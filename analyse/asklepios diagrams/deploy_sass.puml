@@ -1,0 +1,36 @@
+@startuml
+left to right direction
+skinparam node {
+    BackgroundColor White
+    BorderColor Black
+}
+
+actor "Utilisateurs\n(Médecins, Pharmaciens, Accueil)" as users
+actor "Super Admin\n(Authentica SARL)" as superadmin
+
+cloud "Internet" as internet
+
+node "Serveur Cloud / VPS" as vps {
+    
+    node "Serveur Web / Reverse Proxy\n(Nginx / OpenLiteSpeed)" as web {
+        artifact "Frontend App\n(Next.js / React)" as front
+    }
+    
+    node "Serveur d'Application (Node.js / PHP)" as app {
+        component "Asklepios Core API\n(NestJS / Laravel)" as api
+    }
+    
+    database "Serveur de Base de Données" as db {
+        artifact "MySQL / PostgreSQL" as sql
+    }
+}
+
+users --> internet : HTTPS
+superadmin --> internet : HTTPS (Gestion Licences)
+
+internet --> web : Requêtes (Port 443)
+web --> front : Sert l'interface
+front --> api : Appels API REST / GraphQL
+api --> sql : Requêtes SQL (Port 3306 / 5432)
+
+@enduml

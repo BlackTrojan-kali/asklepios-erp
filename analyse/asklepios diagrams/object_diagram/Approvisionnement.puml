@@ -1,0 +1,43 @@
+@startuml
+skinparam nodesep 70
+skinparam ranksep 50
+
+skinparam object {
+    BackgroundColor White
+    BorderColor Black
+    ArrowColor #333333
+}
+
+object "fournisseur : provider" as prov {
+  id = 12
+  name = "Grossiste Santé"
+}
+
+object "commande : order" as ord {
+  id = 890
+  qty = 500.0
+}
+
+object "pharmacien_marc : pharm" as user {
+  id = 8
+  firstname = "Marc"
+}
+
+object "article_seringue : article" as art {
+  id = 203
+  name = "Seringue 5ml"
+}
+
+object "mouvement_entree : move" as mv {
+  id = 15099
+  type = "ENTREE"
+}
+
+' DISPOSITION EN GRILLE
+prov -right-> ord : " reçoit >"
+user -up-> ord : " initie >"
+user -down-> mv : " valide >"
+ord -down-> art : " concerne >"
+art -right-> mv : " subit >"
+
+@enduml

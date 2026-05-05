@@ -1,0 +1,42 @@
+@startuml
+skinparam nodesep 60
+skinparam ranksep 60
+
+skinparam object {
+    BackgroundColor White
+    BorderColor Black
+    ArrowColor #333333
+}
+
+object "agent_accueil : admin" as user {
+  id = 3
+  firstname = "Sophie"
+}
+
+object "nouveau_patient : patient" as pat {
+  id = 1043
+  UIB = "BIU-202605-090"
+}
+
+object "ticket_attente : waiting" as ticket {
+  id = 5021
+  patient_number = 5
+}
+
+object "salle_attente : waiting_room" as w_room {
+  id = 305
+  date = "2026-05-03"
+}
+
+object "service_cardio : service" as serv {
+  id = 2
+  name = "Cardiologie"
+}
+
+' DISPOSITION EN GRILLE
+user -right-> pat : " enregistre >"
+pat -down-> ticket : " reçoit >"
+ticket -left-> w_room : " appartient à >"
+w_room -up-> serv : " rattachée à >"
+
+@enduml

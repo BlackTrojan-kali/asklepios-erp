@@ -1,0 +1,19 @@
+@startuml
+left to right direction
+actor admin as ad
+rectangle "asklepios \n module admin"{
+    usecase "gerer user" as u1
+    usecase "gerer planing" as u2
+    usecase "gerer licence" as u3
+    usecase "consulter statistique" as u4
+    usecase "gerer employer" as u5
+    usecase "generer rapport \n PDF/Excel" as u6
+}
+ad --> u1
+ad --> u2
+ad --> u3
+ad --> u4
+ad --> u5
+ad --> u6
+
+@enduml

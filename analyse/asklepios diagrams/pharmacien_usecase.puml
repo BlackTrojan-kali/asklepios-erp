@@ -1,0 +1,20 @@
+@startuml
+left to right direction
+:pharmacien: as p
+rectangle "asklepios \n module pharmacie"{
+    (stocker /destoquer article) as t1
+    (transferer/receptionner stock) as t2
+    (gerer approvisionnement) as t3
+    (vendre articles ) as t4
+    (versements en banque ou a la caisse) as t5
+    (faire inventaire) as t6
+    (gerer articles) as t7
+}
+p --> t1
+p --> t2
+p --> t3
+p --> t4
+p --> t5
+p --> t6
+p --> t7
+@enduml

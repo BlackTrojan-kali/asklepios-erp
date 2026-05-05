@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan Directeur - E-Patrimoine ASECNA</title>
+    <style>
+        /* --- Styles de base (Écran) --- */
+        :root {
+            --primary-color: #2980b9;
+            --secondary-color: #34495e;
+            --bg-light: #ecf0f1;
+            --text-color: #2c3e50;
+            --border-color: #bdc3c7;
+        }
+
+        body {
+            font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+            color: var(--text-color);
+            line-height: 1.5;
+            font-size: 14px;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 40px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+
+        .action-bar {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button:hover {
+            background-color: #1a5276;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            font-size: 24px;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: var(--secondary-color);
+            margin-top: 5px;
+            font-weight: 600;
+        }
+
+        .project-info {
+            background-color: var(--bg-light);
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .project-info div {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .project-info strong {
+            color: var(--secondary-color);
+        }
+
+        h2 {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 8px 15px;
+            font-size: 18px;
+            margin-top: 30px;
+            border-radius: 4px;
+        }
+
+        table.schedule {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            margin-bottom: 20px;
+        }
+
+        table.schedule th {
+            background-color: var(--secondary-color);
+            color: white;
+            text-align: left;
+            padding: 12px;
+            font-size: 14px;
+        }
+
+        table.schedule td {
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            vertical-align: top;
+        }
+
+        table.schedule tr:nth-child(even) {
+            background-color: #f9fbfb;
+        }
+
+        .deliverables {
+            font-size: 13px;
+            font-style: italic;
+            color: #555;
+        }
+
+        .summary-box {
+            border: 2px solid var(--primary-color);
+            padding: 20px;
+            margin-top: 40px;
+            background-color: #f7fbfe;
+            border-radius: 6px;
+        }
+
+        .summary-box h3 {
+            color: var(--primary-color);
+            margin-top: 0;
+        }
+
+        ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+
+        /* --- Styles d'Impression (Export PDF) --- */
+        @media print {
+            body {
+                background-color: #ffffff;
+                padding: 0;
+            }
+            .container {
+                box-shadow: none;
+                padding: 0;
+                max-width: 100%;
+            }
+            .no-print {
+                display: none !important;
+            }
+            @page {
+                size: A4;
+                margin: 20mm;
+            }
+            table.schedule {
+                page-break-inside: auto;
+            }
+            tr {
+                page-break-inside: avoid;
+                page-break-after: auto;
+            }
+            h2 {
+                page-break-after: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="action-bar no-print">
+            <button onclick="exportPDF()">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                    <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                </svg>
+                Exporter en PDF
+            </button>
+        </div>
+
+        <div class="header">
+            <h1>Plan Directeur de Réalisation (Master Plan)</h1>
+            <div class="subtitle">ERP E-Patrimoine ASECNA : Gouvernance & Maintenance Intégrée</div>
+        </div>
+
+        <div class="project-info">
+            <div>
+                <p><strong>Partenaire :</strong> Mr. Armand SAMOU</p>
+                <p><strong>Objet :</strong> Planification complète (Conception, Dév, Déploiement)</p>
+            </div>
+            <div>
+                <p><strong>Site Pilote :</strong> Yaoundé-Nsimalen</p>
+                <p><strong>Durée Totale :</strong> 24 Semaines (6 mois env.)</p>
+            </div>
+        </div>
+
+        <p>Ce document définit la feuille de route exhaustive pour le passage d'une maintenance de "constat" à une <strong>gouvernance par la preuve</strong>. Il intègre les exigences de traçabilité des stocks sensibles et de visualisation dynamique.</p>
+
+        <h2>PHASE 1 : ANALYSE & CONCEPTION (S1 - S6)</h2>
+        <table class="schedule">
+            <tr>
+                <th style="width: 20%;">Période</th>
+                <th style="width: 40%;">Activités</th>
+                <th style="width: 40%;">Livrables</th>
+            </tr>
+            <tr>
+                <td>S1 - S3</td>
+                <td>Audit métier, modélisation des processus (BIM, Rebus, Carburant), Diagrammes UML.</td>
+                <td class="deliverables">Dossier de Spécifications Fonctionnelles (SFD).</td>
+            </tr>
+            <tr>
+                <td>S4 - S6</td>
+                <td>Architecture technique, Modèle Conceptuel de Données (MCD), Design UI/UX (Cartographie interactive).</td>
+                <td class="deliverables">Dossier d'Architecture Technique (DAT), Maquettes cliquables.</td>
+            </tr>
+        </table>
+
+        <h2>PHASE 2 : DÉVELOPPEMENT & CODAGE (S7 - S16)</h2>
+        <table class="schedule">
+            <tr>
+                <th style="width: 20%;">Période</th>
+                <th style="width: 40%;">Activités</th>
+                <th style="width: 40%;">Livrables</th>
+            </tr>
+            <tr>
+                <td>S7 - S10</td>
+                <td><strong>Core Engine :</strong> Développement du Backend (NestJS/Laravel), gestion des utilisateurs et rôles ASECNA.</td>
+                <td class="deliverables">API Core fonctionnelle, Module d'authentification sécurisé.</td>
+            </tr>
+            <tr>
+                <td>S11 - S14</td>
+                <td><strong>Modules Métiers :</strong> Gestion des stocks (Batteries), Suivi Carburant, Cycle de vie (Passeport équipement).</td>
+                <td class="deliverables">Module Stock & Rebus, Algorithme de calcul de cohérence Carburant.</td>
+            </tr>
+            <tr>
+                <td>S15 - S16</td>
+                <td><strong>Interface BIM & Messagerie :</strong> Intégration des plans dynamiques et moteur de workflow via messagerie.</td>
+                <td class="deliverables">Interface Cartographique interactive, Notifications automatisées.</td>
+            </tr>
+        </table>
+
+        <h2>PHASE 3 : TESTS, QA & RECETTE (S17 - S20)</h2>
+        <table class="schedule">
+            <tr>
+                <th style="width: 20%;">Période</th>
+                <th style="width: 40%;">Activités</th>
+                <th style="width: 40%;">Livrables</th>
+            </tr>
+            <tr>
+                <td>S17 - S18</td>
+                <td>Tests unitaires et d'intégration. Stress tests sur le volume de données (inventaire complet).</td>
+                <td class="deliverables">Rapport de tests techniques (QA Report).</td>
+            </tr>
+            <tr>
+                <td>S19 - S20</td>
+                <td><strong>Recette Utilisateur (UAT) :</strong> Tests par les techniciens et décideurs sur un environnement de pré-production.</td>
+                <td class="deliverables">Procès-Verbal de Recette Provisoire.</td>
+            </tr>
+        </table>
+
+        <h2>PHASE 4 : DÉPLOIEMENT & PILOTE NSIMALEN (S21 - S24)</h2>
+        <table class="schedule">
+            <tr>
+                <th style="width: 20%;">Période</th>
+                <th style="width: 40%;">Activités</th>
+                <th style="width: 40%;">Livrables</th>
+            </tr>
+            <tr>
+                <td>S21 - S22</td>
+                <td>Mise en production (Hosting/Serveurs ASECNA). Migration des données initiales du site de Nsimalen.</td>
+                <td class="deliverables">Plateforme en ligne, Rapports d'inventaire initial.</td>
+            </tr>
+            <tr>
+                <td>S23 - S24</td>
+                <td>Formation des administrateurs et utilisateurs finaux. Accompagnement au changement.</td>
+                <td class="deliverables">Manuels utilisateurs, Supports de formation.</td>
+            </tr>
+        </table>
+
+        <div class="summary-box">
+            <h3>CONCLUSION & GOUVERNANCE</h3>
+            <p>Ce planning garantit une livraison structurée et sécurisée. La réussite du projet repose sur :</p>
+            <ul>
+                <li>La validation immédiate de la Phase 1 pour lancer les développements critiques.</li>
+                <li>La disponibilité des plans techniques numérisés du site de Yaoundé-Nsimalen.</li>
+                <li>L'accès aux protocoles de la messagerie d'entreprise pour le workflow de validation.</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function exportPDF() {
+            // La fonction window.print() ouvre la boîte de dialogue d'impression du navigateur.
+            // Grâce aux CSS @media print, l'utilisateur n'a qu'à choisir "Enregistrer au format PDF" 
+            // comme imprimante de destination pour obtenir un résultat propre.
+            window.print();
+        }
+    </script>
+</body>
+</html>

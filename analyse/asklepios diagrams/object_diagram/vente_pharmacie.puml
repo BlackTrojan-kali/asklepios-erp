@@ -1,0 +1,47 @@
+@startuml
+skinparam nodesep 50
+skinparam ranksep 50
+
+skinparam object {
+    BackgroundColor White
+    BorderColor Black
+    ArrowColor #333333
+}
+
+object "patient_dupont : patient" as pat {
+  id = 1042
+}
+
+object "pharmacien_marc : pharm" as user {
+  id = 8
+  firstname = "Marc"
+}
+
+object "vente_paracetamol : article_sales" as sale {
+  id = 4102
+  total = 2000.0
+}
+
+object "ligne_vente : article_sales_items" as sale_item {
+  qty = 2.0
+  sub_total = 2000.0
+}
+
+object "article_paracetamol : article" as art {
+  id = 105
+  name = "Paracétamol 500mg"
+}
+
+object "stock_pharmacie : stock" as st {
+  id = 88
+  qty = 148.0
+}
+
+' DISPOSITION EN GRILLE
+user -right-> sale : " crée >"
+pat -down-> sale : " paie >"
+sale -down-> sale_item : " contient >"
+sale_item -right-> art : " référence >"
+art -down-> st : " décrémente >"
+
+@enduml

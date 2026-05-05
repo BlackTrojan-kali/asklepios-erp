@@ -1,0 +1,46 @@
+@startuml
+left to right direction
+skinparam node {
+    BackgroundColor White
+    BorderColor Black
+}
+
+node "Réseau Local Hospitalier (LAN / Wi-Fi)" as lan {
+    node "Poste Accueil (PC)" as pc1
+    node "Tablette Médecin" as pc2
+    node "Poste Laboratoire (PC)" as pc3
+}
+
+node "Serveur Local (On-Premise)" as local_server {
+    
+    node "Serveur Web Local\n(Apache / Nginx)" as web {
+        artifact "Frontend App" as front
+    }
+    
+    node "Environnement d'Exécution" as app {
+        component "Asklepios Core API" as api
+    }
+    
+    database "SGBD Local" as db {
+        artifact "Base de données" as sql
+    }
+}
+
+' Routeur pour accès distant optionnel (Maintenance)
+node "Routeur / Pare-feu" as firewall
+cloud "Internet" as internet
+actor "Super Admin\n(Maintenance)" as superadmin
+
+pc1 --> web : HTTP (IP Locale ex: 192.168.1.10)
+pc2 --> web : HTTP (IP Locale)
+pc3 --> web : HTTP (IP Locale)
+
+web --> front : Sert l'interface
+front --> api : Appels API REST
+api --> sql : Requêtes SQL
+
+superadmin --> internet : VPN / SSH
+internet --> firewall
+firewall --> local_server : Accès distant sécurisé
+
+@enduml

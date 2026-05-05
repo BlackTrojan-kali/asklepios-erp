@@ -1,0 +1,12 @@
+@startuml
+left to right direction
+:SuperAdmin: as sup
+rectangle "asklepios \n module sup_admin" {
+    (gerer admin) as u1
+    (gerer licence) as u2
+    (gerer paramettre de l'erp) as u3
+}
+sup --> u1
+sup --> u2
+sup --> u3
+@enduml

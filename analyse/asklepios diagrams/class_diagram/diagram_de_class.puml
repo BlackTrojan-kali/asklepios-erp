@@ -1,0 +1,331 @@
+@startuml
+top to bottom direction
+skinparam classAttributeIconSize 0
+title Diagramme de Classe - ERP DistribOS (GTA)
+
+package "Utilisateurs & Rôles" {
+    class user {
+        id: UnsignedBigInteger
+        firstname: String
+        lastname: String
+        age: String
+        password: String
+        email: String
+        phone: String
+        role_id: UnsignedBigInteger
+    }
+    class role {
+        id: UnsignedBigInteger
+        name: String
+        permissions: JSON
+    }
+    
+    class profile_super_admin {
+        id: UnsignedBigInteger
+        user_id: UnsignedBigInteger
+        function manageLicence(licenceDto)
+        function globalSettings()
+    }
+    class profile_admin {
+        id: UnsignedBigInteger
+        user_id: UnsignedBigInteger
+        function create(userDto)
+        function update(userDto)
+        function delete(userId)  
+    }
+    class profile_lab {
+        id: UnsignedBigInteger
+        user_id: UnsignedBigInteger
+        function analyse(payload)      
+    }
+    class profile_pharm {
+        id: UnsignedBigInteger
+        user_id: UnsignedBigInteger
+        function create(ArticlesDto)
+        function update(ArticlesDto)
+        function delete(ArticlesDto)
+        function createOrder(payload)
+    }
+    class profile_doctor {
+        id: UnsignedBigInteger
+        user_id: UnsignedBigInteger
+        speciality: String
+        function create(book)
+    }
+    
+    user "*" *-- "1" role : hasOne >
+    user "1" *-- "0..1" profile_super_admin : hasProfile >
+    user "1" *-- "0..1" profile_admin : hasProfile >
+    user "1" *-- "0..1" profile_lab : hasProfile >
+    user "1" *-- "0..1" profile_pharm : hasProfile >
+    user "1" *-- "0..1" profile_doctor : hasProfile >
+}
+
+package "Gestion SaaS & Licence (Nouveau)" {
+    class licence {
+        id: UnsignedBigInteger
+        client_name: String
+        start_date: Date
+        end_date: Date
+        status: String
+        type: String
+    }
+    class licence_payment {
+        id: UnsignedBigInteger
+        licence_id: UnsignedBigInteger
+        amount: float
+        payment_date: Date
+        payment_method: String
+        transaction_reference: String
+    }
+    
+    licence "1" *-- "*" licence_payment : hasMany >
+    profile_super_admin --> licence : manages >
+}
+
+package "Noyau & Réception" {
+    class service {
+        id: UnsignedBigInteger
+        name: String
+        type: String 
+    }
+    class patient {
+        id: UnsignedBigInteger
+        UIB: String
+        first_name: String
+        last_name: String
+        birth_date: Date
+        phone_number: String
+        address: String
+        email: String
+    }
+    class waiting_room {
+        id: UnsignedBigInteger
+        service_id: UnsignedBigInteger
+        name: String
+    }
+    class waiting {
+        id: UnsignedBigInteger
+        waiting_room_id: UnsignedBigInteger
+        patient_id: UnsignedBigInteger
+        patient_number: Integer
+        status: String
+        scheduled_date: Date 
+    }
+    
+    service "1" *-- "1" waiting_room: has >
+    waiting_room "1" *-- "*" waiting: contains >
+    profile_doctor --> waiting_room : can admit >
+    patient "1" -- "*" waiting : can enter >
+}
+
+package "Ressources & Maintenance" {
+    class therapy {
+        id: UnsignedBigInteger
+        service_id: UnsignedBigInteger
+        name: String
+        price_per_unit: Integer
+    }
+    class machine {
+        id: UnsignedBigInteger
+        name: String
+        state: String
+        last_maintenance_date: Date
+    }
+    class maintenance {
+        id: UnsignedBigInteger
+        machine_id: UnsignedBigInteger
+        starting_date: Date
+        ending_date: Date
+        state: String 
+        price: float
+    }
+    service "1" --> "*" therapy : hasMany >
+    therapy - machine : hasOne
+    machine "1" --> "*" maintenance : is maintained
+}
+
+package "Pharmacie & Stock" {
+    class article {
+        id: UnsignedBigInteger
+        name: String
+        type: String
+        weight_per_unit: float
+        unit: String
+        min_qty: float
+        image_url: String
+    }
+    class batch {
+        id: UnsignedBigInteger
+        article_id: UnsignedBigInteger
+        batch_number: String
+        expiry_date: Date
+        price_per_unit: float
+    }
+    class stock {
+        id: UnsignedBigInteger
+        service_id: UnsignedBigInteger
+        batch_id: UnsignedBigInteger
+        qty: float
+    }
+    class move {
+        id: UnsignedBigInteger
+        batch_id: UnsignedBigInteger
+        qty: float
+        remaining_stock: float
+        type: String
+        user_id: UnsignedBigInteger
+        origin_id: UnsignedBigInteger
+        destination_id: UnsignedBigInteger_optional
+        order_id: UnsignedBigInteger_optional
+    }
+    class provider {
+        id: UnsignedBigInteger
+        name: String
+        phone: String
+        type: String
+    }
+    class order {
+        id: UnsignedBigInteger
+        provider_id: UnsignedBigInteger
+        article_id: UnsignedBigInteger
+        user_id: UnsignedBigInteger
+        qty: float
+        created_at: Date
+    }
+    
+    article "1" *--> "*" batch : hasMany >
+    batch "1" *--> "*" stock : hasMany >
+    batch "1" --> "*" move : is moved >
+    profile_pharm "1" --> "*" order : can initiate >
+    order "*" --> "1" provider : sent to >
+}
+
+package "Consultation & Dossier Médical" {
+    class hospital_book {
+        id: UnsignedBigInteger
+        patient_id: UnsignedBigInteger
+        blood_type: String
+        skin_color: String
+        allergies: String
+    }
+    class book_page {
+        id: UnsignedBigInteger
+        hospital_book_id: UnsignedBigInteger
+        description: Text
+        weight: float
+        height: float
+        created_at: Date
+    }
+    class prescription {
+        id: UnsignedBigInteger
+        book_page_id: UnsignedBigInteger
+        notes: Text
+        created_at: Date
+    }
+    class prescription_item {
+        id: UnsignedBigInteger
+        prescription_id: UnsignedBigInteger
+        type: String
+        item_id: UnsignedBigInteger
+        dosage: String
+        qty: float
+    }
+    
+    patient "1" -- "1" hospital_book : hasOne >
+    hospital_book "1" *-- "*" book_page : hasMany >
+    book_page "1" *-- "*" prescription : generates >
+    prescription "1" *-- "*" prescription_item : contains >
+}
+
+package "Laboratoire" {
+    class lab_parameter {
+        id: UnsignedBigInteger
+        name: String
+        category: String
+        reference_range_min: float
+        reference_range_max: float
+        unit: String
+    }
+    class lab_request {
+        id: UnsignedBigInteger
+        patient_id: UnsignedBigInteger
+        doctor_id: UnsignedBigInteger
+        book_page_id: UnsignedBigInteger_optional
+        status: String
+        created_at: Date
+    }
+    class lab_sample {
+        id: UnsignedBigInteger
+        lab_request_id: UnsignedBigInteger
+        sample_type: String
+        collection_date: Date
+        collected_by: UnsignedBigInteger
+        status: String
+    }
+    class lab_result {
+        id: UnsignedBigInteger
+        lab_request_id: UnsignedBigInteger
+        lab_parameter_id: UnsignedBigInteger
+        value: String
+        is_abnormal: Boolean
+        validated_by: UnsignedBigInteger
+        validated_at: Date
+    }
+    
+    patient "1" --> "*" lab_request : has >
+    profile_doctor "1" --> "*" lab_request : prescribes >
+    book_page "1" --> "*" lab_request : contains >
+    lab_request "1" *-- "*" lab_sample : requires >
+    lab_request "1" *-- "*" lab_result : generates >
+    lab_result "*" --> "1" lab_parameter : based on >
+    profile_lab --> lab_request : processes >
+}
+
+package "Facturation & Trésorerie" {
+    class invoice {
+        id: UnsignedBigInteger
+        patient_id: UnsignedBigInteger
+        user_id: UnsignedBigInteger
+        sub_total: float
+        total: float
+        status: String
+        created_at: Date
+    }
+    class invoice_item {
+        id: UnsignedBigInteger
+        invoice_id: UnsignedBigInteger
+        item_type: String 
+        item_id: UnsignedBigInteger
+        unit_price: float
+        qty: float
+        sub_total: float
+    }
+    class payment {
+        id: UnsignedBigInteger
+        user_id: UnsignedBigInteger
+        amount: float
+        payment_method: String
+        reference: String
+        payment_date: Date
+        status: String
+    }
+    class invoice_payment {
+        id: UnsignedBigInteger
+        invoice_id: UnsignedBigInteger
+        payment_id: UnsignedBigInteger
+        amount_applied: float
+    }
+    
+    profile_pharm -- invoice : can create >
+    profile_doctor -- invoice : can create >
+    profile_admin --> payment : initiates >
+    
+    invoice "1" *--> "*" invoice_item : hasMany >
+    therapy "1" --> "*" invoice_item : billed as >
+    
+    invoice "1" *--> "*" invoice_payment : receives >
+    payment "1" *--> "*" invoice_payment : allocates to >
+}
+
+@enduml

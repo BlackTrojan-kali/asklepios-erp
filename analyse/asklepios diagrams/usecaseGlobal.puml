@@ -1,0 +1,20 @@
+@startuml
+left to right direction
+:super admin: as sup 
+:admin: as ad 
+:acceuil: as acc
+:pharmacien: as pharm
+:laborantin: as lab
+rectangle asklepios{
+    (gerer module acceuil) as u1
+    (gerer module pharmacie) as u2
+    (gerer module laboratoir) as u3
+    (gerer module admin) as u4
+    (gerer module global) as u5
+}
+sup-->u5
+ad --> u4
+acc --> u1
+pharm --> u2
+lab --> u3
+@enduml

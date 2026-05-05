@@ -1,0 +1,70 @@
+@startuml
+skinparam ranksep 50
+skinparam nodesep 50
+
+skinparam object {
+    BackgroundColor White
+    BorderColor Black
+    ArrowColor #333333
+}
+
+object "patient_dupont : patient" as pat {
+  id = 1042
+  UIB = "BIU-202605-089"
+  first_name = "Jean"
+  last_name = "Dupont"
+}
+
+object "dossier_dupont : hospital_book" as book {
+  id = 501
+  blood_type = "O+"
+  allergies = "Pénicilline"
+}
+
+object "consultation_jour : book_page" as page {
+  id = 8932
+  description = "Prescription bilan (Glycémie)."
+}
+
+object "demande_analyse : lab_request" as req {
+  id = 450
+  status = "Validé"
+  created_at = "2026-05-03 10:15"
+}
+
+object "resultat_glycemie : lab_result" as res {
+  id = 998
+  value = "1.25"
+  is_abnormal = true
+}
+
+object "param_glycemie : lab_parameter" as param {
+  id = 33
+  name = "Glycémie à jeun"
+  unit = "g/L"
+}
+
+object "dr_kamga : doctor" as doc {
+  id = 14
+  firstname = "Paul"
+  lastname = "Kamga"
+}
+
+object "facture_prestation : service_sales" as bill {
+  id = 7741
+  total = 5000.0
+  created_at = "2026-05-03 11:45"
+}
+
+' LIGNE DIRECTRICE VERTICALE PRINCIPALE (Axe central de haut en bas)
+pat --> book : " 1 possède 1 "
+book --> page : " 1 contient 1 "
+page --> req : " 1 justifie 1 "
+req -> res : " 1 génère 1 "
+res --> param : " 1 évalue 1 "
+
+' BRANCHEMENTS SECONDAIRES (Viennent se greffer sur les côtés)
+doc --> req : " 1 prescrit 1 "
+pat --> bill : " 1 doit payer 1 "
+
+@enduml

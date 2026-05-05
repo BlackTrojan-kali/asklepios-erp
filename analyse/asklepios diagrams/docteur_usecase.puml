@@ -1,0 +1,35 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Médecin" as d
+
+package "Asklepios - Module Consultation" {
+    usecase "Consulter l'historique du\ndossier patient" as U10
+    usecase "Créer une note de consultation\n(Anamnèse, Diagnostic)" as U1
+    usecase "Modifier une note de consultation" as U2
+    usecase "Archiver / Invalider une note\n(Maintien de la traçabilité)" as U3
+    usecase "Prescrire des médicaments\n(Ordonnance)" as U4
+    usecase "Prescrire des examens\n(Laboratoire / Imagerie)" as U5
+    usecase "Prescrire un acte médical / Soin\n(Prestation)" as U6
+    usecase "Générer la demande de facturation\n(Bon de caisse)" as U7
+    usecase "Transférer le patient\n(Vers un autre service / Hospitalisation)" as U8
+    usecase "Consulter le catalogue\ndes prestations" as U9
+    (planifier un rdv) as U11
+    (consulter emploi du temps) as U12
+}
+
+d --> U10
+d --> U1
+d --> U2
+d --> U3
+d --> U4
+d --> U5
+d --> U6
+d --> U7
+d --> U8
+d --> U9
+d--> U11
+d--> U12
+
+@enduml

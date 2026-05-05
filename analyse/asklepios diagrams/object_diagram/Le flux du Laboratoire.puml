@@ -1,0 +1,62 @@
+@startuml
+skinparam nodesep 50
+skinparam ranksep 60
+
+skinparam object {
+    BackgroundColor White
+    BorderColor Black
+    ArrowColor #333333
+}
+
+object "patient_dupont : patient" as pat {
+  id = 1042
+  first_name = "Jean"
+}
+
+object "dossier_dupont : hospital_book" as book {
+  id = 501
+  blood_type = "O+"
+}
+
+object "consultation : book_page" as page {
+  id = 8932
+  description = "Prescription bilan."
+}
+
+object "dr_kamga : doctor" as doc {
+  id = 14
+  firstname = "Paul"
+}
+
+object "demande_analyse : lab_request" as req {
+  id = 450
+  status = "Validé"
+}
+
+object "resultat_glycemie : lab_result" as res {
+  id = 998
+  value = "1.25"
+}
+
+object "param_glycemie : lab_parameter" as param {
+  id = 33
+  unit = "g/L"
+}
+
+object "facture : service_sales" as bill {
+  id = 7741
+  total = 5000.0
+}
+
+' DISPOSITION EN GRILLE
+pat -right-> book : " possède >"
+book -down-> page : " contient >"
+page -right-> req : " justifie >"
+
+doc -down-> req : " prescrit >"
+pat -down-> bill : " doit payer >"
+
+req -down-> res : " génère >"
+res -right-> param : " évalue >"
+
+@enduml

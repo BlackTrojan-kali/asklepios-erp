@@ -1,0 +1,18 @@
+@startuml
+left to right direction
+actor "Accueil" as a
+
+rectangle "Asklepios" as ask {
+    usecase "enregistrer patient" as c1
+    usecase "generer BIU" as c2
+    usecase "transferer patient \n vers service" as c3
+    usecase "generer facture globale" as c4
+    usecase "generer facture prestation" as c5
+}
+
+a --> c1
+a --> c2
+a --> c3
+a --> c4
+a --> c5
+@enduml
