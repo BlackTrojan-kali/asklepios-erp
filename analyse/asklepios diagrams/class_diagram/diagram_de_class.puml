@@ -50,6 +50,7 @@ package "Utilisateurs & Rôles" {
         id: UnsignedBigInteger
         user_id: UnsignedBigInteger
         speciality: String
+        grade: String
         function create(book)
     }
     
@@ -61,7 +62,7 @@ package "Utilisateurs & Rôles" {
     user "1" *-- "0..1" profile_doctor : hasProfile >
 }
 
-package "Gestion SaaS & Licence (Nouveau)" {
+package "Gestion SaaS & Licence" {
     class licence {
         id: UnsignedBigInteger
         client_name: String
@@ -119,89 +120,32 @@ package "Noyau & Réception" {
     patient "1" -- "*" waiting : can enter >
 }
 
-package "Ressources & Maintenance" {
-    class therapy {
+package "Consultation & Tarification" {
+    class consultation_tariff {
         id: UnsignedBigInteger
-        service_id: UnsignedBigInteger
-        name: String
-        price_per_unit: Integer
+        title: String
+        speciality: String
+        doctor_grade: String
+        sector: String
+        schedule_type: String
+        base_price: float
     }
-    class machine {
+    class consultation_visit {
         id: UnsignedBigInteger
-        name: String
-        state: String
-        last_maintenance_date: Date
-    }
-    class maintenance {
-        id: UnsignedBigInteger
-        machine_id: UnsignedBigInteger
-        starting_date: Date
-        ending_date: Date
-        state: String 
-        price: float
-    }
-    service "1" --> "*" therapy : hasMany >
-    therapy - machine : hasOne
-    machine "1" --> "*" maintenance : is maintained
-}
-
-package "Pharmacie & Stock" {
-    class article {
-        id: UnsignedBigInteger
-        name: String
-        type: String
-        weight_per_unit: float
-        unit: String
-        min_qty: float
-        image_url: String
-    }
-    class batch {
-        id: UnsignedBigInteger
-        article_id: UnsignedBigInteger
-        batch_number: String
-        expiry_date: Date
-        price_per_unit: float
-    }
-    class stock {
-        id: UnsignedBigInteger
-        service_id: UnsignedBigInteger
-        batch_id: UnsignedBigInteger
-        qty: float
-    }
-    class move {
-        id: UnsignedBigInteger
-        batch_id: UnsignedBigInteger
-        qty: float
-        remaining_stock: float
-        type: String
-        user_id: UnsignedBigInteger
-        origin_id: UnsignedBigInteger
-        destination_id: UnsignedBigInteger_optional
-        order_id: UnsignedBigInteger_optional
-    }
-    class provider {
-        id: UnsignedBigInteger
-        name: String
-        phone: String
-        type: String
-    }
-    class order {
-        id: UnsignedBigInteger
-        provider_id: UnsignedBigInteger
-        article_id: UnsignedBigInteger
-        user_id: UnsignedBigInteger
-        qty: float
-        created_at: Date
+        patient_id: UnsignedBigInteger
+        doctor_id: UnsignedBigInteger
+        tariff_id: UnsignedBigInteger
+        consultation_date: Datetime
+        applied_price: float
+        status: String
     }
     
-    article "1" *--> "*" batch : hasMany >
-    batch "1" *--> "*" stock : hasMany >
-    batch "1" --> "*" move : is moved >
-    profile_pharm "1" --> "*" order : can initiate >
-    order "*" --> "1" provider : sent to >
+    consultation_tariff "1" <-- "*" consultation_visit : dictates price >
+    profile_doctor "1" --> "*" consultation_visit : conducts >
+    patient "1" --> "*" consultation_visit : attends >
 }
 
-package "Consultation & Dossier Médical" {
+package "Dossier Médical" {
     class hospital_book {
         id: UnsignedBigInteger
         patient_id: UnsignedBigInteger
@@ -212,6 +156,7 @@ package "Consultation & Dossier Médical" {
     class book_page {
         id: UnsignedBigInteger
         hospital_book_id: UnsignedBigInteger
+        consultation_visit_id: UnsignedBigInteger
         description: Text
         weight: float
         height: float
@@ -233,9 +178,120 @@ package "Consultation & Dossier Médical" {
     }
     
     patient "1" -- "1" hospital_book : hasOne >
+    consultation_visit "1" -- "1" book_page : documented in >
     hospital_book "1" *-- "*" book_page : hasMany >
     book_page "1" *-- "*" prescription : generates >
     prescription "1" *-- "*" prescription_item : contains >
+}
+
+package "Pharmacie & Stock (Évolutif)" {
+    class article {
+        id: UnsignedBigInteger
+        name: String
+        type: String
+        weight_per_unit: float
+        unit: String
+        min_qty: float
+        image_url: String
+    }
+    class batch {
+        id: UnsignedBigInteger
+        article_id: UnsignedBigInteger
+        batch_number: String
+        expiry_date: Date
+        purchase_price_per_unit: float
+        selling_price_per_unit: float
+    }
+    class stock {
+        id: UnsignedBigInteger
+        service_id: UnsignedBigInteger
+        batch_id: UnsignedBigInteger
+        qty: float
+        location: String
+    }
+    class move {
+        id: UnsignedBigInteger
+        batch_id: UnsignedBigInteger
+        qty: float
+        remaining_stock: float
+        type: String
+        user_id: UnsignedBigInteger
+        origin_id: UnsignedBigInteger
+        destination_id: UnsignedBigInteger_optional
+        reference_id: UnsignedBigInteger_optional
+    }
+    class provider {
+        id: UnsignedBigInteger
+        name: String
+        phone: String
+        type: String
+    }
+    class order {
+        id: UnsignedBigInteger
+        provider_id: UnsignedBigInteger
+        user_id: UnsignedBigInteger
+        status: String
+        expected_date: Date
+        created_at: Date
+    }
+    class order_line {
+        id: UnsignedBigInteger
+        order_id: UnsignedBigInteger
+        article_id: UnsignedBigInteger
+        qty_ordered: float
+        qty_received: float
+        purchase_price: float
+    }
+    class inventory {
+        id: UnsignedBigInteger
+        user_id: UnsignedBigInteger
+        status: String
+        execution_date: Date
+    }
+    class inventory_line {
+        id: UnsignedBigInteger
+        inventory_id: UnsignedBigInteger
+        batch_id: UnsignedBigInteger
+        system_qty: float
+        physical_qty: float
+        discrepancy: float
+    }
+    
+    article "1" *--> "*" batch : hasMany >
+    batch "1" *--> "*" stock : hasMany >
+    batch "1" --> "*" move : is moved >
+    profile_pharm "1" --> "*" order : initiates >
+    order "*" --> "1" provider : sent to >
+    order "1" *--> "*" order_line : contains >
+    order_line "*" --> "1" article : specifies >
+    inventory "1" *--> "*" inventory_line : details >
+    inventory_line "*" --> "1" batch : audits >
+}
+
+package "Ressources & Maintenance" {
+    class therapy {
+        id: UnsignedBigInteger
+        service_id: UnsignedBigInteger
+        name: String
+        price_per_unit: float
+    }
+    class machine {
+        id: UnsignedBigInteger
+        name: String
+        state: String
+        last_maintenance_date: Date
+    }
+    class maintenance {
+        id: UnsignedBigInteger
+        machine_id: UnsignedBigInteger
+        starting_date: Date
+        ending_date: Date
+        state: String 
+        price: float
+    }
+    service "1" --> "*" therapy : hasMany >
+    therapy - machine : hasOne
+    machine "1" --> "*" maintenance : is maintained
 }
 
 package "Laboratoire" {
@@ -322,7 +378,9 @@ package "Facturation & Trésorerie" {
     profile_admin --> payment : initiates >
     
     invoice "1" *--> "*" invoice_item : hasMany >
+    consultation_visit "1" --> "*" invoice_item : billed as >
     therapy "1" --> "*" invoice_item : billed as >
+    batch "1" --> "*" invoice_item : billed as >
     
     invoice "1" *--> "*" invoice_payment : receives >
     payment "1" *--> "*" invoice_payment : allocates to >

@@ -1,0 +1,47 @@
+@startwbs
+<style>
+wbsDiagram {
+  BackgroundColor White
+  LineColor #2C3E50
+  node {
+    FontName Arial
+    FontColor Black
+    BackgroundColor #E8F8F5
+    RoundCorner 10
+    Padding 10
+  }
+  .core {
+    BackgroundColor #FADBD8
+  }
+  .logistics {
+    BackgroundColor #FCF3CF
+  }
+  .medical {
+    BackgroundColor #D6EAF8
+  }
+  .finance {
+    BackgroundColor #EBDEF0
+  }
+  .deploy {
+    BackgroundColor #D5F5E3
+    FontStyle bold
+  }
+}
+</style>
+
+* Roadmap ERP  ASKLEPIOS (Projet )\n""Méthode de Conception Étape par Étape""
+** Phase 1 : Sécurité & Accès <<core>>
+*** 1. Utilisateurs & Rôles\n(Création des badges d'accès)
+*** 2. Gestion SaaS & Licences\n(Contrôle des abonnements)
+** Phase 2 : Logistique Initiale <<logistics>>
+*** 3. Pharmacie & Stocks\n(Remplissage des rayons avant ouverture)
+** Phase 3 : Le Parcours Patient <<medical>>
+*** 4. Noyau & Réception\n(L'accueil et la salle d'attente)
+*** 5. Dossier Médical\n(Le carnet de santé numérique)
+*** 6. Consultations & Tarifs\n(L'acte médical et son coût)
+** Phase 4 : Opérations & Caisse <<finance>>
+*** 7. Ressources & Maintenance\n(Suivi des lits et machines)
+*** 8. Facturation & Trésorerie\n(La caisse centrale)
+** Phase 5 : Lancement <<deploy>>
+*** 9. Déploiement & Formation\n(Mise en production)
+@endwbs
