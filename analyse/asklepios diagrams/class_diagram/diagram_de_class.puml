@@ -1,11 +1,43 @@
 @startuml
 top to bottom direction
 skinparam classAttributeIconSize 0
-title Diagramme de Classe - ERP DistribOS (GTA)
+title Diagramme de Classe - ERP Asklepios (Architecture Hybride SaaS / On-Premise)
+
+package "Gestion SaaS, Locataires & Licences" {
+    class tenant {
+        id: UnsignedBigInteger
+        name: String
+        subdomain: String
+        database_connection: String
+        deployment_type: String
+        status: String
+        created_at: Date
+    }
+    class licence {
+        id: UnsignedBigInteger
+        tenant_id: UnsignedBigInteger
+        start_date: Date
+        end_date: Date
+        status: String
+        type: String
+    }
+    class licence_payment {
+        id: UnsignedBigInteger
+        licence_id: UnsignedBigInteger
+        amount: float
+        payment_date: Date
+        payment_method: String
+        transaction_reference: String
+    }
+    
+    tenant "1" *-- "1..*" licence : owns >
+    licence "1" *-- "*" licence_payment : hasMany >
+}
 
 package "Utilisateurs & Rôles" {
     class user {
         id: UnsignedBigInteger
+        tenant_id: UnsignedBigInteger_optional
         firstname: String
         lastname: String
         age: String
@@ -23,6 +55,7 @@ package "Utilisateurs & Rôles" {
     class profile_super_admin {
         id: UnsignedBigInteger
         user_id: UnsignedBigInteger
+        function manageTenant(tenantDto)
         function manageLicence(licenceDto)
         function globalSettings()
     }
@@ -45,7 +78,7 @@ package "Utilisateurs & Rôles" {
         function update(ArticlesDto)
         function delete(ArticlesDto)
         function createOrder(payload)
-    }
+    } 
     class profile_doctor {
         id: UnsignedBigInteger
         user_id: UnsignedBigInteger
@@ -60,38 +93,21 @@ package "Utilisateurs & Rôles" {
     user "1" *-- "0..1" profile_lab : hasProfile >
     user "1" *-- "0..1" profile_pharm : hasProfile >
     user "1" *-- "0..1" profile_doctor : hasProfile >
-}
-
-package "Gestion SaaS & Licence" {
-    class licence {
-        id: UnsignedBigInteger
-        client_name: String
-        start_date: Date
-        end_date: Date
-        status: String
-        type: String
-    }
-    class licence_payment {
-        id: UnsignedBigInteger
-        licence_id: UnsignedBigInteger
-        amount: float
-        payment_date: Date
-        payment_method: String
-        transaction_reference: String
-    }
     
-    licence "1" *-- "*" licence_payment : hasMany >
-    profile_super_admin --> licence : manages >
+    tenant "1" *-- "*" user : employs >
+    profile_super_admin --> tenant : manages >
 }
 
 package "Noyau & Réception" {
     class service {
         id: UnsignedBigInteger
+        tenant_id: UnsignedBigInteger
         name: String
         type: String 
     }
     class patient {
         id: UnsignedBigInteger
+        tenant_id: UnsignedBigInteger
         UIB: String
         first_name: String
         last_name: String
@@ -123,6 +139,7 @@ package "Noyau & Réception" {
 package "Consultation & Tarification" {
     class consultation_tariff {
         id: UnsignedBigInteger
+        tenant_id: UnsignedBigInteger
         title: String
         speciality: String
         doctor_grade: String
@@ -187,6 +204,7 @@ package "Dossier Médical" {
 package "Pharmacie & Stock (Évolutif)" {
     class article {
         id: UnsignedBigInteger
+        tenant_id: UnsignedBigInteger
         name: String
         type: String
         weight_per_unit: float
@@ -222,6 +240,7 @@ package "Pharmacie & Stock (Évolutif)" {
     }
     class provider {
         id: UnsignedBigInteger
+        tenant_id: UnsignedBigInteger
         name: String
         phone: String
         type: String
@@ -277,6 +296,7 @@ package "Ressources & Maintenance" {
     }
     class machine {
         id: UnsignedBigInteger
+        tenant_id: UnsignedBigInteger
         name: String
         state: String
         last_maintenance_date: Date
@@ -297,6 +317,7 @@ package "Ressources & Maintenance" {
 package "Laboratoire" {
     class lab_parameter {
         id: UnsignedBigInteger
+        tenant_id: UnsignedBigInteger
         name: String
         category: String
         reference_range_min: float
@@ -341,6 +362,7 @@ package "Laboratoire" {
 package "Facturation & Trésorerie" {
     class invoice {
         id: UnsignedBigInteger
+        tenant_id: UnsignedBigInteger
         patient_id: UnsignedBigInteger
         user_id: UnsignedBigInteger
         sub_total: float
@@ -359,6 +381,7 @@ package "Facturation & Trésorerie" {
     }
     class payment {
         id: UnsignedBigInteger
+        tenant_id: UnsignedBigInteger
         user_id: UnsignedBigInteger
         amount: float
         payment_method: String
