@@ -1,0 +1,144 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Asklepios ERP API Documentation",
+        "description": "Documentation interactive de l'API Asklepios pour la gestion hospitalière. Permet aux développeurs front-end de tester les requêtes en temps réel.",
+        "contact": {
+            "name": "Support Technique Asklepios",
+            "email": "admin@asklepios.com"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8000",
+            "description": "Serveur API de Développement"
+        }
+    ],
+    "paths": {
+        "/api/auth/login": {
+            "post": {
+                "tags": [
+                    "Authentification"
+                ],
+                "summary": "Authentifier un utilisateur",
+                "description": "Vérifie les identifiants de l'utilisateur et retourne un jeton d'accès (Token) ainsi que ses informations de profil.",
+                "operationId": "loginUser",
+                "requestBody": {
+                    "description": "Identifiants de connexion requis",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "description": "L'adresse email de l'utilisateur",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "admin@asklepios.com"
+                                    },
+                                    "password": {
+                                        "description": "Le mot de passe de l'utilisateur",
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Connexion réussie",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "token": {
+                                            "description": "Jeton d'authentification Laravel Sanctum",
+                                            "type": "string",
+                                            "example": "1|ra67UvPXYZ123456789..."
+                                        },
+                                        "user": {
+                                            "description": "Informations de l'utilisateur encodées au format chaîne JSON",
+                                            "type": "string",
+                                            "example": "{\"first_name\":\"John\",\"last_name\":\"Doe\",\"role\":\"super_admin\",\"email\":\"admin@asklepios.com\"}"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Identifiants invalides",
+                        "content": {
+                            "application/json": {
+                                "schema": {},
+                                "example": "invalid credentials"
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erreur de validation (champs manquants ou mal formatés)"
+                    }
+                }
+            }
+        },
+        "/api/auth/logout": {
+            "post": {
+                "tags": [
+                    "Authentification"
+                ],
+                "summary": "Déconnecter l'utilisateur",
+                "description": "Révoque et supprime le jeton d'accès actuel de l'utilisateur. L'utilisateur doit être connecté pour utiliser cette route.",
+                "operationId": "logoutUser",
+                "responses": {
+                    "200": {
+                        "description": "Déconnexion réussie",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string"
+                                },
+                                "example": "logged out"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Non autorisé (Le token est manquant ou invalide)"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "description": "Saisissez le jeton (Token) obtenu lors de la connexion pour tester les routes protégées.",
+                "name": "Authorization",
+                "in": "header",
+                "bearerFormat": "JWT",
+                "scheme": "bearer"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Authentification",
+            "description": "Authentification"
+        }
+    ]
+}

@@ -25,7 +25,7 @@ class UserSeeder extends Seeder
                     'first_name' => 'John',
                     'last_name' => 'Doe',
                     'phone' => 237600000000, // Remplace par un format de numéro valide pour ton test
-                    'password' => Hash::make('password123'), // Toujours hasher le mot de passe !
+                    'password' => Hash::make('secrets'), // Toujours hasher le mot de passe !
                     'role_id' => $superAdminRole->id, // On lie l'utilisateur à son rôle
                     'email_verified_at' => now(),
                 ]
