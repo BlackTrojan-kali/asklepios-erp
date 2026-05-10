@@ -22,8 +22,8 @@ class UserSeeder extends Seeder
             User::firstOrCreate(
                 ['email' => 'admin@asklepios.com'], // On évite les doublons basés sur l'email
                 [
-                    'first_name' => 'John',
-                    'last_name' => 'Doe',
+                    'first_name' => 'Chendjou Silinou',
+                    'last_name' => 'Joseph',
                     'phone' => 237600000000, // Remplace par un format de numéro valide pour ton test
                     'password' => Hash::make('secrets'), // Toujours hasher le mot de passe !
                     'role_id' => $superAdminRole->id, // On lie l'utilisateur à son rôle
