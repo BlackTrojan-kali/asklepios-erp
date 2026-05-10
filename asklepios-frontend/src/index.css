@@ -1,13 +1,32 @@
 @import "tailwindcss";
 
 @import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+@custom-variant dark (&:where(.dark, .dark *));
 @theme {
-  --font-brand: "Roboto";
+  /* Polices */
+  --font-brand: "Roboto", sans-serif;
+  --font-lato: "Lato", sans-serif;
+
+  /* Couleurs Mint originales */
   --color-mint-500: #1cd6c4;
   --color-mint-900: #1780a3;
-  
+
+  /* Couleurs de la charte graphique Asclépios */
+  --color-brand-blue: #003366;
+  --color-brand-teal: #00a896;
+  --color-paper: #faf8f1; /* Ton effet papier scolaire */
 }
-body{
-  font-family: "Roboto";
-  @apply w-full h-full bg-slate-100;
+
+body {
+  font-family: "Roboto", sans-serif;
+  /* * Styles globaux de l'application :
+   * min-h-screen : Assure que le fond fait au moins 100% de la hauteur de l'écran
+   * transition-colors : Rend le changement clair/sombre très fluide
+   */
+  @apply w-full min-h-screen bg-slate-100 text-slate-800 transition-colors duration-300 dark:bg-gray-900 dark:text-gray-100;
+}
+
+/* Évite le scroll horizontal indésirable sur les petits écrans */
+html {
+  @apply overflow-x-hidden;
 }

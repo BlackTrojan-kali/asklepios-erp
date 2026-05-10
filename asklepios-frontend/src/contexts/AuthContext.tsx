@@ -8,7 +8,7 @@ interface AuthContextType {
 }
 
 export const AuthContext = createContext<AuthContextType>({
-    profile: null,
+    profile: null, 
     token: null,
     setProfile: () => {},
     setToken: () => {},
