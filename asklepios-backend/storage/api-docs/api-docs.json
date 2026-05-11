@@ -121,6 +121,384 @@
                     }
                 ]
             }
+        },
+        "/api/countries": {
+            "get": {
+                "tags": [
+                    "Pays (Countries)"
+                ],
+                "summary": "Lister et rechercher des pays",
+                "description": "Retourne une liste paginée de pays. Permet de filtrer par nom ou par code via le paramètre 'search'.",
+                "operationId": "getCountries",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Terme de recherche (nom ou code)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Nombre de résultats par page (défaut: 10)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Pays (Countries)"
+                ],
+                "summary": "Créer un nouveau pays",
+                "description": "Insérer un nouveau pays",
+                "operationId": "storeCountry",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "code",
+                                    "currency"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Cameroun"
+                                    },
+                                    "code": {
+                                        "type": "string",
+                                        "example": "CMR"
+                                    },
+                                    "currency": {
+                                        "type": "string",
+                                        "example": "XAF"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Pays créé avec succès"
+                    },
+                    "422": {
+                        "description": "Erreur de validation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/countries/{id}": {
+            "get": {
+                "tags": [
+                    "Pays (Countries)"
+                ],
+                "summary": "Afficher les détails d'un pays",
+                "description": "Rechercher un pays en particulier par son ID",
+                "operationId": "showCountry",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID du pays",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Pays trouvé"
+                    },
+                    "404": {
+                        "description": "Pays non trouvé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Pays (Countries)"
+                ],
+                "summary": "Modifier un pays",
+                "description": "Modifier un pays existant",
+                "operationId": "updateCountry",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID du pays à modifier",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "République du Cameroun"
+                                    },
+                                    "code": {
+                                        "type": "string",
+                                        "example": "CMR"
+                                    },
+                                    "currency": {
+                                        "type": "string",
+                                        "example": "XAF"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Pays modifié avec succès"
+                    },
+                    "404": {
+                        "description": "Pays non trouvé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/supa/hospitals": {
+            "get": {
+                "tags": [
+                    "Hôpitaux (SUPA)"
+                ],
+                "summary": "Lister et rechercher des hôpitaux",
+                "description": "Liste paginée et recherche d'hôpitaux",
+                "operationId": "getHospitals",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Recherche par nom ou NIU",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Résultats par page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Hôpitaux (SUPA)"
+                ],
+                "summary": "Créer un hôpital",
+                "description": "Créer un nouvel hôpital avec son logo",
+                "operationId": "storeHospital",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Hôpital Général de Yaoundé"
+                                    },
+                                    "niu": {
+                                        "type": "string",
+                                        "example": "M1234567890"
+                                    },
+                                    "logo": {
+                                        "description": "Fichier image (JPG, PNG)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Hôpital créé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/supa/hospitals/{id}": {
+            "get": {
+                "tags": [
+                    "Hôpitaux (SUPA)"
+                ],
+                "summary": "Détails d'un hôpital",
+                "description": "Afficher un hôpital",
+                "operationId": "showHospital",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Hôpitaux (SUPA)"
+                ],
+                "summary": "Modifier un hôpital (Envoyer en POST avec _method=PUT)",
+                "description": "Modifier un hôpital (Utiliser POST avec _method=PUT depuis React)",
+                "operationId": "updateHospital",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "_method": {
+                                        "type": "string",
+                                        "example": "PUT"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "niu": {
+                                        "type": "string"
+                                    },
+                                    "logo": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Modifié avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Hôpitaux (SUPA)"
+                ],
+                "summary": "Supprimer un hôpital",
+                "description": "Supprimer un hôpital et son logo",
+                "operationId": "deleteHospital",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Supprimé avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -136,6 +514,14 @@
         }
     },
     "tags": [
+        {
+            "name": "Pays (Countries)",
+            "description": "Gestion des pays pris en charge par l'ERP"
+        },
+        {
+            "name": "Hôpitaux (SUPA)",
+            "description": "Gestion des hôpitaux par le Super Admin"
+        },
         {
             "name": "Authentification",
             "description": "Authentification"
