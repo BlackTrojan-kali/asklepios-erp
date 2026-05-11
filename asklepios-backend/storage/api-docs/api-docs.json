@@ -122,6 +122,263 @@
                 ]
             }
         },
+        "/api/supa/admins": {
+            "get": {
+                "tags": [
+                    "Administrateurs (SUPA)"
+                ],
+                "summary": "Lister les administrateurs",
+                "description": "Liste paginée et recherche des administrateurs",
+                "operationId": "getAdmins",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste des administrateurs récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Administrateurs (SUPA)"
+                ],
+                "summary": "Créer un administrateur",
+                "description": "Créer un nouvel administrateur et son profil",
+                "operationId": "storeAdmin",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "first_name",
+                                    "phone",
+                                    "email",
+                                    "password",
+                                    "hospital_id"
+                                ],
+                                "properties": {
+                                    "first_name": {
+                                        "type": "string"
+                                    },
+                                    "last_name": {
+                                        "type": "string"
+                                    },
+                                    "phone": {
+                                        "type": "integer"
+                                    },
+                                    "email": {
+                                        "type": "string"
+                                    },
+                                    "password": {
+                                        "type": "string"
+                                    },
+                                    "hospital_id": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Administrateur créé avec succès"
+                    },
+                    "422": {
+                        "description": "Erreur de validation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/supa/admins/{id}": {
+            "get": {
+                "tags": [
+                    "Administrateurs (SUPA)"
+                ],
+                "summary": "Détails d'un administrateur",
+                "description": "Lire un administrateur spécifique",
+                "operationId": "showAdmin",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Détails récupérés avec succès"
+                    },
+                    "404": {
+                        "description": "Administrateur non trouvé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Administrateurs (SUPA)"
+                ],
+                "summary": "Modifier un administrateur",
+                "description": "Modifier les informations d'un administrateur",
+                "operationId": "updateAdmin",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "first_name": {
+                                        "type": "string"
+                                    },
+                                    "last_name": {
+                                        "type": "string"
+                                    },
+                                    "phone": {
+                                        "type": "integer"
+                                    },
+                                    "email": {
+                                        "type": "string"
+                                    },
+                                    "hospital_id": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Administrateur modifié avec succès"
+                    },
+                    "404": {
+                        "description": "Administrateur non trouvé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Administrateurs (SUPA)"
+                ],
+                "summary": "Supprimer un administrateur",
+                "description": "Supprimer un administrateur",
+                "operationId": "deleteAdmin",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Administrateur supprimé avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/supa/admins/{id}/password": {
+            "patch": {
+                "tags": [
+                    "Administrateurs (SUPA)"
+                ],
+                "summary": "Modifier le mot de passe d'un administrateur",
+                "description": "Mettre à jour uniquement le mot de passe",
+                "operationId": "updateAdminPassword",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "password"
+                                ],
+                                "properties": {
+                                    "password": {
+                                        "description": "Nouveau mot de passe",
+                                        "type": "string",
+                                        "minLength": 8
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Mot de passe modifié avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/countries": {
             "get": {
                 "tags": [
@@ -514,6 +771,10 @@
         }
     },
     "tags": [
+        {
+            "name": "Administrateurs (SUPA)",
+            "description": "Gestion des administrateurs d'hôpitaux par le Super Admin"
+        },
         {
             "name": "Pays (Countries)",
             "description": "Gestion des pays pris en charge par l'ERP"

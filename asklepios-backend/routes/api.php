@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\SUPA\AdminController;
 use App\Http\Controllers\SUPA\CountryController;
 use App\Http\Controllers\SUPA\HospitalController;
 use Illuminate\Http\Request;
@@ -29,6 +30,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/hospitals/{id}', [HospitalController::class, 'update']);
     
     Route::delete('/hospitals/{id}', [HospitalController::class, 'destroy']);
+
+    // Routes pour les Administrateurs
+    Route::get('/admins', [AdminController::class, 'index']);
+    Route::post('/admins', [AdminController::class, 'store']);
+    Route::get('/admins/{id}', [AdminController::class, 'show']);
+    Route::put('/admins/{id}', [AdminController::class, 'update']);
+    Route::delete('/admins/{id}', [AdminController::class, 'destroy']);
+    
+    // Route spécifique pour le mot de passe (PATCH est plus sémantique ici)
+    Route::patch('/admins/{id}/password', [AdminController::class, 'updatePassword']);
     });
 
 });
