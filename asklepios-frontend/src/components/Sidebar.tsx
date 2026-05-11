@@ -3,7 +3,8 @@ import {  Users, Activity, Pill,
     TestTube, CalendarDays, Settings, 
  Menu, X, ChevronLeft, 
  Globe,
- Hospital
+ Hospital,
+ Shield
 } from 'lucide-react';
  // Ajuste le chemin
 // import { Link, useLocation } from 'react-router-dom'; // Décommente si tu utilises React Router
@@ -37,6 +38,13 @@ const menuData: MenuItem[] = [
         icon: <Hospital size={20} />,
         roles: ["super_admin", "admin"],
         path:"/hospitals"
+    },
+    {
+        title:"Admins",
+        icon: <Shield size={20}/>,
+        roles:["super_admin","admin"],
+        path:"/admins"
+
     },
     {
         title: "Consultations",

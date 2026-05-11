@@ -6,6 +6,7 @@ import AppLayout from "./Layouts/AppLayout";
 import CheckRole from "./middlewares/CheckRole";
 import Countries from "./Pages/SUPA/country/Countries";
 import Hospitals from "./Pages/SUPA/hospital/Hospital";
+import Admins from "./Pages/SUPA/admins/Admins";
 
 const routes = createBrowserRouter([
    {
@@ -32,6 +33,10 @@ const routes = createBrowserRouter([
         {
             path:"hospitals",
             element:<Hospitals/>
+        },
+        {
+            path:"admins",
+            element:<Admins/>
         }
         // Tu pourras ajouter d'autres routes Super Admin ici !
     ]
