@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import {  Users, Activity, Pill, 
     TestTube, CalendarDays, Settings, 
  Menu, X, ChevronLeft, 
- Globe
+ Globe,
+ Hospital
 } from 'lucide-react';
  // Ajuste le chemin
 // import { Link, useLocation } from 'react-router-dom'; // Décommente si tu utilises React Router
@@ -32,13 +33,10 @@ const menuData: MenuItem[] = [
         roles: ["super_admin", "admin", "doctor", "pharmacy", "reception", "laboratory"],
     },
     {
-        title: "Ressources Humaines",
-        icon: <Users size={20} />,
+        title: "Hopitals",
+        icon: <Hospital size={20} />,
         roles: ["super_admin", "admin"],
-        subItems: [
-            { title: "Liste des employés", path: "/hr/employees" },
-            { title: "Congés & Absences", path: "/hr/leaves" },
-        ]
+        path:"/hospitals"
     },
     {
         title: "Consultations",

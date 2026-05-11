@@ -5,6 +5,7 @@ import AuthMiddleware from './middlewares/authMiddleware';
 import AppLayout from "./Layouts/AppLayout";
 import CheckRole from "./middlewares/CheckRole";
 import Countries from "./Pages/SUPA/country/Countries";
+import Hospitals from "./Pages/SUPA/hospital/Hospital";
 
 const routes = createBrowserRouter([
    {
@@ -27,6 +28,10 @@ const routes = createBrowserRouter([
         {
             path: "countries", // L'URL sera "/countries"
             element: <Countries />
+        },
+        {
+            path:"hospitals",
+            element:<Hospitals/>
         }
         // Tu pourras ajouter d'autres routes Super Admin ici !
     ]

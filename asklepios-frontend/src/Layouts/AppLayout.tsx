@@ -9,9 +9,6 @@ const AppLayout = ({ children }: { children: ReactNode }) => {
     // 1. On récupère le thème pour activer le Dark Mode Tailwind
     const { theme } = useTheme();
     
-    // (Optionnel) Tu peux garder useAuth ici si tu en as besoin plus tard dans le Layout, 
-    // sinon la Sidebar gère déjà le profil de son côté.
-    const { profile } = useAuth(); 
 
     // 2. Activation de la classe 'dark' sur la balise <html>
     useEffect(() => {

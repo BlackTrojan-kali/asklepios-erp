@@ -25,3 +25,10 @@ export interface PaginatedResponse<T> {
     per_page: number;
     total: number;
 }
+export interface HospitalDto {
+    id?: number;
+    name: string;
+    niu?: string | null;
+    logo_url?: string | null; // L'URL venant de la BDD pour l'affichage
+    logo?: File | null;       // Le fichier réel à envoyer lors de la création/modification
+}
