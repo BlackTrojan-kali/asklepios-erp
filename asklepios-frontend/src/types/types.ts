@@ -63,3 +63,19 @@ export interface AdminPayload {
     password?: string; 
     hospital_id: number;
 }
+export interface LicenceDto {
+    id: number;
+    name: string;
+    description: string | null;
+    created_at?: string;
+    updated_at?: string;
+}
+
+/**
+ * Le format attendu par le formulaire pour créer ou modifier une licence
+ * (On n'envoie pas l'ID ni les dates de création/modification au backend)
+ */
+export interface LicencePayload {
+    name: string;
+    description?: string | null;
+}

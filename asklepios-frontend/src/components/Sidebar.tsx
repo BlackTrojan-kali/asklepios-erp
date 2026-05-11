@@ -4,7 +4,8 @@ import {  Users, Activity, Pill,
  Menu, X, ChevronLeft, 
  Globe,
  Hospital,
- Shield
+ Shield,
+ NotebookText
 } from 'lucide-react';
  // Ajuste le chemin
 // import { Link, useLocation } from 'react-router-dom'; // Décommente si tu utilises React Router
@@ -47,11 +48,11 @@ const menuData: MenuItem[] = [
 
     },
     {
-        title: "Consultations",
-        icon: <Activity size={20} />,
-        roles: ["super_admin", "doctor"],
+        title: "Licences & Souscribtions",
+        icon: <NotebookText size={20} />,
+        roles: ["super_admin", "admin"],
         subItems: [
-            { title: "Dossiers Patients", path: "/medical/patients" },
+            { title: "Licences", path: "/licences" },
             { title: "Ordonnances", path: "/medical/prescriptions" },
         ]
     },

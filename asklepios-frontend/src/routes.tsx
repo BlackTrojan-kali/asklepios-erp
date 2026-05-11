@@ -7,6 +7,7 @@ import CheckRole from "./middlewares/CheckRole";
 import Countries from "./Pages/SUPA/country/Countries";
 import Hospitals from "./Pages/SUPA/hospital/Hospital";
 import Admins from "./Pages/SUPA/admins/Admins";
+import Licences from "./Pages/SUPA/licence/licences";
 
 const routes = createBrowserRouter([
    {
@@ -37,6 +38,10 @@ const routes = createBrowserRouter([
         {
             path:"admins",
             element:<Admins/>
+        },
+        {
+            path:"licences",
+            element:<Licences/>
         }
         // Tu pourras ajouter d'autres routes Super Admin ici !
     ]

@@ -32,7 +32,7 @@ const navigate  = useNavigate();
             // Si la sidebar est rétractée, on l'ouvre d'abord
             if (isCollapsed) setExpanded(false);
             setIsOpen(!isOpen);
-        } else {
+        } else { 
          navigate(item.path)
             console.log("Naviguer vers :", item.path);
         }
@@ -67,7 +67,7 @@ const navigate  = useNavigate();
                     {item.subItems!.map((sub, idx) => (
                         <button 
                             key={idx}
-                            onClick={() => console.log("Naviguer vers :", sub.path)}
+                            onClick={() => navigate(sub.path)}
                             className="w-full flex items-center p-2 text-sm text-slate-500 hover:text-brand-blue dark:text-gray-400 dark:hover:text-brand-teal hover:bg-slate-100 dark:hover:bg-gray-800 rounded-md transition-colors"
                         >
                             <span className="w-1.5 h-1.5 rounded-full bg-current mr-3 opacity-50"></span>
