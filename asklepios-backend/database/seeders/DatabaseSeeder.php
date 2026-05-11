@@ -22,6 +22,8 @@ class DatabaseSeeder extends Seeder
             CountrySeeder::class,
             RoleSeeder::class,
             UserSeeder::class,
+            LicenceSeeder::class,
+    
             // Tu pourras ajouter tes futurs seeders ici (UserSeeder, DepartmentSeeder, etc.)
         ]);
     }

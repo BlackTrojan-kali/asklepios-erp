@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\SUPA\AdminController;
 use App\Http\Controllers\SUPA\CountryController;
 use App\Http\Controllers\SUPA\HospitalController;
+use App\Http\Controllers\SUPA\LicenceController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -40,6 +41,12 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Route spécifique pour le mot de passe (PATCH est plus sémantique ici)
     Route::patch('/admins/{id}/password', [AdminController::class, 'updatePassword']);
+
+    Route::get('/licences', [LicenceController::class, 'index']);
+Route::post('/licences', [LicenceController::class, 'store']);
+Route::get('/licences/{id}', [LicenceController::class, 'show']);
+Route::put('/licences/{id}', [LicenceController::class, 'update']);
+Route::delete('/licences/{id}', [LicenceController::class, 'destroy']);
     });
 
 });

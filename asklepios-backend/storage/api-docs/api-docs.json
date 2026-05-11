@@ -756,6 +756,198 @@
                     }
                 ]
             }
+        },
+        "/api/supa/licences": {
+            "get": {
+                "tags": [
+                    "Licences (SUPA)"
+                ],
+                "summary": "Lister les licences",
+                "description": "Liste paginée et recherche des licences",
+                "operationId": "getLicences",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste des licences récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Licences (SUPA)"
+                ],
+                "summary": "Créer une licence",
+                "description": "Créer une nouvelle licence",
+                "operationId": "storeLicence",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "laboratory"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Licence pour le module laboratoire"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Licence créée avec succès"
+                    },
+                    "422": {
+                        "description": "Erreur de validation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/supa/licences/{id}": {
+            "get": {
+                "tags": [
+                    "Licences (SUPA)"
+                ],
+                "summary": "Détails d'une licence",
+                "description": "Afficher les détails d'une licence spécifique",
+                "operationId": "showLicence",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Détails récupérés avec succès"
+                    },
+                    "404": {
+                        "description": "Licence non trouvée"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Licences (SUPA)"
+                ],
+                "summary": "Modifier une licence",
+                "description": "Modifier une licence",
+                "operationId": "updateLicence",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Licence modifiée avec succès"
+                    },
+                    "404": {
+                        "description": "Licence non trouvée"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Licences (SUPA)"
+                ],
+                "summary": "Supprimer une licence",
+                "description": "Supprimer une licence",
+                "operationId": "deleteLicence",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Licence supprimée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -782,6 +974,10 @@
         {
             "name": "Hôpitaux (SUPA)",
             "description": "Gestion des hôpitaux par le Super Admin"
+        },
+        {
+            "name": "Licences (SUPA)",
+            "description": "Gestion des licences du système par le Super Admin"
         },
         {
             "name": "Authentification",
