@@ -2,7 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { 
     Globe, Hospital, Shield, NotebookText, Settings, 
     Menu, X, ChevronLeft, 
-    HospitalIcon
+    HospitalIcon,
+    Pill
 } from 'lucide-react';
 // import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -59,11 +60,44 @@ const MENU_CONFIG: MenuItem[] = [
         path: "/settings",
         roles: ["super_admin"],
     },
+    //onglets admin
     {
         title: "Centres",
         icon: <HospitalIcon size={20}/>,
-        path:"/admin/centers",
-        roles:["admin"]
+        roles:["admin"],
+        subItems:[
+            {
+                title:"centres",
+                path:"/admin/centers"
+            },{
+                title:"Departements",
+                path:"/admin/departments"
+            }
+        ]
+    },{
+        title:"Pharmacies",
+        icon: <Pill size={20}/>,
+        roles:["admin"],
+        subItems:[
+        {
+            title:"",
+            path:"/admin/pharmacy"
+        },
+        {
+            title:"Ventes",
+            path:"/admin/pharmacy/Ventes"
+        },
+        {
+            title:"Versments",
+            path:"admin/pharmacy/versements"
+        },{
+            title:"Pharmaciens",
+            path:"admin/pharmacy/users"
+        },{
+            title:"Stocks",
+            path:"admin/pharmacy/users"
+        }
+        ]
     }
 ];
 

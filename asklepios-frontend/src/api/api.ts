@@ -38,8 +38,8 @@ api.interceptors.response.use(
 
                 // 2. Redirection forcée vers la page de connexion
                 // On utilise window.location car nous sommes en dehors du contexte de React Router
-                if (window.location.pathname !== '/login') {
-                    window.location.href = '/login';
+                if (window.location.pathname !== '/auth/login') {
+                    window.location.href = '/auth/login';
                 }
             }
         } catch (e) {

@@ -174,3 +174,16 @@ export interface CenterPayload {
     address?: string | null;
     country_id: number;
 }
+export interface DepartmentDto {
+    id: number;
+    center_id: number;
+    name: string;
+    alias: string | null;
+    created_at?: string;
+}
+
+export interface DepartmentPayload {
+    center_id: number;
+    name: string;
+    alias?: string | null;
+}
