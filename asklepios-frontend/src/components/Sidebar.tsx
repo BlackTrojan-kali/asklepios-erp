@@ -53,29 +53,8 @@ const menuData: MenuItem[] = [
         roles: ["super_admin", "admin"],
         subItems: [
             { title: "Licences", path: "/licences" },
-            { title: "Ordonnances", path: "/medical/prescriptions" },
+            { title: "Subscriptions", path: "/subscriptions" },
         ]
-    },
-    {
-        title: "Laboratoire",
-        icon: <TestTube size={20} />,
-        roles: ["super_admin", "laboratory", "doctor"],
-        path: "/lab/results"
-    },
-    {
-        title: "Pharmacie",
-        icon: <Pill size={20} />,
-        roles: ["super_admin", "pharmacy"],
-        subItems: [
-            { title: "Inventaire", path: "/pharmacy/inventory" },
-            { title: "Ventes", path: "/pharmacy/sales" },
-        ]
-    },
-    {
-        title: "Rendez-vous",
-        icon: <CalendarDays size={20} />,
-        roles: ["super_admin", "admin", "reception", "doctor"],
-        path: "/appointments"
     },
     {
         title: "Paramètres",

@@ -79,3 +79,69 @@ export interface LicencePayload {
     name: string;
     description?: string | null;
 }
+// ==========================================
+// DTOs POUR LA GESTION DES SOUSCRIPTIONS (SUPA)
+// ==========================================
+
+/**
+ * Représente une ligne de facturation (une licence dans une souscription)
+ */
+export interface SubscriptionItemDto {
+    id: number;
+    subscription_id: number;
+    licence_id: number;
+    unit_price: number;
+    // La relation optionnelle vers les détails de la licence
+    licence?: LicenceDto; 
+}
+
+/**
+ * Représente la souscription globale renvoyée par le backend
+ */
+export interface SubscriptionDto {
+    id: number;
+    hospital_id: number;
+    country_id: number;
+    starting_date: string;
+    ending_date: string;
+    // Les relations optionnelles chargées par le backend
+    hospital?: HospitalDto;
+    country?: CountryDto;
+    items?: SubscriptionItemDto[];
+}
+
+// --- PAYLOADS (Format attendu pour la création / modification) ---
+
+export interface SubscriptionItemPayload {
+    licence_id: number;
+    unit_price: number;
+}
+
+export interface SubscriptionPayload {
+    hospital_id: number;
+    country_id: number;
+    starting_date: string; // Format attendu : "YYYY-MM-DD"
+    ending_date: string;   // Format attendu : "YYYY-MM-DD"
+    items: SubscriptionItemPayload[];
+}
+
+// --- DTOs POUR LA PRÉVISUALISATION DE FACTURE ---
+
+export interface SubscriptionPreviewItem {
+    licence_name: string;
+    unit_price: number;
+    center_count: number;
+    sub_total: number;
+}
+
+export interface SubscriptionPreviewDto {
+    hospital_name: string;
+    period: {
+        start: string;
+        end: string;
+    };
+    country: string;
+    licences: SubscriptionPreviewItem[];
+    total_amount: number;
+    currency: string;
+}

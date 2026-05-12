@@ -8,6 +8,7 @@ import Countries from "./Pages/SUPA/country/Countries";
 import Hospitals from "./Pages/SUPA/hospital/Hospital";
 import Admins from "./Pages/SUPA/admins/Admins";
 import Licences from "./Pages/SUPA/licence/licences";
+import Subscriptions from "./Pages/SUPA/subscriptions/Subscriptions";
 
 const routes = createBrowserRouter([
    {
@@ -42,6 +43,10 @@ const routes = createBrowserRouter([
         {
             path:"licences",
             element:<Licences/>
+        },
+        {
+            path:"subscriptions",
+            element:<Subscriptions/>
         }
         // Tu pourras ajouter d'autres routes Super Admin ici !
     ]
