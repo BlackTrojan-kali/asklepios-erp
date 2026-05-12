@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\CenterController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\SUPA\AdminController;
 use App\Http\Controllers\SUPA\CountryController;
@@ -48,7 +49,8 @@ Route::post('/licences', [LicenceController::class, 'store']);
 Route::get('/licences/{id}', [LicenceController::class, 'show']);
 Route::put('/licences/{id}', [LicenceController::class, 'update']);
 Route::delete('/licences/{id}', [LicenceController::class, 'destroy']);
-    });
+    
+
 // ==========================================
     // 3. GESTION DES SOUSCRIPTIONS / CONTRATS (SubscriptionController)
     // ==========================================
@@ -62,7 +64,24 @@ Route::delete('/licences/{id}', [LicenceController::class, 'destroy']);
     Route::get('/subscriptions/{id}/preview', [SubscriptionController::class, 'preview']); // Prévisualiser les coûts
     Route::patch('/subscriptions/{id}/renew', [SubscriptionController::class, 'renew']);   // Ajouter 30 jours
     Route::get('/subscriptions/{id}/invoice', [SubscriptionController::class, 'downloadInvoice']); // Générer le PDF
+
 });
+Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(function () {
+
+    // ==========================================
+    // GESTION DES CENTRES MÉDICAUX (CenterController)
+    // ==========================================
+    Route::get('/centers', [CenterController::class, 'index']);
+    Route::post('/centers', [CenterController::class, 'store']);
+    Route::get('/centers/{id}', [CenterController::class, 'show']);
+    Route::put('/centers/{id}', [CenterController::class, 'update']);
+    Route::delete('/centers/{id}', [CenterController::class, 'destroy']);
+
+    // Tu pourras ajouter d'autres routes spécifiques à l'admin ici plus tard
+    // (ex: gestion des médecins, pharmaciens, patients de cet hôpital...)
+});
+    });
+
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');

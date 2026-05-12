@@ -65,4 +65,10 @@ class User extends Authenticatable
     public function profile_pharm(){
         return $this->hasOne(ProfilePharm::class);
     }
+    public function profile_lab(){
+        return $this->hasOne(ProfileLab::class);
+    }
+    public function profile_reception(){
+        return $this->hasOne(ProfileReception::class);
+    }
 }

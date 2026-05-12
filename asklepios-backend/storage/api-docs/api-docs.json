@@ -16,6 +16,242 @@
         }
     ],
     "paths": {
+        "/api/admin/centers": {
+            "get": {
+                "tags": [
+                    "Centres (Admin)"
+                ],
+                "summary": "Lister les centres de l'hôpital",
+                "description": "Liste paginée des centres de l'hôpital (avec recherche par adresse et pays)",
+                "operationId": "getAdminCenters",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Recherche par nom",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "address",
+                        "in": "query",
+                        "description": "Recherche par adresse",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "country_id",
+                        "in": "query",
+                        "description": "Filtrer par pays",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste des centres récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Centres (Admin)"
+                ],
+                "summary": "Créer un centre",
+                "description": "Créer un nouveau centre pour cet hôpital",
+                "operationId": "storeAdminCenter",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "country_id"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Centre Principal"
+                                    },
+                                    "phone_1": {
+                                        "type": "string",
+                                        "example": "+237 600000000"
+                                    },
+                                    "phone_2": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "Quartier Mvan, Yaoundé"
+                                    },
+                                    "country_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Centre créé avec succès"
+                    },
+                    "422": {
+                        "description": "Erreur de validation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/centers/{id}": {
+            "get": {
+                "tags": [
+                    "Centres (Admin)"
+                ],
+                "summary": "Détails d'un centre",
+                "description": "Afficher un centre spécifique (si et seulement s'il appartient à l'hôpital)",
+                "operationId": "showAdminCenter",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Détails récupérés"
+                    },
+                    "404": {
+                        "description": "Centre non trouvé ou accès refusé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Centres (Admin)"
+                ],
+                "summary": "Modifier un centre",
+                "description": "Modifier un centre",
+                "operationId": "updateAdminCenter",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "phone_1": {
+                                        "type": "string"
+                                    },
+                                    "phone_2": {
+                                        "type": "string"
+                                    },
+                                    "address": {
+                                        "type": "string"
+                                    },
+                                    "country_id": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Centre modifié avec succès"
+                    },
+                    "404": {
+                        "description": "Centre non trouvé ou accès refusé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Centres (Admin)"
+                ],
+                "summary": "Supprimer un centre",
+                "description": "Supprimer un centre",
+                "operationId": "deleteAdminCenter",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Centre supprimé avec succès"
+                    },
+                    "404": {
+                        "description": "Centre non trouvé ou accès refusé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/auth/login": {
             "post": {
                 "tags": [
@@ -1306,6 +1542,10 @@
         }
     },
     "tags": [
+        {
+            "name": "Centres (Admin)",
+            "description": "Gestion des centres médicaux de l'hôpital de l'administrateur"
+        },
         {
             "name": "Administrateurs (SUPA)",
             "description": "Gestion des administrateurs d'hôpitaux par le Super Admin"

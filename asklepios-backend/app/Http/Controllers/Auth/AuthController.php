@@ -87,7 +87,12 @@ class AuthController extends Controller
             "first_name"=>Auth::user()->first_name, 
             "last_name"=> Auth::user()->last_name,
             "role"=>Auth::user()->role->name,
-            "email" => Auth::user()->email, 
+            "email" => Auth::user()->email,
+            "profile_admin"=>Auth::user()->profile_admin,
+            "profile_doctor"=>Auth::user()->profile_doctor,
+            "profile_lab" => Auth::user()->profile_lab,
+            "profile_reception"=>Auth::user()->profile_reception   
+
         ];
         
         $user = json_encode($user);

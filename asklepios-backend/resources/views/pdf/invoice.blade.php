@@ -18,7 +18,7 @@
             top: 25%;
             left: 15%;
             width: 70%;
-            opacity: 0.08; /* Très transparent */
+            opacity: 0.20; /* Très transparent */
             z-index: -1000;
             text-align: center;
         }

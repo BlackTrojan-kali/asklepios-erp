@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('profile_receptions', function (Blueprint $table) {
             $table->id();
+            $table->foreignId("user_id")->constrained("users")->onDelete("cascade");
+            $table->foreignId("center_id")->constrained("centers")->onDelete("cascade");
+            $table->foreignId("hospital_id")->constrained("hospitals")->onDelete("cascade");
             $table->timestamps();
         });
     }
