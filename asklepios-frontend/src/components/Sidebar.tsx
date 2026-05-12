@@ -1,14 +1,10 @@
-import React, { useState } from 'react';
-import {  Users, Activity, Pill, 
-    TestTube, CalendarDays, Settings, 
- Menu, X, ChevronLeft, 
- Globe,
- Hospital,
- Shield,
- NotebookText
+import React, { useState, useMemo } from 'react';
+import { 
+    Globe, Hospital, Shield, NotebookText, Settings, 
+    Menu, X, ChevronLeft, 
+    HospitalIcon
 } from 'lucide-react';
- // Ajuste le chemin
-// import { Link, useLocation } from 'react-router-dom'; // Décommente si tu utilises React Router
+// import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import SidebarItem from './SidebarItem';
 
@@ -21,64 +17,74 @@ type SubMenuItem = {
 type MenuItem = {
     title: string;
     icon: React.ReactNode;
-    path?: string; // Optionnel si on a des subItems
+    path?: string;
     roles: string[]; // Les rôles autorisés à voir ce menu
     subItems?: SubMenuItem[];
 };
 
-// --- 2. CONFIGURATION DES MENUS (Le tableau de données) ---
-const menuData: MenuItem[] = [
+// --- 2. CONFIGURATION GLOBALE DES MENUS ---
+// On met TOUS les menus ici. Pas de "if" ! 
+// C'est le tableau "roles" de chaque objet qui décide de la sécurité.
+const MENU_CONFIG: MenuItem[] = [
     {
         title: "Pays",
         icon: <Globe size={20} />,
         path: "/countries",
-        roles: ["super_admin", "admin", "doctor", "pharmacy", "reception", "laboratory"],
+        roles: ["super_admin"],
     },
     {
-        title: "Hopitals",
+        title: "Hôpitaux",
         icon: <Hospital size={20} />,
-        roles: ["super_admin", "admin"],
-        path:"/hospitals"
+        path: "/hospitals",
+        roles: ["super_admin"],
     },
     {
-        title:"Admins",
+        title: "Admins",
         icon: <Shield size={20}/>,
-        roles:["super_admin","admin"],
-        path:"/admins"
-
+        path: "/admins",
+        roles: ["super_admin"],
     },
     {
-        title: "Licences & Souscribtions",
+        title: "Licences & Souscriptions",
         icon: <NotebookText size={20} />,
-        roles: ["super_admin", "admin"],
+        roles: ["super_admin"],
         subItems: [
             { title: "Licences", path: "/licences" },
-            { title: "Subscriptions", path: "/subscriptions" },
+            { title: "Souscriptions", path: "/subscriptions" },
         ]
     },
     {
         title: "Paramètres",
         icon: <Settings size={20} />,
+        path: "/settings",
         roles: ["super_admin"],
-        path: "/settings"
+    },
+    {
+        title: "Centres",
+        icon: <HospitalIcon size={20}/>,
+        path:"/admin/centers",
+        roles:["admin"]
     }
 ];
 
-
-// --- 4. COMPOSANT PRINCIPAL : LA SIDEBAR ---
+// --- 3. COMPOSANT PRINCIPAL : LA SIDEBAR ---
 const Sidebar = () => {
+    // Le Hook useAuth DOIT être appelé à l'intérieur du composant
     const { profile } = useAuth();
     const [isCollapsed, setIsCollapsed] = useState(false);
-    const [isMobileOpen, setIsMobileOpen] = useState(false); // Pour les petits écrans
+    const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-    // On filtre les menus en fonction du rôle de l'utilisateur
-    // Si pas de profil, on retourne un tableau vide par sécurité
     const userRole = profile?.role || "";
-    const filteredMenu = menuData.filter(item => item.roles.includes(userRole));
+
+    // OPTIMISATION : On ne recalcule le menu que si le rôle change (useMemo)
+    const filteredMenu = useMemo(() => {
+        if (!userRole) return []; // Sécurité si l'utilisateur n'est pas chargé
+        return MENU_CONFIG.filter(item => item.roles.includes(userRole));
+    }, [userRole]);
 
     return (
         <>
-            {/* Bouton Mobile (Hamburger) - Visible uniquement sur petit écran */}
+            {/* Bouton Mobile (Hamburger) */}
             <button 
                 onClick={() => setIsMobileOpen(true)}
                 className="md:hidden fixed bottom-4 right-4 z-50 p-3 bg-brand-blue text-white rounded-full shadow-lg"
@@ -101,11 +107,11 @@ const Sidebar = () => {
                 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
                 `}
             >
-                {/* En-tête de la Sidebar (Bouton pour rétracter) */}
+                {/* En-tête de la Sidebar */}
                 <div className={`p-4 flex items-center border-b border-gray-100 dark:border-gray-800 ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
                     {!isCollapsed && (
                         <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                            Menu - {profile?.role?.replace('_', ' ')}
+                            Menu - {userRole.replace('_', ' ')}
                         </span>
                     )}
                     
@@ -116,7 +122,7 @@ const Sidebar = () => {
 
                     {/* Bouton Rétracter (Desktop) */}
                     <button 
-                        className="hidden md:block p-1 text-gray-400 hover:text-brand-blue dark:hover:text-brand-teal transition-colors rounded"
+                        className="hidden md:block p-1 text-gray-400 hover:text-brand-blue dark:hover:text-[#00a896] transition-colors rounded"
                         onClick={() => setIsCollapsed(!isCollapsed)}
                     >
                         {isCollapsed ? <Menu size={20} /> : <ChevronLeft size={20} />}

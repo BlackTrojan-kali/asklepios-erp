@@ -145,3 +145,32 @@ export interface SubscriptionPreviewDto {
     total_amount: number;
     currency: string;
 }
+export interface CenterDto {
+    id: number;
+    name: string;
+    phone_1: string | null;
+    phone_2: string | null;
+    address: string | null;
+    country_id: number;
+    hospital_id: number;
+    
+    // Relations chargées dynamiquement
+    country?: CountryDto;
+    hospital?: HospitalDto; // Optionnel, si jamais tu charges la relation un jour
+    
+    created_at?: string;
+    updated_at?: string;
+}
+
+/**
+ * Le format attendu par le formulaire pour créer ou modifier un centre (POST / PUT)
+ * Note : l'hospital_id n'est pas requis ici car le backend le déduit automatiquement
+ * via le profil de l'administrateur connecté.
+ */
+export interface CenterPayload {
+    name: string;
+    phone_1?: string | null;
+    phone_2?: string | null;
+    address?: string | null;
+    country_id: number;
+}

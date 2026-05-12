@@ -11,12 +11,16 @@ const Login = () => {
   const [password, setPassword] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   
-  const { token, setToken, setProfile } = useAuth(); 
+  const { token,profile, setToken, setProfile } = useAuth(); 
   const navigate = useNavigate();
   
   useEffect(() => {
     if (token) {
+      if(profile?.role == "super_admin"){
       navigate('/', { replace: true }); 
+      }else if(profile?.role == "admin"){
+        navigate("/admin",{replace:true})
+      }
     }
   }, [token, navigate]);
 

@@ -12,6 +12,7 @@ interface CheckRoleProps {
 const CheckRole = ({ children, roles }: CheckRoleProps) => {
     // 1. On récupère un état de chargement depuis ton contexte
     const { profile, loading } = useAuth(); 
+    console.log(profile)
     const navigate = useNavigate();
     
     useEffect(() => {

@@ -9,6 +9,7 @@ import Hospitals from "./Pages/SUPA/hospital/Hospital";
 import Admins from "./Pages/SUPA/admins/Admins";
 import Licences from "./Pages/SUPA/licence/licences";
 import Subscriptions from "./Pages/SUPA/subscriptions/Subscriptions";
+import Centers from "./Pages/Admin/Centers";
 
 const routes = createBrowserRouter([
    {
@@ -51,6 +52,26 @@ const routes = createBrowserRouter([
         // Tu pourras ajouter d'autres routes Super Admin ici !
     ]
    },
+   {
+    path: "/admin",
+    element: (
+        <AuthMiddleware>
+            <CheckRole roles={["admin"]}>
+                <AppLayout>
+                    <Outlet /> {/* <-- C'est ICI que le composant <Countries /> va s'insérer */}
+                </AppLayout>
+            </CheckRole>
+        </AuthMiddleware>
+    ),
+    children: [
+        {
+            path:"centers",
+            element:<Centers/>
+        }
+        // Tu pourras ajouter d'autres routes Super Admin ici !
+    ]
+   },
+   
    {
         path: "/auth",
         children: [
