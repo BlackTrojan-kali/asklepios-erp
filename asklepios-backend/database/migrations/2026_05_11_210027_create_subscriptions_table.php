@@ -13,10 +13,9 @@ return new class extends Migration
     {
         Schema::create('subscriptions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId("licence_id")->constrained("licences")->onDelete("cascade");
             $table->foreignId("country_id")->constrained("countries")->onDelete("cascade");
             $table->foreignId("hospital_id")->constrained("hospitals")->onDelete("cascade");
-            $table->dateTime("strating_date");
+            $table->dateTime("starting_date");
             $table->dateTime("ending_date");
             $table->timestamps();
         });

@@ -948,6 +948,349 @@
                     }
                 ]
             }
+        },
+        "/api/supa/subscriptions": {
+            "get": {
+                "tags": [
+                    "Souscriptions (SUPA)"
+                ],
+                "summary": "Lister les souscriptions avec filtres",
+                "description": "Liste paginée et filtrée des souscriptions",
+                "operationId": "getSubscriptions",
+                "parameters": [
+                    {
+                        "name": "country_id",
+                        "in": "query",
+                        "description": "Filtrer par pays",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "hospital_id",
+                        "in": "query",
+                        "description": "Filtrer par hôpital",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "from_date",
+                        "in": "query",
+                        "description": "Contrats actifs à partir de (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to_date",
+                        "in": "query",
+                        "description": "Contrats actifs jusqu'au (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste des souscriptions récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Souscriptions (SUPA)"
+                ],
+                "summary": "Créer une souscription pour un hôpital",
+                "description": "Créer une nouvelle souscription avec ses licences",
+                "operationId": "storeSubscription",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "hospital_id",
+                                    "country_id",
+                                    "starting_date",
+                                    "ending_date",
+                                    "items"
+                                ],
+                                "properties": {
+                                    "hospital_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "country_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "starting_date": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2026-05-15 00:00:00"
+                                    },
+                                    "ending_date": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2027-05-15 00:00:00"
+                                    },
+                                    "items": {
+                                        "description": "Liste des licences incluses et leurs prix",
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "licence_id": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                },
+                                                "unit_price": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 150000.5
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Souscription créée avec succès"
+                    },
+                    "422": {
+                        "description": "Erreur de validation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/supa/subscriptions/{id}": {
+            "put": {
+                "tags": [
+                    "Souscriptions (SUPA)"
+                ],
+                "summary": "Modifier une souscription existante",
+                "description": "Modifier une souscription (ajouter/retirer des licences, modifier les prix)",
+                "operationId": "updateSubscription",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "hospital_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "country_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "starting_date": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2026-05-15 00:00:00"
+                                    },
+                                    "ending_date": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2027-05-15 00:00:00"
+                                    },
+                                    "items": {
+                                        "description": "Nouvelle liste complète des licences incluses et leurs prix",
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "licence_id": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                },
+                                                "unit_price": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 175000
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Souscription modifiée avec succès"
+                    },
+                    "404": {
+                        "description": "Souscription non trouvée"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Souscriptions (SUPA)"
+                ],
+                "summary": "Supprimer une souscription",
+                "description": "Supprimer une souscription",
+                "operationId": "deleteSubscription",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Souscription supprimée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/supa/subscriptions/{id}/preview": {
+            "get": {
+                "tags": [
+                    "Souscriptions (SUPA)"
+                ],
+                "summary": "Détails de facturation d'une souscription",
+                "description": "Prévisualiser les détails de facturation d'une souscription",
+                "operationId": "previewSubscription",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Données de prévisualisation récupérées"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/supa/subscriptions/{id}/renew": {
+            "patch": {
+                "tags": [
+                    "Souscriptions (SUPA)"
+                ],
+                "summary": "Ajouter 30 jours à une souscription",
+                "description": "Renouveler une souscription (Ajouter 30 jours)",
+                "operationId": "renewSubscription",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Souscription renouvelée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/supa/subscriptions/{id}/invoice": {
+            "get": {
+                "tags": [
+                    "Souscriptions (SUPA)"
+                ],
+                "summary": "Générer et télécharger la facture PDF",
+                "description": "Télécharger la facture PDF de la souscription",
+                "operationId": "downloadInvoice",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Fichier PDF de la facture"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
         }
     },
     "components": {
@@ -978,6 +1321,10 @@
         {
             "name": "Licences (SUPA)",
             "description": "Gestion des licences du système par le Super Admin"
+        },
+        {
+            "name": "Souscriptions (SUPA)",
+            "description": "Gestion des abonnements et licences des hôpitaux"
         },
         {
             "name": "Authentification",

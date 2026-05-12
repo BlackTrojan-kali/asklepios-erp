@@ -5,6 +5,7 @@ use App\Http\Controllers\SUPA\AdminController;
 use App\Http\Controllers\SUPA\CountryController;
 use App\Http\Controllers\SUPA\HospitalController;
 use App\Http\Controllers\SUPA\LicenceController;
+use App\Http\Controllers\SUPA\SubscriptionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -48,7 +49,19 @@ Route::get('/licences/{id}', [LicenceController::class, 'show']);
 Route::put('/licences/{id}', [LicenceController::class, 'update']);
 Route::delete('/licences/{id}', [LicenceController::class, 'destroy']);
     });
-
+// ==========================================
+    // 3. GESTION DES SOUSCRIPTIONS / CONTRATS (SubscriptionController)
+    // ==========================================
+    // CRUD de base
+    Route::get('/subscriptions', [SubscriptionController::class, 'index']);
+    Route::post('/subscriptions', [SubscriptionController::class, 'store']);
+    Route::put('/subscriptions/{id}', [SubscriptionController::class, 'update']);
+    Route::delete('/subscriptions/{id}', [SubscriptionController::class, 'destroy']);
+    
+    // Actions spécifiques métier (Facturation et Renouvellement)
+    Route::get('/subscriptions/{id}/preview', [SubscriptionController::class, 'preview']); // Prévisualiser les coûts
+    Route::patch('/subscriptions/{id}/renew', [SubscriptionController::class, 'renew']);   // Ajouter 30 jours
+    Route::get('/subscriptions/{id}/invoice', [SubscriptionController::class, 'downloadInvoice']); // Générer le PDF
 });
 Route::get('/user', function (Request $request) {
     return $request->user();
