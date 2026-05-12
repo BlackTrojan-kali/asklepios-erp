@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\CenterController;
+use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\SUPA\AdminController;
 use App\Http\Controllers\SUPA\CountryController;
@@ -79,6 +80,7 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
 
     // Tu pourras ajouter d'autres routes spécifiques à l'admin ici plus tard
     // (ex: gestion des médecins, pharmaciens, patients de cet hôpital...)
+    Route::apiResource('departments', DepartmentController::class);
 });
     });
 

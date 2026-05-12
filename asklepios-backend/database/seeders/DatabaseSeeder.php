@@ -23,7 +23,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             UserSeeder::class,
             LicenceSeeder::class,
-    
+            DepartmentSeeder::class,    
             // Tu pourras ajouter tes futurs seeders ici (UserSeeder, DepartmentSeeder, etc.)
         ]);
     }
