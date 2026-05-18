@@ -1,0 +1,211 @@
+@startuml
+top to bottom direction
+skinparam nodesep 50
+skinparam ranksep 50
+skinparam classAttributeIconSize 0
+
+title Architecture Globale Asklepios : SaaS, Catalogue Catégorisé, POS & Trésorerie
+
+package "SaaS & Réseau (Points de Vente)" {
+    class tenant {
+        id: UnsignedBigInteger
+        name: String
+        type: String ('hospital', 'pharmacy_chain')
+    }
+    class pharmacy_branch {
+        id: UnsignedBigInteger
+        tenant_id: UnsignedBigInteger
+        name: String
+        type: String ('central_warehouse', 'retail_pos')
+        address: String
+    }
+}
+
+package "Catalogue, Catégories & Tarification" {
+    class article_category {
+        id: UnsignedBigInteger
+        tenant_id: UnsignedBigInteger
+        parent_id: UnsignedBigInteger_optional
+        name: String
+        description: String_optional
+    }
+    class article {
+        id: UnsignedBigInteger
+        tenant_id: UnsignedBigInteger
+        category_id: UnsignedBigInteger
+        name: String
+        barcode: String
+        global_min_qty: float
+    }
+    class branch_price {
+        id: UnsignedBigInteger
+        branch_id: UnsignedBigInteger
+        article_id: UnsignedBigInteger
+        selling_price: float
+        is_active: Boolean
+    }
+    class batch {
+        id: UnsignedBigInteger
+        article_id: UnsignedBigInteger
+        batch_number: String
+        expiry_date: Date
+        purchase_price: float
+    }
+}
+
+package "Approvisionnement (Commandes)" {
+    class provider {
+        id: UnsignedBigInteger
+        tenant_id: UnsignedBigInteger
+        name: String
+        type: String
+    }
+    class purchase_order {
+        id: UnsignedBigInteger
+        tenant_id: UnsignedBigInteger
+        provider_id: UnsignedBigInteger
+        destination_branch_id: UnsignedBigInteger
+        status: String
+        total_amount: float
+    }
+    class purchase_order_line {
+        id: UnsignedBigInteger
+        purchase_order_id: UnsignedBigInteger
+        article_id: UnsignedBigInteger
+        qty_ordered: float
+        qty_received: float
+        unit_cost: float
+    }
+}
+
+package "Inventaire & Logistique" {
+    class stock {
+        id: UnsignedBigInteger
+        branch_id: UnsignedBigInteger
+        batch_id: UnsignedBigInteger
+        qty: float
+    }
+    class stock_movement {
+        id: UnsignedBigInteger
+        branch_id: UnsignedBigInteger
+        batch_id: UnsignedBigInteger
+        qty: float
+        type: String ('PURCHASE_IN', 'SALE_OUT', 'TRANSFER_OUT', 'TRANSFER_IN')
+        reference_type: String 
+        reference_id: UnsignedBigInteger
+    }
+    class stock_transfer {
+        id: UnsignedBigInteger
+        source_branch_id: UnsignedBigInteger
+        destination_branch_id: UnsignedBigInteger
+        status: String
+    }
+    class stock_transfer_line {
+        id: UnsignedBigInteger
+        stock_transfer_id: UnsignedBigInteger
+        batch_id: UnsignedBigInteger
+        qty_requested: float
+        qty_shipped: float
+    }
+}
+
+package "Caisse & Ventes (Logique POS)" {
+    class cash_register {
+        id: UnsignedBigInteger
+        branch_id: UnsignedBigInteger
+        name: String
+        status: String
+    }
+    class cash_register_session {
+        id: UnsignedBigInteger
+        cash_register_id: UnsignedBigInteger
+        user_id: UnsignedBigInteger
+        opened_at: Datetime
+        closed_at: Datetime_optional
+        opening_balance: float
+        closing_balance: float
+    }
+    class pos_sale {
+        id: UnsignedBigInteger
+        branch_id: UnsignedBigInteger
+        session_id: UnsignedBigInteger
+        total_amount: float
+        payment_method: String ('CASH', 'MOBILE_MONEY', 'CARD')
+        created_at: Datetime
+    }
+    class pos_sale_item {
+        id: UnsignedBigInteger
+        sale_id: UnsignedBigInteger
+        batch_id: UnsignedBigInteger
+        qty: float
+        unit_price: float
+        sub_total: float
+    }
+}
+
+package "Trésorerie & Dépôts Bancaires" {
+    class bank_account {
+        id: UnsignedBigInteger
+        tenant_id: UnsignedBigInteger
+        bank_name: String
+        account_number: String
+        balance: float
+    }
+    class bank_deposit {
+        id: UnsignedBigInteger
+        branch_id: UnsignedBigInteger
+        bank_account_id: UnsignedBigInteger
+        user_id: UnsignedBigInteger
+        expected_amount: float
+        deposited_amount: float
+        expense_amount: float
+        expense_justification: Text_optional
+        status: String ('PENDING', 'VALIDATED')
+        deposit_date: Date
+        proof_image_url: String_optional
+    }
+}
+ 
+' --- RELATIONS STRUCTURELLES DE BASE ---
+tenant "1" *-- "*" pharmacy_branch : détient >
+tenant "1" *-- "*" bank_account : possède >
+article "1" *-- "*" batch : subdivisé en >
+pharmacy_branch "1" *-- "*" stock : stocke >
+batch "1" *-- "*" stock : quantifié par >
+
+' --- CATÉGORIES (Nouveau) ---
+tenant "1" *-- "*" article_category : définit >
+article_category "1" *-- "*" article_category : contient (sous-catégories) >
+article_category "1" *-- "*" article : classe >
+
+' --- TARIFICATION LOCALE ---
+pharmacy_branch "1" *-- "*" branch_price : fixe le prix >
+article "1" *-- "*" branch_price : tarifé par >
+
+' --- RELATIONS APPROVISIONNEMENT ---
+provider "1" *-- "*" purchase_order : reçoit >
+purchase_order "1" *-- "1..*" purchase_order_line : contient >
+article "1" <-- "*" purchase_order_line : commande <
+
+' --- RELATIONS LOGISTIQUES (Transferts) ---
+pharmacy_branch "1" <-- "*" stock_transfer : part de <
+pharmacy_branch "1" <-- "*" stock_transfer : arrive à <
+stock_transfer "1" *-- "1..*" stock_transfer_line : contient >
+batch "1" <-- "*" stock_transfer_line : concerne <
+
+' --- RELATIONS CAISSE & VENTES ---
+pharmacy_branch "1" *-- "*" cash_register : héberge >
+cash_register "1" *-- "*" cash_register_session : enregistre >
+cash_register_session "1" *-- "*" pos_sale : encaisse >
+pos_sale "1" *-- "1..*" pos_sale_item : détaille >
+batch "1" <-- "*" pos_sale_item : déduit de <
+
+' --- RELATIONS TRÉSORERIE ---
+pharmacy_branch "1" *-- "*" bank_deposit : génère >
+bank_account "1" <-- "*" bank_deposit : crédite <
+
+' --- TRAÇABILITÉ GLOBALE ---
+stock_movement "*" --> "1" pharmacy_branch : impacte >
+stock_movement "*" --> "1" batch : trace >
+
+@enduml
