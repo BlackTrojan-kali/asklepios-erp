@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\ArticleCategoryController;
 use App\Http\Controllers\Admin\CenterController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\PharmacyBranchController;
@@ -89,6 +90,13 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::post('/pharmacy-branches', [PharmacyBranchController::class, 'store']);
     Route::put('/pharmacy-branches/{id}', [PharmacyBranchController::class, 'update']);
     Route::delete('/pharmacy-branches/{id}', [PharmacyBranchController::class, 'destroy']);
+    // ==========================================
+    // GESTION DES CATÉGORIES D'ARTICLES
+    // ==========================================
+    Route::get('/article-categories', [ArticleCategoryController::class, 'index']);
+    Route::post('/article-categories', [ArticleCategoryController::class, 'store']);
+    Route::put('/article-categories/{id}', [ArticleCategoryController::class, 'update']);
+    Route::delete('/article-categories/{id}', [ArticleCategoryController::class, 'destroy']);
 });
     });
 

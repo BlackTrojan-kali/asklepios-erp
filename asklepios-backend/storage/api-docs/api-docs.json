@@ -16,6 +16,162 @@
         }
     ],
     "paths": {
+        "/api/admin/article-categories": {
+            "get": {
+                "tags": [
+                    "Catégories d'Articles (Admin)"
+                ],
+                "summary": "Lister les catégories d'articles",
+                "description": "Lister les catégories (avec recherche)",
+                "operationId": "getAdminArticleCategories",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Catégories d'Articles (Admin)"
+                ],
+                "summary": "Créer une catégorie",
+                "description": "Créer une nouvelle catégorie",
+                "operationId": "storeAdminArticleCategory",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Antibiotiques"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Médicaments antibactériens"
+                                    },
+                                    "article_category_id": {
+                                        "description": "ID de la catégorie parente",
+                                        "type": "integer",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Catégorie créée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/article-categories/{id}": {
+            "put": {
+                "tags": [
+                    "Catégories d'Articles (Admin)"
+                ],
+                "summary": "Modifier une catégorie",
+                "description": "Modifier une catégorie",
+                "operationId": "updateAdminArticleCategory",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "article_category_id": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Catégorie modifiée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Catégories d'Articles (Admin)"
+                ],
+                "summary": "Supprimer une catégorie",
+                "description": "Supprimer une catégorie",
+                "operationId": "deleteAdminArticleCategory",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Catégorie supprimée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/admin/centers": {
             "get": {
                 "tags": [
@@ -1889,6 +2045,10 @@
         }
     },
     "tags": [
+        {
+            "name": "Catégories d'Articles (Admin)",
+            "description": "Gestion des catégories et sous-catégories de la pharmacie/stock"
+        },
         {
             "name": "Centres (Admin)",
             "description": "Gestion des centres médicaux de l'hôpital de l'administrateur"
