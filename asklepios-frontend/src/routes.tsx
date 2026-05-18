@@ -12,6 +12,7 @@ import Subscriptions from "./Pages/SUPA/subscriptions/Subscriptions";
 import Centers from "./Pages/Admin/Centers";
 import Departments from "./Pages/Admin/departments/Departments";
 import Pharmacies from "./Pages/Admin/Pharmacies/Pharmacies";
+import ArticleCategories from "./Pages/Admin/Pharmacies/Articles/ArticleCategories";
 
 const routes = createBrowserRouter([
    {
@@ -77,6 +78,10 @@ const routes = createBrowserRouter([
         {
             path:"pharmacies",
             element:<Pharmacies/>
+        },
+        {
+            path:"pharmacy/acticles-categories",
+            element:<ArticleCategories/>
         }
         // Tu pourras ajouter d'autres routes Super Admin ici !
     ]

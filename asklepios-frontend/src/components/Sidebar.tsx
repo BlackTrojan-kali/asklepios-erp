@@ -5,28 +5,21 @@ import {
     HospitalIcon,
     Pill
 } from 'lucide-react';
-// import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import SidebarItem from './SidebarItem';
 
 // --- 1. DÉFINITION DES TYPES ---
-type SubMenuItem = {
+// Type unique et récursif : un item peut contenir un tableau de ce même type
+export type MenuItemType = {
     title: string;
-    path: string;
-};
-
-type MenuItem = {
-    title: string;
-    icon: React.ReactNode;
+    icon?: React.ReactNode; // L'icône est optionnelle pour les sous-menus
     path?: string;
-    roles: string[]; // Les rôles autorisés à voir ce menu
-    subItems?: SubMenuItem[];
+    roles?: string[]; // Les rôles (généralement appliqués aux menus parents)
+    subItems?: MenuItemType[]; // <- LA RÉCURSIVITÉ EST ICI
 };
 
 // --- 2. CONFIGURATION GLOBALE DES MENUS ---
-// On met TOUS les menus ici. Pas de "if" ! 
-// C'est le tableau "roles" de chaque objet qui décide de la sécurité.
-const MENU_CONFIG: MenuItem[] = [
+const MENU_CONFIG: MenuItemType[] = [
     {
         title: "Pays",
         icon: <Globe size={20} />,
@@ -60,60 +53,70 @@ const MENU_CONFIG: MenuItem[] = [
         path: "/settings",
         roles: ["super_admin"],
     },
-    //onglets admin
+    // Onglets Admin
     {
         title: "Centres",
         icon: <HospitalIcon size={20}/>,
         roles:["admin"],
         subItems:[
             {
-                title:"centres",
+                title:"Centres",
                 path:"/admin/centers"
-            },{
-                title:"Departements",
+            },
+            {
+                title:"Départements",
                 path:"/admin/departments"
             }
         ]
-    },{
+    },
+    {
         title:"Pharmacies",
         icon: <Pill size={20}/>,
         roles:["admin"],
         subItems:[
-        {
-            title:"Pharmacies",
-            path:"/admin/pharmacies"
-        },
-        {
-            title:"Ventes",
-            path:"/admin/pharmacy/Ventes"
-        },
-        {
-            title:"Versments",
-            path:"admin/pharmacy/versements"
-        },{
-            title:"Pharmaciens",
-            path:"admin/pharmacy/users"
-        },{
-            title:"Stocks",
-            path:"admin/pharmacy/users"
-        }
+            {
+                title:"Pharmacies",
+                path:"/admin/pharmacies"
+            },
+            {
+                title:"Articles",
+                  subItems: [
+                     { title: "Categories", path: "/admin/pharmacy/acticles-categories" },
+                     { title: "Mouvements", path: "/admin/pharmacy/stocks/movements" }
+                 ]
+            },
+            {
+                title:"Versements",
+                path:"/admin/pharmacy/versements"
+            },
+            {
+                title:"Pharmaciens",
+                path:"/admin/pharmacy/users"
+            },
+            {
+                title:"Stocks",
+                path:"/admin/pharmacy/users",
+                // EXEMPLE DE SOUS-SOUS-MENU (Tu peux en rajouter à l'infini)
+                // subItems: [
+                //     { title: "Inventaire", path: "/admin/pharmacy/stocks/inventory" },
+                //     { title: "Mouvements", path: "/admin/pharmacy/stocks/movements" }
+                // ]
+            }
         ]
     }
 ];
 
 // --- 3. COMPOSANT PRINCIPAL : LA SIDEBAR ---
 const Sidebar = () => {
-    // Le Hook useAuth DOIT être appelé à l'intérieur du composant
     const { profile } = useAuth();
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
 
     const userRole = profile?.role || "";
 
-    // OPTIMISATION : On ne recalcule le menu que si le rôle change (useMemo)
     const filteredMenu = useMemo(() => {
-        if (!userRole) return []; // Sécurité si l'utilisateur n'est pas chargé
-        return MENU_CONFIG.filter(item => item.roles.includes(userRole));
+        if (!userRole) return []; 
+        return MENU_CONFIG.filter(item => item.roles?.includes(userRole));
     }, [userRole]);
 
     return (
@@ -149,12 +152,10 @@ const Sidebar = () => {
                         </span>
                     )}
                     
-                    {/* Bouton fermer (Mobile) */}
                     <button className="md:hidden text-gray-500" onClick={() => setIsMobileOpen(false)}>
                         <X size={20} />
                     </button>
 
-                    {/* Bouton Rétracter (Desktop) */}
                     <button 
                         className="hidden md:block p-1 text-gray-400 hover:text-brand-blue dark:hover:text-[#00a896] transition-colors rounded"
                         onClick={() => setIsCollapsed(!isCollapsed)}

@@ -1,82 +1,79 @@
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import type { MenuItemType } from "./Sidebar"; // Import du type commun
 
-type SubMenuItem = {
-    title: string;
-    path: string;
-};
-type MenuItem = {
-    title: string;
-    icon: React.ReactNode;
-    path?: string; // Optionnel si on a des subItems
-    roles: string[]; // Les rôles autorisés à voir ce menu
-    subItems?: SubMenuItem[];
-};
-
-// --- 3. SOUS-COMPOSANT : GESTION D'UN ITEM & DROPDOWN ---
-const SidebarItem = ({ 
-    item, 
-    isCollapsed, 
-    setExpanded 
-}: { 
-    item: MenuItem; 
-    isCollapsed: boolean; 
+interface SidebarItemProps {
+    item: MenuItemType;
+    isCollapsed: boolean;
     setExpanded: (val: boolean) => void;
-}) => {
+    level?: number; // Niveau d'imbrication (0 par défaut)
+}
+
+const SidebarItem = ({ item, isCollapsed, setExpanded, level = 0 }: SidebarItemProps) => {
     const [isOpen, setIsOpen] = useState(false);
     const hasSubItems = item.subItems && item.subItems.length > 0;
-const navigate  = useNavigate();
-    const handleClick = () => {
+    const navigate = useNavigate();
+
+    const handleClick = (e: React.MouseEvent) => {
+        e.stopPropagation(); // Évite que le clic ne déclenche les éléments parents
         if (hasSubItems) {
             // Si la sidebar est rétractée, on l'ouvre d'abord
             if (isCollapsed) setExpanded(false);
             setIsOpen(!isOpen);
-        } else { 
-         navigate(item.path)
-            console.log("Naviguer vers :", item.path);
+        } else if (item.path) {
+            navigate(item.path);
         }
     };
 
+    // Calcul de l'indentation dynamique : +1.5rem à chaque niveau
+    const indentPadding = level === 0 ? '0.75rem' : `${(level * 1.5) + 0.75}rem`;
+
     return (
         <div className="mb-1">
-            {/* Bouton principal du menu */}
+            {/* Bouton de menu */}
             <button 
                 onClick={handleClick}
+                style={{ paddingLeft: !isCollapsed ? indentPadding : '0.75rem' }}
                 className={`w-full flex items-center justify-between p-3 rounded-lg transition-colors duration-200 
                 hover:bg-slate-100 dark:hover:bg-gray-800 text-slate-700 dark:text-gray-300
-                ${isOpen && !isCollapsed ? 'bg-slate-50 dark:bg-gray-800/50 text-brand-blue dark:text-brand-teal font-semibold' : ''}`}
+                ${isOpen && !isCollapsed && level === 0 ? 'bg-slate-50 dark:bg-gray-800/50 text-brand-blue dark:text-brand-teal font-semibold' : ''}`}
                 title={isCollapsed ? item.title : ""}
             >
-                <div className="flex items-center gap-3">
-                    <span className="text-current">{item.icon}</span>
-                    {!isCollapsed && <span className="text-sm whitespace-nowrap">{item.title}</span>}
+                <div className={`flex items-center ${isCollapsed ? 'justify-center w-full' : 'gap-3'}`}>
+                    {item.icon ? (
+                        <span className="text-current flex-shrink-0">{item.icon}</span>
+                    ) : (
+                        // Petit point pour les sous-menus qui n'ont pas d'icône
+                        !isCollapsed && <span className="w-1.5 h-1.5 rounded-full bg-current flex-shrink-0 opacity-50"></span>
+                    )}
+                    {!isCollapsed && <span className="text-sm whitespace-nowrap text-left">{item.title}</span>}
                 </div>
                 
                 {/* Icône Chevron pour les menus déroulants */}
                 {hasSubItems && !isCollapsed && (
-                    <span className="text-gray-400">
+                    <span className="text-gray-400 flex-shrink-0 ml-2">
                         {isOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                     </span>
                 )}
             </button>
 
-            {/* Sous-menus (Dropdown) */}
+            {/* APPEL RÉCURSIF DES SOUS-MENUS */}
             {hasSubItems && isOpen && !isCollapsed && (
-                <div className="ml-9 mt-1 space-y-1 overflow-hidden transition-all duration-300">
+                <div className="mt-1 overflow-hidden transition-all duration-300 flex flex-col">
                     {item.subItems!.map((sub, idx) => (
-                        <button 
+                        <SidebarItem 
                             key={idx}
-                            onClick={() => navigate(sub.path)}
-                            className="w-full flex items-center p-2 text-sm text-slate-500 hover:text-brand-blue dark:text-gray-400 dark:hover:text-brand-teal hover:bg-slate-100 dark:hover:bg-gray-800 rounded-md transition-colors"
-                        >
-                            <span className="w-1.5 h-1.5 rounded-full bg-current mr-3 opacity-50"></span>
-                            {sub.title}
-                        </button>
+                            item={sub}
+                            isCollapsed={isCollapsed}
+                            setExpanded={setExpanded}
+                            level={level + 1} // On incrémente la profondeur
+                        />
                     ))}
                 </div>
             )}
         </div>
     );
 };
-export default SidebarItem
+
+export default SidebarItem;
