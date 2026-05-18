@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\CenterController;
 use App\Http\Controllers\Admin\DepartmentController;
+use App\Http\Controllers\Admin\PharmacyBranchController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\SUPA\AdminController;
 use App\Http\Controllers\SUPA\CountryController;
@@ -81,6 +82,13 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     // Tu pourras ajouter d'autres routes spécifiques à l'admin ici plus tard
     // (ex: gestion des médecins, pharmaciens, patients de cet hôpital...)
     Route::apiResource('departments', DepartmentController::class);
+    // ==========================================
+    // GESTION DES SUCCURSALES DE PHARMACIE
+    // ==========================================
+    Route::get('/pharmacy-branches', [PharmacyBranchController::class, 'index']);
+    Route::post('/pharmacy-branches', [PharmacyBranchController::class, 'store']);
+    Route::put('/pharmacy-branches/{id}', [PharmacyBranchController::class, 'update']);
+    Route::delete('/pharmacy-branches/{id}', [PharmacyBranchController::class, 'destroy']);
 });
     });
 

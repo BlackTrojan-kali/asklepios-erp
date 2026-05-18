@@ -424,6 +424,181 @@
                 ]
             }
         },
+        "/api/admin/pharmacy-branches": {
+            "get": {
+                "tags": [
+                    "Pharmacies (Admin)"
+                ],
+                "summary": "Lister les succursales de la pharmacie",
+                "description": "Lister les succursales de la pharmacie",
+                "operationId": "getAdminPharmacyBranches",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "description": "central_warehouse ou retail_pos",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Pharmacies (Admin)"
+                ],
+                "summary": "Créer une succursale de pharmacie",
+                "description": "Créer une succursale de pharmacie",
+                "operationId": "storeAdminPharmacyBranch",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "adress",
+                                    "type"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Pharmacie Principale"
+                                    },
+                                    "adress": {
+                                        "type": "string",
+                                        "example": "Bâtiment A, RDC"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "central_warehouse",
+                                            "retail_pos"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Succursale créée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/pharmacy-branches/{id}": {
+            "put": {
+                "tags": [
+                    "Pharmacies (Admin)"
+                ],
+                "summary": "Modifier une succursale",
+                "description": "Modifier une succursale",
+                "operationId": "updateAdminPharmacyBranch",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "adress": {
+                                        "type": "string"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "central_warehouse",
+                                            "retail_pos"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Succursale modifiée avec succès"
+                    },
+                    "404": {
+                        "description": "Non trouvé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Pharmacies (Admin)"
+                ],
+                "summary": "Supprimer une succursale",
+                "description": "Supprimer une succursale",
+                "operationId": "deleteAdminPharmacyBranch",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Succursale supprimée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/auth/login": {
             "post": {
                 "tags": [
@@ -1721,6 +1896,10 @@
         {
             "name": "Départements (Admin)",
             "description": "Gestion des départements par centre médical"
+        },
+        {
+            "name": "Pharmacies (Admin)",
+            "description": "Gestion des succursales et magasins de la pharmacie de l'hôpital"
         },
         {
             "name": "Administrateurs (SUPA)",
