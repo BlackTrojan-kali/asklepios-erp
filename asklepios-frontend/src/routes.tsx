@@ -11,6 +11,7 @@ import Licences from "./Pages/SUPA/licence/licences";
 import Subscriptions from "./Pages/SUPA/subscriptions/Subscriptions";
 import Centers from "./Pages/Admin/Centers";
 import Departments from "./Pages/Admin/departments/Departments";
+import Pharmacies from "./Pages/Admin/Pharmacies/Pharmacies";
 
 const routes = createBrowserRouter([
    {
@@ -72,6 +73,10 @@ const routes = createBrowserRouter([
         {
             path:"departments",
             element:<Departments/>
+        },
+        {
+            path:"pharmacies",
+            element:<Pharmacies/>
         }
         // Tu pourras ajouter d'autres routes Super Admin ici !
     ]

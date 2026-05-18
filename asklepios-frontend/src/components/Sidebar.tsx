@@ -80,8 +80,8 @@ const MENU_CONFIG: MenuItem[] = [
         roles:["admin"],
         subItems:[
         {
-            title:"",
-            path:"/admin/pharmacy"
+            title:"Pharmacies",
+            path:"/admin/pharmacies"
         },
         {
             title:"Ventes",
