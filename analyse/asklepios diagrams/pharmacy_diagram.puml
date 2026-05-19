@@ -4,7 +4,7 @@ skinparam nodesep 50
 skinparam ranksep 50
 skinparam classAttributeIconSize 0
 
-title Architecture Globale Asklepios : SaaS, Catalogue Catégorisé, POS & Trésorerie
+title Architecture Globale Asklepios : SaaS, Catalogue, POS Complet & Trésorerie
 
 package "SaaS & Réseau (Points de Vente)" {
     class tenant {
@@ -21,7 +21,7 @@ package "SaaS & Réseau (Points de Vente)" {
     }
 }
 
-package "Catalogue, Catégories & Tarification" {
+package "Catalogue, Catégories & Tarification (Cascade)" {
     class article_category {
         id: UnsignedBigInteger
         tenant_id: UnsignedBigInteger
@@ -36,19 +36,21 @@ package "Catalogue, Catégories & Tarification" {
         name: String
         barcode: String
         global_min_qty: float
+        default_selling_price: float
+        track_batches: Boolean
     }
     class branch_price {
         id: UnsignedBigInteger
         branch_id: UnsignedBigInteger
         article_id: UnsignedBigInteger
-        selling_price: float
+        special_selling_price: float
         is_active: Boolean
     }
     class batch {
         id: UnsignedBigInteger
         article_id: UnsignedBigInteger
-        batch_number: String
-        expiry_date: Date
+        batch_number: String ('N/A' si track_batches = false)
+        expiry_date: Date_optional
         purchase_price: float
     }
 }
@@ -109,7 +111,7 @@ package "Inventaire & Logistique" {
     }
 }
 
-package "Caisse & Ventes (Logique POS)" {
+package "Caisse & Ventes (Logique POS Complète)" {
     class cash_register {
         id: UnsignedBigInteger
         branch_id: UnsignedBigInteger
@@ -173,14 +175,14 @@ article "1" *-- "*" batch : subdivisé en >
 pharmacy_branch "1" *-- "*" stock : stocke >
 batch "1" *-- "*" stock : quantifié par >
 
-' --- CATÉGORIES (Nouveau) ---
+' --- CATÉGORIES ---
 tenant "1" *-- "*" article_category : définit >
-article_category "1" *-- "*" article_category : contient (sous-catégories) >
+article_category "1" *-- "*" article_category : contient >
 article_category "1" *-- "*" article : classe >
 
-' --- TARIFICATION LOCALE ---
-pharmacy_branch "1" *-- "*" branch_price : fixe le prix >
-article "1" *-- "*" branch_price : tarifé par >
+' --- TARIFICATION LOCALE (CASCADE) ---
+pharmacy_branch "1" *-- "*" branch_price : surcharge le prix >
+article "1" *-- "*" branch_price : tarifé spécifiquement par >
 
 ' --- RELATIONS APPROVISIONNEMENT ---
 provider "1" *-- "*" purchase_order : reçoit >
