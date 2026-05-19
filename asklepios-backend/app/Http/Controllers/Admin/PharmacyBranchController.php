@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Pharmacy\PharmacyBranch;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use OpenApi\Attributes as OA;
 
 #[OA\Tag(name: "Pharmacies (Admin)", description: "Gestion des succursales et magasins de la pharmacie de l'hôpital")]
@@ -35,15 +36,15 @@ class PharmacyBranchController extends Controller
     {
         $hospitalId = $this->getHospitalId();
 
-        // On restreint à l'hôpital de l'administrateur
-        $query = PharmacyBranch::where('hospital_id', $hospitalId);
+        // On restreint à l'hôpital de l'administrateur et on charge le centre lié
+        $query = PharmacyBranch::with('center')->where('hospital_id', $hospitalId);
 
         // Recherche par nom ou adresse
         if ($request->filled('search')) {
             $search = $request->query('search');
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('adress', 'like', "%{$search}%"); // Note: "adress" selon ta migration
+                  ->orWhere('adress', 'like', "%{$search}%");
             });
         }
 
@@ -72,27 +73,36 @@ class PharmacyBranchController extends Controller
             properties: [
                 new OA\Property(property: "name", type: "string", example: "Pharmacie Principale"),
                 new OA\Property(property: "adress", type: "string", example: "Bâtiment A, RDC"),
-                new OA\Property(property: "type", type: "string", enum: ["central_warehouse", "retail_pos"])
+                new OA\Property(property: "type", type: "string", enum: ["central_warehouse", "retail_pos"]),
+                new OA\Property(property: "center_id", type: "integer", nullable: true, example: 1)
             ]
         )
     )]
     #[OA\Response(response: 201, description: "Succursale créée avec succès")]
     public function store(Request $request)
     {
+        $hospitalId = $this->getHospitalId();
+
         $validatedData = $request->validate([
             'name' => 'required|string|max:255',
             'adress' => 'required|string|max:255',
             'type' => 'required|in:central_warehouse,retail_pos',
+            'center_id' => [
+                'nullable',
+                // Sécurité : le centre doit exister ET appartenir au même hôpital
+                Rule::exists('centers', 'id')->where(function ($query) use ($hospitalId) {
+                    return $query->where('hospital_id', $hospitalId);
+                }),
+            ],
         ]);
 
-        // Ajout sécurisé du hospital_id
-        $validatedData['hospital_id'] = $this->getHospitalId();
+        $validatedData['hospital_id'] = $hospitalId;
 
         $branch = PharmacyBranch::create($validatedData);
 
         return response()->json([
             'message' => 'Succursale de pharmacie créée avec succès',
-            'data' => $branch
+            'data' => $branch->load('center') // On retourne l'objet avec son centre
         ], 201);
     }
 
@@ -113,7 +123,8 @@ class PharmacyBranchController extends Controller
             properties: [
                 new OA\Property(property: "name", type: "string"),
                 new OA\Property(property: "adress", type: "string"),
-                new OA\Property(property: "type", type: "string", enum: ["central_warehouse", "retail_pos"])
+                new OA\Property(property: "type", type: "string", enum: ["central_warehouse", "retail_pos"]),
+                new OA\Property(property: "center_id", type: "integer", nullable: true)
             ]
         )
     )]
@@ -121,20 +132,28 @@ class PharmacyBranchController extends Controller
     #[OA\Response(response: 404, description: "Non trouvé")]
     public function update(Request $request, $id)
     {
+        $hospitalId = $this->getHospitalId();
+
         // On s'assure que la succursale appartient bien à cet hôpital
-        $branch = PharmacyBranch::where('hospital_id', $this->getHospitalId())->findOrFail($id);
+        $branch = PharmacyBranch::where('hospital_id', $hospitalId)->findOrFail($id);
 
         $validatedData = $request->validate([
             'name' => 'sometimes|required|string|max:255',
             'adress' => 'sometimes|required|string|max:255',
             'type' => 'sometimes|required|in:central_warehouse,retail_pos',
+            'center_id' => [
+                'nullable',
+                Rule::exists('centers', 'id')->where(function ($query) use ($hospitalId) {
+                    return $query->where('hospital_id', $hospitalId);
+                }),
+            ],
         ]);
 
         $branch->update($validatedData);
 
         return response()->json([
             'message' => 'Succursale de pharmacie mise à jour',
-            'data' => $branch
+            'data' => $branch->load('center')
         ], 200);
     }
 

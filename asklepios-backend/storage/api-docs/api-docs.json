@@ -172,6 +172,390 @@
                 ]
             }
         },
+        "/api/admin/articles": {
+            "get": {
+                "tags": [
+                    "Articles (Admin)"
+                ],
+                "summary": "Lister les articles",
+                "description": "Lister et rechercher des articles",
+                "operationId": "getAdminArticles",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Nom ou Code-barres",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "category_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Articles (Admin)"
+                ],
+                "summary": "Créer un article",
+                "description": "Créer un nouvel article",
+                "operationId": "storeAdminArticle",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "category_id",
+                                    "name",
+                                    "track_batches"
+                                ],
+                                "properties": {
+                                    "category_id": {
+                                        "type": "integer"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "barcode": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "global_min_qty": {
+                                        "type": "number",
+                                        "format": "float"
+                                    },
+                                    "image": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
+                                    },
+                                    "track_batches": {
+                                        "description": "Vrai si l'article gère des lots classiques",
+                                        "type": "boolean"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Article créé avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/articles/{id}": {
+            "post": {
+                "tags": [
+                    "Articles (Admin)"
+                ],
+                "summary": "Modifier un article",
+                "description": "Modifier un article",
+                "operationId": "updateAdminArticle",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Article modifié avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Articles (Admin)"
+                ],
+                "summary": "Supprimer un article",
+                "description": "Supprimer un article",
+                "operationId": "deleteAdminArticle",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Article supprimé avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/batches": {
+            "get": {
+                "tags": [
+                    "Lots d'Articles (Admin)"
+                ],
+                "summary": "Lister les lots d'articles",
+                "description": "Lister et filtrer les lots",
+                "operationId": "getAdminBatches",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Numéro de lot",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "article_id",
+                        "in": "query",
+                        "description": "Filtrer par article spécifique",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Lots d'Articles (Admin)"
+                ],
+                "summary": "Créer un lot",
+                "description": "Créer un nouveau lot",
+                "operationId": "storeAdminBatch",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "article_id",
+                                    "batch_number",
+                                    "purchase_price"
+                                ],
+                                "properties": {
+                                    "article_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "batch_number": {
+                                        "type": "string",
+                                        "example": "LOT-2026-X1"
+                                    },
+                                    "expire_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2027-12-31",
+                                        "nullable": true
+                                    },
+                                    "purchase_price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 1500.5
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Lot créé avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/batches/{id}": {
+            "put": {
+                "tags": [
+                    "Lots d'Articles (Admin)"
+                ],
+                "summary": "Modifier un lot",
+                "description": "Modifier un lot",
+                "operationId": "updateAdminBatch",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "article_id": {
+                                        "type": "integer"
+                                    },
+                                    "batch_number": {
+                                        "type": "string"
+                                    },
+                                    "expire_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "nullable": true
+                                    },
+                                    "purchase_price": {
+                                        "type": "number",
+                                        "format": "float"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Lot modifié avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Lots d'Articles (Admin)"
+                ],
+                "summary": "Supprimer un lot",
+                "description": "Supprimer un lot",
+                "operationId": "deleteAdminBatch",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lot supprimé avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/batches/initialize-all-stocks": {
+            "post": {
+                "tags": [
+                    "Lots d'Articles (Admin)"
+                ],
+                "summary": "Générer les lignes de stock manquantes (à 0) pour tous les lots",
+                "description": "Initialiser les stocks (à zéro) pour TOUS les lots dans TOUTES les succursales",
+                "operationId": "initializeAllStocks",
+                "responses": {
+                    "200": {
+                        "description": "Stocks globaux synchronisés avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/batches/{id}/initialize-stock": {
+            "post": {
+                "tags": [
+                    "Lots d'Articles (Admin)"
+                ],
+                "summary": "Générer les lignes de stock manquantes (à 0) pour un lot spécifique",
+                "description": "Initialiser les stocks (à zéro) pour UN lot spécifique dans TOUTES les succursales",
+                "operationId": "initializeBatchStock",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Stock du lot synchronisé avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/admin/centers": {
             "get": {
                 "tags": [
@@ -650,6 +1034,11 @@
                                             "central_warehouse",
                                             "retail_pos"
                                         ]
+                                    },
+                                    "center_id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -705,6 +1094,10 @@
                                             "central_warehouse",
                                             "retail_pos"
                                         ]
+                                    },
+                                    "center_id": {
+                                        "type": "integer",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -2048,6 +2441,14 @@
         {
             "name": "Catégories d'Articles (Admin)",
             "description": "Gestion des catégories et sous-catégories de la pharmacie/stock"
+        },
+        {
+            "name": "Articles (Admin)",
+            "description": "Gestion du catalogue des articles, médicaments et consommables"
+        },
+        {
+            "name": "Lots d'Articles (Admin)",
+            "description": "Gestion des lots (Batches) avec dates de péremption et prix d'achat"
         },
         {
             "name": "Centres (Admin)",

@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('article_categories', function (Blueprint $table) {
+        Schema::create('articles', function (Blueprint $table) {
             $table->id();
             $table->foreignId("hospital_id")->constrained("hospitals")->onDelete("cascade");
-            $table->foreignId("article_category_id")->nullable()->constrained("article_categories")->onDelete("cascade");
+            $table->foreignId("category_id")->constrained("article_categories")->onDelete("cascade");
             $table->string("name");
-            $table->string("description")->nullable();
+            $table->string("barcode")->nullable();
+            $table->float("global_min_qty")->default(0.0);
+            $table->string("image_url")->nullable();
+            $table->boolean("track_batches");
             $table->timestamps();
-            $table->unique(['hospital_id', 'name'], 'unique_category_per_hospital');
         });
     }
 
@@ -27,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('article_categories');
+        Schema::dropIfExists('articles');
     }
 };

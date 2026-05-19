@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Admin\ArticleCategoryController;
+use App\Http\Controllers\Admin\ArticleController;
+use App\Http\Controllers\Admin\BatchController;
 use App\Http\Controllers\Admin\CenterController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\PharmacyBranchController;
@@ -97,6 +99,28 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::post('/article-categories', [ArticleCategoryController::class, 'store']);
     Route::put('/article-categories/{id}', [ArticleCategoryController::class, 'update']);
     Route::delete('/article-categories/{id}', [ArticleCategoryController::class, 'destroy']);
+    // ==========================================
+    // GESTION DES ARTICLES (CATALOGUE)
+    // ==========================================
+    Route::get('/articles', [ArticleController::class, 'index']);
+    Route::post('/articles', [ArticleController::class, 'store']);
+    // Note : On utilise POST pour l'update afin de supporter l'upload de fichiers (Multipart)
+    // Le frontend devra envoyer la requête POST avec un champ `_method=PUT`
+    Route::put('/articles/{id}', [ArticleController::class, 'update']); 
+    Route::delete('/articles/{id}', [ArticleController::class, 'destroy']);
+    // ==========================================
+    // GESTION DES LOTS (BATCHES)
+    // ==========================================
+    
+    // Nouveaux endpoints pour l'initialisation des stocks (À PLACER EN PREMIER)
+    Route::post('/batches/initialize-all-stocks', [BatchController::class, 'initializeAllStocks']);
+    Route::post('/batches/{id}/initialize-stock', [BatchController::class, 'initializeBatchStock']);
+
+    // Routes CRUD classiques
+    Route::get('/batches', [BatchController::class, 'index']);
+    Route::post('/batches', [BatchController::class, 'store']);
+    Route::put('/batches/{id}', [BatchController::class, 'update']);
+    Route::delete('/batches/{id}', [BatchController::class, 'destroy']);
 });
     });
 
