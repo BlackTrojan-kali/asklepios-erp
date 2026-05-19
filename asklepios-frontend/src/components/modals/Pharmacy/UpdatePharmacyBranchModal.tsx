@@ -2,20 +2,23 @@ import React, { useState, useEffect } from 'react';
 import usePharmacyStore from '../../../functions/pharmacy/usePharmacyStore';
 import { PharmacyBranchForm } from './PharmacyBranchForm';
 import type { PharmacyBranchDto, PharmacyBranchPayload } from '../../../types/PharmTypes';
+import type { CenterDto } from '../../../types/types';
 
 interface Props {
     isOpen: boolean;
     onClose: () => void;
     branch: PharmacyBranchDto | null;
+    centers: CenterDto[]; // Ajout de la prop
 }
 
-export const UpdatePharmacyBranchModal: React.FC<Props> = ({ isOpen, onClose, branch }) => {
+export const UpdatePharmacyBranchModal: React.FC<Props> = ({ isOpen, onClose, branch, centers }) => {
     const { updatePharmacyBranch, actionLoading } = usePharmacyStore();
     
     const [payload, setPayload] = useState<PharmacyBranchPayload>({
         name: '',
         adress: '',
-        type: ''
+        type: '',
+        center_id: null // Initialisation
     });
 
     // Remplissage du formulaire avec les données existantes
@@ -24,7 +27,8 @@ export const UpdatePharmacyBranchModal: React.FC<Props> = ({ isOpen, onClose, br
             setPayload({
                 name: branch.name,
                 adress: branch.adress,
-                type: branch.type
+                type: branch.type,
+                center_id: branch.center_id || null // Chargement du centre existant
             });
         }
     }, [branch]);
@@ -45,7 +49,11 @@ export const UpdatePharmacyBranchModal: React.FC<Props> = ({ isOpen, onClose, br
                     <h2 className="text-xl font-bold text-slate-800 dark:text-white">Modifier la Succursale</h2>
                 </div>
                 
-                <PharmacyBranchForm payload={payload} setPayload={setPayload} />
+                <PharmacyBranchForm 
+                    payload={payload} 
+                    setPayload={setPayload} 
+                    centers={centers} // Passage des centres
+                />
 
                 <div className="mt-6 flex justify-end gap-3 border-t border-gray-100 dark:border-gray-800 pt-4">
                     <button 

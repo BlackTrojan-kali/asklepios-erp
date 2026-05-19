@@ -8,12 +8,14 @@ import {
     MapPin, 
     Package, 
     ShoppingCart, 
-    Loader2 
+    Loader2,
+    Building2
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
 // Stores
 import usePharmacyStore from '../../../functions/pharmacy/usePharmacyStore'; 
+import useCenterStore from '../../../functions/center/useCenterStore'; // <-- IMPORT DU STORE DES CENTRES
 
 // Modèles et Types
 import type { PharmacyBranchDto } from '../../../types/PharmTypes';
@@ -23,11 +25,14 @@ import { CreatePharmacyBranchModal } from '../../../components/modals/Pharmacy/C
 import { UpdatePharmacyBranchModal } from '../../../components/modals/Pharmacy/UpdatePharmacyBranchModal';
 
 const Pharmacies = () => {
-    // Hook du store
+    // Hooks des stores
     const { 
         pharmacyBranches, loading, 
         getPharmacyBranches, deletePharmacyBranch 
     } = usePharmacyStore();
+    
+    // Ajout du store pour récupérer les centres
+    const { centers, getCenters } = useCenterStore();
 
     // États pour les filtres
     const [filters, setFilters] = useState({
@@ -39,10 +44,11 @@ const Pharmacies = () => {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [selectedBranch, setSelectedBranch] = useState<PharmacyBranchDto | null>(null);
 
-    // Chargement initial des données
+    // Chargement initial des données (Pharmacies + Centres)
     useEffect(() => {
         getPharmacyBranches({});
-    }, [getPharmacyBranches]);
+        getCenters(1, {}, 100); // On récupère une large liste de centres pour les menus déroulants
+    }, [getPharmacyBranches, getCenters]);
 
     // Soumission du formulaire de filtre
     const handleFilterSubmit = (e: React.FormEvent) => {
@@ -153,6 +159,7 @@ const Pharmacies = () => {
                         <thead>
                             <tr className="bg-slate-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
                                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Succursale</th>
+                                <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Centre</th>
                                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Adresse</th>
                                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
                                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Actions</th>
@@ -161,14 +168,14 @@ const Pharmacies = () => {
                         <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                             {loading ? (
                                 <tr>
-                                    <td colSpan={4} className="p-8 text-center">
+                                    <td colSpan={5} className="p-8 text-center">
                                         <Loader2 size={32} className="animate-spin text-[#00a896] mx-auto mb-2" />
                                         <p className="text-sm text-gray-500 dark:text-gray-400">Chargement des données...</p>
                                     </td>
                                 </tr>
                             ) : pharmacyBranches.length === 0 ? (
                                 <tr>
-                                    <td colSpan={4} className="p-12 text-center">
+                                    <td colSpan={5} className="p-12 text-center">
                                         <div className="flex flex-col items-center justify-center text-gray-400 dark:text-gray-500">
                                             <Store size={48} className="mb-3 opacity-50" />
                                             <p>Aucune succursale trouvée.</p>
@@ -182,6 +189,18 @@ const Pharmacies = () => {
                                         {/* NOM */}
                                         <td className="p-4">
                                             <div className="font-bold text-slate-800 dark:text-gray-200">{branch.name}</div>
+                                        </td>
+
+                                        {/* CENTRE MÉDICAL */}
+                                        <td className="p-4">
+                                            {branch.center ? (
+                                                <div className="flex items-center gap-1.5 text-sm text-slate-700 dark:text-gray-300">
+                                                    <Building2 size={14} className="text-gray-400" />
+                                                    <span>{branch.center.name}</span>
+                                                </div>
+                                            ) : (
+                                                <span className="text-xs text-gray-400 italic">Non rattaché</span>
+                                            )}
                                         </td>
                                         
                                         {/* ADRESSE */}
@@ -238,12 +257,14 @@ const Pharmacies = () => {
             <CreatePharmacyBranchModal 
                 isOpen={isCreateOpen} 
                 onClose={() => setIsCreateOpen(false)} 
+                centers={centers} // <-- PASSAGE DES CENTRES
             />
 
             <UpdatePharmacyBranchModal 
                 isOpen={!!selectedBranch} 
                 onClose={() => setSelectedBranch(null)} 
                 branch={selectedBranch}
+                centers={centers} // <-- PASSAGE DES CENTRES
             />
 
         </div>

@@ -6,6 +6,10 @@
  * Type strict pour les différents types de succursales
  */
 export type PharmacyBranchType = "central_warehouse" | "retail_pos";
+// ==========================================
+// DTOs POUR LA GESTION DES PHARMACIES (ADMIN)
+// ==========================================
+
 
 /**
  * Représente une succursale de pharmacie telle qu'elle est renvoyée par l'API (GET)
@@ -13,9 +17,18 @@ export type PharmacyBranchType = "central_warehouse" | "retail_pos";
 export interface PharmacyBranchDto {
     id: number;
     hospital_id: number;
+    center_id: number | null; // Ajout du lien vers le centre (peut être null pour un magasin central)
     name: string;
     adress: string; // Attention: "adress" avec un seul 'd' comme défini dans ta migration
     type: PharmacyBranchType;
+    
+    // Relation chargée depuis le backend (si tu utilises with('center'))
+    center?: {
+        id: number;
+        name: string;
+        // Tu peux typer ça avec CenterDto si tu l'importes depuis ton fichier types.ts
+    };
+
     created_at?: string;
     updated_at?: string;
 }
@@ -28,8 +41,8 @@ export interface PharmacyBranchPayload {
     name: string;
     adress: string;
     type: PharmacyBranchType | ""; // "" permet de gérer l'état initial vide du select
+    center_id: number | null; // Ajout du champ pour la création/modification
 }
-
 // Si tu as besoin de la réponse paginée plus tard, tu peux importer ton interface générique :
 // import { PaginatedResponse } from "./types";
 // ==========================================
@@ -61,4 +74,65 @@ export interface ArticleCategoryPayload {
     description: string;
     // On utilise number | null pour gérer facilement le "Aucun parent" dans le Select
     article_category_id: number | null; 
+}
+
+// ==========================================
+// DTOs POUR LA GESTION DES ARTICLES (CATALOGUE)
+// ==========================================
+
+/**
+ * Représente un article tel qu'il est renvoyé par l'API (GET)
+ */
+// ==========================================
+// DTOs POUR LA GESTION DES ARTICLES (CATALOGUE)
+// ==========================================
+
+export interface ArticleDto {
+    id: number;
+    hospital_id: number;
+    category_id: number;
+    name: string;
+    barcode: string | null;
+    global_min_qty: number;
+    image_url: string | null;
+    track_batches: boolean; // <-- NOUVEAU CHAMP
+    
+    category?: ArticleCategoryDto; 
+    
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface ArticlePayload {
+    category_id: number | ""; 
+    name: string;
+    barcode: string;
+    global_min_qty: number | ""; 
+    track_batches: boolean; // <-- NOUVEAU CHAMP
+    image: File | null; 
+}
+
+
+// ==========================================
+// DTOs POUR LA GESTION DES LOTS (BATCHES)
+// ==========================================
+
+export interface BatchDto {
+    id: number;
+    article_id: number;
+    batch_number: string;
+    expire_date: string | null; // <-- PEUT DÉSORMAIS ÊTRE NULL
+    purchase_price: number;
+    
+    article?: ArticleDto; 
+    
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface BatchPayload {
+    article_id: number | "";
+    batch_number: string;
+    expire_date: string; // Une chaîne vide "" sera envoyée comme null au backend
+    purchase_price: number | ""; 
 }

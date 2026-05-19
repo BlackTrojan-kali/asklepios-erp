@@ -13,6 +13,8 @@ import Centers from "./Pages/Admin/Centers";
 import Departments from "./Pages/Admin/departments/Departments";
 import Pharmacies from "./Pages/Admin/Pharmacies/Pharmacies";
 import ArticleCategories from "./Pages/Admin/Pharmacies/Articles/ArticleCategories";
+import Articles from "./Pages/Admin/Pharmacies/Articles/Articles";
+import Batches from "./Pages/Admin/Pharmacies/Articles/Batches";
 
 const routes = createBrowserRouter([
    {
@@ -82,6 +84,14 @@ const routes = createBrowserRouter([
         {
             path:"pharmacy/acticles-categories",
             element:<ArticleCategories/>
+        },
+        {
+            path:"pharmacy/articles",
+            element:<Articles/>
+        },
+        {
+            path:"pharmacy/batch",
+            element:<Batches/>
         }
         // Tu pourras ajouter d'autres routes Super Admin ici !
     ]

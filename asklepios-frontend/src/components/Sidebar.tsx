@@ -82,7 +82,8 @@ const MENU_CONFIG: MenuItemType[] = [
                 title:"Articles",
                   subItems: [
                      { title: "Categories", path: "/admin/pharmacy/acticles-categories" },
-                     { title: "Mouvements", path: "/admin/pharmacy/stocks/movements" }
+                     { title: "Articles", path: "/admin/pharmacy/articles" },
+                     {title:"Lots",path:"/admin/pharmacy/batch"}
                  ]
             },
             {

@@ -2,19 +2,22 @@ import React, { useState } from 'react';
 import usePharmacyStore from '../../../functions/pharmacy/usePharmacyStore';
 import { PharmacyBranchForm } from './PharmacyBranchForm';
 import type { PharmacyBranchPayload } from '../../../types/PharmTypes';
+import type { CenterDto } from '../../../types/types';
 
 interface Props {
     isOpen: boolean;
     onClose: () => void;
+    centers: CenterDto[]; // Ajout de la prop
 }
 
-export const CreatePharmacyBranchModal: React.FC<Props> = ({ isOpen, onClose }) => {
+export const CreatePharmacyBranchModal: React.FC<Props> = ({ isOpen, onClose, centers }) => {
     const { createPharmacyBranch, actionLoading } = usePharmacyStore();
     
     const [payload, setPayload] = useState<PharmacyBranchPayload>({
         name: '',
         adress: '',
-        type: ''
+        type: '',
+        center_id: null // Initialisation du nouveau champ
     });
 
     const handleSubmit = async () => {
@@ -22,7 +25,7 @@ export const CreatePharmacyBranchModal: React.FC<Props> = ({ isOpen, onClose }) 
         
         const success = await createPharmacyBranch(payload);
         if (success) {
-            setPayload({ name: '', adress: '', type: '' });
+            setPayload({ name: '', adress: '', type: '', center_id: null });
             onClose();
         }
     };
@@ -34,7 +37,11 @@ export const CreatePharmacyBranchModal: React.FC<Props> = ({ isOpen, onClose }) 
             <div className="bg-white dark:bg-gray-900 rounded-lg w-full max-w-lg p-6 shadow-xl border border-transparent dark:border-gray-800">
                 <h2 className="text-xl font-bold mb-4 text-slate-800 dark:text-white">Nouvelle Succursale (Pharmacie)</h2>
                 
-                <PharmacyBranchForm payload={payload} setPayload={setPayload} />
+                <PharmacyBranchForm 
+                    payload={payload} 
+                    setPayload={setPayload} 
+                    centers={centers} // Passage des centres
+                />
                 
                 <div className="mt-6 flex justify-end gap-3 border-t border-gray-100 dark:border-gray-800 pt-4">
                     <button 
