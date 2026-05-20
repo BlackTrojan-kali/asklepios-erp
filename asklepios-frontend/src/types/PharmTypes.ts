@@ -136,3 +136,51 @@ export interface BatchPayload {
     expire_date: string; // Une chaîne vide "" sera envoyée comme null au backend
     purchase_price: number | ""; 
 }
+// ==========================================
+// DTOs POUR LA GESTION DES UTILISATEURS
+// ==========================================
+
+export interface UserDto {
+    id: number;
+    first_name: string;
+    last_name: string | null;
+    phone: number;
+    email: string;
+    created_at?: string;
+    updated_at?: string;
+}
+
+// ==========================================
+// DTOs POUR LA GESTION DES PHARMACIENS
+// ==========================================
+
+/**
+ * Représente un profil pharmacien tel qu'il est renvoyé par l'API (GET)
+ */
+export interface PharmacienDto {
+    id: number;
+    user_id: number;
+    hospital_id: number;
+    branch_id: number;
+    position: 'magasin' | 'vente';
+    
+    // Relations chargées depuis le backend
+    user?: UserDto;
+    branch?: PharmacyBranchDto; // Assure-toi d'avoir ce DTO défini pour tes succursales
+    
+    created_at?: string;
+    updated_at?: string;
+}
+
+/**
+ * Le format attendu par le formulaire pour créer ou modifier un pharmacien (POST / PUT)
+ */
+export interface PharmacienPayload {
+    first_name: string;
+    last_name: string;
+    phone: string | number; // Le string gère mieux les inputs vides avant soumission
+    email: string;
+    password?: string; // Optionnel lors de la modification
+    position: 'magasin' | 'vente' | ''; // '' pour l'état initial du select
+    branch_id: number | ''; // '' pour l'état initial du select
+}

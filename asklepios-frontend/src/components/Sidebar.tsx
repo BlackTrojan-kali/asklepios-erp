@@ -87,6 +87,10 @@ const MENU_CONFIG: MenuItemType[] = [
                  ]
             },
             {
+                title:"Pharmaciens",
+                path:"/admin/pharmaciens"
+            },
+            {
                 title:"Versements",
                 path:"/admin/pharmacy/versements"
             },

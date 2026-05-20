@@ -24,7 +24,9 @@ const CheckRole = ({ children, roles }: CheckRoleProps) => {
             } else if (!roles.includes(profile.role)) {
                 // S'il est connecté mais n'a pas le bon rôle
                 toast.error("Vous n'avez pas le droit d'accéder à cette page.");
-                navigate("/countries", { replace: true }); 
+                if(profile?.role == "admin"){
+                navigate("/admin/centers", { replace: true }); 
+                }
             }
         }
     }, [profile, roles, navigate, loading]);

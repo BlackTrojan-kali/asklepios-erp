@@ -154,7 +154,7 @@ class ArticleController extends Controller
             'name' => 'sometimes|required|string|max:255',
             'barcode' => 'nullable|string|max:100',
             'global_min_qty' => 'nullable|numeric|min:0',
-            'track_batches' => 'sometimes|required|boolean', // Validation du nouveau champ
+            'track_batches' => 'sometimes|required|string', // Validation du nouveau champ
             'image' => 'nullable|image|mimes:jpeg,png,jpg,svg|max:2048',
         ]);
 

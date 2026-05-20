@@ -14,8 +14,7 @@ return new class extends Migration
         Schema::create('profile_pharms', function (Blueprint $table) {
             $table->id();
             $table->foreignId("user_id")->constrained("users")->onDelete("cascade");
-            $table->enum("possition",["magasin","vente"]);
-            $table->foreignId("center_id")->constrained("centers")->onDelete("cascade");
+            $table->enum("position",["magasin","vente"]);
             $table->foreignId("hospital_id")->constrained("hospitals")->onDelete("cascade");
             $table->timestamps();
         });

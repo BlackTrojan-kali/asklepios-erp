@@ -15,6 +15,7 @@ import Pharmacies from "./Pages/Admin/Pharmacies/Pharmacies";
 import ArticleCategories from "./Pages/Admin/Pharmacies/Articles/ArticleCategories";
 import Articles from "./Pages/Admin/Pharmacies/Articles/Articles";
 import Batches from "./Pages/Admin/Pharmacies/Articles/Batches";
+import Pharmaciens from "./Pages/Admin/Pharmacies/Pharmaciens";
 
 const routes = createBrowserRouter([
    {
@@ -92,6 +93,10 @@ const routes = createBrowserRouter([
         {
             path:"pharmacy/batch",
             element:<Batches/>
+        },
+        {
+            path:"pharmaciens",
+            element:<Pharmaciens/>
         }
         // Tu pourras ajouter d'autres routes Super Admin ici !
     ]

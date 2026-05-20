@@ -964,6 +964,221 @@
                 ]
             }
         },
+        "/api/admin/pharmaciens": {
+            "get": {
+                "tags": [
+                    "Pharmaciens (Admin)"
+                ],
+                "summary": "Lister les pharmaciens",
+                "description": "Lister et filtrer les pharmaciens",
+                "operationId": "getAdminPharmaciens",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Nom, email ou téléphone",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "position",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "magasin",
+                                "vente"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Pharmaciens (Admin)"
+                ],
+                "summary": "Créer un pharmacien",
+                "description": "Créer un pharmacien (Compte User + Profil)",
+                "operationId": "storeAdminPharmacien",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "first_name",
+                                    "phone",
+                                    "email",
+                                    "password",
+                                    "position",
+                                    "branch_id"
+                                ],
+                                "properties": {
+                                    "first_name": {
+                                        "type": "string"
+                                    },
+                                    "last_name": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "phone": {
+                                        "type": "integer"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password"
+                                    },
+                                    "position": {
+                                        "type": "string",
+                                        "enum": [
+                                            "magasin",
+                                            "vente"
+                                        ]
+                                    },
+                                    "branch_id": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Pharmacien créé avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/pharmaciens/{id}": {
+            "put": {
+                "tags": [
+                    "Pharmaciens (Admin)"
+                ],
+                "summary": "Modifier un pharmacien",
+                "description": "Modifier un pharmacien",
+                "operationId": "updateAdminPharmacien",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "first_name": {
+                                        "type": "string"
+                                    },
+                                    "last_name": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "phone": {
+                                        "type": "integer"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password"
+                                    },
+                                    "position": {
+                                        "type": "string",
+                                        "enum": [
+                                            "magasin",
+                                            "vente"
+                                        ]
+                                    },
+                                    "branch_id": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Pharmacien modifié avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Pharmaciens (Admin)"
+                ],
+                "summary": "Supprimer un pharmacien",
+                "description": "Supprimer un pharmacien",
+                "operationId": "deleteAdminPharmacien",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Pharmacien supprimé avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/admin/pharmacy-branches": {
             "get": {
                 "tags": [
@@ -2457,6 +2672,10 @@
         {
             "name": "Départements (Admin)",
             "description": "Gestion des départements par centre médical"
+        },
+        {
+            "name": "Pharmaciens (Admin)",
+            "description": "Gestion du personnel de la pharmacie (Création compte + Affectation)"
         },
         {
             "name": "Pharmacies (Admin)",

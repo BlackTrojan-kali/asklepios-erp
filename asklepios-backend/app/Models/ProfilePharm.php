@@ -11,4 +11,8 @@ class ProfilePharm extends Model
     public function user(){
         return $this->belongsTo(User::class,"user_id");
     }
+    public function branch()
+    {
+        return $this->belongsTo(\App\Models\Pharmacy\PharmacyBranch::class, 'branch_id');
+    }
 }
