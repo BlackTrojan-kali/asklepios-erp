@@ -7,7 +7,6 @@ import CheckRole from "./middlewares/CheckRole";
 import Countries from "./Pages/SUPA/country/Countries";
 import Hospitals from "./Pages/SUPA/hospital/Hospital";
 import Admins from "./Pages/SUPA/admins/Admins";
-import Licences from "./Pages/SUPA/licence/licences";
 import Subscriptions from "./Pages/SUPA/subscriptions/Subscriptions";
 import Centers from "./Pages/Admin/Centers";
 import Departments from "./Pages/Admin/departments/Departments";
@@ -16,6 +15,8 @@ import ArticleCategories from "./Pages/Admin/Pharmacies/Articles/ArticleCategori
 import Articles from "./Pages/Admin/Pharmacies/Articles/Articles";
 import Batches from "./Pages/Admin/Pharmacies/Articles/Batches";
 import Pharmaciens from "./Pages/Admin/Pharmacies/Pharmaciens";
+import Stocks from "./Pages/Admin/Pharmacies/Stock/Stocks";
+import Licences from "./Pages/SUPA/licence/Licences";
 
 const routes = createBrowserRouter([
    {
@@ -93,6 +94,10 @@ const routes = createBrowserRouter([
         {
             path:"pharmacy/batch",
             element:<Batches/>
+        },
+        {
+            path:"pharmacy/stocks",
+            element:<Stocks/>
         },
         {
             path:"pharmaciens",

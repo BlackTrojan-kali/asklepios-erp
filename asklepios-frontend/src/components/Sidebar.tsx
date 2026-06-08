@@ -100,7 +100,7 @@ const MENU_CONFIG: MenuItemType[] = [
             },
             {
                 title:"Stocks",
-                path:"/admin/pharmacy/users",
+                path:"/admin/pharmacy/stocks",
                 // EXEMPLE DE SOUS-SOUS-MENU (Tu peux en rajouter à l'infini)
                 // subItems: [
                 //     { title: "Inventaire", path: "/admin/pharmacy/stocks/inventory" },

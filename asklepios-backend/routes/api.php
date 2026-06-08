@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\CenterController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\PharmacienController;
 use App\Http\Controllers\Admin\PharmacyBranchController;
+use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\SUPA\AdminController;
 use App\Http\Controllers\SUPA\CountryController;
@@ -122,6 +123,9 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::post('/batches', [BatchController::class, 'store']);
     Route::put('/batches/{id}', [BatchController::class, 'update']);
     Route::delete('/batches/{id}', [BatchController::class, 'destroy']);
+
+    //Stocks
+    Route::get('/stocks/global', [StockController::class, 'getGlobalStocks']);
 });
 Route::middleware(['auth:sanctum', 'role:admin,pharmacy'])->prefix('admin')->group(function () {
     // ... tes autres routes existantes (pharmacy-branches, articles, batches) ...
@@ -133,6 +137,11 @@ Route::middleware(['auth:sanctum', 'role:admin,pharmacy'])->prefix('admin')->gro
     Route::post('/pharmaciens', [PharmacienController::class, 'store']);
     Route::put('/pharmaciens/{id}', [PharmacienController::class, 'update']);
     Route::delete('/pharmaciens/{id}', [PharmacienController::class, 'destroy']);
+    
+});
+Route::middleware(["auth:sanctum","role:pharmacy"])->prefix("admin")->group(function(){
+    // ... tes autres routes pharmacien ...
+    Route::get('/stocks/my-branch', [StockController::class, 'getMyBranchStocks']);
 });
     });
 

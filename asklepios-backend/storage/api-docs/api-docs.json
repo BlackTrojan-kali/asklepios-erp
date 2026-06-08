@@ -1363,6 +1363,95 @@
                 ]
             }
         },
+        "/api/admin/stocks/global": {
+            "get": {
+                "tags": [
+                    "Stocks"
+                ],
+                "summary": "Voir les stocks globaux (Toutes succursales)",
+                "description": "1. VUE GLOBALE (Pour les Administrateurs ou Superviseurs)\r\nListe tous les stocks de l'hôpital, avec possibilité de filtrer par succursale.",
+                "operationId": "getGlobalStocks",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Nom de l'article, code-barres ou N° de lot",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "Filtrer par succursale",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "article_id",
+                        "in": "query",
+                        "description": "Filtrer par article",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste des stocks récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/pharmacien/stocks/my-branch": {
+            "get": {
+                "tags": [
+                    "Stocks"
+                ],
+                "summary": "Voir les stocks de ma succursale",
+                "description": "2. VUE LOCALE (Pour les Pharmaciens / Vendeurs)\r\nListe uniquement les stocks de la succursale du pharmacien connecté.",
+                "operationId": "getMyBranchStocks",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Nom, code-barres ou N° de lot",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "article_id",
+                        "in": "query",
+                        "description": "Filtrer par article",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste des stocks récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/auth/login": {
             "post": {
                 "tags": [
@@ -2680,6 +2769,10 @@
         {
             "name": "Pharmacies (Admin)",
             "description": "Gestion des succursales et magasins de la pharmacie de l'hôpital"
+        },
+        {
+            "name": "Stocks",
+            "description": "Consultation des niveaux de stocks par succursale et par lot"
         },
         {
             "name": "Administrateurs (SUPA)",

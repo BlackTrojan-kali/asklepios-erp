@@ -15,16 +15,15 @@ import {
 import Swal from 'sweetalert2';
 
 // Stores
-import usePharmacienStore from '../../../functions/pharmacy/usePharmacienStore';
-// Assure-toi d'importer ton store qui gère les succursales (branches
+import usePharmacienStore from '../../../functions/pharmacy/usePharmacienStore'; 
+import usePharmacyStore from '../../../functions/pharmacy/usePharmacyStore'; 
 
 // Modèles et Types
 import type { PharmacienDto } from '../../../types/PharmTypes';
 
 // Modales
-import { CreatePharmacienModal } from '../../../components/modals/Pharmacy/Pharmacien/CreatePharmacienModal';
-import { UpdatePharmacienModal } from '../../../components/modals/Pharmacy/Pharmacien/UpdatePharmacienModal';
-import usePharmacyStore from '../../../functions/pharmacy/usePharmacyStore';
+import { CreatePharmacienModal } from '../../../components/modals/Pharmacy/Pharmacien/CreatePharmacienModal'; 
+import { UpdatePharmacienModal } from '../../../components/modals/Pharmacy/Pharmacien/UpdatePharmacienModal'; 
 
 const Pharmaciens = () => {
     // Hooks des stores
@@ -33,10 +32,11 @@ const Pharmaciens = () => {
         getPharmaciens, deletePharmacien 
     } = usePharmacienStore();
 
-    // Récupération des succursales pour les filtres et les formulaires
+    // Récupération des succursales via ton usePharmacyStore
     const { 
-       pharmacyBranches, 
-       getPharmacyBranches}  = usePharmacyStore();
+        pharmacyBranches: branches, // <-- ALIAS pour utiliser 'branches' dans le code
+        getPharmacyBranches: getBranches 
+    } = usePharmacyStore();
 
     // États pour les filtres
     const [filters, setFilters] = useState({
@@ -52,8 +52,8 @@ const Pharmaciens = () => {
     // Chargement initial des données
     useEffect(() => {
         getPharmaciens({});
-        getPharmacyBranches({}); // On charge les succursales
-    }, [getPharmaciens, getPharmacyBranches]);
+        getBranches({}); // On charge les succursales
+    }, [getPharmaciens, getBranches]);
 
     // Soumission du formulaire de filtre
     const handleFilterSubmit = (e: React.FormEvent) => {
@@ -150,7 +150,7 @@ const Pharmaciens = () => {
                             className="w-full p-2 bg-slate-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:border-[#00a896] dark:focus:border-teal-500 text-sm text-slate-800 dark:text-white transition-colors"
                         >
                             <option value="">Toutes les succursales</option>
-                            {pharmacyBranches?.map(branch => (
+                            {branches?.map(branch => (
                                 <option key={branch.id} value={branch.id}>
                                     {branch.name}
                                 </option>
@@ -281,18 +281,17 @@ const Pharmaciens = () => {
             </div>
 
             {/* MODALES */}
-            {/* Assure-toi de passer la liste de tes succursales (branches) ici */}
             <CreatePharmacienModal 
                 isOpen={isCreateOpen} 
                 onClose={() => setIsCreateOpen(false)} 
-                branches={pharmacyBranches || []}
+                branches={branches || []}
             />
 
             <UpdatePharmacienModal 
                 isOpen={!!selectedPharmacien} 
                 onClose={() => setSelectedPharmacien(null)} 
                 pharmacien={selectedPharmacien}
-                branches={pharmacyBranches || []}
+                branches={branches || []}
             />
 
         </div>
