@@ -18,6 +18,7 @@ import Pharmaciens from "./Pages/Admin/Pharmacies/Pharmaciens";
 import Stocks from "./Pages/Admin/Pharmacies/Stock/Stocks";
 import Licences from "./Pages/SUPA/licence/Licences";
 import NotFound from "./Pages/NotFound";
+import Providers from "./Pages/Admin/Pharmacies/Providers";
 
 const routes = createBrowserRouter([
    {
@@ -105,6 +106,9 @@ const routes = createBrowserRouter([
         {
             path:"pharmaciens",
             element:<Pharmaciens/>
+        },{
+            path:"pharmacy/providers",
+            element:<Providers/>
         }
         // Tu pourras ajouter d'autres routes Super Admin ici !
     ]

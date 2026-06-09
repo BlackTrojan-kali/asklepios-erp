@@ -34,7 +34,7 @@ export const UpdateBatchModal: React.FC<Props> = ({ isOpen, onClose, batch, arti
     }, [batch]);
 
     const handleSubmit = async () => {
-        if (!batch || !payload.article_id || !payload.batch_number || !payload.expire_date || payload.purchase_price === '') return;
+        if (!batch || !payload.article_id || !payload.batch_number ||  payload.purchase_price === '') return;
 
         const success = await updateBatch(batch.id, payload);
         if (success) onClose();
@@ -64,7 +64,7 @@ export const UpdateBatchModal: React.FC<Props> = ({ isOpen, onClose, batch, arti
                     </button>
                     <button 
                         onClick={handleSubmit}
-                        disabled={actionLoading || !payload.article_id || !payload.batch_number || !payload.expire_date || payload.purchase_price === ''}
+                        disabled={actionLoading || !payload.article_id || !payload.batch_number ||  payload.purchase_price === ''}
                         className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 transition-colors"
                     >
                         {actionLoading ? "Sauvegarde..." : "Enregistrer"}

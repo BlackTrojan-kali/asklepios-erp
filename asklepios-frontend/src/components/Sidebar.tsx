@@ -106,6 +106,9 @@ const MENU_CONFIG: MenuItemType[] = [
                 //     { title: "Inventaire", path: "/admin/pharmacy/stocks/inventory" },
                 //     { title: "Mouvements", path: "/admin/pharmacy/stocks/movements" }
                 // ]
+            },{
+                title:"Fournisseurs",
+                path:"/admin/pharmacy/providers"
             }
         ]
     }
