@@ -1363,6 +1363,247 @@
                 ]
             }
         },
+        "/api/admin/providers/export/pdf": {
+            "get": {
+                "tags": [
+                    "Fournisseurs (Admin)"
+                ],
+                "summary": "Télécharger la liste en PDF",
+                "description": "Exporter les fournisseurs en PDF",
+                "operationId": "exportProvidersPdf",
+                "responses": {
+                    "200": {
+                        "description": "Fichier PDF généré et téléchargé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/providers/export/excel": {
+            "get": {
+                "tags": [
+                    "Fournisseurs (Admin)"
+                ],
+                "summary": "Télécharger la liste en Excel",
+                "description": "Exporter les fournisseurs en Excel",
+                "operationId": "exportProvidersExcel",
+                "responses": {
+                    "200": {
+                        "description": "Fichier Excel généré et téléchargé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/providers/import": {
+            "post": {
+                "tags": [
+                    "Fournisseurs (Admin)"
+                ],
+                "summary": "Importer une liste Excel",
+                "description": "Importer les fournisseurs depuis un fichier Excel",
+                "operationId": "importProvidersExcel",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "file": {
+                                        "description": "Fichier Excel (.xlsx, .xls)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Importation terminée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/providers": {
+            "get": {
+                "tags": [
+                    "Fournisseurs (Admin)"
+                ],
+                "summary": "Lister les fournisseurs",
+                "description": "Lister et filtrer les fournisseurs",
+                "operationId": "getProviders",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Recherche par nom, téléphone ou NIU",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Fournisseurs (Admin)"
+                ],
+                "summary": "Créer un fournisseur",
+                "description": "Créer un fournisseur",
+                "operationId": "storeProvider",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "phone": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "niu": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Fournisseur créé avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/providers/{id}": {
+            "put": {
+                "tags": [
+                    "Fournisseurs (Admin)"
+                ],
+                "summary": "Modifier un fournisseur",
+                "description": "Modifier un fournisseur",
+                "operationId": "updateProvider",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "phone": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "niu": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Fournisseur mis à jour"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Fournisseurs (Admin)"
+                ],
+                "summary": "Supprimer un fournisseur",
+                "description": "Supprimer un fournisseur",
+                "operationId": "deleteProvider",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Fournisseur supprimé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/admin/stocks/global": {
             "get": {
                 "tags": [
@@ -2769,6 +3010,10 @@
         {
             "name": "Pharmacies (Admin)",
             "description": "Gestion des succursales et magasins de la pharmacie de l'hôpital"
+        },
+        {
+            "name": "Fournisseurs (Admin)",
+            "description": "Gestion des fournisseurs de la pharmacie"
         },
         {
             "name": "Stocks",

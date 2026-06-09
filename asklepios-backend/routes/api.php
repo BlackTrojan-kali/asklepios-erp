@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\CenterController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\PharmacienController;
 use App\Http\Controllers\Admin\PharmacyBranchController;
+use App\Http\Controllers\Admin\ProviderController;
 use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\SUPA\AdminController;
@@ -142,6 +143,15 @@ Route::middleware(['auth:sanctum', 'role:admin,pharmacy'])->prefix('admin')->gro
 Route::middleware(["auth:sanctum","role:pharmacy"])->prefix("admin")->group(function(){
     // ... tes autres routes pharmacien ...
     Route::get('/stocks/my-branch', [StockController::class, 'getMyBranchStocks']);
+    // ==========================================
+    // FOURNISSEURS
+    // ==========================================
+    Route::get('/providers/export/pdf', [ProviderController::class, 'exportPdf']);
+    Route::get('/providers/export/excel', [ProviderController::class, 'exportExcel']);
+    Route::post('/providers/import', [ProviderController::class, 'importExcel']);
+    
+    // Les routes CRUD classiques après les routes spécifiques
+    Route::apiResource('providers', ProviderController::class)->except(['show']);
 });
     });
 
