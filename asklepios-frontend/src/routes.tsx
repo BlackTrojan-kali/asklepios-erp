@@ -17,6 +17,7 @@ import Batches from "./Pages/Admin/Pharmacies/Articles/Batches";
 import Pharmaciens from "./Pages/Admin/Pharmacies/Pharmaciens";
 import Stocks from "./Pages/Admin/Pharmacies/Stock/Stocks";
 import Licences from "./Pages/SUPA/licence/Licences";
+import NotFound from "./Pages/NotFound";
 
 const routes = createBrowserRouter([
    {
@@ -35,6 +36,7 @@ const routes = createBrowserRouter([
             </CheckRole>
         </AuthMiddleware>
     ),
+    
     children: [
         {
             path: "countries", // L'URL sera "/countries"
@@ -99,6 +101,7 @@ const routes = createBrowserRouter([
             path:"pharmacy/stocks",
             element:<Stocks/>
         },
+      
         {
             path:"pharmaciens",
             element:<Pharmaciens/>
@@ -115,7 +118,11 @@ const routes = createBrowserRouter([
                 element: <Login />
             }
         ]
-   }
+   },
+     {
+            path:"*",
+            element:<NotFound/>
+        },
 ]);
 
 export default routes;
