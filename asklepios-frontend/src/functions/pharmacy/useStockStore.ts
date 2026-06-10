@@ -37,7 +37,7 @@ const useStockStore = () => {
     ) => {
         try {
             setLoading(true);
-            const res = await api.get<StockDto[]>("/pharmacien/stocks/my-branch", {
+            const res = await api.get<StockDto[]>("/pharmacy/stocks/my-branch", {
                 params: filters
             });
             

@@ -15,4 +15,8 @@ class Stock extends Model
     public function batch(){
         return $this->belongsTo(Batch::class);
     }
+    public function storageLocation()
+{
+    return $this->belongsTo(StorageLocation::class, 'storage_location_id');
+}
 }

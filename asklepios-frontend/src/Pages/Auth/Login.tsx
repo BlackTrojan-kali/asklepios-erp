@@ -20,6 +20,9 @@ const Login = () => {
       navigate('/', { replace: true }); 
       }else if(profile?.role == "admin"){
         navigate("/admin",{replace:true})
+      }else if(profile?.role == "pharmacy")
+      {
+         navigate("/pharmacy",{replace:true})
       }
     }
   }, [token, navigate]);

@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\PharmacyBranchController;
 use App\Http\Controllers\Admin\ProviderController;
 use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Pharmacien\StorageLocationController;
 use App\Http\Controllers\SUPA\AdminController;
 use App\Http\Controllers\SUPA\CountryController;
 use App\Http\Controllers\SUPA\HospitalController;
@@ -105,7 +106,6 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     // ==========================================
     // GESTION DES ARTICLES (CATALOGUE)
     // ==========================================
-    Route::get('/articles', [ArticleController::class, 'index']);
     Route::post('/articles', [ArticleController::class, 'store']);
     // Note : On utilise POST pour l'update afin de supporter l'upload de fichiers (Multipart)
     // Le frontend devra envoyer la requête POST avec un champ `_method=PUT`
@@ -131,6 +131,7 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
 Route::middleware(['auth:sanctum', 'role:admin,pharmacy'])->prefix('admin')->group(function () {
     // ... tes autres routes existantes (pharmacy-branches, articles, batches) ...
 
+    Route::get('/articles', [ArticleController::class, 'index']);
     // ==========================================
     // GESTION DES PHARMACIENS
     // ==========================================
@@ -138,11 +139,6 @@ Route::middleware(['auth:sanctum', 'role:admin,pharmacy'])->prefix('admin')->gro
     Route::post('/pharmaciens', [PharmacienController::class, 'store']);
     Route::put('/pharmaciens/{id}', [PharmacienController::class, 'update']);
     Route::delete('/pharmaciens/{id}', [PharmacienController::class, 'destroy']);
-    
-});
-Route::middleware(["auth:sanctum","role:pharmacy"])->prefix("admin")->group(function(){
-    // ... tes autres routes pharmacien ...
-    Route::get('/stocks/my-branch', [StockController::class, 'getMyBranchStocks']);
     // ==========================================
     // FOURNISSEURS
     // ==========================================
@@ -151,7 +147,16 @@ Route::middleware(["auth:sanctum","role:pharmacy"])->prefix("admin")->group(func
     Route::post('/providers/import', [ProviderController::class, 'importExcel']);
     
     // Les routes CRUD classiques après les routes spécifiques
-    Route::apiResource('providers', ProviderController::class)->except(['show']);
+    Route::apiResource('providers', ProviderController::class)->except(['show']); 
+});
+Route::middleware(["auth:sanctum","role:pharmacy"])->prefix("pharmacy")->group(function(){
+    // ... tes autres routes pharmacien ...
+    Route::get('/stocks/my-branch', [StockController::class, 'getMyBranchStocks']);
+    Route::post('/storage-locations/assign-stock', [StorageLocationController::class, 'assignToStock']);
+    
+    // CRUD complet des étagères/allées
+    Route::apiResource('storage-locations', StorageLocationController::class)->except(['show']);
+   
 });
     });
 

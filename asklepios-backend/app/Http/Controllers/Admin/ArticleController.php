@@ -23,7 +23,12 @@ class ArticleController extends Controller
 
     private function getHospitalId()
     {
-        return auth()->user()->profile_admin->hospital_id;
+        if(auth()->user()->role->name == "admin"){
+        return auth()->user()->profile_admin->hospital_id ;}
+        else if(auth()->user()->role->name ==  "pharmacy"){
+            return auth()->user()->profile_pharm->hospital_id;
+            
+        }
     }
 
     /**
@@ -42,6 +47,7 @@ class ArticleController extends Controller
     public function index(Request $request)
     {
         $hospitalId = $this->getHospitalId();
+        
 
         $query = Article::with('category')->where('hospital_id', $hospitalId);
 

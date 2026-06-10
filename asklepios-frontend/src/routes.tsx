@@ -19,6 +19,8 @@ import Stocks from "./Pages/Admin/Pharmacies/Stock/Stocks";
 import Licences from "./Pages/SUPA/licence/Licences";
 import NotFound from "./Pages/NotFound";
 import Providers from "./Pages/Admin/Pharmacies/Providers";
+import MagasinHome from "./Pages/Admin/Pharmacies/Magasin/MagasinHome";
+import StorageLocations from "./Pages/Admin/Pharmacies/Stock/StorageLocations";
 
 const routes = createBrowserRouter([
    {
@@ -109,6 +111,30 @@ const routes = createBrowserRouter([
         },{
             path:"pharmacy/providers",
             element:<Providers/>
+        }
+        // Tu pourras ajouter d'autres routes Super Admin ici !
+    ]
+   },
+   //pharmacien
+      {
+    path: "/pharmacy",
+    element: (
+        <AuthMiddleware>
+            <CheckRole roles={["pharmacy"]}>
+                <AppLayout>
+                    <Outlet /> {/* <-- C'est ICI que le composant <Countries /> va s'insérer */}
+                </AppLayout>
+            </CheckRole>
+        </AuthMiddleware>
+    ),
+    children: [
+        {
+            path:"",
+            element:<MagasinHome/>
+        },
+        {
+            path:"storage_location",
+            element:<StorageLocations/>
         }
         // Tu pourras ajouter d'autres routes Super Admin ici !
     ]

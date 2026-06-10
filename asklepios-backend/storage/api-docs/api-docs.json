@@ -1799,6 +1799,184 @@
                 ]
             }
         },
+        "/api/pharmacien/storage-locations": {
+            "get": {
+                "tags": [
+                    "Gestion Espace & Aménagement"
+                ],
+                "summary": "Lister les emplacements physiques de ma succursale",
+                "description": "1. LISTER LES EMPLACEMENTS DE LA SUCCURSALE",
+                "operationId": "getBranchStorageLocations",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Recherche par code, allée ou étagère",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste des emplacements récupérée"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Gestion Espace & Aménagement"
+                ],
+                "summary": "Créer une zone de rangement (Allée, Étagère, Code)",
+                "description": "2. CRÉER UN NOUVEL EMPLACEMENT",
+                "operationId": "storeStorageLocation",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "aisle": {
+                                        "description": "Ex: Allée A",
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "shelf": {
+                                        "description": "Ex: Étagère 3",
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "code": {
+                                        "description": "Ex: A-3 (Code unique ou code-barres de zone)",
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Emplacement créé avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/pharmacien/storage-locations/{id}": {
+            "put": {
+                "tags": [
+                    "Gestion Espace & Aménagement"
+                ],
+                "summary": "Modifier une zone de rangement",
+                "description": "3. MODIFIER UN EMPLACEMENT",
+                "operationId": "updateStorageLocation",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Emplacement mis à jour"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Gestion Espace & Aménagement"
+                ],
+                "summary": "Supprimer une zone de rangement",
+                "description": "4. SUPPRIMER UN EMPLACEMENT",
+                "operationId": "deleteStorageLocation",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Emplacement supprimé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/pharmacien/storage-locations/assign-stock": {
+            "post": {
+                "tags": [
+                    "Gestion Espace & Aménagement"
+                ],
+                "summary": "Assigner un article en stock à un emplacement de rangement",
+                "description": "5. AMÉNAGEMENT : ASSOCIER UN STOCK À UN EMPLACEMENT PHYSIQUE\nLie (ou délie) un article en stock à un rayon/étagère spécifique",
+                "operationId": "assignStockToLocation",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "stock_id"
+                                ],
+                                "properties": {
+                                    "stock_id": {
+                                        "description": "ID de la ligne de stock concernée",
+                                        "type": "integer"
+                                    },
+                                    "storage_location_id": {
+                                        "description": "ID de l'emplacement (Mettre null pour désassigner)",
+                                        "type": "integer",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Rangement mis à jour avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/supa/admins": {
             "get": {
                 "tags": [
@@ -3018,6 +3196,10 @@
         {
             "name": "Stocks",
             "description": "Consultation des niveaux de stocks par succursale et par lot"
+        },
+        {
+            "name": "Gestion Espace & Aménagement",
+            "description": "Outils de rangement et d'organisation physique des stocks pour les pharmaciens"
         },
         {
             "name": "Administrateurs (SUPA)",

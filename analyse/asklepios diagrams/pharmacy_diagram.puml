@@ -4,7 +4,7 @@ skinparam nodesep 50
 skinparam ranksep 50
 skinparam classAttributeIconSize 0
 
-title Architecture Globale Asklepios : SaaS, Catalogue, POS Complet & Trésorerie
+title Architecture Globale Asklepios : Logistique Multi-Emplacements & POS
 
 package "SaaS & Réseau (Points de Vente)" {
     class tenant {
@@ -21,7 +21,7 @@ package "SaaS & Réseau (Points de Vente)" {
     }
 }
 
-package "Catalogue, Catégories & Tarification (Cascade)" {
+package "Catalogue, Catégories & Contrôle Local" {
     class article_category {
         id: UnsignedBigInteger
         tenant_id: UnsignedBigInteger
@@ -39,17 +39,18 @@ package "Catalogue, Catégories & Tarification (Cascade)" {
         default_selling_price: float
         track_batches: Boolean
     }
-    class branch_price {
+    class branch_article {
         id: UnsignedBigInteger
         branch_id: UnsignedBigInteger
         article_id: UnsignedBigInteger
-        special_selling_price: float
+        special_selling_price: float_optional
+        default_storage_location_id: UnsignedBigInteger_optional
         is_active: Boolean
     }
     class batch {
         id: UnsignedBigInteger
         article_id: UnsignedBigInteger
-        batch_number: String ('N/A' si track_batches = false)
+        batch_number: String
         expiry_date: Date_optional
         purchase_price: float
     }
@@ -80,19 +81,28 @@ package "Approvisionnement (Commandes)" {
     }
 }
 
-package "Inventaire & Logistique" {
+package "Inventaire, Emplacements & Logistique" {
+    class storage_location {
+        id: UnsignedBigInteger
+        branch_id: UnsignedBigInteger
+        aisle: String (ex: 'Allée A')
+        shelf: String (ex: 'Étagère 03')
+        code: String (ex: 'A-03')
+    }
     class stock {
         id: UnsignedBigInteger
         branch_id: UnsignedBigInteger
         batch_id: UnsignedBigInteger
+        storage_location_id: UnsignedBigInteger_optional
         qty: float
     }
     class stock_movement {
         id: UnsignedBigInteger
         branch_id: UnsignedBigInteger
         batch_id: UnsignedBigInteger
+        storage_location_id: UnsignedBigInteger_optional
         qty: float
-        type: String ('PURCHASE_IN', 'SALE_OUT', 'TRANSFER_OUT', 'TRANSFER_IN')
+        type: String ('PURCHASE_IN', 'SALE_OUT', 'TRANSFER_OUT', 'TRANSFER_IN', 'INTERNAL_MOVE')
         reference_type: String 
         reference_id: UnsignedBigInteger
     }
@@ -164,7 +174,6 @@ package "Trésorerie & Dépôts Bancaires" {
         expense_justification: Text_optional
         status: String ('PENDING', 'VALIDATED')
         deposit_date: Date
-        proof_image_url: String_optional
     }
 }
  
@@ -175,14 +184,18 @@ article "1" *-- "*" batch : subdivisé en >
 pharmacy_branch "1" *-- "*" stock : stocke >
 batch "1" *-- "*" stock : quantifié par >
 
-' --- CATÉGORIES ---
+' --- EMPLACEMENTS DE RANGEMENT ---
+pharmacy_branch "1" *-- "*" storage_location : est compartimentée en >
+storage_location "1" <-- "*" stock : localise (réel) <
+storage_location "1" <-- "*" stock_movement : trace <
+
+' --- CATÉGORIES & CONTRÔLE LOCAL ---
 tenant "1" *-- "*" article_category : définit >
 article_category "1" *-- "*" article_category : contient >
 article_category "1" *-- "*" article : classe >
-
-' --- TARIFICATION LOCALE (CASCADE) ---
-pharmacy_branch "1" *-- "*" branch_price : surcharge le prix >
-article "1" *-- "*" branch_price : tarifé spécifiquement par >
+pharmacy_branch "1" *-- "*" branch_article : paramètre localement >
+article "1" *-- "*" branch_article : possède paramètres pour >
+storage_location "1" <-- "*" branch_article : définit emplacement par défaut <
 
 ' --- RELATIONS APPROVISIONNEMENT ---
 provider "1" *-- "*" purchase_order : reçoit >
