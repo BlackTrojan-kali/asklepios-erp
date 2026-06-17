@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Pharmacien\PurchaseOrderController;
 use App\Http\Controllers\Pharmacien\PurchaseReturnController;
+use App\Http\Controllers\Pharmacien\StockMovementController;
 use App\Http\Controllers\Pharmacien\StorageLocationController;
 use App\Http\Controllers\SUPA\AdminController;
 use App\Http\Controllers\SUPA\CountryController;
@@ -133,6 +134,15 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     Route::get('/stocks/global', [StockController::class, 'getGlobalStocks']);
 });
 Route::middleware(['auth:sanctum', 'role:admin,pharmacy'])->prefix('admin')->group(function () {
+    // ---------------------------------------------------------
+        // 3. PISTE D'AUDIT / MOUVEMENTS DE STOCK (STOCK MOVEMENTS)
+        // ---------------------------------------------------------
+        // EXPORTS
+        Route::get('/stock-movements/export/pdf', [StockMovementController::class, 'exportPdf']);
+        Route::get('/stock-movements/export/excel', [StockMovementController::class, 'exportExcel']);
+        
+        // LECTURE SEULE
+        Route::get('/stock-movements', [StockMovementController::class, 'index']);
     // ... tes autres routes existantes (pharmacy-branches, articles, batches) ...
 Route::get('/providers/paginated', [ProviderController::class, 'indexPaginated']);
     Route::get('/articles', [ArticleController::class, 'index']);

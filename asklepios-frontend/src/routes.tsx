@@ -25,6 +25,8 @@ import PurchaseOrders from "./Pages/PHARMACY/PurchaseOrders";
 import PurchaseReturns from "./Pages/PHARMACY/PurchaseReturns";
 import AdminPurchaseOrders from "./Pages/Admin/Pharmacies/Stock/AdminPurchaseOrders";
 import AdminPurchaseReturns from "./Pages/Admin/Pharmacies/AdminPurchaseReturns";
+import StockMovements from "./Pages/Admin/Pharmacies/Stock/StockMovements";
+import AdminStockMovements from "./Pages/Admin/Pharmacies/Magasin/AdminStockMovements";
 
 const routes = createBrowserRouter([
    {
@@ -83,6 +85,11 @@ const routes = createBrowserRouter([
         {
             path:"centers",
             element:<Centers/>
+        },
+        
+        {
+            path:"movements",
+            element:<AdminStockMovements/>
         },
         {
             path:"departments",
@@ -144,6 +151,10 @@ const routes = createBrowserRouter([
         {
             path:"",
             element:<MagasinHome/>
+        },
+        {
+            path:"movements",
+            element:<StockMovements/>
         },
         {
             path:"storage_location",

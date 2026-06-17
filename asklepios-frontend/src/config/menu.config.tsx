@@ -92,6 +92,10 @@ export const MENU_CONFIG: MenuItemType[] = [
                 path:"/admin/pharmacy/versements"
             },
             {
+                title:"Movements",
+                path:"/admin/movements",
+            },
+            {
                 title:"Stocks",
                 path:"/admin/pharmacy/stocks",
             },
@@ -111,6 +115,9 @@ export const MENU_CONFIG: MenuItemType[] = [
             {
                 title:"stocks",
                 path:"/pharmacy"
+            },{
+                title:"Movements",
+                path:"/pharmacy/movements",
             },
             {
                 title:"emplacements",
