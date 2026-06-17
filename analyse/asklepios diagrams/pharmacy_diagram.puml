@@ -4,7 +4,7 @@ skinparam nodesep 50
 skinparam ranksep 50
 skinparam classAttributeIconSize 0
 
-title Architecture Globale Asklepios : Logistique Multi-Emplacements & POS
+title Architecture Globale Asklepios : Approvisionnement, Validation des Réceptions & Retours
 
 package "SaaS & Réseau (Points de Vente)" {
     class tenant {
@@ -27,7 +27,6 @@ package "Catalogue, Catégories & Contrôle Local" {
         tenant_id: UnsignedBigInteger
         parent_id: UnsignedBigInteger_optional
         name: String
-        description: String_optional
     }
     class article {
         id: UnsignedBigInteger
@@ -56,7 +55,7 @@ package "Catalogue, Catégories & Contrôle Local" {
     }
 }
 
-package "Approvisionnement (Commandes)" {
+package "Approvisionnement & Retours Fournisseurs" {
     class provider {
         id: UnsignedBigInteger
         tenant_id: UnsignedBigInteger
@@ -68,7 +67,7 @@ package "Approvisionnement (Commandes)" {
         tenant_id: UnsignedBigInteger
         provider_id: UnsignedBigInteger
         destination_branch_id: UnsignedBigInteger
-        status: String
+        status: String ('PENDING', 'PARTIALLY_RECEIVED', 'RECEIVED', 'CANCELLED')
         total_amount: float
     }
     class purchase_order_line {
@@ -79,15 +78,31 @@ package "Approvisionnement (Commandes)" {
         qty_received: float
         unit_cost: float
     }
+    class purchase_return {
+        id: UnsignedBigInteger
+        tenant_id: UnsignedBigInteger
+        provider_id: UnsignedBigInteger
+        source_branch_id: UnsignedBigInteger
+        purchase_order_id: UnsignedBigInteger_optional
+        status: String ('PENDING', 'SHIPPED', 'CREDITED')
+        return_date: Date
+    }
+    class purchase_return_line {
+        id: UnsignedBigInteger
+        purchase_return_id: UnsignedBigInteger
+        batch_id: UnsignedBigInteger
+        qty_returned: float
+        reason: String
+    }
 }
 
 package "Inventaire, Emplacements & Logistique" {
     class storage_location {
         id: UnsignedBigInteger
         branch_id: UnsignedBigInteger
-        aisle: String (ex: 'Allée A')
-        shelf: String (ex: 'Étagère 03')
-        code: String (ex: 'A-03')
+        aisle: String
+        shelf: String
+        code: String
     }
     class stock {
         id: UnsignedBigInteger
@@ -102,7 +117,7 @@ package "Inventaire, Emplacements & Logistique" {
         batch_id: UnsignedBigInteger
         storage_location_id: UnsignedBigInteger_optional
         qty: float
-        type: String ('PURCHASE_IN', 'SALE_OUT', 'TRANSFER_OUT', 'TRANSFER_IN', 'INTERNAL_MOVE')
+        type: String ('PURCHASE_IN', 'SALE_OUT', 'TRANSFER_OUT', 'TRANSFER_IN', 'PURCHASE_RETURN_OUT')
         reference_type: String 
         reference_id: UnsignedBigInteger
     }
@@ -121,7 +136,7 @@ package "Inventaire, Emplacements & Logistique" {
     }
 }
 
-package "Caisse & Ventes (Logique POS Complète)" {
+package "Caisse & Ventes (Logique POS)" {
     class cash_register {
         id: UnsignedBigInteger
         branch_id: UnsignedBigInteger
@@ -142,7 +157,7 @@ package "Caisse & Ventes (Logique POS Complète)" {
         branch_id: UnsignedBigInteger
         session_id: UnsignedBigInteger
         total_amount: float
-        payment_method: String ('CASH', 'MOBILE_MONEY', 'CARD')
+        payment_method: String
         created_at: Datetime
     }
     class pos_sale_item {
@@ -172,7 +187,7 @@ package "Trésorerie & Dépôts Bancaires" {
         deposited_amount: float
         expense_amount: float
         expense_justification: Text_optional
-        status: String ('PENDING', 'VALIDATED')
+        status: String
         deposit_date: Date
     }
 }
@@ -197,10 +212,16 @@ pharmacy_branch "1" *-- "*" branch_article : paramètre localement >
 article "1" *-- "*" branch_article : possède paramètres pour >
 storage_location "1" <-- "*" branch_article : définit emplacement par défaut <
 
-' --- RELATIONS APPROVISIONNEMENT ---
+' --- RELATIONS APPROVISIONNEMENT & RETOURS ---
 provider "1" *-- "*" purchase_order : reçoit >
 purchase_order "1" *-- "1..*" purchase_order_line : contient >
 article "1" <-- "*" purchase_order_line : commande <
+
+provider "1" *-- "*" purchase_return : reçoit retour >
+purchase_order "1" <-- "*" purchase_return : lié optionnellement à <
+purchase_return "1" *-- "1..*" purchase_return_line : contient >
+batch "1" <-- "*" purchase_return_line : restitue <
+pharmacy_branch "1" <-- "*" purchase_return : expédié depuis <
 
 ' --- RELATIONS LOGISTIQUES (Transferts) ---
 pharmacy_branch "1" <-- "*" stock_transfer : part de <

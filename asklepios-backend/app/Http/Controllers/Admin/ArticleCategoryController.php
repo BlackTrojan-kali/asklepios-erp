@@ -14,26 +14,30 @@ class ArticleCategoryController extends Controller
     /**
      * Obtenir l'ID de l'hôpital de l'administrateur connecté
      */
+    
     private function getHospitalId()
     {
         return auth()->user()->profile_admin->hospital_id;
     }
 
     /**
-     * Lister les catégories (avec recherche)
+     * Lister les catégories (Paginées, pour le tableau d'affichage)
      */
     #[OA\Get(
         path: "/api/admin/article-categories",
         operationId: "getAdminArticleCategories",
-        summary: "Lister les catégories d'articles",
+        summary: "Lister les catégories d'articles (Paginées)",
         security: [["bearerAuth" => []]],
         tags: ["Catégories d'Articles (Admin)"]
     )]
     #[OA\Parameter(name: "search", in: "query", required: false, schema: new OA\Schema(type: "string"))]
-    #[OA\Response(response: 200, description: "Liste récupérée avec succès")]
+    #[OA\Parameter(name: "per_page", description: "Nombre de résultats par page (défaut: 10)", in: "query", required: false, schema: new OA\Schema(type: "integer", default: 10))]
+    #[OA\Parameter(name: "page", description: "Numéro de la page à récupérer (défaut: 1)", in: "query", required: false, schema: new OA\Schema(type: "integer", default: 1))]
+    #[OA\Response(response: 200, description: "Liste paginée récupérée avec succès")]
     public function index(Request $request)
     {
         $hospitalId = $this->getHospitalId();
+        $perPage = $request->query('per_page', 10);
 
         // On charge la relation parentCategory pour l'affichage frontend
         $query = ArticleCategory::with('parentCategory')->where('hospital_id', $hospitalId);
@@ -47,7 +51,30 @@ class ArticleCategoryController extends Controller
             });
         }
 
-        return response()->json($query->latest()->get(), 200);
+        // Retourne le résultat paginé
+        return response()->json($query->latest()->paginate($perPage), 200);
+    }
+
+    /**
+     * Lister TOUTES les catégories (Sans pagination, pour les select du frontend)
+     */
+    #[OA\Get(
+        path: "/api/admin/article-categories/all",
+        operationId: "getAllAdminArticleCategories",
+        summary: "Lister toutes les catégories (Sans pagination)",
+        security: [["bearerAuth" => []]],
+        tags: ["Catégories d'Articles (Admin)"]
+    )]
+    #[OA\Response(response: 200, description: "Liste complète récupérée avec succès")]
+    public function all(Request $request)
+    {
+        $hospitalId = $this->getHospitalId();
+
+        $categories = ArticleCategory::where('hospital_id', $hospitalId)
+            ->latest()
+            ->get();
+
+        return response()->json($categories, 200);
     }
 
     /**

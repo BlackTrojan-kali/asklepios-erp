@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Services\BatchService;
 use App\Models\Pharmacy\Article;
+use App\Models\Pharmacy\Stock;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Storage;
@@ -24,33 +25,69 @@ class ArticleController extends Controller
     private function getHospitalId()
     {
         if(auth()->user()->role->name == "admin"){
-        return auth()->user()->profile_admin->hospital_id ;}
+            return auth()->user()->profile_admin->hospital_id ;
+        }
         else if(auth()->user()->role->name ==  "pharmacy"){
             return auth()->user()->profile_pharm->hospital_id;
-            
         }
     }
 
     /**
-     * Lister et rechercher des articles
+     * Lister et rechercher des articles (Paginés)
      */
     #[OA\Get(
         path: "/api/admin/articles",
         operationId: "getAdminArticles",
-        summary: "Lister les articles",
+        summary: "Lister les articles (Paginés)",
         security: [["bearerAuth" => []]],
         tags: ["Articles (Admin)"]
     )]
     #[OA\Parameter(name: "search", in: "query", required: false, description: "Nom ou Code-barres", schema: new OA\Schema(type: "string"))]
     #[OA\Parameter(name: "category_id", in: "query", required: false, schema: new OA\Schema(type: "integer"))]
-    #[OA\Response(response: 200, description: "Liste récupérée avec succès")]
+    #[OA\Parameter(name: "per_page", description: "Nombre de résultats par page (défaut: 10)", in: "query", required: false, schema: new OA\Schema(type: "integer", default: 10))]
+    #[OA\Parameter(name: "page", description: "Numéro de la page à récupérer (défaut: 1)", in: "query", required: false, schema: new OA\Schema(type: "integer", default: 1))]
+    #[OA\Response(response: 200, description: "Liste paginée récupérée avec succès")]
     public function index(Request $request)
     {
         $hospitalId = $this->getHospitalId();
+        $perPage = $request->query('per_page', 10);
         
+        // 1. Déterminer si on filtre le stock pour une succursale précise 
+        // (ex: Pharmacien connecté ou Admin qui filtre par succursale)
+        $branchId = null;
+        $user = auth()->user();
+        if ($user && $user->profile_pharm) {
+            $branchId = $user->profile_pharm->branch_id;
+        } elseif ($request->filled('branch_id')) {
+            $branchId = $request->query('branch_id');
+        }
 
         $query = Article::with('category')->where('hospital_id', $hospitalId);
 
+        // 2. SOUS-REQUÊTE : Calculer la quantité totale en stock (stock_qty)
+        $query->addSelect([
+            'stock_qty' => Stock::selectRaw('COALESCE(SUM(qty), 0)')
+                ->join('batches', 'batches.id', '=', 'stocks.batch_id')
+                ->whereColumn('batches.article_id', 'articles.id')
+                ->when($branchId, function ($q) use ($branchId) {
+                    $q->where('stocks.pharmacy_branch_id', $branchId);
+                })
+        ]);
+
+        // 3. SOUS-REQUÊTE : Vérifier s'il y a des lots qui expirent bientôt (has_expiring_batches)
+        $query->addSelect([
+            'has_expiring_batches' => Stock::selectRaw('IF(COUNT(*) > 0, 1, 0)')
+                ->join('batches', 'batches.id', '=', 'stocks.batch_id')
+                ->whereColumn('batches.article_id', 'articles.id')
+                ->where('stocks.qty', '>', 0) // On ne compte que s'il en reste en stock
+                ->whereNotNull('batches.expire_date')
+                ->where('batches.expire_date', '<=', now()->addMonths(3))
+                ->when($branchId, function ($q) use ($branchId) {
+                    $q->where('stocks.pharmacy_branch_id', $branchId);
+                })
+        ]);
+
+        // --- FILTRES EXISTANTS ---
         if ($request->filled('search')) {
             $search = $request->query('search');
             $query->where(function ($q) use ($search) {
@@ -63,7 +100,75 @@ class ArticleController extends Controller
             $query->where('category_id', $request->query('category_id'));
         }
 
-        return response()->json($query->latest()->get(), 200);
+        // 4. Exécuter la requête avec pagination
+        $articles = $query->latest()->paginate($perPage);
+
+        // 5. Typer correctement les attributs virtuels pour React/TypeScript
+        // On utilise getCollection() pour modifier les items à l'intérieur du paginateur Laravel
+        $articles->getCollection()->transform(function ($article) {
+            $article->stock_qty = (float) $article->stock_qty;
+            $article->has_expiring_batches = (bool) $article->has_expiring_batches;
+            return $article;
+        });
+
+        return response()->json($articles, 200);
+    }
+
+    /**
+     * Lister tous les articles (Sans pagination, pour les select)
+     */
+    #[OA\Get(
+        path: "/api/admin/articles/all",
+        operationId: "getAllAdminArticles",
+        summary: "Lister tous les articles (Sans pagination)",
+        security: [["bearerAuth" => []]],
+        tags: ["Articles (Admin)"]
+    )]
+    #[OA\Response(response: 200, description: "Liste complète récupérée avec succès")]
+    public function all(Request $request)
+    {
+        $hospitalId = $this->getHospitalId();
+        
+        $branchId = null;
+        $user = auth()->user();
+        if ($user && $user->profile_pharm) {
+            $branchId = $user->profile_pharm->branch_id;
+        } elseif ($request->filled('branch_id')) {
+            $branchId = $request->query('branch_id');
+        }
+
+        $query = Article::with('category')->where('hospital_id', $hospitalId);
+
+        $query->addSelect([
+            'stock_qty' => Stock::selectRaw('COALESCE(SUM(qty), 0)')
+                ->join('batches', 'batches.id', '=', 'stocks.batch_id')
+                ->whereColumn('batches.article_id', 'articles.id')
+                ->when($branchId, function ($q) use ($branchId) {
+                    $q->where('stocks.pharmacy_branch_id', $branchId);
+                })
+        ]);
+
+        $query->addSelect([
+            'has_expiring_batches' => Stock::selectRaw('IF(COUNT(*) > 0, 1, 0)')
+                ->join('batches', 'batches.id', '=', 'stocks.batch_id')
+                ->whereColumn('batches.article_id', 'articles.id')
+                ->where('stocks.qty', '>', 0)
+                ->whereNotNull('batches.expire_date')
+                ->where('batches.expire_date', '<=', now()->addMonths(3))
+                ->when($branchId, function ($q) use ($branchId) {
+                    $q->where('stocks.pharmacy_branch_id', $branchId);
+                })
+        ]);
+
+        $articles = $query->latest()->get();
+
+        $articles->transform(function ($article) {
+            $article->stock_qty = (float) $article->stock_qty;
+            $article->has_expiring_batches = (bool) $article->has_expiring_batches;
+            return $article;
+        });
+
+        return response()->json($articles, 200);
     }
 
     /**
@@ -111,7 +216,9 @@ class ArticleController extends Controller
             'track_batches' => 'required | string', // Validation du nouveau champ
             'image' => 'nullable|image|mimes:jpeg,png,jpg,svg|max:2048',
         ]);
+        
         $validatedData['hospital_id'] = $hospitalId;
+        
         // On s'assure que ce soit bien casté en booléen
         $validatedData['track_batches'] = filter_var($validatedData['track_batches'], FILTER_VALIDATE_BOOLEAN);
 

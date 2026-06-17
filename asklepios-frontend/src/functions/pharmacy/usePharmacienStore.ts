@@ -4,23 +4,50 @@ import toast from "react-hot-toast";
 import api from "../../api/api"; // Ajuste le chemin selon ton arborescence
 import type { PharmacienDto, PharmacienPayload } from "../../types/PharmTypes";
 
+// Interface pour typage des métadonnées de pagination de Laravel
+export interface PaginationMeta {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+}
+
 const usePharmacienStore = () => {
     // --- ÉTATS ---
     const [pharmaciens, setPharmaciens] = useState<PharmacienDto[]>([]);
+    
+    // Nouvel état pour gérer la pagination
+    const [pagination, setPagination] = useState<PaginationMeta>({
+        current_page: 1,
+        last_page: 1,
+        per_page: 15,
+        total: 0
+    });
+
     const [loading, setLoading] = useState<boolean>(false);
     const [actionLoading, setActionLoading] = useState<boolean>(false);
 
-    // --- 1. LISTER & FILTRER (GET /admin/pharmaciens) ---
+    // --- 1. LISTER & FILTRER (GET /admin/pharmaciens/paginated) ---
     const getPharmaciens = useCallback(async (
-        filters: { search?: string, position?: string, branch_id?: number | string } = {}
+        filters: { search?: string, position?: string, branch_id?: number | string, page?: number, per_page?: number } = {}
     ) => {
         try {
             setLoading(true);
-            const res = await api.get<PharmacienDto[]>("/admin/pharmaciens", {
+            // Utilisation du nouvel endpoint paginé
+            const res = await api.get("/admin/pharmaciens/paginated", {
                 params: filters
             });
             
-            setPharmaciens(res.data);
+            // Laravel retourne le tableau d'items dans la propriété "data"
+            setPharmaciens(res.data.data);
+            
+            // Mise à jour des informations de pagination
+            setPagination({
+                current_page: res.data.current_page,
+                last_page: res.data.last_page,
+                per_page: res.data.per_page,
+                total: res.data.total
+            });
         } catch (error) {
             if (axios.isAxiosError(error) && !axios.isCancel(error)) {
                 toast.error("Erreur lors de la récupération des pharmaciens");
@@ -35,7 +62,6 @@ const usePharmacienStore = () => {
         try {
             setActionLoading(true);
             
-            // On s'assure que password est bien défini pour la création
             if (!payload.password) {
                 toast.error("Le mot de passe est obligatoire pour la création.");
                 return false;
@@ -44,7 +70,8 @@ const usePharmacienStore = () => {
             await api.post("/admin/pharmaciens", payload);
             
             toast.success("Pharmacien enregistré avec succès !");
-            await getPharmaciens(); 
+            // Rafraîchir la liste en restant sur la première page
+            await getPharmaciens({ page: 1 }); 
             return true;
         } catch (error) {
             if (axios.isAxiosError(error)) {
@@ -61,10 +88,8 @@ const usePharmacienStore = () => {
         try {
             setActionLoading(true);
             
-            // Cloner le payload pour pouvoir le nettoyer
             const updateData = { ...payload };
             
-            // Si le mot de passe est vide, on le retire de la requête pour ne pas l'écraser
             if (!updateData.password || updateData.password.trim() === "") {
                 delete updateData.password;
             }
@@ -72,7 +97,8 @@ const usePharmacienStore = () => {
             await api.put(`/admin/pharmaciens/${id}`, updateData);
             
             toast.success("Pharmacien mis à jour avec succès !");
-            await getPharmaciens(); 
+            // Rafraîchir la liste en conservant la page actuelle
+            await getPharmaciens({ page: pagination.current_page }); 
             return true;
         } catch (error) {
             if (axios.isAxiosError(error)) {
@@ -91,7 +117,8 @@ const usePharmacienStore = () => {
             await api.delete(`/admin/pharmaciens/${id}`);
             
             toast.success("Pharmacien supprimé avec succès !");
-            await getPharmaciens(); 
+            // Rafraîchir la liste sur la page actuelle
+            await getPharmaciens({ page: pagination.current_page }); 
             return true;
         } catch (error) {
             if (axios.isAxiosError(error)) {
@@ -105,6 +132,7 @@ const usePharmacienStore = () => {
 
     return {
         pharmaciens,
+        pagination, // <-- On exporte l'état de la pagination pour l'utiliser dans le composant
         loading,
         actionLoading,
         getPharmaciens,

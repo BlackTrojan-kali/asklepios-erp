@@ -10,7 +10,10 @@ import {
     Shield, 
     MapPin, 
     Loader2,
-    UserCircle
+    UserCircle,
+    ChevronLeft,
+    ChevronRight,
+    RefreshCw  // <-- Nouvelle icône pour le rafraîchissement
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
@@ -28,13 +31,16 @@ import { UpdatePharmacienModal } from '../../../components/modals/Pharmacy/Pharm
 const Pharmaciens = () => {
     // Hooks des stores
     const { 
-        pharmaciens, loading, 
-        getPharmaciens, deletePharmacien 
+        pharmaciens, 
+        pagination, 
+        loading, 
+        getPharmaciens, 
+        deletePharmacien 
     } = usePharmacienStore();
 
     // Récupération des succursales via ton usePharmacyStore
     const { 
-        pharmacyBranches: branches, // <-- ALIAS pour utiliser 'branches' dans le code
+        pharmacyBranches: branches, 
         getPharmacyBranches: getBranches 
     } = usePharmacyStore();
 
@@ -52,19 +58,29 @@ const Pharmaciens = () => {
     // Chargement initial des données
     useEffect(() => {
         getPharmaciens({});
-        getBranches({}); // On charge les succursales
+        getBranches({}); 
     }, [getPharmaciens, getBranches]);
 
-    // Soumission du formulaire de filtre
+    // Action de rafraîchissement manuel
+    const handleRefresh = () => {
+        getPharmaciens({ ...filters, page: pagination.current_page || 1 });
+    };
+
+    // Soumission du formulaire de filtre (on force la page 1)
     const handleFilterSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        getPharmaciens(filters);
+        getPharmaciens({ ...filters, page: 1 });
     };
 
     // Réinitialisation des filtres
     const handleResetFilters = () => {
         setFilters({ search: '', position: '', branch_id: '' });
-        getPharmaciens({});
+        getPharmaciens({ page: 1 });
+    };
+
+    // Gestion du changement de page
+    const handlePageChange = (page: number) => {
+        getPharmaciens({ ...filters, page });
     };
 
     // Action : Supprimer un pharmacien
@@ -87,6 +103,10 @@ const Pharmaciens = () => {
         }
     };
 
+    // Calculs pour le texte d'affichage de la pagination
+    const fromItem = pagination.total === 0 ? 0 : (pagination.current_page - 1) * pagination.per_page + 1;
+    const toItem = Math.min(pagination.current_page * pagination.per_page, pagination.total);
+
     return (
         <div className="space-y-6">
             
@@ -102,13 +122,26 @@ const Pharmaciens = () => {
                     </div>
                 </div>
                 
-                <button 
-                    onClick={() => setIsCreateOpen(true)}
-                    className="flex items-center gap-2 bg-[#00a896] hover:bg-[#008f7e] text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
-                >
-                    <Plus size={18} />
-                    Nouveau Pharmacien
-                </button>
+                {/* Actions de l'en-tête (Rafraîchir + Nouveau) */}
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                    <button 
+                        type="button"
+                        onClick={handleRefresh}
+                        disabled={loading}
+                        title="Rafraîchir la liste"
+                        className="p-2 text-slate-600 hover:bg-slate-100 dark:text-gray-300 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors bg-white dark:bg-gray-800 disabled:opacity-50"
+                    >
+                        <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+                    </button>
+
+                    <button 
+                        onClick={() => setIsCreateOpen(true)}
+                        className="flex items-center gap-2 bg-[#00a896] hover:bg-[#008f7e] text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm whitespace-nowrap"
+                    >
+                        <Plus size={18} />
+                        Nouveau Pharmacien
+                    </button>
+                </div>
             </div>
 
             {/* BARRE DE FILTRES */}
@@ -177,7 +210,7 @@ const Pharmaciens = () => {
                 </form>
             </div>
 
-            {/* TABLEAU DES PHARMACIENS */}
+            {/* TABLEAU DES PHARMACIENS & PAGINATION */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
@@ -209,8 +242,6 @@ const Pharmaciens = () => {
                             ) : (
                                 pharmaciens.map((pharmacien) => (
                                     <tr key={pharmacien.id} className="hover:bg-slate-50 dark:hover:bg-gray-700/30 transition-colors">
-                                        
-                                        {/* IDENTITÉ ET CONTACT */}
                                         <td className="p-4">
                                             <div className="flex items-center gap-3">
                                                 <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-gray-700 flex items-center justify-center text-slate-500 dark:text-gray-300">
@@ -233,7 +264,6 @@ const Pharmaciens = () => {
                                             </div>
                                         </td>
                                         
-                                        {/* POSTE (RÔLE) */}
                                         <td className="p-4">
                                             <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border ${
                                                 pharmacien.position === 'magasin' 
@@ -245,7 +275,6 @@ const Pharmaciens = () => {
                                             </div>
                                         </td>
 
-                                        {/* SUCCURSALE D'AFFECTATION */}
                                         <td className="p-4">
                                             <div className="flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-gray-300">
                                                 <MapPin size={16} className="text-gray-400" />
@@ -253,7 +282,6 @@ const Pharmaciens = () => {
                                             </div>
                                         </td>
 
-                                        {/* ACTIONS */}
                                         <td className="p-4 text-right">
                                             <div className="flex justify-end items-center gap-2">
                                                 <button 
@@ -278,6 +306,66 @@ const Pharmaciens = () => {
                         </tbody>
                     </table>
                 </div>
+
+                {/* --- BARRE DE PAGINATION --- */}
+                {pagination.total > 0 && (
+                    <div className="bg-slate-50 dark:bg-gray-900/30 px-4 py-3 flex items-center justify-between border-t border-gray-100 dark:border-gray-700 sm:px-6">
+                        <div className="flex-1 flex justify-between sm:hidden">
+                            <button
+                                onClick={() => handlePageChange(pagination.current_page - 1)}
+                                disabled={pagination.current_page === 1 || loading}
+                                className="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                            >
+                                Précédent
+                            </button>
+                            <button
+                                onClick={() => handlePageChange(pagination.current_page + 1)}
+                                disabled={pagination.current_page === pagination.last_page || loading}
+                                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                            >
+                                Suivant
+                            </button>
+                        </div>
+                        <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                            <div>
+                                <p className="text-sm text-gray-700 dark:text-gray-400">
+                                    Affichage de{' '}
+                                    <span className="font-semibold text-slate-800 dark:text-white">{fromItem}</span>
+                                    {' '}à{' '}
+                                    <span className="font-semibold text-slate-800 dark:text-white">{toItem}</span>
+                                    {' '}sur{' '}
+                                    <span className="font-semibold text-slate-800 dark:text-white">{pagination.total}</span>
+                                    {' '}éléments
+                                </p>
+                            </div>
+                            <div>
+                                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                    <button
+                                        onClick={() => handlePageChange(pagination.current_page - 1)}
+                                        disabled={pagination.current_page === 1 || loading}
+                                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
+                                    >
+                                        <span className="sr-only">Précédent</span>
+                                        <ChevronLeft size={16} />
+                                    </button>
+                                    
+                                    <div className="px-4 py-2 border-t border-b border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-slate-700 dark:text-gray-300 select-none">
+                                        Page {pagination.current_page} sur {pagination.last_page}
+                                    </div>
+
+                                    <button
+                                        onClick={() => handlePageChange(pagination.current_page + 1)}
+                                        disabled={pagination.current_page === pagination.last_page || loading}
+                                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 transition-colors"
+                                    >
+                                        <span className="sr-only">Suivant</span>
+                                        <ChevronRight size={16} />
+                                    </button>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* MODALES */}

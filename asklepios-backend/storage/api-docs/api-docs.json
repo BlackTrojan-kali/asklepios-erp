@@ -21,8 +21,8 @@
                 "tags": [
                     "Catégories d'Articles (Admin)"
                 ],
-                "summary": "Lister les catégories d'articles",
-                "description": "Lister les catégories (avec recherche)",
+                "summary": "Lister les catégories d'articles (Paginées)",
+                "description": "Lister les catégories (Paginées, pour le tableau d'affichage)",
                 "operationId": "getAdminArticleCategories",
                 "parameters": [
                     {
@@ -32,11 +32,31 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Nombre de résultats par page (défaut: 10)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Numéro de la page à récupérer (défaut: 1)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Liste récupérée avec succès"
+                        "description": "Liste paginée récupérée avec succès"
                     }
                 },
                 "security": [
@@ -83,6 +103,26 @@
                 "responses": {
                     "201": {
                         "description": "Catégorie créée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/article-categories/all": {
+            "get": {
+                "tags": [
+                    "Catégories d'Articles (Admin)"
+                ],
+                "summary": "Lister toutes les catégories (Sans pagination)",
+                "description": "Lister TOUTES les catégories (Sans pagination, pour les select du frontend)",
+                "operationId": "getAllAdminArticleCategories",
+                "responses": {
+                    "200": {
+                        "description": "Liste complète récupérée avec succès"
                     }
                 },
                 "security": [
@@ -177,8 +217,8 @@
                 "tags": [
                     "Articles (Admin)"
                 ],
-                "summary": "Lister les articles",
-                "description": "Lister et rechercher des articles",
+                "summary": "Lister les articles (Paginés)",
+                "description": "Lister et rechercher des articles (Paginés)",
                 "operationId": "getAdminArticles",
                 "parameters": [
                     {
@@ -197,11 +237,31 @@
                         "schema": {
                             "type": "integer"
                         }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Nombre de résultats par page (défaut: 10)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Numéro de la page à récupérer (défaut: 1)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Liste récupérée avec succès"
+                        "description": "Liste paginée récupérée avec succès"
                     }
                 },
                 "security": [
@@ -260,6 +320,26 @@
                 "responses": {
                     "201": {
                         "description": "Article créé avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/articles/all": {
+            "get": {
+                "tags": [
+                    "Articles (Admin)"
+                ],
+                "summary": "Lister tous les articles (Sans pagination)",
+                "description": "Lister tous les articles (Sans pagination, pour les select)",
+                "operationId": "getAllAdminArticles",
+                "responses": {
+                    "200": {
+                        "description": "Liste complète récupérée avec succès"
                     }
                 },
                 "security": [
@@ -332,8 +412,8 @@
                 "tags": [
                     "Lots d'Articles (Admin)"
                 ],
-                "summary": "Lister les lots d'articles",
-                "description": "Lister et filtrer les lots",
+                "summary": "Lister les lots d'articles (Paginés)",
+                "description": "Lister et filtrer les lots (Paginés)",
                 "operationId": "getAdminBatches",
                 "parameters": [
                     {
@@ -353,11 +433,31 @@
                         "schema": {
                             "type": "integer"
                         }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Nombre de résultats par page (défaut: 10)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Numéro de la page à récupérer (défaut: 1)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Liste récupérée avec succès"
+                        "description": "Liste paginée récupérée avec succès"
                     }
                 },
                 "security": [
@@ -412,6 +512,37 @@
                 "responses": {
                     "201": {
                         "description": "Lot créé avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/batches/all": {
+            "get": {
+                "tags": [
+                    "Lots d'Articles (Admin)"
+                ],
+                "summary": "Lister tous les lots d'articles (Sans pagination)",
+                "description": "Lister tous les lots (Sans pagination)",
+                "operationId": "getAllAdminBatches",
+                "parameters": [
+                    {
+                        "name": "article_id",
+                        "in": "query",
+                        "description": "Filtrer par article spécifique",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste complète récupérée avec succès"
                     }
                 },
                 "security": [
@@ -970,7 +1101,7 @@
                     "Pharmaciens (Admin)"
                 ],
                 "summary": "Lister les pharmaciens",
-                "description": "Lister et filtrer les pharmaciens",
+                "description": "Lister et filtrer les pharmaciens (Sans pagination)",
                 "operationId": "getAdminPharmaciens",
                 "parameters": [
                     {
@@ -1072,6 +1203,67 @@
                 "responses": {
                     "201": {
                         "description": "Pharmacien créé avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/pharmaciens/paginated": {
+            "get": {
+                "tags": [
+                    "Pharmaciens (Admin)"
+                ],
+                "summary": "Lister les pharmaciens avec pagination",
+                "description": "Lister et filtrer les pharmaciens (AVEC pagination)",
+                "operationId": "getAdminPharmaciensPaginated",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Nom, email ou téléphone",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "position",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "magasin",
+                                "vente"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Nombre d'éléments par page (défaut: 15)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste paginée récupérée avec succès"
                     }
                 },
                 "security": [
@@ -1440,6 +1632,57 @@
                 ]
             }
         },
+        "/api/admin/providers/paginated": {
+            "get": {
+                "tags": [
+                    "Fournisseurs (Admin)"
+                ],
+                "summary": "Lister les fournisseurs avec pagination",
+                "description": "Lister et filtrer les fournisseurs (AVEC pagination)",
+                "operationId": "getAdminProvidersPaginated",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Recherche par nom, téléphone ou NIU",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Numéro de la page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Nombre d'éléments par page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste paginée récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/admin/providers": {
             "get": {
                 "tags": [
@@ -1609,8 +1852,8 @@
                 "tags": [
                     "Stocks"
                 ],
-                "summary": "Voir les stocks globaux (Toutes succursales)",
-                "description": "1. VUE GLOBALE (Pour les Administrateurs ou Superviseurs)\r\nListe tous les stocks de l'hôpital, avec possibilité de filtrer par succursale.",
+                "summary": "Voir les stocks globaux paginés (Toutes succursales)",
+                "description": "1. VUE GLOBALE PAGINÉE (Pour les Administrateurs ou Superviseurs)\r\nListe tous les stocks de l'hôpital, avec possibilité de filtrer par succursale.",
                 "operationId": "getGlobalStocks",
                 "parameters": [
                     {
@@ -1639,11 +1882,31 @@
                         "schema": {
                             "type": "integer"
                         }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Numéro de la page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Nombre d'éléments par page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Liste des stocks récupérée avec succès"
+                        "description": "Liste paginée des stocks récupérée avec succès"
                     }
                 },
                 "security": [
@@ -1658,8 +1921,8 @@
                 "tags": [
                     "Stocks"
                 ],
-                "summary": "Voir les stocks de ma succursale",
-                "description": "2. VUE LOCALE (Pour les Pharmaciens / Vendeurs)\r\nListe uniquement les stocks de la succursale du pharmacien connecté.",
+                "summary": "Voir les stocks paginés de ma succursale",
+                "description": "2. VUE LOCALE PAGINÉE (Pour les Pharmaciens / Vendeurs)\r\nListe uniquement les stocks de la succursale du pharmacien connecté.",
                 "operationId": "getMyBranchStocks",
                 "parameters": [
                     {
@@ -1679,11 +1942,31 @@
                         "schema": {
                             "type": "integer"
                         }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Numéro de la page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Nombre d'éléments par page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Liste des stocks récupérée avec succès"
+                        "description": "Liste paginée des stocks récupérée avec succès"
                     }
                 },
                 "security": [
@@ -1790,6 +2073,342 @@
                     },
                     "401": {
                         "description": "Non autorisé (Le token est manquant ou invalide)"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/purchase-orders": {
+            "get": {
+                "tags": [
+                    "Commandes Fournisseurs"
+                ],
+                "summary": "Lister les commandes (Filtrable avec Pagination)",
+                "operationId": "75ef4b95a8b16eeab89a5ded5dbdc9bf",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Numéro de la page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Nombre d'éléments par page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filtrer par statut (ex: PENDING, RECEIVED)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "provider_id",
+                        "in": "query",
+                        "description": "Filtrer par fournisseur",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste des commandes récupérée"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Commandes Fournisseurs"
+                ],
+                "summary": "Créer une commande",
+                "operationId": "77591da94b6c5cb5785428116df32962",
+                "responses": {
+                    "201": {
+                        "description": "Commande créée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/purchase-orders/{id}": {
+            "put": {
+                "tags": [
+                    "Commandes Fournisseurs"
+                ],
+                "summary": "Modifier une commande en attente",
+                "operationId": "8eecac70a1bc49b8ae2a0b4fa10a953e",
+                "responses": {
+                    "200": {
+                        "description": "Commande mise à jour"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Commandes Fournisseurs"
+                ],
+                "summary": "Supprimer une commande",
+                "operationId": "ab10f768eae05e0ac2d005e8e20a9e60",
+                "responses": {
+                    "200": {
+                        "description": "Commande supprimée"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/purchase-orders/{id}/cancel": {
+            "post": {
+                "tags": [
+                    "Commandes Fournisseurs"
+                ],
+                "summary": "Annuler une commande (Sans mouvement de stock)",
+                "operationId": "fa8ff13a2513a56ad4b347f7d177e7ba",
+                "responses": {
+                    "200": {
+                        "description": "Action effectuée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/purchase-orders/{id}/validate": {
+            "post": {
+                "tags": [
+                    "Commandes Fournisseurs"
+                ],
+                "summary": "Réceptionner la commande (Entrée en stock)",
+                "operationId": "dc705d50c2385d09f4b27f0ab0d59136",
+                "responses": {
+                    "200": {
+                        "description": "Action effectuée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/purchase-orders/export/pdf": {
+            "get": {
+                "tags": [
+                    "Commandes Fournisseurs"
+                ],
+                "summary": "Exporter l'historique détaillé en PDF",
+                "operationId": "b3e56624c0f300d987346d7312006fc4",
+                "responses": {
+                    "200": {
+                        "description": "Fichier généré avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/purchase-orders/export/excel": {
+            "get": {
+                "tags": [
+                    "Commandes Fournisseurs"
+                ],
+                "summary": "Exporter l'historique détaillé en Excel",
+                "operationId": "63aae7a2fc7f44eece1260569a6a1324",
+                "responses": {
+                    "200": {
+                        "description": "Fichier généré avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/purchase-returns": {
+            "get": {
+                "tags": [
+                    "Retours Fournisseurs"
+                ],
+                "summary": "Lister les retours fournisseurs",
+                "operationId": "1f8539b6f4ada9ef0569c930a11981b2",
+                "responses": {
+                    "200": {
+                        "description": "Liste des retours récupérée"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Retours Fournisseurs"
+                ],
+                "summary": "Initier un retour fournisseur",
+                "operationId": "b6de75aa307a94d2c928f1b717e895a4",
+                "responses": {
+                    "201": {
+                        "description": "Retour initié avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/purchase-returns/{id}": {
+            "put": {
+                "tags": [
+                    "Retours Fournisseurs"
+                ],
+                "summary": "Modifier un retour",
+                "operationId": "44a80010c8ac462058cda5e240b09704",
+                "responses": {
+                    "200": {
+                        "description": "Retour mis à jour"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Retours Fournisseurs"
+                ],
+                "summary": "Supprimer un retour",
+                "operationId": "75c3b7fef54be61a072a9c36ec384d8f",
+                "responses": {
+                    "200": {
+                        "description": "Retour supprimé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/purchase-returns/{id}/cancel": {
+            "post": {
+                "tags": [
+                    "Retours Fournisseurs"
+                ],
+                "summary": "Annuler un retour",
+                "operationId": "639e8b543ba1e5924be8a80431b8a972",
+                "responses": {
+                    "200": {
+                        "description": "Retour annulé avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/purchase-returns/{id}/validate": {
+            "post": {
+                "tags": [
+                    "Retours Fournisseurs"
+                ],
+                "summary": "Valider le retour (Sortie de stock)",
+                "operationId": "a534c47521e67c8580e1cfa902136928",
+                "responses": {
+                    "200": {
+                        "description": "Retour validé et stock déduit"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/purchase-returns/export/pdf": {
+            "get": {
+                "tags": [
+                    "Retours Fournisseurs"
+                ],
+                "summary": "Exporter les retours détaillés en PDF",
+                "operationId": "ea6dfaf7d1aa5cc18dde4496fbd6f7eb",
+                "responses": {
+                    "200": {
+                        "description": "Fichier PDF généré"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/purchase-returns/export/excel": {
+            "get": {
+                "tags": [
+                    "Retours Fournisseurs"
+                ],
+                "summary": "Exporter les retours détaillés en Excel",
+                "operationId": "6ee322aa7a081efa52c2c5ffe4855a73",
+                "responses": {
+                    "200": {
+                        "description": "Fichier Excel généré"
                     }
                 },
                 "security": [
@@ -3196,6 +3815,14 @@
         {
             "name": "Stocks",
             "description": "Consultation des niveaux de stocks par succursale et par lot"
+        },
+        {
+            "name": "Commandes Fournisseurs",
+            "description": "Gestion des approvisionnements (Admin & Pharmacien)"
+        },
+        {
+            "name": "Retours Fournisseurs",
+            "description": "Gestion des retours de marchandises (Admin & Pharmacy)"
         },
         {
             "name": "Gestion Espace & Aménagement",

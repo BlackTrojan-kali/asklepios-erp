@@ -89,9 +89,50 @@ class ProviderController extends Controller
      */
     private function getHospitalId()
     {
-        return auth()->user()->profile_admin->hospital_id;
+        if(auth()->user()->role->name == "admin"){
+        return auth()->user()->profile_admin->hospital_id ;}
+        else if(auth()->user()->role->name ==  "pharmacy"){
+            return auth()->user()->profile_pharm->hospital_id;
+            
+        }
     }
 
+    /**
+     * Lister et filtrer les fournisseurs (AVEC pagination)
+     */
+    #[OA\Get(
+        path: "/api/admin/providers/paginated",
+        operationId: "getAdminProvidersPaginated",
+        summary: "Lister les fournisseurs avec pagination",
+        security: [["bearerAuth" => []]],
+        tags: ["Fournisseurs (Admin)"]
+    )]
+    #[OA\Parameter(name: "search", in: "query", required: false, description: "Recherche par nom, téléphone ou NIU", schema: new OA\Schema(type: "string"))]
+    #[OA\Parameter(name: "page", in: "query", required: false, description: "Numéro de la page", schema: new OA\Schema(type: "integer", default: 1))]
+    #[OA\Parameter(name: "per_page", in: "query", required: false, description: "Nombre d'éléments par page", schema: new OA\Schema(type: "integer", default: 15))]
+    #[OA\Response(response: 200, description: "Liste paginée récupérée avec succès")]
+    public function indexPaginated(Request $request)
+    {
+        $hospitalId = $this->getHospitalId();
+
+        $query = Provider::where('hospital_id', $hospitalId);
+
+        if ($request->filled('search')) {
+            $search = $request->query('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhere('niu', 'like', "%{$search}%");
+            });
+        }
+
+        // Tri alphabétique par défaut (comme indiqué dans tes commentaires)
+        $query->orderBy('name', 'asc');
+
+        $perPage = $request->query('per_page', 15);
+
+        return response()->json($query->paginate($perPage), 200);
+    }
     /**
      * Lister et filtrer les fournisseurs
      */

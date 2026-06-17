@@ -29,21 +29,24 @@ class BatchController extends Controller
     }
 
     /**
-     * Lister et filtrer les lots
+     * Lister et filtrer les lots (Paginés)
      */
     #[OA\Get(
         path: "/api/admin/batches",
         operationId: "getAdminBatches",
-        summary: "Lister les lots d'articles",
+        summary: "Lister les lots d'articles (Paginés)",
         security: [["bearerAuth" => []]],
         tags: ["Lots d'Articles (Admin)"]
     )]
     #[OA\Parameter(name: "search", in: "query", required: false, description: "Numéro de lot", schema: new OA\Schema(type: "string"))]
     #[OA\Parameter(name: "article_id", in: "query", required: false, description: "Filtrer par article spécifique", schema: new OA\Schema(type: "integer"))]
-    #[OA\Response(response: 200, description: "Liste récupérée avec succès")]
+    #[OA\Parameter(name: "per_page", description: "Nombre de résultats par page (défaut: 10)", in: "query", required: false, schema: new OA\Schema(type: "integer", default: 10))]
+    #[OA\Parameter(name: "page", description: "Numéro de la page à récupérer (défaut: 1)", in: "query", required: false, schema: new OA\Schema(type: "integer", default: 1))]
+    #[OA\Response(response: 200, description: "Liste paginée récupérée avec succès")]
     public function index(Request $request)
     {
         $hospitalId = $this->getHospitalId();
+        $perPage = $request->query('per_page', 10);
 
         $query = Batch::with('article')->whereHas('article', function ($q) use ($hospitalId) {
             $q->where('hospital_id', $hospitalId);
@@ -53,6 +56,33 @@ class BatchController extends Controller
             $search = $request->query('search');
             $query->where('batch_number', 'like', "%{$search}%");
         }
+
+        if ($request->filled('article_id')) {
+            $query->where('article_id', $request->query('article_id'));
+        }
+
+        return response()->json($query->orderBy('expire_date', 'asc')->paginate($perPage), 200);
+    }
+
+    /**
+     * Lister tous les lots (Sans pagination)
+     */
+    #[OA\Get(
+        path: "/api/admin/batches/all",
+        operationId: "getAllAdminBatches",
+        summary: "Lister tous les lots d'articles (Sans pagination)",
+        security: [["bearerAuth" => []]],
+        tags: ["Lots d'Articles (Admin)"]
+    )]
+    #[OA\Parameter(name: "article_id", in: "query", required: false, description: "Filtrer par article spécifique", schema: new OA\Schema(type: "integer"))]
+    #[OA\Response(response: 200, description: "Liste complète récupérée avec succès")]
+    public function all(Request $request)
+    {
+        $hospitalId = $this->getHospitalId();
+
+        $query = Batch::with('article')->whereHas('article', function ($q) use ($hospitalId) {
+            $q->where('hospital_id', $hospitalId);
+        });
 
         if ($request->filled('article_id')) {
             $query->where('article_id', $request->query('article_id'));

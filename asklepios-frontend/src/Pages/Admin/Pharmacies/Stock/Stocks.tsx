@@ -13,7 +13,9 @@ import {
     Loader2,
     Barcode,
     Tags,
-    RefreshCw
+    RefreshCw,
+    ChevronLeft,
+    ChevronRight
 } from 'lucide-react';
 
 // Stores
@@ -24,7 +26,9 @@ import usePharmacyStore from '../../../../functions/pharmacy/usePharmacyStore';
 const Stocks = () => {
     // Hooks des stores
     const { 
-        stocks, loading, 
+        stocks, 
+        pagination, // <-- Récupération de la pagination
+        loading, 
         getGlobalStocks 
     } = useStockStore();
 
@@ -45,31 +49,45 @@ const Stocks = () => {
         article_id: ''
     });
 
-    // Chargement initial des données
+    // Nombre d'éléments par page souhaité (Optionnel)
+    const [perPage] = useState<number>(15);
+
+    // Chargement initial des données (Page 1 par défaut)
     useEffect(() => {
-        getGlobalStocks({});
+        getGlobalStocks({ page: 1, per_page: perPage });
         getArticles({}); 
         getBranches({}); 
-    }, [getGlobalStocks, getArticles, getBranches]);
+    }, [getGlobalStocks, getArticles, getBranches, perPage]);
 
     // Fonction de rafraîchissement manuel
     const handleRefresh = () => {
-        getGlobalStocks(filters);
+        getGlobalStocks({ ...filters, page: pagination.current_page, per_page: perPage });
         getArticles({});
         getBranches({});
     };
 
-    // Soumission du formulaire de filtre
+    // Soumission du formulaire de filtre (On force le retour à la page 1)
     const handleFilterSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        getGlobalStocks(filters);
+        getGlobalStocks({ ...filters, page: 1, per_page: perPage });
     };
 
     // Réinitialisation des filtres
     const handleResetFilters = () => {
         setFilters({ search: '', branch_id: '', article_id: '' });
-        getGlobalStocks({});
+        getGlobalStocks({ page: 1, per_page: perPage });
     };
+
+    // Gestion du changement de page
+    const handlePageChange = (newPage: number) => {
+        if (newPage >= 1 && newPage <= pagination.last_page) {
+            getGlobalStocks({ ...filters, page: newPage, per_page: perPage });
+        }
+    };
+
+    // Calcul des éléments affichés (ex: Affichage de 1 à 15 sur 45)
+    const startItem = (pagination.current_page - 1) * pagination.per_page + 1;
+    const endItem = Math.min(pagination.current_page * pagination.per_page, pagination.total);
 
     // Fonction utilitaire pour l'état de péremption du lot
     const getExpirationStatus = (dateString?: string | null) => {
@@ -312,6 +330,42 @@ const Stocks = () => {
                         </tbody>
                     </table>
                 </div>
+
+                {/* CONTROLES DE PAGINATION */}
+                {!loading && pagination.total > 0 && (
+                    <div className="px-4 py-4 bg-slate-50 dark:bg-gray-900/30 border-t border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                            Affichage de <span className="font-semibold text-slate-800 dark:text-white">{startItem}</span> à{" "}
+                            <span className="font-semibold text-slate-800 dark:text-white">{endItem}</span> sur{" "}
+                            <span className="font-semibold text-slate-800 dark:text-white">{pagination.total}</span> éléments
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => handlePageChange(pagination.current_page - 1)}
+                                disabled={pagination.current_page === 1}
+                                className="p-2 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-white dark:hover:bg-gray-800 disabled:opacity-50 disabled:hover:bg-transparent transition-colors shadow-sm"
+                                title="Page précédente"
+                            >
+                                <ChevronLeft size={18} />
+                            </button>
+
+                            <div className="text-sm text-gray-700 dark:text-gray-300 font-medium px-2">
+                                Page <span className="text-slate-900 dark:text-white font-bold">{pagination.current_page}</span> sur{" "}
+                                <span className="font-bold">{pagination.last_page}</span>
+                            </div>
+
+                            <button
+                                onClick={() => handlePageChange(pagination.current_page + 1)}
+                                disabled={pagination.current_page === pagination.last_page}
+                                className="p-2 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-white dark:hover:bg-gray-800 disabled:opacity-50 disabled:hover:bg-transparent transition-colors shadow-sm"
+                                title="Page suivante"
+                            >
+                                <ChevronRight size={18} />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
         </div>

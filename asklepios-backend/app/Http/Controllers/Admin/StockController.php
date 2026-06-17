@@ -26,23 +26,26 @@ class StockController extends Controller
     }
 
     /**
-     * 1. VUE GLOBALE (Pour les Administrateurs ou Superviseurs)
+     * 1. VUE GLOBALE PAGINÉE (Pour les Administrateurs ou Superviseurs)
      * Liste tous les stocks de l'hôpital, avec possibilité de filtrer par succursale.
      */
     #[OA\Get(
         path: "/api/admin/stocks/global",
         operationId: "getGlobalStocks",
-        summary: "Voir les stocks globaux (Toutes succursales)",
+        summary: "Voir les stocks globaux paginés (Toutes succursales)",
         security: [["bearerAuth" => []]],
         tags: ["Stocks"]
     )]
     #[OA\Parameter(name: "search", in: "query", required: false, description: "Nom de l'article, code-barres ou N° de lot", schema: new OA\Schema(type: "string"))]
     #[OA\Parameter(name: "branch_id", in: "query", required: false, description: "Filtrer par succursale", schema: new OA\Schema(type: "integer"))]
     #[OA\Parameter(name: "article_id", in: "query", required: false, description: "Filtrer par article", schema: new OA\Schema(type: "integer"))]
-    #[OA\Response(response: 200, description: "Liste des stocks récupérée avec succès")]
+    #[OA\Parameter(name: "page", in: "query", required: false, description: "Numéro de la page", schema: new OA\Schema(type: "integer", default: 1))]
+    #[OA\Parameter(name: "per_page", in: "query", required: false, description: "Nombre d'éléments par page", schema: new OA\Schema(type: "integer", default: 15))]
+    #[OA\Response(response: 200, description: "Liste paginée des stocks récupérée avec succès")]
     public function getGlobalStocks(Request $request)
     {
         $hospitalId = $this->getHospitalId();
+        $perPage = $request->query('per_page', 15); // 15 éléments par défaut
 
         // On charge les relations nécessaires pour l'affichage (Succursale, Lot, Article, Catégorie)
         $query = Stock::with(['branch', 'batch.article.category'])
@@ -75,24 +78,26 @@ class StockController extends Controller
             });
         }
 
-        // On trie par nom de succursale, puis par quantité
-        return response()->json($query->get(), 200);
+        // On retourne les résultats paginés
+        return response()->json($query->paginate($perPage), 200);
     }
 
     /**
-     * 2. VUE LOCALE (Pour les Pharmaciens / Vendeurs)
+     * 2. VUE LOCALE PAGINÉE (Pour les Pharmaciens / Vendeurs)
      * Liste uniquement les stocks de la succursale du pharmacien connecté.
      */
     #[OA\Get(
         path: "/api/pharmacien/stocks/my-branch",
         operationId: "getMyBranchStocks",
-        summary: "Voir les stocks de ma succursale",
+        summary: "Voir les stocks paginés de ma succursale",
         security: [["bearerAuth" => []]],
         tags: ["Stocks"]
     )]
     #[OA\Parameter(name: "search", in: "query", required: false, description: "Nom, code-barres ou N° de lot", schema: new OA\Schema(type: "string"))]
     #[OA\Parameter(name: "article_id", in: "query", required: false, description: "Filtrer par article", schema: new OA\Schema(type: "integer"))]
-    #[OA\Response(response: 200, description: "Liste des stocks récupérée avec succès")]
+    #[OA\Parameter(name: "page", in: "query", required: false, description: "Numéro de la page", schema: new OA\Schema(type: "integer", default: 1))]
+    #[OA\Parameter(name: "per_page", in: "query", required: false, description: "Nombre d'éléments par page", schema: new OA\Schema(type: "integer", default: 15))]
+    #[OA\Response(response: 200, description: "Liste paginée des stocks récupérée avec succès")]
     public function getMyBranchStocks(Request $request)
     {
         // On s'assure que l'utilisateur est bien un pharmacien rattaché à une succursale
@@ -103,12 +108,13 @@ class StockController extends Controller
         }
 
         $branchId = $profile->branch_id;
+        $perPage = $request->query('per_page', 15); // 15 éléments par défaut
 
-        // On charge le Lot, l'Article et la Catégorie (pas besoin de charger la succursale puisqu'on sait déjà laquelle c'est)
+        // On charge le Lot, l'Article et la Catégorie
         $query = Stock::with(['batch.article.category'])
             ->where('pharmacy_branch_id', $branchId);
 
-        // FILTRES (Identiques, mais restreints à la succursale)
+        // FILTRES
         if ($request->filled('article_id')) {
             $query->whereHas('batch', function ($q) use ($request) {
                 $q->where('article_id', $request->query('article_id'));
@@ -126,6 +132,7 @@ class StockController extends Controller
             });
         }
 
-        return response()->json($query->get(), 200);
+        // On retourne les résultats paginés
+        return response()->json($query->paginate($perPage), 200);
     }
 }

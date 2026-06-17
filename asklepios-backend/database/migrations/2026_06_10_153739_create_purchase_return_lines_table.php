@@ -11,16 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('stock_movements', function (Blueprint $table) {
+        Schema::create('purchase_return_lines', function (Blueprint $table) {
             $table->id();
-            $table->softDeletes();
+            $table->foreignId("purchase_return_id")->constrained("purchase_returns")->onDelete("cascade");
             $table->foreignId("pharmacy_branch_id")->constrained("pharmacy_branches")->onDelete("cascade");
             $table->foreignId("batch_id")->constrained("batches")->onDelete("cascade");
-            $table->float("qty");
-            $table->enum("reference_type",["PURCHASE_IN","SALE_OUT","TRANSFER_OUT","TRANFER_IN","LOSS"]);
-            $table->unsignedBigInteger("reference_id")->nullable();
-            $table->enum("type",["STOCK_IN","STOCK_OUT"]);
-            $table->string("label")->nullable();
+            $table->float("qty_returned")->default(0.0);
+            $table->text("reason")->nullable();
             $table->timestamps();
         });
     }
@@ -30,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('stock_movements');
+        Schema::dropIfExists('purchase_return_lines');
     }
 };

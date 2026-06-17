@@ -12,13 +12,16 @@ import {
     CheckCircle2,
     Infinity,
     Loader2,
-    RefreshCw // <-- NOUVELLE ICÔNE POUR LA SYNCHRONISATION
+    RefreshCw,
+    ChevronLeft,  // Nouvel import pour la pagination
+    ChevronRight  // Nouvel import pour la pagination
 } from 'lucide-react';
 import Swal from 'sweetalert2';
+import Select from 'react-select'; // Import de React Select
 
 // Stores
 import useBatchStore from '../../../../functions/pharmacy/useBatchStore';
-import useArticleStore from '../../../../functions/pharmacy/useArticleStore';  // Pour la liste des articles
+import useArticleStore from '../../../../functions/pharmacy/useArticleStore';  
 
 // Modèles et Types
 import type { BatchDto } from '../../../../types/PharmTypes';
@@ -28,11 +31,11 @@ import { CreateBatchModal } from '../../../../components/modals/Pharmacy/Batch/C
 import { UpdateBatchModal } from '../../../../components/modals/Pharmacy/Batch/UpdateBatchModal';
 
 const Batches = () => {
-    // Hooks des stores
+    // Hooks des stores (Ajout de pagination)
     const { 
-        batches, loading, actionLoading, // Ajout de actionLoading pour bloquer les boutons
+        batches, loading, actionLoading, pagination,
         getBatches, deleteBatch,
-        initializeAllStocks, initializeBatchStock // Nouveaux endpoints
+        initializeAllStocks, initializeBatchStock 
     } = useBatchStore();
 
     const { 
@@ -43,7 +46,7 @@ const Batches = () => {
     // États pour les filtres
     const [filters, setFilters] = useState({
         search: '',
-        article_id: ''
+        article_id: '' as number | string
     });
 
     // États pour les modales
@@ -52,20 +55,33 @@ const Batches = () => {
 
     // Chargement initial des données
     useEffect(() => {
-        getBatches({});
+        getBatches(1, {}); // Demande la page 1 par défaut
         getArticles({}); 
     }, [getBatches, getArticles]);
 
     // Soumission du formulaire de filtre
     const handleFilterSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        getBatches(filters);
+        getBatches(1, filters); // Retour à la page 1 lors d'une nouvelle recherche
     };
 
     // Réinitialisation des filtres
     const handleResetFilters = () => {
         setFilters({ search: '', article_id: '' });
-        getBatches({});
+        getBatches(1, {});
+    };
+
+    // Action : Rafraîchir les données
+    const handleRefresh = () => {
+        getBatches(pagination?.currentPage || 1, filters);
+        getArticles({});
+    };
+
+    // Action : Changer de page
+    const handlePageChange = (newPage: number) => {
+        if (pagination && newPage >= 1 && newPage <= pagination.lastPage) {
+            getBatches(newPage, filters);
+        }
     };
 
     // Action : Supprimer un lot
@@ -153,6 +169,50 @@ const Batches = () => {
         }
     };
 
+    // Préparation des options pour React Select
+    const articleOptions = [
+        { value: '', label: 'Tous les articles' },
+        ...articles.map(article => ({ value: article.id, label: article.name }))
+    ];
+
+    // Styles forcés pour React Select (Fond blanc, texte noir)
+    const reactSelectStyles = {
+        control: (base: any) => ({
+            ...base,
+            backgroundColor: 'white',
+            color: 'black',
+            borderColor: '#e5e7eb',
+            minHeight: '42px',
+            borderRadius: '0.5rem',
+            boxShadow: 'none',
+            '&:hover': {
+                borderColor: '#00a896'
+            }
+        }),
+        singleValue: (base: any) => ({
+            ...base,
+            color: 'black',
+        }),
+        input: (base: any) => ({
+            ...base,
+            color: 'black',
+        }),
+        menu: (base: any) => ({
+            ...base,
+            backgroundColor: 'white',
+            zIndex: 50
+        }),
+        option: (base: any, state: any) => ({
+            ...base,
+            color: 'black',
+            backgroundColor: state.isFocused ? '#f3f4f6' : 'white',
+            cursor: 'pointer',
+            '&:active': {
+                backgroundColor: '#e5e7eb'
+            }
+        })
+    };
+
     return (
         <div className="space-y-6">
             
@@ -191,9 +251,9 @@ const Batches = () => {
 
             {/* BARRE DE FILTRES */}
             <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-                <form onSubmit={handleFilterSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                <form onSubmit={handleFilterSubmit} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
                     
-                    <div className="md:col-span-2">
+                    <div className="md:col-span-4">
                         <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Recherche (Numéro de lot)</label>
                         <div className="relative">
                             <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
@@ -202,40 +262,45 @@ const Batches = () => {
                                 placeholder="LOT-2026..."
                                 value={filters.search}
                                 onChange={(e) => setFilters({...filters, search: e.target.value})}
-                                className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:border-[#00a896] dark:focus:border-teal-500 text-sm text-slate-800 dark:text-white transition-colors"
+                                className="w-full pl-10 pr-4 h-[42px] bg-slate-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:border-[#00a896] dark:focus:border-teal-500 text-sm text-slate-800 dark:text-white transition-colors"
                             />
                         </div>
                     </div>
 
-                    <div>
+                    <div className="md:col-span-4">
                         <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Filtrer par article</label>
-                        <select 
-                            value={filters.article_id}
-                            onChange={(e) => setFilters({...filters, article_id: e.target.value})}
-                            className="w-full p-2 bg-slate-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:border-[#00a896] dark:focus:border-teal-500 text-sm text-slate-800 dark:text-white transition-colors"
-                        >
-                            <option value="">Tous les articles</option>
-                            {articles.map(article => (
-                                <option key={article.id} value={article.id}>
-                                    {article.name}
-                                </option>
-                            ))}
-                        </select>
+                        <Select
+                            options={articleOptions}
+                            value={articleOptions.find(opt => opt.value === filters.article_id) || articleOptions[0]}
+                            onChange={(selectedOption: any) => setFilters({...filters, article_id: selectedOption?.value || ''})}
+                            styles={reactSelectStyles}
+                            placeholder="Sélectionner un article..."
+                            isSearchable
+                        />
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="md:col-span-4 flex gap-2 h-[42px]">
                         <button 
                             type="submit" 
-                            className="flex-1 bg-slate-800 hover:bg-slate-900 dark:bg-gray-700 dark:hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm flex justify-center items-center gap-2"
+                            className="flex-1 bg-slate-800 hover:bg-slate-900 dark:bg-gray-700 dark:hover:bg-gray-600 text-white px-4 rounded-lg font-medium transition-colors text-sm flex justify-center items-center gap-2"
                         >
                             <Search size={16} /> Filtrer
                         </button>
                         <button 
                             type="button"
                             onClick={handleResetFilters}
-                            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200 dark:border dark:border-gray-600 rounded-lg font-medium transition-colors text-sm"
+                            className="px-4 bg-gray-200 hover:bg-gray-300 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200 dark:border dark:border-gray-600 rounded-lg font-medium transition-colors text-sm"
                         >
                             Réinitialiser
+                        </button>
+                        <button 
+                            type="button"
+                            onClick={handleRefresh}
+                            disabled={loading}
+                            title="Rafraîchir les données"
+                            className="px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 dark:text-indigo-400 dark:border dark:border-indigo-800/30 border border-indigo-200 rounded-lg transition-colors flex items-center justify-center disabled:opacity-50"
+                        >
+                            <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
                         </button>
                     </div>
                 </form>
@@ -313,7 +378,6 @@ const Batches = () => {
 
                                             <td className="p-4 text-right">
                                                 <div className="flex justify-end items-center gap-1">
-                                                    {/* BOUTON SYNCHRONISATION INDIVIDUELLE */}
                                                     <button 
                                                         onClick={() => handleSyncBatch(batch)}
                                                         disabled={actionLoading}
@@ -350,6 +414,33 @@ const Batches = () => {
                         </tbody>
                     </table>
                 </div>
+
+                {/* PAGINATION */}
+                {pagination && pagination.lastPage > 1 && (
+                    <div className="p-4 border-t border-gray-100 dark:border-gray-700 bg-slate-50/50 dark:bg-gray-800/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                            Affichage de la page <span className="font-medium text-gray-900 dark:text-white">{pagination.currentPage}</span> sur <span className="font-medium text-gray-900 dark:text-white">{pagination.lastPage}</span> 
+                            {' '}(<span className="font-medium text-gray-900 dark:text-white">{pagination.total}</span> lots au total)
+                        </span>
+                        
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => handlePageChange(pagination.currentPage - 1)}
+                                disabled={pagination.currentPage === 1 || loading}
+                                className="p-2 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                                <ChevronLeft size={18} />
+                            </button>
+                            <button
+                                onClick={() => handlePageChange(pagination.currentPage + 1)}
+                                disabled={pagination.currentPage === pagination.lastPage || loading}
+                                className="p-2 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                                <ChevronRight size={18} />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* MODALES */}

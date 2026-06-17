@@ -10,6 +10,8 @@ use App\Http\Controllers\Admin\PharmacyBranchController;
 use App\Http\Controllers\Admin\ProviderController;
 use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Pharmacien\PurchaseOrderController;
+use App\Http\Controllers\Pharmacien\PurchaseReturnController;
 use App\Http\Controllers\Pharmacien\StorageLocationController;
 use App\Http\Controllers\SUPA\AdminController;
 use App\Http\Controllers\SUPA\CountryController;
@@ -99,6 +101,7 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     // ==========================================
     // GESTION DES CATÉGORIES D'ARTICLES
     // ==========================================
+    Route::get('/article-categories/all', [\App\Http\Controllers\Admin\ArticleCategoryController::class, 'all']);
     Route::get('/article-categories', [ArticleCategoryController::class, 'index']);
     Route::post('/article-categories', [ArticleCategoryController::class, 'store']);
     Route::put('/article-categories/{id}', [ArticleCategoryController::class, 'update']);
@@ -106,6 +109,7 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     // ==========================================
     // GESTION DES ARTICLES (CATALOGUE)
     // ==========================================
+    Route::get('/articles/all', [\App\Http\Controllers\Admin\ArticleController::class, 'all']);
     Route::post('/articles', [ArticleController::class, 'store']);
     // Note : On utilise POST pour l'update afin de supporter l'upload de fichiers (Multipart)
     // Le frontend devra envoyer la requête POST avec un champ `_method=PUT`
@@ -114,7 +118,7 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
     // ==========================================
     // GESTION DES LOTS (BATCHES)
     // ==========================================
-    
+    Route::get('/batches/all', [\App\Http\Controllers\Admin\BatchController::class, 'all']);
     // Nouveaux endpoints pour l'initialisation des stocks (À PLACER EN PREMIER)
     Route::post('/batches/initialize-all-stocks', [BatchController::class, 'initializeAllStocks']);
     Route::post('/batches/{id}/initialize-stock', [BatchController::class, 'initializeBatchStock']);
@@ -130,11 +134,13 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
 });
 Route::middleware(['auth:sanctum', 'role:admin,pharmacy'])->prefix('admin')->group(function () {
     // ... tes autres routes existantes (pharmacy-branches, articles, batches) ...
-
+Route::get('/providers/paginated', [ProviderController::class, 'indexPaginated']);
     Route::get('/articles', [ArticleController::class, 'index']);
     // ==========================================
     // GESTION DES PHARMACIENS
     // ==========================================
+    // ⚠️ La route spécifique (paginated) DOIT être au-dessus des routes génériques ou de apiResource
+    Route::get('/pharmaciens/paginated', [PharmacienController::class, 'indexPaginated']);
     Route::get('/pharmaciens', [PharmacienController::class, 'index']);
     Route::post('/pharmaciens', [PharmacienController::class, 'store']);
     Route::put('/pharmaciens/{id}', [PharmacienController::class, 'update']);
@@ -148,6 +154,26 @@ Route::middleware(['auth:sanctum', 'role:admin,pharmacy'])->prefix('admin')->gro
     
     // Les routes CRUD classiques après les routes spécifiques
     Route::apiResource('providers', ProviderController::class)->except(['show']); 
+   
+// COMMANDES FOURNISSEURS (ADMIN)
+    Route::prefix('purchase-orders')->group(function () {
+        Route::get('/export/pdf', [PurchaseOrderController::class, 'exportPdf']);
+        Route::get('/export/excel', [PurchaseOrderController::class, 'exportExcel']);
+        Route::post('/{id}/cancel', [PurchaseOrderController::class, 'cancelOrder']);
+        Route::post('/{id}/validate', [PurchaseOrderController::class, 'validateOrder']);
+    });
+    Route::apiResource('purchase-orders', PurchaseOrderController::class);
+
+    // RETOURS FOURNISSEURS (ADMIN)
+    Route::prefix('purchase-returns')->group(function () {
+        Route::get('/export/pdf', [PurchaseReturnController::class, 'exportPdf']);
+        Route::get('/export/excel', [PurchaseReturnController::class, 'exportExcel']);
+        Route::post('/{id}/cancel', [PurchaseReturnController::class, 'cancelReturn']);
+        Route::post('/{id}/validate', [PurchaseReturnController::class, 'validateReturn']);
+    });
+    Route::apiResource('purchase-returns', PurchaseReturnController::class);
+// --- À METTRE ÉGALEMENT DANS LE GROUPE PHARMACIEN ---
+// (Mêmes routes, le contrôleur triera les permissions)
 });
 Route::middleware(["auth:sanctum","role:pharmacy"])->prefix("pharmacy")->group(function(){
     // ... tes autres routes pharmacien ...
@@ -157,6 +183,7 @@ Route::middleware(["auth:sanctum","role:pharmacy"])->prefix("pharmacy")->group(f
     // CRUD complet des étagères/allées
     Route::apiResource('storage-locations', StorageLocationController::class)->except(['show']);
    
+
 });
     });
 

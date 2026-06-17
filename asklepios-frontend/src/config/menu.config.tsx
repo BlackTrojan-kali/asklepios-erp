@@ -2,7 +2,8 @@ import React from 'react';
 import { 
     Globe, Hospital, Shield, NotebookText, Settings, 
     HospitalIcon, Pill,
-    Home
+    Home,
+    ListOrdered
 } from 'lucide-react';
 
 // --- 1. DÉFINITION DES TYPES ---
@@ -91,10 +92,6 @@ export const MENU_CONFIG: MenuItemType[] = [
                 path:"/admin/pharmacy/versements"
             },
             {
-                title:"Pharmaciens",
-                path:"/admin/pharmacy/users"
-            },
-            {
                 title:"Stocks",
                 path:"/admin/pharmacy/stocks",
             },
@@ -102,6 +99,7 @@ export const MENU_CONFIG: MenuItemType[] = [
                 title:"Fournisseurs",
                 path:"/admin/pharmacy/providers"
             }
+           
         ]
     },
     //pharmacien magasin
@@ -120,5 +118,35 @@ export const MENU_CONFIG: MenuItemType[] = [
             }
         ]
         
+    },
+    {
+        title:"Commandes",
+        icon:<ListOrdered/>,
+        roles:["pharmacy"],
+        subItems:[
+            {
+                title:"Commandes effectuées",
+                path:"/pharmacy/orders"
+            },
+            {
+                title:"Retours Commandes",
+                path:"/pharmacy/returns"
+            }
+        ]
+    },//reporting commandes admin
+      {
+        title:"Commandes",
+        icon:<ListOrdered/>,
+        roles:["admin"],
+        subItems:[
+            {
+                title:"Commandes effectuées",
+                path:"/admin/orders"
+            },
+            {
+                title:"Retours Commandes",
+                path:"/admin/returns"
+            }
+        ]
     }
 ];

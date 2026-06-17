@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Search, Edit, Trash2, Building2, MapPin, Phone, Globe, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Building2, MapPin, Phone, Globe, ChevronLeft, ChevronRight, Loader2, RefreshCw } from 'lucide-react';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
+import Select from 'react-select'; // <-- Import de react-select
 
 // Stores
 import useCenterStore from '../../functions/center/useCenterStore';
@@ -52,6 +53,11 @@ const Centers = () => {
         getCenters(1, {});
     };
 
+    // Rafraîchir la liste en conservant la page et les filtres
+    const handleRefresh = () => {
+        getCenters(pagination?.currentPage || 1, filters);
+    };
+
     // Action : Supprimer un centre
     const handleDelete = async (id: number) => {
         const result = await Swal.fire({
@@ -72,6 +78,9 @@ const Centers = () => {
         }
     };
 
+    // Préparation des options pour React-Select
+    const countryOptions = countries.map(c => ({ value: c.id.toString(), label: c.name }));
+
     return (
         <div className="space-y-6">
             
@@ -87,13 +96,26 @@ const Centers = () => {
                     </div>
                 </div>
                 
-                <button 
-                    onClick={() => setIsCreateOpen(true)}
-                    className="flex items-center gap-2 bg-[#00a896] hover:bg-[#008f7e] dark:bg-teal-600 dark:hover:bg-teal-500 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
-                >
-                    <Plus size={18} />
-                    Nouveau Centre
-                </button>
+                {/* Actions (Rafraîchir & Ajouter) */}
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <button 
+                        onClick={handleRefresh}
+                        disabled={loading}
+                        className="flex items-center justify-center gap-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 px-4 py-2 rounded-lg font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-none"
+                        title="Rafraîchir la liste"
+                    >
+                        <RefreshCw size={18} className={loading ? "animate-spin text-[#00a896]" : ""} />
+                        <span className="hidden sm:inline">Rafraîchir</span>
+                    </button>
+
+                    <button 
+                        onClick={() => setIsCreateOpen(true)}
+                        className="flex items-center gap-2 bg-[#00a896] hover:bg-[#008f7e] dark:bg-teal-600 dark:hover:bg-teal-500 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm flex-1 sm:flex-none justify-center"
+                    >
+                        <Plus size={18} />
+                        Nouveau Centre
+                    </button>
+                </div>
             </div>
 
             {/* BARRE DE FILTRES */}
@@ -107,7 +129,7 @@ const Centers = () => {
                             placeholder="Rechercher..."
                             value={filters.search}
                             onChange={(e) => setFilters({...filters, search: e.target.value})}
-                            className="w-full p-2 bg-slate-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:border-[#00a896] dark:focus:border-teal-500 text-sm text-slate-800 dark:text-white"
+                            className="w-full p-2 min-h-[40px] bg-slate-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:border-[#00a896] dark:focus:border-teal-500 text-sm text-slate-800 dark:text-white transition-colors"
                         />
                     </div>
 
@@ -118,33 +140,76 @@ const Centers = () => {
                             placeholder="Quartier, ville..."
                             value={filters.address}
                             onChange={(e) => setFilters({...filters, address: e.target.value})}
-                            className="w-full p-2 bg-slate-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:border-[#00a896] dark:focus:border-teal-500 text-sm text-slate-800 dark:text-white"
+                            className="w-full p-2 min-h-[40px] bg-slate-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:border-[#00a896] dark:focus:border-teal-500 text-sm text-slate-800 dark:text-white transition-colors"
                         />
                     </div>
 
+                    {/* Sélecteur de Pays : Strictement forcé en Blanc & Noir via styles inline */}
                     <div>
                         <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Pays</label>
-                        <select 
-                            value={filters.country_id}
-                            onChange={(e) => setFilters({...filters, country_id: e.target.value})}
-                            className="w-full p-2 bg-slate-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:border-[#00a896] dark:focus:border-teal-500 text-sm text-slate-800 dark:text-white"
-                        >
-                            <option value="">Tous les pays</option>
-                            {countries.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                        </select>
+                        <Select 
+                            options={countryOptions}
+                            value={countryOptions.find(opt => opt.value === filters.country_id) || null}
+                            onChange={(selected) => setFilters({...filters, country_id: selected ? selected.value : ''})}
+                            placeholder="Tous les pays"
+                            isClearable
+                            styles={{
+                                control: (base, state) => ({
+                                    ...base,
+                                    backgroundColor: '#ffffff',
+                                    borderColor: state.isFocused ? '#00a896' : '#e5e7eb',
+                                    boxShadow: state.isFocused ? '0 0 0 1px #00a896' : 'none',
+                                    minHeight: '40px',
+                                    borderRadius: '0.5rem',
+                                    cursor: 'pointer'
+                                }),
+                                menu: (base) => ({
+                                    ...base,
+                                    backgroundColor: '#ffffff',
+                                    borderRadius: '0.5rem',
+                                    zIndex: 50,
+                                }),
+                                option: (base, state) => ({
+                                    ...base,
+                                    backgroundColor: state.isSelected 
+                                        ? '#e6f6f4' 
+                                        : state.isFocused 
+                                            ? '#f3f4f6' 
+                                            : '#ffffff',
+                                    color: state.isSelected ? '#00a896' : '#000000', 
+                                    cursor: 'pointer',
+                                }),
+                                singleValue: (base) => ({
+                                    ...base,
+                                    color: '#000000', 
+                                }),
+                                input: (base) => ({
+                                    ...base,
+                                    color: '#000000', 
+                                }),
+                                placeholder: (base) => ({
+                                    ...base,
+                                    color: '#6b7280', 
+                                }),
+                                indicatorSeparator: (base) => ({
+                                    ...base,
+                                    backgroundColor: '#e5e7eb',
+                                }),
+                            }}
+                        />
                     </div>
 
                     <div className="flex gap-2">
                         <button 
                             type="submit" 
-                            className="flex-1 bg-slate-800 hover:bg-slate-900 dark:bg-gray-700 dark:hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm flex justify-center items-center gap-2"
+                            className="flex-1 bg-slate-800 hover:bg-slate-900 dark:bg-gray-700 dark:hover:bg-gray-600 text-white px-4 py-2 min-h-[40px] rounded-lg font-medium transition-colors text-sm flex justify-center items-center gap-2"
                         >
                             <Search size={16} /> Filtrer
                         </button>
                         <button 
                             type="button"
                             onClick={handleResetFilters}
-                            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200 dark:border dark:border-gray-600 rounded-lg font-medium transition-colors text-sm"
+                            className="px-4 py-2 min-h-[40px] bg-gray-200 hover:bg-gray-300 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200 dark:border dark:border-gray-600 rounded-lg font-medium transition-colors text-sm"
                         >
                             Réinitialiser
                         </button>
@@ -169,7 +234,7 @@ const Centers = () => {
                                 <tr>
                                     <td colSpan={4} className="p-8 text-center">
                                         <Loader2 size={32} className="animate-spin text-[#00a896] mx-auto mb-2" />
-                                        <p className="text-sm text-gray-500 dark:text-gray-400">Chargement des centres...</p>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Chargement des centres...</p>
                                     </td>
                                 </tr>
                             ) : centers.length === 0 ? (
@@ -248,7 +313,7 @@ const Centers = () => {
                 </div>
 
                 {/* PAGINATION */}
-                {!loading && centers.length > 0 && (
+                {!loading && centers.length > 0 && pagination && (
                     <div className="p-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between bg-slate-50 dark:bg-gray-900/50">
                         <span className="text-sm text-gray-500 dark:text-gray-400">
                             Page <span className="font-semibold text-slate-800 dark:text-gray-200">{pagination.currentPage}</span> sur <span className="font-semibold text-slate-800 dark:text-gray-200">{pagination.lastPage}</span>

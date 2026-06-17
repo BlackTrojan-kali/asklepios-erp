@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Search, Edit, Trash2, FileBadge, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, FileBadge, ChevronLeft, ChevronRight, Loader2, RefreshCw } from 'lucide-react';
 import Swal from 'sweetalert2';
 import useLicenceStore from '../../../functions/licence/useLicenceStore'; // Ajuste le chemin
 import LicenceModal from '../../../components/modals/licence/LicenceModal';
@@ -22,6 +22,12 @@ const Licences = () => {
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         getLicences(1, searchInput);
+    };
+
+    // Gérer le rafraîchissement des données
+    const handleRefresh = () => {
+        // Rafraîchit les données en gardant la page courante et la recherche active
+        getLicences(pagination?.currentPage || 1, searchInput);
     };
 
     // Ouvrir la modale pour Créer
@@ -75,13 +81,26 @@ const Licences = () => {
                     </div>
                 </div>
                 
-                <button 
-                    onClick={handleOpenCreate}
-                    className="flex items-center gap-2 bg-[#00a896] hover:bg-[#008f7e] text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
-                >
-                    <Plus size={18} />
-                    Nouvelle licence
-                </button>
+                {/* Actions (Rafraîchir & Ajouter) */}
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <button 
+                        onClick={handleRefresh}
+                        disabled={loading}
+                        className="flex items-center justify-center gap-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 px-4 py-2 rounded-lg font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-none"
+                        title="Rafraîchir la liste"
+                    >
+                        <RefreshCw size={18} className={loading ? "animate-spin text-[#00a896]" : ""} />
+                        <span className="hidden sm:inline">Rafraîchir</span>
+                    </button>
+
+                    <button 
+                        onClick={handleOpenCreate}
+                        className="flex items-center justify-center gap-2 bg-[#00a896] hover:bg-[#008f7e] text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm flex-1 sm:flex-none"
+                    >
+                        <Plus size={18} />
+                        Nouvelle licence
+                    </button>
+                </div>
             </div>
 
             {/* BARRE DE RECHERCHE */}
@@ -99,6 +118,7 @@ const Licences = () => {
                             className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:border-[#00a896] dark:focus:border-teal-500 text-slate-800 dark:text-white transition-colors"
                         />
                     </div>
+                    
                     <button 
                         type="submit" 
                         className="bg-[#003366] hover:bg-[#002244] dark:bg-gray-700 dark:hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
@@ -182,7 +202,7 @@ const Licences = () => {
                 </div>
 
                 {/* PAGINATION */}
-                {!loading && licences.length > 0 && (
+                {!loading && licences.length > 0 && pagination && (
                     <div className="p-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between bg-slate-50 dark:bg-gray-900/50">
                         <span className="text-sm text-gray-500 dark:text-gray-400">
                             Page <span className="font-semibold text-slate-800 dark:text-gray-200">{pagination.currentPage}</span> sur <span className="font-semibold text-slate-800 dark:text-gray-200">{pagination.lastPage}</span>

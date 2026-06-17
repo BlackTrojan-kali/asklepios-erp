@@ -24,7 +24,7 @@ class PharmacienController extends Controller
     }
 
     /**
-     * Lister et filtrer les pharmaciens
+     * Lister et filtrer les pharmaciens (Sans pagination)
      */
     #[OA\Get(
         path: "/api/admin/pharmaciens",
@@ -41,11 +41,9 @@ class PharmacienController extends Controller
     {
         $hospitalId = $this->getHospitalId();
 
-        // On part du profil pharmacien pour s'assurer qu'ils appartiennent à cet hôpital
         $query = ProfilePharm::with(['user', 'branch'])
             ->where('hospital_id', $hospitalId);
 
-        // Filtre par recherche (sur la table users liée)
         if ($request->filled('search')) {
             $search = $request->query('search');
             $query->whereHas('user', function ($q) use ($search) {
@@ -56,17 +54,61 @@ class PharmacienController extends Controller
             });
         }
 
-        // Filtre par position
         if ($request->filled('position')) {
             $query->where('position', $request->query('position'));
         }
 
-        // Filtre par succursale
         if ($request->filled('branch_id')) {
             $query->where('branch_id', $request->query('branch_id'));
         }
 
         return response()->json($query->latest()->get(), 200);
+    }
+
+    /**
+     * Lister et filtrer les pharmaciens (AVEC pagination)
+     */
+    #[OA\Get(
+        path: "/api/admin/pharmaciens/paginated",
+        operationId: "getAdminPharmaciensPaginated",
+        summary: "Lister les pharmaciens avec pagination",
+        security: [["bearerAuth" => []]],
+        tags: ["Pharmaciens (Admin)"]
+    )]
+    #[OA\Parameter(name: "search", in: "query", required: false, description: "Nom, email ou téléphone", schema: new OA\Schema(type: "string"))]
+    #[OA\Parameter(name: "position", in: "query", required: false, schema: new OA\Schema(type: "string", enum: ["magasin", "vente"]))]
+    #[OA\Parameter(name: "branch_id", in: "query", required: false, schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "per_page", in: "query", required: false, description: "Nombre d'éléments par page (défaut: 15)", schema: new OA\Schema(type: "integer", default: 15))]
+    #[OA\Response(response: 200, description: "Liste paginée récupérée avec succès")]
+    public function indexPaginated(Request $request)
+    {
+        $hospitalId = $this->getHospitalId();
+
+        $query = ProfilePharm::with(['user', 'branch'])
+            ->where('hospital_id', $hospitalId);
+
+        if ($request->filled('search')) {
+            $search = $request->query('search');
+            $query->whereHas('user', function ($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('position')) {
+            $query->where('position', $request->query('position'));
+        }
+
+        if ($request->filled('branch_id')) {
+            $query->where('branch_id', $request->query('branch_id'));
+        }
+
+        // Récupère le paramètre per_page, ou utilise 15 par défaut
+        $perPage = $request->query('per_page', 15);
+
+        return response()->json($query->latest()->paginate($perPage), 200);
     }
 
     /**
@@ -114,7 +156,9 @@ class PharmacienController extends Controller
                 Rule::exists('pharmacy_branches', 'id')->where('hospital_id', $hospitalId),
             ],
         ]);
+        
         $rolePharm = Role::where("name","pharmacy")->first();
+        
         // Transaction DB pour garantir la création couplée
         $profile = DB::transaction(function () use ( $rolePharm, $validated, $hospitalId) {
             
@@ -125,11 +169,8 @@ class PharmacienController extends Controller
                 'phone'      => $validated['phone'],
                 'email'      => $validated['email'],
                 'password'   => Hash::make($validated['password']),
-                "role_id"=>$rolePharm->id
+                "role_id"    => $rolePharm->id
             ]);
-
-            // Assigner un rôle ici si tu utilises Spatie Permission (Optionnel)
-            // $user->assignRole('pharmacien');
 
             // 2. Création du profil pharmacien
             $profilePharm = ProfilePharm::create([

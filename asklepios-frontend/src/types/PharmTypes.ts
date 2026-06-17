@@ -98,7 +98,9 @@ export interface ArticleDto {
     track_batches: boolean; // <-- NOUVEAU CHAMP
     
     category?: ArticleCategoryDto; 
-    
+    // --- NOUVEAUX CHAMPS OPTIONNELS (Calculés par le Backend) ---
+    stock_qty?: number; 
+    has_expiring_batches?: boolean;
     created_at?: string;
     updated_at?: string;
 }

@@ -9,13 +9,17 @@ import {
     Package, 
     ShoppingCart, 
     Loader2,
-    Building2
+    Building2,
+    RefreshCw,
+    ChevronLeft,
+    ChevronRight
 } from 'lucide-react';
 import Swal from 'sweetalert2';
+import Select from 'react-select'; // <-- IMPORT DU REACT-SELECT
 
 // Stores
 import usePharmacyStore from '../../../functions/pharmacy/usePharmacyStore'; 
-import useCenterStore from '../../../functions/center/useCenterStore'; // <-- IMPORT DU STORE DES CENTRES
+import useCenterStore from '../../../functions/center/useCenterStore'; 
 
 // Modèles et Types
 import type { PharmacyBranchDto } from '../../../types/PharmTypes';
@@ -25,9 +29,9 @@ import { CreatePharmacyBranchModal } from '../../../components/modals/Pharmacy/C
 import { UpdatePharmacyBranchModal } from '../../../components/modals/Pharmacy/UpdatePharmacyBranchModal';
 
 const Pharmacies = () => {
-    // Hooks des stores
+    // Hooks des stores (ajout de la pagination)
     const { 
-        pharmacyBranches, loading, 
+        pharmacyBranches, loading, pagination, 
         getPharmacyBranches, deletePharmacyBranch 
     } = usePharmacyStore();
     
@@ -46,20 +50,25 @@ const Pharmacies = () => {
 
     // Chargement initial des données (Pharmacies + Centres)
     useEffect(() => {
-        getPharmacyBranches({});
+        getPharmacyBranches(1, {}); // Chargement de la page 1 sans filtre
         getCenters(1, {}, 100); // On récupère une large liste de centres pour les menus déroulants
     }, [getPharmacyBranches, getCenters]);
+
+    // Rafraîchir la liste en conservant la page et les filtres actuels
+    const handleRefresh = () => {
+        getPharmacyBranches(pagination?.currentPage || 1, filters);
+    };
 
     // Soumission du formulaire de filtre
     const handleFilterSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        getPharmacyBranches(filters);
+        getPharmacyBranches(1, filters); // Retour à la page 1 lors d'une nouvelle recherche
     };
 
     // Réinitialisation des filtres
     const handleResetFilters = () => {
         setFilters({ search: '', type: '' });
-        getPharmacyBranches({});
+        getPharmacyBranches(1, {});
     };
 
     // Action : Supprimer une succursale
@@ -82,6 +91,12 @@ const Pharmacies = () => {
         }
     };
 
+    // Options pour le sélecteur de type
+    const typeOptions = [
+        { value: 'central_warehouse', label: 'Magasin Central' },
+        { value: 'retail_pos', label: 'Point de Vente' }
+    ];
+
     return (
         <div className="space-y-6">
             
@@ -97,13 +112,26 @@ const Pharmacies = () => {
                     </div>
                 </div>
                 
-                <button 
-                    onClick={() => setIsCreateOpen(true)}
-                    className="flex items-center gap-2 bg-[#00a896] hover:bg-[#008f7e] text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
-                >
-                    <Plus size={18} />
-                    Nouvelle Succursale
-                </button>
+                {/* Actions (Rafraîchir & Ajouter) */}
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <button 
+                        onClick={handleRefresh}
+                        disabled={loading}
+                        className="flex items-center justify-center gap-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 px-4 py-2 rounded-lg font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-none"
+                        title="Rafraîchir la liste"
+                    >
+                        <RefreshCw size={18} className={loading ? "animate-spin text-[#00a896]" : ""} />
+                        <span className="hidden sm:inline">Rafraîchir</span>
+                    </button>
+
+                    <button 
+                        onClick={() => setIsCreateOpen(true)}
+                        className="flex items-center justify-center gap-2 bg-[#00a896] hover:bg-[#008f7e] text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm flex-1 sm:flex-none"
+                    >
+                        <Plus size={18} />
+                        Nouvelle Succursale
+                    </button>
+                </div>
             </div>
 
             {/* BARRE DE FILTRES */}
@@ -117,34 +145,76 @@ const Pharmacies = () => {
                             placeholder="Nom ou adresse..."
                             value={filters.search}
                             onChange={(e) => setFilters({...filters, search: e.target.value})}
-                            className="w-full p-2 bg-slate-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:border-[#00a896] dark:focus:border-teal-500 text-sm text-slate-800 dark:text-white transition-colors"
+                            className="w-full p-2 min-h-[40px] bg-slate-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:border-[#00a896] dark:focus:border-teal-500 text-sm text-slate-800 dark:text-white transition-colors"
                         />
                     </div>
 
+                    {/* Sélecteur de type : Forcé en Blanc & Noir pour compatibilité Mode Sombre */}
                     <div>
                         <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Type de structure</label>
-                        <select 
-                            value={filters.type}
-                            onChange={(e) => setFilters({...filters, type: e.target.value})}
-                            className="w-full p-2 bg-slate-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:border-[#00a896] dark:focus:border-teal-500 text-sm text-slate-800 dark:text-white transition-colors"
-                        >
-                            <option value="">Tous les types</option>
-                            <option value="central_warehouse">Magasin Central</option>
-                            <option value="retail_pos">Point de Vente</option>
-                        </select>
+                        <Select 
+                            options={typeOptions}
+                            value={typeOptions.find(opt => opt.value === filters.type) || null}
+                            onChange={(selected) => setFilters({...filters, type: selected ? selected.value : ''})}
+                            placeholder="Tous les types"
+                            isClearable
+                            styles={{
+                                control: (base, state) => ({
+                                    ...base,
+                                    backgroundColor: '#ffffff',
+                                    borderColor: state.isFocused ? '#00a896' : '#e5e7eb',
+                                    boxShadow: state.isFocused ? '0 0 0 1px #00a896' : 'none',
+                                    minHeight: '40px',
+                                    borderRadius: '0.5rem',
+                                    cursor: 'pointer'
+                                }),
+                                menu: (base) => ({
+                                    ...base,
+                                    backgroundColor: '#ffffff',
+                                    borderRadius: '0.5rem',
+                                    zIndex: 50,
+                                }),
+                                option: (base, state) => ({
+                                    ...base,
+                                    backgroundColor: state.isSelected 
+                                        ? '#e6f6f4' 
+                                        : state.isFocused 
+                                            ? '#f3f4f6' 
+                                            : '#ffffff',
+                                    color: state.isSelected ? '#00a896' : '#000000', 
+                                    cursor: 'pointer',
+                                }),
+                                singleValue: (base) => ({
+                                    ...base,
+                                    color: '#000000', 
+                                }),
+                                input: (base) => ({
+                                    ...base,
+                                    color: '#000000', 
+                                }),
+                                placeholder: (base) => ({
+                                    ...base,
+                                    color: '#6b7280', 
+                                }),
+                                indicatorSeparator: (base) => ({
+                                    ...base,
+                                    backgroundColor: '#e5e7eb',
+                                }),
+                            }}
+                        />
                     </div>
 
                     <div className="flex gap-2">
                         <button 
                             type="submit" 
-                            className="flex-1 bg-slate-800 hover:bg-slate-900 dark:bg-gray-700 dark:hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm flex justify-center items-center gap-2"
+                            className="flex-1 bg-slate-800 hover:bg-slate-900 dark:bg-gray-700 dark:hover:bg-gray-600 text-white px-4 py-2 min-h-[40px] rounded-lg font-medium transition-colors text-sm flex justify-center items-center gap-2"
                         >
                             <Search size={16} /> Filtrer
                         </button>
                         <button 
                             type="button"
                             onClick={handleResetFilters}
-                            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200 dark:border dark:border-gray-600 rounded-lg font-medium transition-colors text-sm"
+                            className="px-4 py-2 min-h-[40px] bg-gray-200 hover:bg-gray-300 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200 dark:border dark:border-gray-600 rounded-lg font-medium transition-colors text-sm"
                         >
                             Réinitialiser
                         </button>
@@ -251,6 +321,33 @@ const Pharmacies = () => {
                         </tbody>
                     </table>
                 </div>
+
+                {/* PAGINATION */}
+                {!loading && pharmacyBranches.length > 0 && pagination && (
+                    <div className="p-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between bg-slate-50 dark:bg-gray-900/50">
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                            Page <span className="font-semibold text-slate-800 dark:text-gray-200">{pagination.currentPage}</span> sur <span className="font-semibold text-slate-800 dark:text-gray-200">{pagination.lastPage}</span>
+                            <span className="ml-2 hidden sm:inline">({pagination.total} succursales)</span>
+                        </span>
+                        
+                        <div className="flex gap-2">
+                            <button 
+                                onClick={() => getPharmacyBranches(pagination.currentPage - 1, filters)}
+                                disabled={pagination.currentPage === 1}
+                                className="p-2 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-600 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white dark:hover:bg-gray-800 transition-colors"
+                            >
+                                <ChevronLeft size={18} />
+                            </button>
+                            <button 
+                                onClick={() => getPharmacyBranches(pagination.currentPage + 1, filters)}
+                                disabled={pagination.currentPage === pagination.lastPage}
+                                className="p-2 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-600 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white dark:hover:bg-gray-800 transition-colors"
+                            >
+                                <ChevronRight size={18} />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* MODALES */}

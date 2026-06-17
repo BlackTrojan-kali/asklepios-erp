@@ -4,29 +4,61 @@ import toast from "react-hot-toast";
 import api from "../../api/api"; // Ajuste le chemin selon ton arborescence
 import type { ArticleCategoryDto, ArticleCategoryPayload } from "../../types/PharmTypes";
 
+// Interface pour la pagination
+export interface PaginationData {
+    currentPage: number;
+    lastPage: number;
+    total: number;
+}
+
 const useArticleCategoryStore = () => {
     // --- ÉTATS ---
     const [articleCategories, setArticleCategories] = useState<ArticleCategoryDto[]>([]);
-    const [loading, setLoading] = useState<boolean>(false); // Chargement de la liste
-    const [actionLoading, setActionLoading] = useState<boolean>(false); // Bloque les boutons pendant l'enregistrement
+    const [allCategories, setAllCategories] = useState<ArticleCategoryDto[]>([]); // Utile pour les selects (ex: parent_category_id)
+    const [pagination, setPagination] = useState<PaginationData | null>(null);
+    const [loading, setLoading] = useState<boolean>(false); 
+    const [actionLoading, setActionLoading] = useState<boolean>(false); 
 
-    // --- 1. LISTER & FILTRER (GET /admin/article-categories) ---
+    // --- 1. LISTER & FILTRER Paginé (GET /admin/article-categories) ---
     const getArticleCategories = useCallback(async (
+        page: number = 1,
         filters: { search?: string } = {}
     ) => {
         try {
             setLoading(true);
-            const res = await api.get<ArticleCategoryDto[]>("/admin/article-categories", {
-                params: filters
+            const res = await api.get("/admin/article-categories", {
+                params: { page, ...filters }
             });
             
-            setArticleCategories(res.data);
+            // Sécurisation de la réponse (paginée ou non)
+            const responseData = res.data;
+            const categoriesData = responseData.data !== undefined ? responseData.data : responseData;
+            
+            setArticleCategories(Array.isArray(categoriesData) ? categoriesData : []);
+            
+            setPagination({
+                currentPage: responseData.current_page || 1,
+                lastPage: responseData.last_page || 1,
+                total: responseData.total || (Array.isArray(categoriesData) ? categoriesData.length : 0)
+            });
         } catch (error) {
             if (axios.isAxiosError(error) && !axios.isCancel(error)) {
                 toast.error("Erreur lors de la récupération des catégories");
             }
+            setArticleCategories([]); // Fallback de sécurité
         } finally {
             setLoading(false);
+        }
+    }, []);
+
+    // --- 1bis. RÉCUPÉRER TOUTES LES CATÉGORIES (GET /admin/article-categories/all) ---
+    const getAllArticleCategories = useCallback(async () => {
+        try {
+            const res = await api.get("/admin/article-categories/all");
+            setAllCategories(Array.isArray(res.data) ? res.data : []);
+        } catch (error) {
+            console.error("Erreur lors de la récupération de la liste complète des catégories", error);
+            setAllCategories([]);
         }
     }, []);
 
@@ -37,8 +69,9 @@ const useArticleCategoryStore = () => {
             await api.post("/admin/article-categories", payload);
             toast.success("Catégorie créée avec succès !");
             
-            // Rafraîchir la liste automatiquement
-            await getArticleCategories(); 
+            // Rafraîchir les listes
+            await getArticleCategories(1); 
+            await getAllArticleCategories();
             return true;
         } catch (error) {
             if (axios.isAxiosError(error)) {
@@ -57,8 +90,9 @@ const useArticleCategoryStore = () => {
             await api.put(`/admin/article-categories/${id}`, payload);
             toast.success("Catégorie mise à jour avec succès !");
             
-            // Rafraîchir la liste automatiquement
-            await getArticleCategories(); 
+            // Rafraîchir les listes
+            await getArticleCategories(1); 
+            await getAllArticleCategories();
             return true;
         } catch (error) {
             if (axios.isAxiosError(error)) {
@@ -77,8 +111,9 @@ const useArticleCategoryStore = () => {
             await api.delete(`/admin/article-categories/${id}`);
             toast.success("Catégorie supprimée avec succès !");
             
-            // Rafraîchir la liste automatiquement
-            await getArticleCategories(); 
+            // Rafraîchir les listes
+            await getArticleCategories(1); 
+            await getAllArticleCategories();
             return true;
         } catch (error) {
             if (axios.isAxiosError(error)) {
@@ -92,9 +127,12 @@ const useArticleCategoryStore = () => {
 
     return {
         articleCategories,
+        allCategories, // Exporté pour les React-Select des modales
+        pagination,
         loading,
         actionLoading,
         getArticleCategories,
+        getAllArticleCategories,
         createArticleCategory,
         updateArticleCategory,
         deleteArticleCategory

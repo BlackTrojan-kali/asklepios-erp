@@ -8,7 +8,10 @@ import {
     FolderTree, 
     CornerDownRight, 
     Loader2, 
-    AlignLeft
+    AlignLeft,
+    RefreshCw,
+    ChevronLeft,
+    ChevronRight
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
@@ -23,10 +26,15 @@ import { CreateArticleCategoryModal } from '../../../../components/modals/Pharma
 import { UpdateArticleCategoryModal } from '../../../../components/modals/Pharmacy/Article_category/UpdateArticleCategoryModal';
 
 const ArticleCategories = () => {
-    // Hook du store
+    // Hook du store (Mise à jour avec la pagination et allCategories)
     const { 
-        articleCategories, loading, 
-        getArticleCategories, deleteArticleCategory 
+        articleCategories, 
+        allCategories,
+        pagination,
+        loading, 
+        getArticleCategories, 
+        getAllArticleCategories,
+        deleteArticleCategory 
     } = useArticleCategoryStore();
 
     // États pour les filtres
@@ -40,19 +48,26 @@ const ArticleCategories = () => {
 
     // Chargement initial des données
     useEffect(() => {
-        getArticleCategories({});
-    }, [getArticleCategories]);
+        getArticleCategories(1, {}); // Page 1 par défaut
+        getAllArticleCategories();   // Charge la liste complète pour les Selects des modales
+    }, [getArticleCategories, getAllArticleCategories]);
+
+    // Rafraîchir la liste en conservant la page et la recherche
+    const handleRefresh = () => {
+        getArticleCategories(pagination?.currentPage || 1, filters);
+        getAllArticleCategories(); // On met aussi à jour la liste complète en arrière-plan
+    };
 
     // Soumission du formulaire de filtre
     const handleFilterSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        getArticleCategories(filters);
+        getArticleCategories(1, filters); // Retour à la page 1 lors d'une recherche
     };
 
     // Réinitialisation des filtres
     const handleResetFilters = () => {
         setFilters({ search: '' });
-        getArticleCategories({});
+        getArticleCategories(1, {});
     };
 
     // Action : Supprimer une catégorie
@@ -90,13 +105,26 @@ const ArticleCategories = () => {
                     </div>
                 </div>
                 
-                <button 
-                    onClick={() => setIsCreateOpen(true)}
-                    className="flex items-center gap-2 bg-[#00a896] hover:bg-[#008f7e] text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
-                >
-                    <Plus size={18} />
-                    Nouvelle Catégorie
-                </button>
+                {/* Actions (Rafraîchir & Ajouter) */}
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <button 
+                        onClick={handleRefresh}
+                        disabled={loading}
+                        className="flex items-center justify-center gap-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 px-4 py-2 rounded-lg font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-none"
+                        title="Rafraîchir la liste"
+                    >
+                        <RefreshCw size={18} className={loading ? "animate-spin text-[#00a896]" : ""} />
+                        <span className="hidden sm:inline">Rafraîchir</span>
+                    </button>
+
+                    <button 
+                        onClick={() => setIsCreateOpen(true)}
+                        className="flex items-center justify-center gap-2 bg-[#00a896] hover:bg-[#008f7e] text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm flex-1 sm:flex-none"
+                    >
+                        <Plus size={18} />
+                        Nouvelle Catégorie
+                    </button>
+                </div>
             </div>
 
             {/* BARRE DE FILTRES */}
@@ -120,14 +148,14 @@ const ArticleCategories = () => {
                     <div className="flex gap-2">
                         <button 
                             type="submit" 
-                            className="flex-1 bg-slate-800 hover:bg-slate-900 dark:bg-gray-700 dark:hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm flex justify-center items-center gap-2"
+                            className="flex-1 bg-slate-800 hover:bg-slate-900 dark:bg-gray-700 dark:hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm flex justify-center items-center gap-2 min-h-[40px]"
                         >
                             <Search size={16} /> Filtrer
                         </button>
                         <button 
                             type="button"
                             onClick={handleResetFilters}
-                            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200 dark:border dark:border-gray-600 rounded-lg font-medium transition-colors text-sm"
+                            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200 dark:border dark:border-gray-600 rounded-lg font-medium transition-colors text-sm min-h-[40px]"
                         >
                             Réinitialiser
                         </button>
@@ -154,7 +182,7 @@ const ArticleCategories = () => {
                                         <p className="text-sm text-gray-500 dark:text-gray-400">Chargement des catégories...</p>
                                     </td>
                                 </tr>
-                            ) : articleCategories.length === 0 ? (
+                            ) : articleCategories?.length === 0 ? (
                                 <tr>
                                     <td colSpan={3} className="p-12 text-center">
                                         <div className="flex flex-col items-center justify-center text-gray-400 dark:text-gray-500">
@@ -164,7 +192,7 @@ const ArticleCategories = () => {
                                     </td>
                                 </tr>
                             ) : (
-                                articleCategories.map((category) => (
+                                articleCategories?.map((category) => (
                                     <tr key={category.id} className="hover:bg-slate-50 dark:hover:bg-gray-700/30 transition-colors">
                                         
                                         {/* NOM & HIÉRARCHIE */}
@@ -224,21 +252,48 @@ const ArticleCategories = () => {
                         </tbody>
                     </table>
                 </div>
+
+                {/* PAGINATION */}
+                {!loading && articleCategories?.length > 0 && pagination && (
+                    <div className="p-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between bg-slate-50 dark:bg-gray-900/50">
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                            Page <span className="font-semibold text-slate-800 dark:text-gray-200">{pagination.currentPage}</span> sur <span className="font-semibold text-slate-800 dark:text-gray-200">{pagination.lastPage}</span>
+                            <span className="ml-2 hidden sm:inline">({pagination.total} catégories)</span>
+                        </span>
+                        
+                        <div className="flex gap-2">
+                            <button 
+                                onClick={() => getArticleCategories(pagination.currentPage - 1, filters)}
+                                disabled={pagination.currentPage === 1}
+                                className="p-2 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-600 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white dark:hover:bg-gray-800 transition-colors"
+                            >
+                                <ChevronLeft size={18} />
+                            </button>
+                            <button 
+                                onClick={() => getArticleCategories(pagination.currentPage + 1, filters)}
+                                disabled={pagination.currentPage === pagination.lastPage}
+                                className="p-2 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-600 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white dark:hover:bg-gray-800 transition-colors"
+                            >
+                                <ChevronRight size={18} />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* MODALES */}
-            {/* On passe la liste complète `articleCategories` pour alimenter le React-Select des parents */}
+            {/* On passe la liste complète `allCategories` pour alimenter le React-Select des parents sans être limité par la pagination */}
             <CreateArticleCategoryModal 
                 isOpen={isCreateOpen} 
                 onClose={() => setIsCreateOpen(false)}
-                categories={articleCategories} 
+                categories={allCategories} 
             />
 
             <UpdateArticleCategoryModal 
                 isOpen={!!selectedCategory} 
                 onClose={() => setSelectedCategory(null)} 
                 category={selectedCategory}
-                categories={articleCategories}
+                categories={allCategories}
             />
 
         </div>

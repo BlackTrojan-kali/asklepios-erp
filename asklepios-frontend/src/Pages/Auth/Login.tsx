@@ -17,7 +17,7 @@ const Login = () => {
   useEffect(() => {
     if (token) {
       if(profile?.role == "super_admin"){
-      navigate('/', { replace: true }); 
+      navigate('/countries', { replace: true }); 
       }else if(profile?.role == "admin"){
         navigate("/admin",{replace:true})
       }else if(profile?.role == "pharmacy")

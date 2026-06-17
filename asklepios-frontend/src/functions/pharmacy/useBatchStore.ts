@@ -4,29 +4,63 @@ import toast from "react-hot-toast";
 import api from "../../api/api"; // Ajuste le chemin selon ton arborescence
 import type { BatchDto, BatchPayload } from "../../types/PharmTypes";
 
+// Interface pour la pagination
+export interface PaginationData {
+    currentPage: number;
+    lastPage: number;
+    total: number;
+}
+
 const useBatchStore = () => {
     // --- ÉTATS ---
     const [batches, setBatches] = useState<BatchDto[]>([]);
+    const [allBatches, setAllBatches] = useState<BatchDto[]>([]); // Liste complète pour les select
+    const [pagination, setPagination] = useState<PaginationData | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [actionLoading, setActionLoading] = useState<boolean>(false);
 
-    // --- 1. LISTER & FILTRER (GET /admin/batches) ---
+    // --- 1. LISTER & FILTRER Paginé (GET /admin/batches) ---
     const getBatches = useCallback(async (
+        page: number = 1,
         filters: { search?: string, article_id?: number | string } = {}
     ) => {
         try {
             setLoading(true);
-            const res = await api.get<BatchDto[]>("/admin/batches", {
-                params: filters
+            const res = await api.get("/admin/batches", {
+                params: { page, ...filters }
             });
             
-            setBatches(res.data);
+            // Sécurisation de la réponse (paginée ou non)
+            const responseData = res.data;
+            const batchesData = responseData.data !== undefined ? responseData.data : responseData;
+            
+            setBatches(Array.isArray(batchesData) ? batchesData : []);
+            
+            setPagination({
+                currentPage: responseData.current_page || 1,
+                lastPage: responseData.last_page || 1,
+                total: responseData.total || (Array.isArray(batchesData) ? batchesData.length : 0)
+            });
         } catch (error) {
             if (axios.isAxiosError(error) && !axios.isCancel(error)) {
                 toast.error("Erreur lors de la récupération des lots");
             }
+            setBatches([]);
         } finally {
             setLoading(false);
+        }
+    }, []);
+
+    // --- 1bis. RÉCUPÉRER TOUS LES LOTS (GET /admin/batches/all) ---
+    const getAllBatches = useCallback(async (filters: { article_id?: number | string } = {}) => {
+        try {
+            const res = await api.get("/admin/batches/all", {
+                params: filters
+            });
+            setAllBatches(Array.isArray(res.data) ? res.data : []);
+        } catch (error) {
+            console.error("Erreur lors de la récupération de la liste complète des lots", error);
+            setAllBatches([]);
         }
     }, []);
 
@@ -37,7 +71,10 @@ const useBatchStore = () => {
             await api.post("/admin/batches", payload);
             
             toast.success("Lot enregistré avec succès !");
-            await getBatches(); 
+            
+            // Rafraîchir les listes
+            await getBatches(1); 
+            await getAllBatches();
             return true;
         } catch (error) {
             if (axios.isAxiosError(error)) {
@@ -56,7 +93,10 @@ const useBatchStore = () => {
             await api.put(`/admin/batches/${id}`, payload);
             
             toast.success("Lot mis à jour avec succès !");
-            await getBatches(); 
+            
+            // Rafraîchir les listes
+            await getBatches(1); 
+            await getAllBatches();
             return true;
         } catch (error) {
             if (axios.isAxiosError(error)) {
@@ -75,7 +115,10 @@ const useBatchStore = () => {
             await api.delete(`/admin/batches/${id}`);
             
             toast.success("Lot supprimé avec succès !");
-            await getBatches(); 
+            
+            // Rafraîchir les listes
+            await getBatches(1); 
+            await getAllBatches();
             return true;
         } catch (error) {
             if (axios.isAxiosError(error)) {
@@ -88,7 +131,7 @@ const useBatchStore = () => {
     };
 
     // =========================================================================
-    // NOUVELLES FONCTIONS : INITIALISATION DES STOCKS
+    // FONCTIONS : INITIALISATION DES STOCKS
     // =========================================================================
 
     // --- 5. INITIALISER TOUS LES STOCKS (POST /admin/batches/initialize-all-stocks) ---
@@ -129,14 +172,17 @@ const useBatchStore = () => {
 
     return {
         batches,
+        allBatches, // Exporté pour les select
+        pagination,
         loading,
         actionLoading,
         getBatches,
+        getAllBatches,
         createBatch,
         updateBatch,
         deleteBatch,
-        initializeAllStocks, // Export de la nouvelle fonction
-        initializeBatchStock // Export de la nouvelle fonction
+        initializeAllStocks, 
+        initializeBatchStock 
     };
 };
 

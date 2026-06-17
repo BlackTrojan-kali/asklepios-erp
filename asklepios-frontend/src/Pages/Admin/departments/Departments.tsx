@@ -8,7 +8,8 @@ import {
     Trash2, 
     Building2, 
     Loader2, 
-    Hash
+    Hash,
+    RefreshCw
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
@@ -54,6 +55,13 @@ const Departments = () => {
     const centerOptions = useMemo(() => 
         centers.map(c => ({ value: c.id, label: c.name })), 
     [centers]);
+
+    // Action : Rafraîchir les données
+    const handleRefresh = () => {
+        if (selectedCenterOption) {
+            getDepartments(selectedCenterOption.value, searchTerm);
+        }
+    };
 
     // Action : Supprimer un département
     const handleDelete = async (id: number) => {
@@ -117,14 +125,27 @@ const Departments = () => {
                     </div>
                 </div>
                 
-                <button 
-                    disabled={!selectedCenterOption}
-                    onClick={() => setIsCreateOpen(true)}
-                    className="flex items-center gap-2 bg-[#00a896] hover:bg-[#008f7e] text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    <Plus size={18} />
-                    Nouveau Département
-                </button>
+                {/* Actions (Rafraîchir & Nouveau) */}
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <button 
+                        onClick={handleRefresh}
+                        disabled={loading || !selectedCenterOption}
+                        className="flex items-center justify-center gap-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 px-4 py-2 rounded-lg font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-none"
+                        title="Rafraîchir la liste"
+                    >
+                        <RefreshCw size={18} className={loading ? "animate-spin text-[#00a896]" : ""} />
+                        <span className="hidden sm:inline">Rafraîchir</span>
+                    </button>
+
+                    <button 
+                        disabled={!selectedCenterOption}
+                        onClick={() => setIsCreateOpen(true)}
+                        className="flex items-center justify-center gap-2 bg-[#00a896] hover:bg-[#008f7e] text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-none"
+                    >
+                        <Plus size={18} />
+                        Nouveau Département
+                    </button>
+                </div>
             </div>
 
             {/* SÉLECTEUR DE CENTRE & RECHERCHE */}

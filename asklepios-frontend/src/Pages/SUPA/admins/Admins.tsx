@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Search, Edit, Trash2, ShieldCheck, ChevronLeft, ChevronRight, Loader2, KeyRound } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, ShieldCheck, ChevronLeft, ChevronRight, Loader2, KeyRound, RefreshCw } from 'lucide-react';
 import Swal from 'sweetalert2';
 import useAdminStore from '../../../functions/admin/useAdminStore'; // Ajuste le chemin
 import AdminModal from '../../../components/modals/admin/AdminModal'; // Ajuste le chemin
@@ -29,6 +29,12 @@ const Admins = () => {
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         getAdmins(1, searchInput);
+    };
+
+    // Gérer le rafraîchissement des données
+    const handleRefresh = () => {
+        // Rafraîchit les données en gardant la page courante et la recherche active
+        getAdmins(pagination?.currentPage || 1, searchInput);
     };
 
     // --- HANDLERS POUR LES MODALES ---
@@ -89,13 +95,26 @@ const Admins = () => {
                     </div>
                 </div>
                 
-                <button 
-                    onClick={handleOpenCreate}
-                    className="flex items-center gap-2 bg-[#00a896] hover:bg-[#008f7e] text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
-                >
-                    <Plus size={18} />
-                    Nouvel administrateur
-                </button>
+                {/* Actions (Rafraîchir & Ajouter) */}
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <button 
+                        onClick={handleRefresh}
+                        disabled={loading}
+                        className="flex items-center justify-center gap-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 px-4 py-2 rounded-lg font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-none"
+                        title="Rafraîchir la liste"
+                    >
+                        <RefreshCw size={18} className={loading ? "animate-spin text-[#00a896]" : ""} />
+                        <span className="hidden sm:inline">Rafraîchir</span>
+                    </button>
+
+                    <button 
+                        onClick={handleOpenCreate}
+                        className="flex items-center justify-center gap-2 bg-[#00a896] hover:bg-[#008f7e] text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm flex-1 sm:flex-none"
+                    >
+                        <Plus size={18} />
+                        Nouvel administrateur
+                    </button>
+                </div>
             </div>
 
             {/* BARRE DE RECHERCHE */}
@@ -210,7 +229,7 @@ const Admins = () => {
                 </div>
 
                 {/* PAGINATION */}
-                {!loading && admins.length > 0 && (
+                {!loading && admins.length > 0 && pagination && (
                     <div className="p-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between bg-slate-50 dark:bg-gray-900/50">
                         <span className="text-sm text-gray-500 dark:text-gray-400">
                             Page <span className="font-semibold text-slate-800 dark:text-gray-200">{pagination.currentPage}</span> sur <span className="font-semibold text-slate-800 dark:text-gray-200">{pagination.lastPage}</span>

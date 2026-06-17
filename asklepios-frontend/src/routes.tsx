@@ -21,6 +21,10 @@ import NotFound from "./Pages/NotFound";
 import Providers from "./Pages/Admin/Pharmacies/Providers";
 import MagasinHome from "./Pages/Admin/Pharmacies/Magasin/MagasinHome";
 import StorageLocations from "./Pages/Admin/Pharmacies/Stock/StorageLocations";
+import PurchaseOrders from "./Pages/PHARMACY/PurchaseOrders";
+import PurchaseReturns from "./Pages/PHARMACY/PurchaseReturns";
+import AdminPurchaseOrders from "./Pages/Admin/Pharmacies/Stock/AdminPurchaseOrders";
+import AdminPurchaseReturns from "./Pages/Admin/Pharmacies/AdminPurchaseReturns";
 
 const routes = createBrowserRouter([
    {
@@ -111,7 +115,16 @@ const routes = createBrowserRouter([
         },{
             path:"pharmacy/providers",
             element:<Providers/>
+        },
+            
+        {
+            path:"orders",
+            element:<AdminPurchaseOrders/>
+        },{
+            path:"returns",
+            element:<AdminPurchaseReturns/>
         }
+        
         // Tu pourras ajouter d'autres routes Super Admin ici !
     ]
    },
@@ -135,6 +148,32 @@ const routes = createBrowserRouter([
         {
             path:"storage_location",
             element:<StorageLocations/>
+        },
+        
+        // Tu pourras ajouter d'autres routes Super Admin ici !
+    ]
+   },
+   
+   //pharmacien admin
+      {
+    path: "/pharmacy",
+    element: (
+        <AuthMiddleware>
+            <CheckRole roles={["pharmacy","admin"]}>
+                <AppLayout>
+                    <Outlet /> {/* <-- C'est ICI que le composant <Countries /> va s'insérer */}
+                </AppLayout>
+            </CheckRole>
+        </AuthMiddleware>
+    ),
+    children: [
+        
+        {
+            path:"orders",
+            element:<PurchaseOrders/>
+        },{
+            path:"returns",
+            element:<PurchaseReturns/>
         }
         // Tu pourras ajouter d'autres routes Super Admin ici !
     ]

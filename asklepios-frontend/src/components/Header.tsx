@@ -11,8 +11,9 @@ const Header = () => {
     // On garde juste ce booléen pour savoir quelle icône (Soleil/Lune) afficher
     const isDark = theme === "dark";
 
-    const handleLogout = () => {
-        logout();
+    const handleLogout =async () => {
+        await logout();
+        location.reload()
     };
 
     // Petit formatage sympa pour le rôle (ex: "super_admin" devient "Super Admin")

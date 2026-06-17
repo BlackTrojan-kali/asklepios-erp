@@ -2,13 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { Plus, Search, Edit, Trash2, FileText, Download, RefreshCw, Eye, ChevronLeft, ChevronRight, Loader2, CalendarDays } from 'lucide-react';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
+import Select from 'react-select'; 
 
 // Stores
 import useSubscriptionStore from '../../../functions/subscriptions/useSubscriptionStore';
 import useHospitalStore from '../../../functions/hospital/useHospitalStore'; 
 import useLicenceStore from '../../../functions/licence/useLicenceStore'; 
-// Assure-toi d'avoir un useCountryStore ou remplace par un fetch direct
-// import useCountryStore from '../../functions/country/useCountryStore'; 
+import useCountryStore from '../../../functions/country/useCountryStore';
 
 // Modèles et Types
 import type { SubscriptionDto, SubscriptionPreviewDto } from "../../../types/types" ;
@@ -16,7 +16,6 @@ import type { SubscriptionDto, SubscriptionPreviewDto } from "../../../types/typ
 // Modales
 import { CreateSubscriptionModal } from '../../../components/modals/Subscription/CreateSubscriptionModal';
 import { UpdateSubscriptionModal } from '../../../components/modals/Subscription/UpdateSubscriptionModal'; 
-import useCountryStore from '../../../functions/country/useCountryStore';
 
 const Subscriptions = () => {
     const { 
@@ -28,7 +27,6 @@ const Subscriptions = () => {
     // Pour alimenter les menus déroulants des filtres et des modales de création
     const { hospitals, getHospitals } = useHospitalStore();
     const { licences, getLicences } = useLicenceStore();
-    
     const { countries,  getCountries } = useCountryStore();
 
     // États pour les Filtres
@@ -51,15 +49,19 @@ const Subscriptions = () => {
     useEffect(() => {
         getCountries(1,"",100);
         getSubscriptions(1, {});
-        getHospitals(1, '', 100); // Récupère 100 hôpitaux pour les selects
+        getHospitals(1, '', 100); 
         getLicences(1, '', 100);
-        // getCountries() ...
-    }, [getSubscriptions, getHospitals, getLicences]);
+    }, [getSubscriptions, getHospitals, getLicences, getCountries]);
 
     // Lancer la recherche avec filtres
     const handleFilterSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         getSubscriptions(1, filters);
+    };
+
+    // Gérer le rafraîchissement des données
+    const handleRefresh = () => {
+        getSubscriptions(pagination?.currentPage || 1, filters);
     };
 
     // --- ACTIONS ---
@@ -108,6 +110,9 @@ const Subscriptions = () => {
         }
     };
 
+    // Préparation des options pour React-Select
+    const hospitalOptions = hospitals.map(h => ({ value: h.id.toString(), label: h.name }));
+
     return (
         <div className="space-y-6">
             
@@ -123,29 +128,85 @@ const Subscriptions = () => {
                     </div>
                 </div>
                 
-                <button 
-                    onClick={() => setIsCreateOpen(true)}
-                    className="flex items-center gap-2 bg-[#00a896] hover:bg-[#008f7e] text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
-                >
-                    <Plus size={18} />
-                    Nouveau Contrat
-                </button>
+                {/* Actions (Rafraîchir & Nouveau) */}
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <button 
+                        onClick={handleRefresh}
+                        disabled={loading}
+                        className="flex items-center justify-center gap-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 px-4 py-2 rounded-lg font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-none"
+                        title="Rafraîchir la liste"
+                    >
+                        <RefreshCw size={18} className={loading ? "animate-spin text-[#00a896]" : ""} />
+                        <span className="hidden sm:inline">Rafraîchir</span>
+                    </button>
+
+                    <button 
+                        onClick={() => setIsCreateOpen(true)}
+                        className="flex items-center justify-center gap-2 bg-[#00a896] hover:bg-[#008f7e] text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm flex-1 sm:flex-none"
+                    >
+                        <Plus size={18} />
+                        Nouveau Contrat
+                    </button>
+                </div>
             </div>
 
             {/* BARRE DE FILTRES AVANCÉS */}
             <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
                 <form onSubmit={handleFilterSubmit} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
                     
+                    {/* Select Hôpital : Strictement forcé en Blanc & Noir via styles inline */}
                     <div className="md:col-span-1">
                         <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Hôpital</label>
-                        <select 
-                            value={filters.hospital_id}
-                            onChange={(e) => setFilters({...filters, hospital_id: e.target.value})}
-                            className="w-full p-2 bg-slate-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:border-[#00a896] dark:focus:border-teal-500 text-sm text-slate-800 dark:text-white"
-                        >
-                            <option value="">Tous les hôpitaux</option>
-                            {hospitals.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
-                        </select>
+                        <Select 
+                            options={hospitalOptions}
+                            value={hospitalOptions.find(opt => opt.value === filters.hospital_id) || null}
+                            onChange={(selected) => setFilters({...filters, hospital_id: selected ? selected.value : ''})}
+                            placeholder="Tous les hôpitaux"
+                            isClearable
+                            styles={{
+                                control: (base, state) => ({
+                                    ...base,
+                                    backgroundColor: '#ffffff',
+                                    borderColor: state.isFocused ? '#00a896' : '#e5e7eb',
+                                    boxShadow: state.isFocused ? '0 0 0 1px #00a896' : 'none',
+                                    minHeight: '40px',
+                                    borderRadius: '0.5rem',
+                                    cursor: 'pointer'
+                                }),
+                                menu: (base) => ({
+                                    ...base,
+                                    backgroundColor: '#ffffff',
+                                    borderRadius: '0.5rem',
+                                    zIndex: 50,
+                                }),
+                                option: (base, state) => ({
+                                    ...base,
+                                    backgroundColor: state.isSelected 
+                                        ? '#e6f6f4' // Vert très clair si sélectionné
+                                        : state.isFocused 
+                                            ? '#f3f4f6' // Gris clair au survol
+                                            : '#ffffff', // Blanc par défaut
+                                    color: state.isSelected ? '#00a896' : '#000000', // Noir forcé
+                                    cursor: 'pointer',
+                                }),
+                                singleValue: (base) => ({
+                                    ...base,
+                                    color: '#000000', // Noir forcé pour la valeur choisie
+                                }),
+                                input: (base) => ({
+                                    ...base,
+                                    color: '#000000', // Noir forcé pour le texte tapé
+                                }),
+                                placeholder: (base) => ({
+                                    ...base,
+                                    color: '#6b7280', // Gris pour le placeholder
+                                }),
+                                indicatorSeparator: (base) => ({
+                                    ...base,
+                                    backgroundColor: '#e5e7eb',
+                                }),
+                            }}
+                        />
                     </div>
 
                     <div className="md:col-span-1">
@@ -154,7 +215,7 @@ const Subscriptions = () => {
                             type="date" 
                             value={filters.from_date}
                             onChange={(e) => setFilters({...filters, from_date: e.target.value})}
-                            className="w-full p-2 bg-slate-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:border-[#00a896] dark:focus:border-teal-500 text-sm text-slate-800 dark:text-white"
+                            className="w-full p-2 min-h-[40px] bg-slate-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:border-[#00a896] dark:focus:border-teal-500 text-sm text-slate-800 dark:text-white transition-colors"
                         />
                     </div>
 
@@ -164,14 +225,14 @@ const Subscriptions = () => {
                             type="date" 
                             value={filters.to_date}
                             onChange={(e) => setFilters({...filters, to_date: e.target.value})}
-                            className="w-full p-2 bg-slate-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:border-[#00a896] dark:focus:border-teal-500 text-sm text-slate-800 dark:text-white"
+                            className="w-full p-2 min-h-[40px] bg-slate-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:border-[#00a896] dark:focus:border-teal-500 text-sm text-slate-800 dark:text-white transition-colors"
                         />
                     </div>
 
                     <div className="md:col-span-2 flex gap-2">
                         <button 
                             type="submit" 
-                            className="flex-1 bg-[#003366] hover:bg-[#002244] dark:bg-gray-700 dark:hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm flex justify-center items-center gap-2"
+                            className="flex-1 bg-[#003366] hover:bg-[#002244] dark:bg-gray-700 dark:hover:bg-gray-600 text-white px-4 py-2 min-h-[40px] rounded-lg font-medium transition-colors text-sm flex justify-center items-center gap-2"
                         >
                             <Search size={16} /> Filtrer
                         </button>
@@ -181,7 +242,7 @@ const Subscriptions = () => {
                                 setFilters({ hospital_id: '', country_id: '', from_date: '', to_date: '' });
                                 getSubscriptions(1, {});
                             }}
-                            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200 dark:border dark:border-gray-600 rounded-lg font-medium transition-colors text-sm"
+                            className="px-4 py-2 min-h-[40px] bg-gray-200 hover:bg-gray-300 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200 dark:border dark:border-gray-600 rounded-lg font-medium transition-colors text-sm"
                         >
                             Réinitialiser
                         </button>
@@ -284,7 +345,7 @@ const Subscriptions = () => {
                 </div>
 
                 {/* PAGINATION */}
-                {!loading && subscriptions.length > 0 && (
+                {!loading && subscriptions.length > 0 && pagination && (
                     <div className="p-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between bg-slate-50 dark:bg-gray-900/50">
                         <span className="text-sm text-gray-500 dark:text-gray-400">
                             Page <span className="font-semibold text-slate-800 dark:text-gray-200">{pagination.currentPage}</span> sur <span className="font-semibold text-slate-800 dark:text-gray-200">{pagination.lastPage}</span>

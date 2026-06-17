@@ -4,9 +4,18 @@ import toast from "react-hot-toast";
 import api from "../../api/api"; // Ajuste le chemin selon ton arborescence
 import type { ArticleDto, ArticlePayload } from "../../types/PharmTypes";
 
+// Interface pour la pagination
+export interface PaginationData {
+    currentPage: number;
+    lastPage: number;
+    total: number;
+}
+
 const useArticleStore = () => {
     // --- ÉTATS ---
     const [articles, setArticles] = useState<ArticleDto[]>([]);
+    const [allArticles, setAllArticles] = useState<ArticleDto[]>([]); // Pour les select sans pagination
+    const [pagination, setPagination] = useState<PaginationData | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [actionLoading, setActionLoading] = useState<boolean>(false);
 
@@ -29,7 +38,7 @@ const useArticleStore = () => {
             formData.append('barcode', payload.barcode);
         }
         
-        if (payload.global_min_qty !== "") {
+        if (payload.global_min_qty !== "" && payload.global_min_qty !== undefined && payload.global_min_qty !== null) {
             formData.append('global_min_qty', String(payload.global_min_qty));
         }
 
@@ -41,23 +50,46 @@ const useArticleStore = () => {
         return formData;
     };
 
-    // --- 1. LISTER & FILTRER (GET /admin/articles) ---
+    // --- 1. LISTER & FILTRER Paginé (GET /admin/articles) ---
     const getArticles = useCallback(async (
+        page: number = 1,
         filters: { search?: string, category_id?: number | string } = {}
     ) => {
         try {
             setLoading(true);
-            const res = await api.get<ArticleDto[]>("/admin/articles", {
-                params: filters
+            const res = await api.get("/admin/articles", {
+                params: { page, ...filters }
             });
             
-            setArticles(res.data);
+            // Sécurisation de la réponse (paginée ou non)
+            const responseData = res.data;
+            const articlesData = responseData.data !== undefined ? responseData.data : responseData;
+            
+            setArticles(Array.isArray(articlesData) ? articlesData : []);
+            
+            setPagination({
+                currentPage: responseData.current_page || 1,
+                lastPage: responseData.last_page || 1,
+                total: responseData.total || (Array.isArray(articlesData) ? articlesData.length : 0)
+            });
         } catch (error) {
             if (axios.isAxiosError(error) && !axios.isCancel(error)) {
                 toast.error("Erreur lors de la récupération des articles");
             }
+            setArticles([]);
         } finally {
             setLoading(false);
+        }
+    }, []);
+
+    // --- 1bis. RÉCUPÉRER TOUS LES ARTICLES (GET /admin/articles/all) ---
+    const getAllArticles = useCallback(async () => {
+        try {
+            const res = await api.get("/admin/articles/all");
+            setAllArticles(Array.isArray(res.data) ? res.data : []);
+        } catch (error) {
+            console.error("Erreur lors de la récupération du catalogue complet", error);
+            setAllArticles([]);
         }
     }, []);
 
@@ -72,7 +104,10 @@ const useArticleStore = () => {
             });
             
             toast.success("Article créé avec succès !");
-            await getArticles(); 
+            
+            // Rafraîchir les listes
+            await getArticles(1); 
+            await getAllArticles();
             return true;
         } catch (error) {
             if (axios.isAxiosError(error)) {
@@ -96,7 +131,10 @@ const useArticleStore = () => {
             });
             
             toast.success("Article mis à jour avec succès !");
-            await getArticles(); 
+            
+            // Rafraîchir les listes
+            await getArticles(1); 
+            await getAllArticles();
             return true;
         } catch (error) {
             if (axios.isAxiosError(error)) {
@@ -114,7 +152,10 @@ const useArticleStore = () => {
             setActionLoading(true);
             await api.delete(`/admin/articles/${id}`);
             toast.success("Article supprimé avec succès !");
-            await getArticles(); 
+            
+            // Rafraîchir les listes
+            await getArticles(1); 
+            await getAllArticles();
             return true;
         } catch (error) {
             if (axios.isAxiosError(error)) {
@@ -128,9 +169,12 @@ const useArticleStore = () => {
 
     return {
         articles,
+        allArticles, // Liste complète pour les futurs formulaires (entrées de stock, etc.)
+        pagination,
         loading,
         actionLoading,
         getArticles,
+        getAllArticles,
         createArticle,
         updateArticle,
         deleteArticle

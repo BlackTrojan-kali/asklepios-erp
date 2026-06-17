@@ -9,6 +9,7 @@ class ArticleCategory extends Model
 {
     //
     protected $guarded  = [];
+    
     public function hospital()
     {
         return $this->belongsTo(Hospital::class);
