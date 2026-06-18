@@ -12,13 +12,14 @@ import {
     Layers,
     Package,
     ArrowRightLeft,
-    AlertCircle
+    AlertCircle,
+    GripVertical
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
 // Stores
 import useStorageLocationStore from '../../../../functions/pharmacy/useStorageLocationStore';
-import useStockStore from '../../../../functions/pharmacy/useStockStore'; // Ajout du store des stocks
+import useStockStore from '../../../../functions/pharmacy/useStockStore';
 
 // Types
 import type { StorageLocationDto } from '../../../../types/PharmMagTypes';
@@ -32,7 +33,7 @@ const StorageLocations = () => {
     // Hooks des stores
     const { 
         locations, loading: locLoading,
-        getLocations, deleteLocation 
+        getLocations, deleteLocation, assignStockToLocation // <-- Importation de ta méthode
     } = useStorageLocationStore();
 
     const {
@@ -40,24 +41,74 @@ const StorageLocations = () => {
         getMyBranchStocks
     } = useStockStore();
 
-    // États
+    // États standards
     const [searchTerm, setSearchTerm] = useState('');
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [selectedLocation, setSelectedLocation] = useState<StorageLocationDto | null>(null);
-    
-    // État pour la modale d'affectation de stock
     const [stockToAssign, setStockToAssign] = useState<any | null>(null);
 
-    // Chargement initial (Emplacements + Stocks de la succursale)
+    // --- ÉTATS POUR LE DRAG & DROP ---
+    const [hoveredLocationId, setHoveredLocationId] = useState<number | 'UNASSIGNED' | null>(null);
+    const [isDragging, setIsDragging] = useState(false);
+
+    // Chargement initial
     useEffect(() => {
         getLocations({});
         getMyBranchStocks({});
     }, [getLocations, getMyBranchStocks]);
 
-    // Rafraîchissement manuel
     const handleRefresh = () => {
         getLocations({});
         getMyBranchStocks({});
+    };
+
+    // --- LOGIQUE DRAG & DROP ---
+    const handleDragStart = (e: React.DragEvent<HTMLDivElement | HTMLButtonElement>, stockId: number) => {
+        setIsDragging(true);
+        e.dataTransfer.setData('text/plain', stockId.toString());
+        e.dataTransfer.effectAllowed = 'move';
+    };
+
+    const handleDragEnd = () => {
+        setIsDragging(false);
+        setHoveredLocationId(null);
+    };
+
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>, locationId: number | 'UNASSIGNED') => {
+        e.preventDefault(); 
+        e.dataTransfer.dropEffect = 'move';
+        if (hoveredLocationId !== locationId) {
+            setHoveredLocationId(locationId);
+        }
+    };
+
+    const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setHoveredLocationId(null);
+    };
+
+    const handleDrop = async (e: React.DragEvent<HTMLDivElement>, locationId: number | null) => {
+        e.preventDefault();
+        setHoveredLocationId(null);
+        setIsDragging(false);
+
+        const stockIdStr = e.dataTransfer.getData('text/plain');
+        if (!stockIdStr) return;
+        const stockId = parseInt(stockIdStr, 10);
+
+        // Vérifier si l'article est déjà à cet emplacement exact
+        const stock = stocks.find(s => s.id === stockId);
+        if (!stock || stock.storage_location_id === locationId) return;
+
+        // UTILISATION DE TON STORE ICI
+        const success = await assignStockToLocation({
+            stock_id: stockId,
+            storage_location_id: locationId // Sera null si déposé dans la zone d'attente (UNASSIGNED)
+        });
+
+        if (success) {
+            handleRefresh(); // Rafraîchit les stocks pour afficher la nouvelle position
+        }
     };
 
     // Suppression d'une zone
@@ -70,20 +121,16 @@ const StorageLocations = () => {
             confirmButtonColor: '#ef4444',
             cancelButtonText: 'Annuler',
             confirmButtonText: 'Oui, supprimer',
-            customClass: {
-                popup: 'rounded-2xl dark:bg-gray-800 dark:text-gray-200'
-            }
+            customClass: { popup: 'rounded-2xl dark:bg-gray-800 dark:text-gray-200' }
         });
         
         if (result.isConfirmed) {
             const success = await deleteLocation(id);
-            if(success) handleRefresh(); // On rafraîchit pour mettre à jour les stocks orphelins
+            if(success) handleRefresh(); 
         }
     };
 
     // --- FILTRAGE ET ORGANISATION DES DONNÉES ---
-
-    // 1. Filtrer les emplacements par la barre de recherche
     const filteredLocations = useMemo(() => {
         if (!searchTerm) return locations;
         const lowerSearch = searchTerm.toLowerCase();
@@ -94,12 +141,42 @@ const StorageLocations = () => {
         );
     }, [locations, searchTerm]);
 
-    // 2. Séparer les stocks : ceux qui sont rangés et ceux qui ne le sont pas (Zone d'attente)
     const unassignedStocks = useMemo(() => {
         return stocks.filter(s => !s.storage_location_id);
     }, [stocks]);
 
     const isLoading = locLoading || stockLoading;
+
+    // Composant réutilisable pour une carte "Stock" (Draggable)
+    const DraggableStockCard = ({ stock }: { stock: any }) => (
+        <div
+            draggable
+            onDragStart={(e) => handleDragStart(e, stock.id)}
+            onDragEnd={handleDragEnd}
+            onClick={() => setStockToAssign(stock)} // Fallback au clic
+            className="group flex items-center justify-between p-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md hover:border-teal-400 dark:hover:border-teal-500 transition-all text-left cursor-grab active:cursor-grabbing w-full sm:w-auto min-w-[220px]"
+            title="Glissez pour déplacer, ou cliquez pour les options"
+        >
+            <div className="flex items-center gap-3 w-full min-w-0 pr-2">
+                <div className="text-gray-300 dark:text-gray-600 group-hover:text-teal-500 shrink-0 cursor-grab">
+                    <GripVertical size={16} />
+                </div>
+                <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-slate-800 dark:text-gray-200 truncate">
+                        {stock.batch?.article?.name || "Article inconnu"}
+                    </p>
+                    <div className="flex justify-between items-center mt-0.5">
+                        <span className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
+                            Lot: <span className="font-mono bg-slate-100 dark:bg-gray-700 px-1 rounded">{stock.batch?.batch_number}</span>
+                        </span>
+                        <span className="text-xs font-black text-[#00a896] bg-teal-50 dark:bg-teal-900/30 px-1.5 py-0.5 rounded shrink-0">
+                            x{stock.qty}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
 
     return (
         <div className="space-y-6">
@@ -112,7 +189,7 @@ const StorageLocations = () => {
                     </div>
                     <div>
                         <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Bibliothèque du Magasin</h1>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Gérez vos rayons et rangez vos articles facilement.</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Glissez-déposez vos articles pour les ranger sur les étagères.</p>
                     </div>
                 </div>
                 
@@ -158,42 +235,42 @@ const StorageLocations = () => {
                 </div>
             ) : (
                 <>
-                    {/* ZONE 1 : ARTICLES NON RANGÉS (S'il y en a) */}
-                    {unassignedStocks.length > 0 && (
-                        <div className="bg-amber-50 dark:bg-amber-900/10 border-2 border-dashed border-amber-300 dark:border-amber-700/50 rounded-xl p-5">
-                            <div className="flex items-center gap-2 mb-4 text-amber-700 dark:text-amber-500">
-                                <AlertCircle size={20} />
-                                <h2 className="text-lg font-bold">Zone d'attente : Articles à ranger</h2>
-                                <span className="bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 text-xs font-bold px-2 py-0.5 rounded-full ml-2">
-                                    {unassignedStocks.length}
-                                </span>
+                    {/* ZONE 1 : ZONE D'ATTENTE (DROPZONE "UNASSIGNED") */}
+                    <div 
+                        onDragOver={(e) => handleDragOver(e, 'UNASSIGNED')}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(e, null)} // null pour retirer un article de son emplacement
+                        className={`transition-all duration-200 rounded-xl p-5 border-2 ${
+                            hoveredLocationId === 'UNASSIGNED' 
+                                ? 'bg-amber-100 border-amber-500 dark:bg-amber-900/40 dark:border-amber-400 scale-[1.01]' 
+                                : isDragging
+                                    ? 'bg-amber-50/50 border-amber-300 border-dashed dark:bg-amber-900/10 dark:border-amber-700/50'
+                                    : unassignedStocks.length > 0
+                                        ? 'bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800/50 border-dashed'
+                                        : 'hidden'
+                        }`}
+                    >
+                        <div className="flex items-center gap-2 mb-4 text-amber-700 dark:text-amber-500">
+                            <AlertCircle size={20} />
+                            <h2 className="text-lg font-bold">Zone d'attente (Articles non rangés)</h2>
+                            <span className="bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 text-xs font-bold px-2 py-0.5 rounded-full ml-2">
+                                {unassignedStocks.length}
+                            </span>
+                        </div>
+                        
+                        {unassignedStocks.length === 0 && isDragging ? (
+                            <div className="py-6 text-center text-amber-600 dark:text-amber-500 opacity-70 border-2 border-dashed border-amber-300 dark:border-amber-700 rounded-lg">
+                                <Package size={32} className="mx-auto mb-2" />
+                                <p>Déposez un article ici pour le retirer de son étagère</p>
                             </div>
-                            
-                            {/* Flex wrap pour ressembler à des boîtes en vrac */}
+                        ) : (
                             <div className="flex flex-wrap gap-3 max-h-60 overflow-y-auto custom-scrollbar p-1">
                                 {unassignedStocks.map(stock => (
-                                    <button
-                                        key={stock.id}
-                                        onClick={() => setStockToAssign(stock)}
-                                        className="flex items-center gap-3 bg-white dark:bg-gray-800 border border-amber-200 dark:border-amber-700/50 p-2.5 rounded-lg shadow-sm hover:shadow-md hover:border-amber-400 dark:hover:border-amber-500 transition-all text-left w-full sm:w-auto min-w-[200px]"
-                                    >
-                                        <div className="bg-amber-100 dark:bg-amber-900/30 p-2 rounded text-amber-600 dark:text-amber-400">
-                                            <Package size={16} />
-                                        </div>
-                                        <div className="flex-1">
-                                            <p className="text-sm font-bold text-slate-800 dark:text-gray-200 line-clamp-1">
-                                                {stock.batch?.article?.name || "Article inconnu"}
-                                            </p>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                                                Lot: {stock.batch?.batch_number} | Qté: <span className="font-bold">{stock.qty}</span>
-                                            </p>
-                                        </div>
-                                        <ArrowRightLeft size={14} className="text-gray-300 group-hover:text-amber-500 ml-2" />
-                                    </button>
+                                    <DraggableStockCard key={stock.id} stock={stock} />
                                 ))}
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
 
                     {/* ZONE 2 : LA BIBLIOTHÈQUE (ÉTAGÈRES ET RAYONS) */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -204,18 +281,29 @@ const StorageLocations = () => {
                             </div>
                         ) : (
                             filteredLocations.map(loc => {
-                                // Récupérer les stocks rangés dans cet emplacement précis
                                 const stocksInLocation = stocks.filter(s => s.storage_location_id === loc.id);
                                 const locLabel = [loc.aisle, loc.shelf].filter(Boolean).join(' - ') || `Zone #${loc.id}`;
+                                const isHovered = hoveredLocationId === loc.id;
 
                                 return (
-                                    <div key={loc.id} className="flex flex-col bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow">
-                                        
+                                    <div 
+                                        key={loc.id} 
+                                        onDragOver={(e) => handleDragOver(e, loc.id)}
+                                        onDragLeave={handleDragLeave}
+                                        onDrop={(e) => handleDrop(e, loc.id)}
+                                        className={`flex flex-col rounded-xl overflow-hidden transition-all duration-200 shadow-sm ${
+                                            isHovered 
+                                                ? 'bg-teal-50 border-2 border-dashed border-teal-500 dark:bg-teal-900/20 dark:border-teal-400 scale-[1.02]' 
+                                                : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:shadow-md'
+                                        }`}
+                                    >
                                         {/* EN-TÊTE DE L'ÉTAGÈRE */}
-                                        <div className="bg-slate-50 dark:bg-gray-900/50 p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-start">
+                                        <div className={`p-4 border-b flex justify-between items-start transition-colors ${
+                                            isHovered ? 'bg-teal-100/50 dark:bg-teal-900/40 border-teal-200 dark:border-teal-800/50' : 'bg-slate-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700'
+                                        }`}>
                                             <div>
                                                 <div className="flex items-center gap-1.5 text-sm font-bold text-slate-800 dark:text-white">
-                                                    <Layers size={16} className="text-teal-500" />
+                                                    <Layers size={16} className={isHovered ? "text-teal-600 dark:text-teal-400" : "text-teal-500"} />
                                                     {locLabel}
                                                 </div>
                                                 {loc.code && (
@@ -226,7 +314,6 @@ const StorageLocations = () => {
                                                 )}
                                             </div>
                                             
-                                            {/* Actions de l'emplacement */}
                                             <div className="flex gap-1">
                                                 <button onClick={() => setSelectedLocation(loc)} className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-gray-700 rounded transition-colors">
                                                     <Edit size={14} />
@@ -237,41 +324,31 @@ const StorageLocations = () => {
                                             </div>
                                         </div>
 
-                                        {/* CORPS DE L'ÉTAGÈRE (Les produits) */}
-                                        <div className="flex-1 p-3 bg-slate-50/50 dark:bg-gray-800/50 flex flex-col gap-2 min-h-[120px] max-h-[300px] overflow-y-auto custom-scrollbar">
-                                            {stocksInLocation.length === 0 ? (
+                                        {/* CORPS DE L'ÉTAGÈRE */}
+                                        <div className={`flex-1 p-3 flex flex-col gap-2 min-h-[120px] max-h-[300px] overflow-y-auto custom-scrollbar transition-colors ${
+                                            isHovered ? 'bg-teal-50/30 dark:bg-transparent' : 'bg-slate-50/50 dark:bg-gray-800/50'
+                                        }`}>
+                                            {isHovered && stocksInLocation.length === 0 ? (
+                                                <div className="flex-1 flex flex-col items-center justify-center text-center">
+                                                    <ArrowDownLeft size={32} className="text-teal-500 dark:text-teal-400 animate-bounce mb-2" />
+                                                    <span className="text-sm font-bold text-teal-600 dark:text-teal-400">Déposer ici</span>
+                                                </div>
+                                            ) : stocksInLocation.length === 0 ? (
                                                 <div className="flex-1 flex flex-col items-center justify-center text-center opacity-50">
                                                     <Package size={24} className="text-gray-300 dark:text-gray-600 mb-1" />
                                                     <span className="text-xs text-gray-400">Étagère vide</span>
                                                 </div>
                                             ) : (
                                                 stocksInLocation.map(stock => (
-                                                    <button 
-                                                        key={stock.id}
-                                                        onClick={() => setStockToAssign(stock)}
-                                                        className="group flex items-center justify-between p-2 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded shadow-sm hover:border-teal-300 dark:hover:border-teal-600 transition-colors text-left"
-                                                        title="Cliquer pour déplacer cet article"
-                                                    >
-                                                        <div className="flex-1 min-w-0 pr-2">
-                                                            <p className="text-xs font-bold text-slate-700 dark:text-gray-200 truncate">
-                                                                {stock.batch?.article?.name || "Inconnu"}
-                                                            </p>
-                                                            <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
-                                                                Lot: {stock.batch?.batch_number}
-                                                            </p>
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-xs font-black text-[#00a896] bg-teal-50 dark:bg-teal-900/30 px-1.5 py-0.5 rounded">
-                                                                x{stock.qty}
-                                                            </span>
-                                                        </div>
-                                                    </button>
+                                                    <DraggableStockCard key={stock.id} stock={stock} />
                                                 ))
                                             )}
                                         </div>
                                         
-                                        {/* PIED DE L'ÉTAGÈRE (Effet visuel bois/tablette) */}
-                                        <div className="h-3 w-full bg-slate-200 dark:bg-gray-700 border-t border-slate-300 dark:border-gray-600"></div>
+                                        {/* PIED DE L'ÉTAGÈRE */}
+                                        <div className={`h-3 w-full border-t transition-colors ${
+                                            isHovered ? 'bg-teal-200 dark:bg-teal-800 border-teal-300 dark:border-teal-700' : 'bg-slate-200 dark:bg-gray-700 border-slate-300 dark:border-gray-600'
+                                        }`}></div>
                                     </div>
                                 );
                             })
@@ -280,7 +357,7 @@ const StorageLocations = () => {
                 </>
             )}
 
-            {/* MODALES DE GESTION DES EMPLACEMENTS */}
+            {/* MODALES */}
             <CreateLocationModal 
                 isOpen={isCreateOpen} 
                 onClose={() => setIsCreateOpen(false)} 
@@ -292,7 +369,6 @@ const StorageLocations = () => {
                 location={selectedLocation}
             />
 
-            {/* MODALE D'AFFECTATION DES STOCKS */}
             <AssignStockModal
                 isOpen={!!stockToAssign}
                 onClose={() => setStockToAssign(null)}
@@ -300,7 +376,7 @@ const StorageLocations = () => {
                 articleName={stockToAssign?.batch?.article?.name || "Article sélectionné"}
                 currentLocationId={stockToAssign?.storage_location_id}
                 locations={locations}
-                onSuccess={handleRefresh} // On rafraîchit la bibliothèque après le rangement
+                onSuccess={handleRefresh}
             />
 
         </div>
