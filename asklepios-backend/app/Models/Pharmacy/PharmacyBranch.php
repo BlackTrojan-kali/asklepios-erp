@@ -21,4 +21,10 @@ class PharmacyBranch extends Model
     {
         return $this->belongsTo(Center::class);
     }
+    // Dans app/Models/Pharmacy/PharmacyBranch.php
+
+    public function inventories()
+    {
+        return $this->hasMany(Inventory::class);
+    }
 }

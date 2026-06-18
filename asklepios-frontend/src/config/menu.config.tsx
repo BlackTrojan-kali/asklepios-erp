@@ -97,7 +97,16 @@ export const MENU_CONFIG: MenuItemType[] = [
             },
             {
                 title:"Stocks",
+                subItems:[
+                    {
+                        title:"etat des stocks",
                 path:"/admin/pharmacy/stocks",
+                    },
+                    {
+                        title:"inventaires",
+                        path:"/admin/inventory"
+                    }
+                ]
             },
             {
                 title:"Fournisseurs",
@@ -119,6 +128,10 @@ export const MENU_CONFIG: MenuItemType[] = [
                 title:"Movements",
                 path:"/pharmacy/movements",
             },
+    {
+        title:"Inventaire",
+        path:"/pharmacy/inventory"
+    },
             {
                 title:"emplacements",
                 path:"/pharmacy/storage_location"

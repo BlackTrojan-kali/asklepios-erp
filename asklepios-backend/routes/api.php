@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\PharmacyBranchController;
 use App\Http\Controllers\Admin\ProviderController;
 use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\Pharmacien\InventoryController;
 use App\Http\Controllers\Pharmacien\PurchaseOrderController;
 use App\Http\Controllers\Pharmacien\PurchaseReturnController;
 use App\Http\Controllers\Pharmacien\StockMovementController;
@@ -184,6 +185,31 @@ Route::get('/providers/paginated', [ProviderController::class, 'indexPaginated']
     Route::apiResource('purchase-returns', PurchaseReturnController::class);
 // --- À METTRE ÉGALEMENT DANS LE GROUPE PHARMACIEN ---
 // (Mêmes routes, le contrôleur triera les permissions)
+
+
+});
+// ==========================================================
+// ROUTES PARTAGÉES (ADMIN & PHARMACY) - PRÉFIXE: /api/pharmacy/
+// ==========================================================
+Route::middleware(['auth:sanctum', 'role:admin,pharmacy'])->prefix('pharmacy')->group(function () {
+    
+    // ---------------------------------------------------------
+    // GESTION DES INVENTAIRES (INVENTORIES)
+    // ---------------------------------------------------------
+    // ⚠️ ATTENTION : Les routes d'exportation DOIVENT être au-dessus des routes /{id}
+    Route::get('/inventories/export/pdf', [InventoryController::class, 'exportPdf']);
+    Route::get('/inventories/export/excel', [InventoryController::class, 'exportExcel']);
+    
+    // Actions spécifiques
+    Route::post('/inventories/{id}/validate', [InventoryController::class, 'validateInventory']);
+    
+    // Routes CRUD classiques
+    Route::get('/inventories', [InventoryController::class, 'index']);
+    Route::get('/inventories/{id}', [InventoryController::class, 'show']);
+    Route::post('/inventories', [InventoryController::class, 'store']);
+    Route::put('/inventories/{id}', [InventoryController::class, 'update']);
+    Route::delete('/inventories/{id}', [InventoryController::class, 'destroy']);
+    
 });
 Route::middleware(["auth:sanctum","role:pharmacy"])->prefix("pharmacy")->group(function(){
     // ... tes autres routes pharmacien ...

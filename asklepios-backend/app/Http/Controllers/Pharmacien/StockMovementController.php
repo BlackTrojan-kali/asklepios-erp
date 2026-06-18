@@ -106,6 +106,7 @@ class StockMovementController extends Controller
     }
 
     #[OA\Get(path: "/api/stock-movements", summary: "Lister l'historique des mouvements", security: [["bearerAuth" => []]], tags: ["Mouvements de Stock"])]
+    #[OA\Response(response: 200, description: "Liste des mouvements récupérée avec succès")]
     public function index(Request $request)
     {
         $perPage = $request->query('per_page', 20);
@@ -119,6 +120,7 @@ class StockMovementController extends Controller
     // ==========================================
 
     #[OA\Get(path: "/api/stock-movements/export/pdf", summary: "Exporter les mouvements en PDF", security: [["bearerAuth" => []]], tags: ["Mouvements de Stock"])]
+ #[OA\Response(response: 200, description: "Fichier PDF généré")] // <-- LIGNE MANQUANTE
     public function exportPdf(Request $request)
     {
         $query = $this->applyFilters($this->getScopedQuery(), $request);
@@ -132,6 +134,7 @@ class StockMovementController extends Controller
     }
 
     #[OA\Get(path: "/api/stock-movements/export/excel", summary: "Exporter les mouvements en Excel", security: [["bearerAuth" => []]], tags: ["Mouvements de Stock"])]
+   #[OA\Response(response: 200, description: "Fichier Excel généré")] // <-- LIGNE MANQUANTE
     public function exportExcel(Request $request)
     {
         $query = $this->applyFilters($this->getScopedQuery(), $request);

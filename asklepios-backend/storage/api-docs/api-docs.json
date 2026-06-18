@@ -2082,6 +2082,152 @@
                 ]
             }
         },
+        "/api/pharmacy/inventories": {
+            "get": {
+                "tags": [
+                    "Inventaires"
+                ],
+                "summary": "Lister les inventaires",
+                "operationId": "c73aa68a7b06125997539d61f3b6fabe",
+                "responses": {
+                    "200": {
+                        "description": "Liste des inventaires"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Inventaires"
+                ],
+                "summary": "Créer un brouillon d'inventaire",
+                "operationId": "753c221b3258277a6ac68a4391361a7a",
+                "responses": {
+                    "201": {
+                        "description": "Inventaire créé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/pharmacy/inventories/{id}": {
+            "get": {
+                "tags": [
+                    "Inventaires"
+                ],
+                "summary": "Détails d'un inventaire",
+                "operationId": "a8f4129f6c957fdc487ff61bb5f93303",
+                "responses": {
+                    "200": {
+                        "description": "Détails avec les lignes"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Inventaires"
+                ],
+                "summary": "Modifier un brouillon d'inventaire",
+                "operationId": "72ab97c6c0c6d660641de33083b94cbc",
+                "responses": {
+                    "200": {
+                        "description": "Inventaire mis à jour"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Inventaires"
+                ],
+                "summary": "Supprimer un inventaire",
+                "operationId": "4cacecb823ab1df5138ab79f2f898666",
+                "responses": {
+                    "200": {
+                        "description": "Inventaire supprimé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/pharmacy/inventories/{id}/validate": {
+            "post": {
+                "tags": [
+                    "Inventaires"
+                ],
+                "summary": "Valider l'inventaire et ajuster les stocks",
+                "operationId": "63a0f2b04ca11c10ff15fe2a0a8b095c",
+                "responses": {
+                    "200": {
+                        "description": "Inventaire validé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/pharmacy/inventories/export/pdf": {
+            "get": {
+                "tags": [
+                    "Inventaires"
+                ],
+                "summary": "Exporter les inventaires détaillés en PDF",
+                "operationId": "99a09957577ceb5b7effb0358de2b4ad",
+                "responses": {
+                    "200": {
+                        "description": "Fichier PDF généré"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/pharmacy/inventories/export/excel": {
+            "get": {
+                "tags": [
+                    "Inventaires"
+                ],
+                "summary": "Exporter les inventaires détaillés en Excel",
+                "operationId": "39281df444a345766adb4aff24cdcc70",
+                "responses": {
+                    "200": {
+                        "description": "Fichier Excel généré"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/purchase-orders": {
             "get": {
                 "tags": [
@@ -2406,6 +2552,63 @@
                 ],
                 "summary": "Exporter les retours détaillés en Excel",
                 "operationId": "6ee322aa7a081efa52c2c5ffe4855a73",
+                "responses": {
+                    "200": {
+                        "description": "Fichier Excel généré"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/stock-movements": {
+            "get": {
+                "tags": [
+                    "Mouvements de Stock"
+                ],
+                "summary": "Lister l'historique des mouvements",
+                "operationId": "6da256c673a940eebf920be301e9126c",
+                "responses": {
+                    "200": {
+                        "description": "Liste des mouvements récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/stock-movements/export/pdf": {
+            "get": {
+                "tags": [
+                    "Mouvements de Stock"
+                ],
+                "summary": "Exporter les mouvements en PDF",
+                "operationId": "90c294f138e3360546d130c2a1d353cb",
+                "responses": {
+                    "200": {
+                        "description": "Fichier PDF généré"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/stock-movements/export/excel": {
+            "get": {
+                "tags": [
+                    "Mouvements de Stock"
+                ],
+                "summary": "Exporter les mouvements en Excel",
+                "operationId": "3821fc25b22ab76a64d02d534a03175b",
                 "responses": {
                     "200": {
                         "description": "Fichier Excel généré"
@@ -3817,12 +4020,20 @@
             "description": "Consultation des niveaux de stocks par succursale et par lot"
         },
         {
+            "name": "Inventaires",
+            "description": "Gestion des inventaires de la pharmacie"
+        },
+        {
             "name": "Commandes Fournisseurs",
             "description": "Gestion des approvisionnements (Admin & Pharmacien)"
         },
         {
             "name": "Retours Fournisseurs",
             "description": "Gestion des retours de marchandises (Admin & Pharmacy)"
+        },
+        {
+            "name": "Mouvements de Stock",
+            "description": "Historique et piste d'audit des mouvements de stock"
         },
         {
             "name": "Gestion Espace & Aménagement",
