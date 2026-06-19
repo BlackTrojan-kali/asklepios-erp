@@ -187,3 +187,44 @@ export interface DepartmentPayload {
     name: string;
     alias?: string | null;
 }
+// ==========================================
+// DTOs POUR LE RÔLE PHARMACIEN
+// ==========================================
+
+export type PharmacyPosition = "magasin" | "vente";
+
+export interface ProfilePharmDto {
+    id: number;
+    user_id: number;
+    position: PharmacyPosition;
+    hospital_id: number;
+    // Relations optionnelles
+    hospital?: HospitalDto; 
+}
+
+/**
+ * Interface complète pour un utilisateur ayant le rôle pharmacien
+ */
+export interface PharmacienDto {
+    id: number;
+    first_name: string;
+    last_name: string | null;
+    phone: number | string;
+    email: string;
+    role_id: number;
+    // Relation vers le profil spécifique pharmacien
+    profile_pharm?: ProfilePharmDto;
+}
+
+/**
+ * Payload pour la création/modification d'un pharmacien
+ */
+export interface PharmacienPayload {
+    first_name: string;
+    last_name?: string | null;
+    phone: number | string;
+    email: string;
+    password?: string; // Optionnel lors de la mise à jour
+    position: PharmacyPosition;
+    hospital_id: number;
+}

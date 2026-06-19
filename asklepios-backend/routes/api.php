@@ -5,10 +5,12 @@ use App\Http\Controllers\Admin\ArticleController;
 use App\Http\Controllers\Admin\BatchController;
 use App\Http\Controllers\Admin\CenterController;
 use App\Http\Controllers\Admin\DepartmentController;
+use App\Http\Controllers\Admin\DriverController;
 use App\Http\Controllers\Admin\PharmacienController;
 use App\Http\Controllers\Admin\PharmacyBranchController;
 use App\Http\Controllers\Admin\ProviderController;
 use App\Http\Controllers\Admin\StockController;
+use App\Http\Controllers\Admin\VehiculeController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Pharmacien\InventoryController;
 use App\Http\Controllers\Pharmacien\PurchaseOrderController;
@@ -133,6 +135,21 @@ Route::middleware(['auth:sanctum', 'role:admin'])->prefix('admin')->group(functi
 
     //Stocks
     Route::get('/stocks/global', [StockController::class, 'getGlobalStocks']);
+    // GESTION DU PARC AUTOMOBILE
+    Route::prefix('vehicules')->group(function () {
+        Route::get('/export/excel', [VehiculeController::class, 'exportExcel']);
+        Route::post('/import', [VehiculeController::class, 'importExcel']);
+    });
+    
+    // Les routes CRUD standard générées automatiquement
+    Route::apiResource('vehicules', VehiculeController::class);
+
+    // GESTION DES CHAUFFEURS
+    Route::prefix('drivers')->group(function () {
+        Route::get('/export/excel', [DriverController::class, 'exportExcel']);
+        Route::post('/import', [DriverController::class, 'importExcel']);
+    });
+    Route::apiResource('drivers', DriverController::class);
 });
 Route::middleware(['auth:sanctum', 'role:admin,pharmacy'])->prefix('admin')->group(function () {
     // ---------------------------------------------------------

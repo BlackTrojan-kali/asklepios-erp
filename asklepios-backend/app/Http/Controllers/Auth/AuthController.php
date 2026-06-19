@@ -91,7 +91,8 @@ class AuthController extends Controller
             "profile_admin"=>Auth::user()->profile_admin,
             "profile_doctor"=>Auth::user()->profile_doctor,
             "profile_lab" => Auth::user()->profile_lab,
-            "profile_reception"=>Auth::user()->profile_reception   
+            "profile_reception"=>Auth::user()->profile_reception, 
+            "profile_pharm"=>Auth::user()->profile_pharm
 
         ];
         

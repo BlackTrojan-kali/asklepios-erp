@@ -1,0 +1,10 @@
+<?php
+
+namespace App\Models\Pharmacy;
+
+use Illuminate\Database\Eloquent\Model;
+
+class StockTranferLine extends Model
+{
+    //
+}

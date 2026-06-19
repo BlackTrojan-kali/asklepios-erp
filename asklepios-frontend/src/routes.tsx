@@ -1,13 +1,18 @@
-import { createBrowserRouter, Outlet } from "react-router-dom"; // N'oublie pas d'importer Outlet
+import { createBrowserRouter, Outlet } from "react-router-dom";
 import Login from "./Pages/Auth/Login"
-// import App from "./App"; // Si tu ne l'utilises plus, tu peux l'enlever
 import AuthMiddleware from './middlewares/authMiddleware';
 import AppLayout from "./Layouts/AppLayout";
 import CheckRole from "./middlewares/CheckRole";
+import NotFound from "./Pages/NotFound";
+
+// Pages Super Admin
 import Countries from "./Pages/SUPA/country/Countries";
 import Hospitals from "./Pages/SUPA/hospital/Hospital";
 import Admins from "./Pages/SUPA/admins/Admins";
 import Subscriptions from "./Pages/SUPA/subscriptions/Subscriptions";
+import Licences from "./Pages/SUPA/licence/Licences";
+
+// Pages Admin
 import Centers from "./Pages/Admin/Centers";
 import Departments from "./Pages/Admin/departments/Departments";
 import Pharmacies from "./Pages/Admin/Pharmacies/Pharmacies";
@@ -16,202 +21,129 @@ import Articles from "./Pages/Admin/Pharmacies/Articles/Articles";
 import Batches from "./Pages/Admin/Pharmacies/Articles/Batches";
 import Pharmaciens from "./Pages/Admin/Pharmacies/Pharmaciens";
 import Stocks from "./Pages/Admin/Pharmacies/Stock/Stocks";
-import Licences from "./Pages/SUPA/licence/Licences";
-import NotFound from "./Pages/NotFound";
 import Providers from "./Pages/Admin/Pharmacies/Providers";
+import AdminPurchaseOrders from "./Pages/Admin/Pharmacies/Stock/AdminPurchaseOrders";
+import AdminPurchaseReturns from "./Pages/Admin/Pharmacies/AdminPurchaseReturns";
+import AdminStockMovements from "./Pages/Admin/Pharmacies/Magasin/AdminStockMovements";
+import AdminInventories from "./Pages/Admin/Pharmacies/Stock/AdminInventories";
+
+// Pages Pharmacie
 import MagasinHome from "./Pages/Admin/Pharmacies/Magasin/MagasinHome";
 import StorageLocations from "./Pages/Admin/Pharmacies/Stock/StorageLocations";
 import PurchaseOrders from "./Pages/PHARMACY/PurchaseOrders";
 import PurchaseReturns from "./Pages/PHARMACY/PurchaseReturns";
-import AdminPurchaseOrders from "./Pages/Admin/Pharmacies/Stock/AdminPurchaseOrders";
-import AdminPurchaseReturns from "./Pages/Admin/Pharmacies/AdminPurchaseReturns";
 import StockMovements from "./Pages/Admin/Pharmacies/Stock/StockMovements";
-import AdminStockMovements from "./Pages/Admin/Pharmacies/Magasin/AdminStockMovements";
 import Inventories from "./Pages/Admin/Pharmacies/Stock/Inventories";
-import AdminInventories from "./Pages/Admin/Pharmacies/Stock/AdminInventories";
+import Vehicules from "./Pages/Admin/Pharmacies/Logistics/Vehicules";
+import Drivers from "./Pages/Admin/Pharmacies/Logistics/Drivers";
+
 
 const routes = createBrowserRouter([
-   {
-    path: "/",
-    // L'ordre est important : 
-    // 1. Est-il connecté ? (AuthMiddleware)
-    // 2. A-t-il le bon rôle ? (CheckRole)
-    // 3. On affiche la structure (AppLayout)
-    // 4. On injecte la page demandée (Outlet)
-    element: (
-        <AuthMiddleware>
-            <CheckRole roles={["super_admin"]}>
+    // ==========================================
+    // 1. ROUTES D'AUTHENTIFICATION (Publiques)
+    // ==========================================
+    {
+        path: "/auth/login",
+        element: <Login />
+    },
+
+    // ==========================================
+    // 2. APPLICATION PRINCIPALE (Protégée + Layout)
+    // ==========================================
+    {
+        path: "/",
+        element: (
+            <AuthMiddleware>
                 <AppLayout>
-                    <Outlet /> {/* <-- C'est ICI que le composant <Countries /> va s'insérer */}
+                    <Outlet /> {/* <-- Le layout global est rendu UNE seule fois ici */}
                 </AppLayout>
-            </CheckRole>
-        </AuthMiddleware>
-    ),
-    
-    children: [
-        {
-            path: "countries", // L'URL sera "/countries"
-            element: <Countries />
-        },
-        {
-            path:"hospitals",
-            element:<Hospitals/>
-        },
-        {
-            path:"admins",
-            element:<Admins/>
-        },
-        {
-            path:"licences",
-            element:<Licences/>
-        },
-        {
-            path:"subscriptions",
-            element:<Subscriptions/>
-        }
-        // Tu pourras ajouter d'autres routes Super Admin ici !
-    ]
-   },
-   {
-    path: "/admin",
-    element: (
-        <AuthMiddleware>
-            <CheckRole roles={["admin"]}>
-                <AppLayout>
-                    <Outlet /> {/* <-- C'est ICI que le composant <Countries /> va s'insérer */}
-                </AppLayout>
-            </CheckRole>
-        </AuthMiddleware>
-    ),
-    children: [
-        {
-            path:"centers",
-            element:<Centers/>
-        },
-        {
-            path:"inventory",
-            element:<AdminInventories/>
-        },
-        {
-            path:"movements",
-            element:<AdminStockMovements/>
-        },
-        {
-            path:"departments",
-            element:<Departments/>
-        },
-        {
-            path:"pharmacies",
-            element:<Pharmacies/>
-        },
-        {
-            path:"pharmacy/acticles-categories",
-            element:<ArticleCategories/>
-        },
-        {
-            path:"pharmacy/articles",
-            element:<Articles/>
-        },
-        {
-            path:"pharmacy/batch",
-            element:<Batches/>
-        },
-        {
-            path:"pharmacy/stocks",
-            element:<Stocks/>
-        },
-      
-        {
-            path:"pharmaciens",
-            element:<Pharmaciens/>
-        },{
-            path:"pharmacy/providers",
-            element:<Providers/>
-        },
-            
-        {
-            path:"orders",
-            element:<AdminPurchaseOrders/>
-        },{
-            path:"returns",
-            element:<AdminPurchaseReturns/>
-        }
-        
-        // Tu pourras ajouter d'autres routes Super Admin ici !
-    ]
-   },
-   //pharmacien
-      {
-    path: "/pharmacy",
-    element: (
-        <AuthMiddleware>
-            <CheckRole roles={["pharmacy"]}>
-                <AppLayout>
-                    <Outlet /> {/* <-- C'est ICI que le composant <Countries /> va s'insérer */}
-                </AppLayout>
-            </CheckRole>
-        </AuthMiddleware>
-    ),
-    children: [
-        {
-            path:"",
-            element:<MagasinHome/>
-        },
-        {
-            path:"inventory",
-            element:<Inventories/>
-        },
-        {
-            path:"movements",
-            element:<StockMovements/>
-        },
-        {
-            path:"storage_location",
-            element:<StorageLocations/>
-        },
-        
-        // Tu pourras ajouter d'autres routes Super Admin ici !
-    ]
-   },
-   
-   //pharmacien admin
-      {
-    path: "/pharmacy",
-    element: (
-        <AuthMiddleware>
-            <CheckRole roles={["pharmacy","admin"]}>
-                <AppLayout>
-                    <Outlet /> {/* <-- C'est ICI que le composant <Countries /> va s'insérer */}
-                </AppLayout>
-            </CheckRole>
-        </AuthMiddleware>
-    ),
-    children: [
-        
-        {
-            path:"orders",
-            element:<PurchaseOrders/>
-        },{
-            path:"returns",
-            element:<PurchaseReturns/>
-        }
-        // Tu pourras ajouter d'autres routes Super Admin ici !
-    ]
-   },
-   
-   {
-        path: "/auth",
+            </AuthMiddleware>
+        ),
         children: [
+            // ----------------------------------------------------
+            // A. ROUTES SUPER ADMIN
+            // ----------------------------------------------------
             {
-                path: "login",
-                element: <Login />
+                element: <CheckRole roles={["super_admin"]}><Outlet /></CheckRole>,
+                children: [
+                    { path: "countries", element: <Countries /> },
+                    { path: "hospitals", element: <Hospitals /> },
+                    { path: "admins", element: <Admins /> },
+                    { path: "licences", element: <Licences /> },
+                    { path: "subscriptions", element: <Subscriptions /> },
+                ]
+            },
+
+            // ----------------------------------------------------
+            // B. ROUTES ADMIN (/admin/...)
+            // ----------------------------------------------------
+            {
+                path: "admin",
+                element: <CheckRole roles={["admin"]}><Outlet /></CheckRole>,
+                children: [
+                    { path: "centers", element: <Centers /> },
+                    { path: "departments", element: <Departments /> },
+                    { path: "pharmacies", element: <Pharmacies /> },
+                    { path: "pharmaciens", element: <Pharmaciens /> },
+                    { path: "inventory", element: <AdminInventories /> },
+                    { path: "movements", element: <AdminStockMovements /> },
+                    { path: "orders", element: <AdminPurchaseOrders /> },
+                    { path: "returns", element: <AdminPurchaseReturns /> },
+                    
+                    // Sous-dossier Pharmacie côté Admin
+                    { path: "pharmacy/acticles-categories", element: <ArticleCategories /> },
+                    { path: "pharmacy/articles", element: <Articles /> },
+                    { path: "pharmacy/batch", element: <Batches /> },
+                    { path: "pharmacy/stocks", element: <Stocks /> },
+                    { path: "pharmacy/providers", element: <Providers /> },
+                    //logistique
+                    { path:"vehicules",element:<Vehicules/> },
+                    { path:"drivers",element:<Drivers/> }
+                ]
+            },
+
+            // ----------------------------------------------------
+            // C. ROUTES PARTAGÉES (ADMIN & PHARMACIE)
+            // ----------------------------------------------------
+            {
+                element: <CheckRole roles={["admin", "pharmacy"]}><Outlet /></CheckRole>,
+                children: [
+                    { path: "pharmacy/orders", element: <PurchaseOrders /> },
+                    { path: "pharmacy/returns", element: <PurchaseReturns /> },
+                ]
+            },
+
+            // ----------------------------------------------------
+            // D. ROUTES PHARMACIEN (Rôle : "pharmacy")
+            // ----------------------------------------------------
+            {
+                element: <CheckRole roles={["pharmacy"]}><Outlet /></CheckRole>,
+                children: [
+                    // MAGASINIER
+                    // Si un jour CheckRole supporte les positions, on mettra ici : 
+                    // <CheckRole roles={["pharmacy"]} positions={["magasin"]}>
+                    { path: "pharmacy", element: <MagasinHome /> },
+                    { path: "pharmacy/inventory", element: <Inventories /> },
+                    { path: "pharmacy/movements", element: <StockMovements /> },
+                    { path: "pharmacy/storage_location", element: <StorageLocations /> },
+
+                    // VENDEUR / COMMERCIAL
+                    // Si un jour CheckRole supporte les positions, on mettra ici : 
+                    // <CheckRole roles={["pharmacy"]} positions={["vente"]}>
+                    // { path: "pharmacy/pos", element: <PointOfSale /> },
+                    // { path: "pharmacy/sales", element: <SalesHistory /> },
+                ]
             }
         ]
-   },
-     {
-            path:"*",
-            element:<NotFound/>
-        },
+    },
+
+    // ==========================================
+    // 3. PAGE 404 (Introuvable)
+    // ==========================================
+    {
+        path: "*",
+        element: <NotFound />
+    }
 ]);
 
 export default routes;
