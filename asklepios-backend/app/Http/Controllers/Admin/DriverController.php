@@ -22,14 +22,21 @@ class DriverController extends Controller
     {
         $user = auth()->user();
         if ($user->profile_admin) {
-            return [
-                'role' => 'admin',
-                'hospital_id' => $user->profile_admin->hospital_id
-            ];
+            return ['role' => 'admin', 'hospital_id' => $user->profile_admin->hospital_id];
         }
-        abort(403, "Profil non autorisé. Seul un administrateur peut gérer les chauffeurs.");
+        if ($user->profile_pharm) {
+            $hospitalId = $user->profile_pharm->hospital_id ?? $user->profile_pharm->branch->hospital_id ?? null;
+            return ['role' => 'pharmacy', 'hospital_id' => $hospitalId];
+        }
+        abort(403, "Profil non autorisé.");
     }
 
+    private function enforceAdmin($context)
+    {
+        if ($context['role'] !== 'admin') {
+            abort(403, "Action refusée. Seul un administrateur peut modifier les chauffeurs.");
+        }
+    }
     private function applyFilters($query, Request $request)
     {
         if ($request->filled('search')) {

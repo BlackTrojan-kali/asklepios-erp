@@ -36,6 +36,8 @@ import StockMovements from "./Pages/Admin/Pharmacies/Stock/StockMovements";
 import Inventories from "./Pages/Admin/Pharmacies/Stock/Inventories";
 import Vehicules from "./Pages/Admin/Pharmacies/Logistics/Vehicules";
 import Drivers from "./Pages/Admin/Pharmacies/Logistics/Drivers";
+import StockTransfers from "./Pages/PHARMACY/StockTransfers";
+import StockTransfersAdmin from "./Pages/Admin/Pharmacies/Logistics/StockTransfersAdmin";
 
 
 const routes = createBrowserRouter([
@@ -98,7 +100,8 @@ const routes = createBrowserRouter([
                     { path: "pharmacy/providers", element: <Providers /> },
                     //logistique
                     { path:"vehicules",element:<Vehicules/> },
-                    { path:"drivers",element:<Drivers/> }
+                    { path:"drivers",element:<Drivers/> },
+                    { path:"transfers",element:<StockTransfersAdmin/>}
                 ]
             },
 
@@ -126,7 +129,7 @@ const routes = createBrowserRouter([
                     { path: "pharmacy/inventory", element: <Inventories /> },
                     { path: "pharmacy/movements", element: <StockMovements /> },
                     { path: "pharmacy/storage_location", element: <StorageLocations /> },
-
+                    { path:"pharmacy/stock_transfers",element:<StockTransfers/>}
                     // VENDEUR / COMMERCIAL
                     // Si un jour CheckRole supporte les positions, on mettra ici : 
                     // <CheckRole roles={["pharmacy"]} positions={["vente"]}>

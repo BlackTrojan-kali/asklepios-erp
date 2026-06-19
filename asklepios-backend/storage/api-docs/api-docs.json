@@ -1504,7 +1504,7 @@
                     "Pharmacies (Admin)"
                 ],
                 "summary": "Lister les succursales de la pharmacie",
-                "description": "Lister les succursales de la pharmacie",
+                "description": "Lister les succursales de la pharmacie (Accessible Admin + Pharmacien)",
                 "operationId": "getAdminPharmacyBranches",
                 "parameters": [
                     {
@@ -1519,6 +1519,15 @@
                         "name": "type",
                         "in": "query",
                         "description": "central_warehouse ou retail_pos",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "paginated",
+                        "in": "query",
+                        "description": "true pour paginer, false pour tout récupérer",
                         "required": false,
                         "schema": {
                             "type": "string"
@@ -1541,7 +1550,7 @@
                     "Pharmacies (Admin)"
                 ],
                 "summary": "Créer une succursale de pharmacie",
-                "description": "Créer une succursale de pharmacie",
+                "description": "Créer une succursale (Réservé Admin)",
                 "operationId": "storeAdminPharmacyBranch",
                 "requestBody": {
                     "required": true,
@@ -1593,13 +1602,13 @@
             }
         },
         "/api/admin/pharmacy-branches/{id}": {
-            "put": {
+            "get": {
                 "tags": [
                     "Pharmacies (Admin)"
                 ],
-                "summary": "Modifier une succursale",
-                "description": "Modifier une succursale",
-                "operationId": "updateAdminPharmacyBranch",
+                "summary": "Détails d'une succursale",
+                "description": "Détails d'une succursale (Accessible Admin + Pharmacien)",
+                "operationId": "showAdminPharmacyBranch",
                 "parameters": [
                     {
                         "name": "id",
@@ -1610,41 +1619,27 @@
                         }
                     }
                 ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "name": {
-                                        "type": "string"
-                                    },
-                                    "adress": {
-                                        "type": "string"
-                                    },
-                                    "type": {
-                                        "type": "string",
-                                        "enum": [
-                                            "central_warehouse",
-                                            "retail_pos"
-                                        ]
-                                    },
-                                    "center_id": {
-                                        "type": "integer",
-                                        "nullable": true
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
+                "responses": {
+                    "200": {
+                        "description": "Détails récupérés avec succès"
                     }
                 },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Pharmacies (Admin)"
+                ],
+                "summary": "Modifier une succursale",
+                "description": "Modifier une succursale (Réservé Admin)",
+                "operationId": "updateAdminPharmacyBranch",
                 "responses": {
                     "200": {
                         "description": "Succursale modifiée avec succès"
-                    },
-                    "404": {
-                        "description": "Non trouvé"
                     }
                 },
                 "security": [
@@ -1658,18 +1653,8 @@
                     "Pharmacies (Admin)"
                 ],
                 "summary": "Supprimer une succursale",
-                "description": "Supprimer une succursale",
+                "description": "Supprimer une succursale (Réservé Admin)",
                 "operationId": "deleteAdminPharmacyBranch",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "Succursale supprimée avec succès"
@@ -2866,6 +2851,99 @@
                 "responses": {
                     "200": {
                         "description": "Fichier Excel généré"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/stock-transfers": {
+            "get": {
+                "tags": [
+                    "Transferts de Stock"
+                ],
+                "summary": "Lister les transferts (Paginé)",
+                "operationId": "7aa5968c191f1340eb98be3be34b3369",
+                "responses": {
+                    "200": {
+                        "description": "Liste des transferts"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Transferts de Stock"
+                ],
+                "summary": "Créer un transfert (Expédition)",
+                "operationId": "5625071b1823a8a20bcdb29636cf3d24",
+                "responses": {
+                    "201": {
+                        "description": "Transfert initié"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/stock-transfers/{id}/receive": {
+            "post": {
+                "tags": [
+                    "Transferts de Stock"
+                ],
+                "summary": "Réceptionner un transfert",
+                "operationId": "3f11135dc43078893082304b84b9724e",
+                "responses": {
+                    "200": {
+                        "description": "Transfert réceptionné"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/stock-transfers/{id}/cancel": {
+            "post": {
+                "tags": [
+                    "Transferts de Stock"
+                ],
+                "summary": "Annuler un transfert initié",
+                "operationId": "1386d27c3ec622b2b0c298f86f9dac74",
+                "responses": {
+                    "200": {
+                        "description": "Transfert annulé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/stock-transfers/export/pdf": {
+            "get": {
+                "tags": [
+                    "Transferts de Stock"
+                ],
+                "summary": "Exporter les transferts en PDF",
+                "operationId": "7657b2c7aeed720e171ff45145c7c851",
+                "responses": {
+                    "200": {
+                        "description": "Fichier PDF généré"
                     }
                 },
                 "security": [
@@ -4296,6 +4374,10 @@
         {
             "name": "Mouvements de Stock",
             "description": "Historique et piste d'audit des mouvements de stock"
+        },
+        {
+            "name": "Transferts de Stock",
+            "description": "Gestion des transferts inter-pharmacies"
         },
         {
             "name": "Gestion Espace & Aménagement",

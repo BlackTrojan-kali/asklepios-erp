@@ -12,15 +12,36 @@ use OpenApi\Attributes as OA;
 class PharmacyBranchController extends Controller
 {
     /**
-     * Obtenir l'ID de l'hôpital de l'administrateur connecté
+     * Récupère le contexte (accessible aux admins et pharmaciens pour la lecture)
      */
-    private function getHospitalId()
+    private function getContext()
     {
-        return auth()->user()->profile_admin->hospital_id;
+        $user = auth()->user();
+        
+        if ($user->profile_admin) {
+            return ['role' => 'admin', 'hospital_id' => $user->profile_admin->hospital_id];
+        }
+        
+        if ($user->profile_pharm) {
+            $hospitalId = $user->profile_pharm->hospital_id ?? $user->profile_pharm->branch->hospital_id ?? null;
+            return ['role' => 'pharmacy', 'hospital_id' => $hospitalId];
+        }
+        
+        abort(403, "Profil non autorisé.");
     }
 
     /**
-     * Lister les succursales de la pharmacie
+     * Bloque l'exécution si l'utilisateur n'est pas un admin
+     */
+    private function enforceAdmin($context)
+    {
+        if ($context['role'] !== 'admin') {
+            abort(403, "Action refusée. Seul un administrateur peut modifier les succursales de pharmacie.");
+        }
+    }
+
+  /**
+     * Lister les succursales de la pharmacie (Accessible Admin + Pharmacien)
      */
     #[OA\Get(
         path: "/api/admin/pharmacy-branches",
@@ -31,12 +52,13 @@ class PharmacyBranchController extends Controller
     )]
     #[OA\Parameter(name: "search", in: "query", required: false, schema: new OA\Schema(type: "string"))]
     #[OA\Parameter(name: "type", in: "query", required: false, description: "central_warehouse ou retail_pos", schema: new OA\Schema(type: "string"))]
+    #[OA\Parameter(name: "paginated", in: "query", required: false, description: "true pour paginer, false pour tout récupérer", schema: new OA\Schema(type: "string"))]
     #[OA\Response(response: 200, description: "Liste récupérée avec succès")]
     public function index(Request $request)
     {
-        $hospitalId = $this->getHospitalId();
+        $context = $this->getContext();
+        $hospitalId = $context['hospital_id'];
 
-        // On restreint à l'hôpital de l'administrateur et on charge le centre lié
         $query = PharmacyBranch::with('center')->where('hospital_id', $hospitalId);
 
         // Recherche par nom ou adresse
@@ -53,11 +75,39 @@ class PharmacyBranchController extends Controller
             $query->where('type', $request->query('type'));
         }
 
-        return response()->json($query->latest()->get(), 200);
+        $query->latest();
+
+        // GESTION CONDITIONNELLE DE LA PAGINATION
+        if ($request->query('paginated') === 'true') {
+            $perPage = $request->query('per_page', 15);
+            return response()->json($query->paginate($perPage), 200);
+        }
+
+        // Si pas de pagination demandée, on renvoie un tableau plat (pour les listes déroulantes)
+        return response()->json($query->get(), 200);
+    }
+    /**
+     * Détails d'une succursale (Accessible Admin + Pharmacien)
+     */
+    #[OA\Get(
+        path: "/api/admin/pharmacy-branches/{id}",
+        operationId: "showAdminPharmacyBranch",
+        summary: "Détails d'une succursale",
+        security: [["bearerAuth" => []]],
+        tags: ["Pharmacies (Admin)"]
+    )]
+    #[OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))]
+    #[OA\Response(response: 200, description: "Détails récupérés avec succès")]
+    public function show($id)
+    {
+        $context = $this->getContext();
+        $branch = PharmacyBranch::with('center')->where('hospital_id', $context['hospital_id'])->findOrFail($id);
+
+        return response()->json($branch, 200);
     }
 
     /**
-     * Créer une succursale de pharmacie
+     * Créer une succursale (Réservé Admin)
      */
     #[OA\Post(
         path: "/api/admin/pharmacy-branches",
@@ -81,7 +131,9 @@ class PharmacyBranchController extends Controller
     #[OA\Response(response: 201, description: "Succursale créée avec succès")]
     public function store(Request $request)
     {
-        $hospitalId = $this->getHospitalId();
+        $context = $this->getContext();
+        $this->enforceAdmin($context); // Sécurité Admin
+        $hospitalId = $context['hospital_id'];
 
         $validatedData = $request->validate([
             'name' => 'required|string|max:255',
@@ -89,7 +141,6 @@ class PharmacyBranchController extends Controller
             'type' => 'required|in:central_warehouse,retail_pos',
             'center_id' => [
                 'nullable',
-                // Sécurité : le centre doit exister ET appartenir au même hôpital
                 Rule::exists('centers', 'id')->where(function ($query) use ($hospitalId) {
                     return $query->where('hospital_id', $hospitalId);
                 }),
@@ -102,12 +153,12 @@ class PharmacyBranchController extends Controller
 
         return response()->json([
             'message' => 'Succursale de pharmacie créée avec succès',
-            'data' => $branch->load('center') // On retourne l'objet avec son centre
+            'data' => $branch->load('center')
         ], 201);
     }
 
     /**
-     * Modifier une succursale
+     * Modifier une succursale (Réservé Admin)
      */
     #[OA\Put(
         path: "/api/admin/pharmacy-branches/{id}",
@@ -116,25 +167,13 @@ class PharmacyBranchController extends Controller
         security: [["bearerAuth" => []]],
         tags: ["Pharmacies (Admin)"]
     )]
-    #[OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))]
-    #[OA\RequestBody(
-        required: true,
-        content: new OA\JsonContent(
-            properties: [
-                new OA\Property(property: "name", type: "string"),
-                new OA\Property(property: "adress", type: "string"),
-                new OA\Property(property: "type", type: "string", enum: ["central_warehouse", "retail_pos"]),
-                new OA\Property(property: "center_id", type: "integer", nullable: true)
-            ]
-        )
-    )]
     #[OA\Response(response: 200, description: "Succursale modifiée avec succès")]
-    #[OA\Response(response: 404, description: "Non trouvé")]
     public function update(Request $request, $id)
     {
-        $hospitalId = $this->getHospitalId();
+        $context = $this->getContext();
+        $this->enforceAdmin($context); // Sécurité Admin
+        $hospitalId = $context['hospital_id'];
 
-        // On s'assure que la succursale appartient bien à cet hôpital
         $branch = PharmacyBranch::where('hospital_id', $hospitalId)->findOrFail($id);
 
         $validatedData = $request->validate([
@@ -158,7 +197,7 @@ class PharmacyBranchController extends Controller
     }
 
     /**
-     * Supprimer une succursale
+     * Supprimer une succursale (Réservé Admin)
      */
     #[OA\Delete(
         path: "/api/admin/pharmacy-branches/{id}",
@@ -167,12 +206,13 @@ class PharmacyBranchController extends Controller
         security: [["bearerAuth" => []]],
         tags: ["Pharmacies (Admin)"]
     )]
-    #[OA\Parameter(name: "id", in: "path", required: true, schema: new OA\Schema(type: "integer"))]
     #[OA\Response(response: 200, description: "Succursale supprimée avec succès")]
     public function destroy($id)
     {
-        $branch = PharmacyBranch::where('hospital_id', $this->getHospitalId())->findOrFail($id);
+        $context = $this->getContext();
+        $this->enforceAdmin($context); // Sécurité Admin
         
+        $branch = PharmacyBranch::where('hospital_id', $context['hospital_id'])->findOrFail($id);
         $branch->delete();
 
         return response()->json([

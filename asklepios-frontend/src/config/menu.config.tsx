@@ -2,7 +2,8 @@ import React from 'react';
 import { 
     Globe, Hospital, Shield, NotebookText, Settings, 
     HospitalIcon, Pill, Home, ListOrdered, 
-    Layers, ShoppingCart, Activity, Search
+    Layers, ShoppingCart, Activity, Search,
+    Truck
 } from 'lucide-react';
 
 // --- 1. DÉFINITION DES TYPES ---
@@ -88,6 +89,10 @@ export const MENU_CONFIG: MenuItemType[] = [
                         path:"/admin/vehicules"
                     },
                     {
+                        title:"Transfers",
+                        path:"/admin/transfers"
+                    },
+                    {
                         title:"Chauffeurs",
                         path:"/admin/drivers"
                     }
@@ -144,6 +149,14 @@ export const MENU_CONFIG: MenuItemType[] = [
             { title: "Retours Commandes", path: "/pharmacy/returns" }
         ]
     },
+{
+    title:"Logistique",
+    icon:<Truck size={20}/>,
+    roles:["pharmacy"],
+    positions:["magasin"],
+    path:"pharmacy/stock_transfers",
+
+},
 
     // ==========================================
     // MENUS PHARMACIEN (COMMERCIAL / VENTE)

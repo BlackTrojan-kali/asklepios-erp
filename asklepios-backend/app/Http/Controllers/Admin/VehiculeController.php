@@ -18,18 +18,35 @@ class VehiculeController extends Controller
     /**
      * Récupère le contexte (uniquement accessible aux admins pour la gestion du parc)
      */
+    /**
+     * Récupère le contexte (accessible aux admins et pharmaciens pour la lecture)
+     */
     private function getContext()
     {
         $user = auth()->user();
+        
         if ($user->profile_admin) {
-            return [
-                'role' => 'admin',
-                'hospital_id' => $user->profile_admin->hospital_id
-            ];
+            return ['role' => 'admin', 'hospital_id' => $user->profile_admin->hospital_id];
         }
-        abort(403, "Profil non autorisé. Seul un administrateur peut gérer le parc automobile.");
+        
+        if ($user->profile_pharm) {
+            // Si le profil pharmacien n'a pas directement de hospital_id, on le récupère via sa succursale
+            $hospitalId = $user->profile_pharm->hospital_id ?? $user->profile_pharm->branch->hospital_id ?? null;
+            return ['role' => 'pharmacy', 'hospital_id' => $hospitalId];
+        }
+        
+        abort(403, "Profil non autorisé.");
     }
 
+    /**
+     * Bloque l'exécution si l'utilisateur n'est pas un admin
+     */
+    private function enforceAdmin($context)
+    {
+        if ($context['role'] !== 'admin') {
+            abort(403, "Action refusée. Seul un administrateur peut modifier le parc automobile.");
+        }
+    }
     private function applyFilters($query, Request $request)
     {
         if ($request->filled('search')) {

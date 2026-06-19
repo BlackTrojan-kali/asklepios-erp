@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignId("batch_id")->constrained("batches")->onDelete("cascade");
             $table->foreignId("storage_location_id")->nullable()->constrained();
             $table->float("qty")->default(0.0);
-            $table->enum("reference_type",["PURCHASE","RETURN","TRANSFER","INVENTORY","SALE","OTHER"]);
+            $table->enum("reference_type",["PURCHASE","RETURN","TRANSFER_OUT","TRANSFER_IN","TRANSFER_CANCEL","INVENTORY","SALE","OTHER"]);
             $table->unsignedBigInteger('reference_id')->nullable();
             $table->enum("type",["ENTRY","EXIT"]);
             $table->float("qty_in_stock")->default(0.0);
