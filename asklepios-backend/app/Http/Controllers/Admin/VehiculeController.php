@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Imports\VehiculeImport;
+use App\Http\Imports\VehiculeImport;
 use App\Models\Pharmacy\Vehicule;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;

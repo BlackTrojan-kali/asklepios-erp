@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Imports\DriverImport;
+use App\Http\Imports\DriverImport;
 use App\Models\Pharmacy\Driver;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;

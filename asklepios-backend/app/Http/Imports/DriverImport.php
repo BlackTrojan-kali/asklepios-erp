@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Imports;
+namespace App\Http\Imports;
 
-use App\Models\Driver;
+use App\Models\Pharmacy\Driver;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
@@ -19,14 +19,12 @@ class DriverImport implements ToCollection, WithHeadingRow
     public function collection(Collection $rows)
     {
         foreach ($rows as $row) {
-            // Ignorer les lignes vides
             if (!isset($row['nom_complet'])) {
                 continue;
             }
 
             $phone = isset($row['telephone']) ? preg_replace('/[^0-9]/', '', $row['telephone']) : null;
 
-            // On vérifie si ce chauffeur (même nom et même numéro) existe déjà pour éviter les doublons
             $existing = Driver::where('hospital_id', $this->hospitalId)
                               ->where('fullname', trim($row['nom_complet']))
                               ->where('phone', $phone)

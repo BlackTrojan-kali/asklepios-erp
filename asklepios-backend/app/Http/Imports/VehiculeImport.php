@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Imports;
+namespace App\Http\Imports;
 
-use App\Models\Vehicule;
+use App\Models\Pharmacy\Vehicule;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;

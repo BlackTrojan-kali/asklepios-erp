@@ -1095,6 +1095,133 @@
                 ]
             }
         },
+        "/api/admin/drivers": {
+            "get": {
+                "tags": [
+                    "Chauffeurs"
+                ],
+                "summary": "Lister les chauffeurs",
+                "operationId": "a72c4950e1b3c098a240d0353905d045",
+                "responses": {
+                    "200": {
+                        "description": "Liste paginée des chauffeurs"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Chauffeurs"
+                ],
+                "summary": "Ajouter un chauffeur",
+                "operationId": "ba31f30d7b30fef15ac5272d4bb09d7a",
+                "responses": {
+                    "201": {
+                        "description": "Chauffeur créé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/drivers/{id}": {
+            "get": {
+                "tags": [
+                    "Chauffeurs"
+                ],
+                "summary": "Détails d'un chauffeur",
+                "operationId": "a6b0b74d083b110ae9d9bb3046fcf007",
+                "responses": {
+                    "200": {
+                        "description": "Détails du chauffeur"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Chauffeurs"
+                ],
+                "summary": "Modifier un chauffeur",
+                "operationId": "931d41988b2b346bc00616d9c493b026",
+                "responses": {
+                    "200": {
+                        "description": "Chauffeur mis à jour"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Chauffeurs"
+                ],
+                "summary": "Supprimer un chauffeur",
+                "operationId": "37be584c8e0a4d9553fbe01df663707b",
+                "responses": {
+                    "200": {
+                        "description": "Chauffeur supprimé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/drivers/export/excel": {
+            "get": {
+                "tags": [
+                    "Chauffeurs"
+                ],
+                "summary": "Exporter les chauffeurs en Excel",
+                "operationId": "69c6cdc5de77f76f86661e47c8c4f85f",
+                "responses": {
+                    "200": {
+                        "description": "Fichier Excel généré"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/drivers/import": {
+            "post": {
+                "tags": [
+                    "Chauffeurs"
+                ],
+                "summary": "Importer une liste de chauffeurs (Excel)",
+                "operationId": "0fcb1fd39784043995979f2e53dea9a1",
+                "responses": {
+                    "200": {
+                        "description": "Chauffeurs importés"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/admin/pharmaciens": {
             "get": {
                 "tags": [
@@ -1967,6 +2094,133 @@
                 "responses": {
                     "200": {
                         "description": "Liste paginée des stocks récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/vehicules": {
+            "get": {
+                "tags": [
+                    "Véhicules"
+                ],
+                "summary": "Lister les véhicules",
+                "operationId": "f4be1079bc4863a3cd1ee6cfdbb0fd90",
+                "responses": {
+                    "200": {
+                        "description": "Liste paginée des véhicules"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Véhicules"
+                ],
+                "summary": "Ajouter un véhicule",
+                "operationId": "001946642f3a4da27d69c10ac3450763",
+                "responses": {
+                    "201": {
+                        "description": "Véhicule créé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/vehicules/{id}": {
+            "get": {
+                "tags": [
+                    "Véhicules"
+                ],
+                "summary": "Détails d'un véhicule",
+                "operationId": "47a1ce7904706392d1b2c0407c7f0c40",
+                "responses": {
+                    "200": {
+                        "description": "Détails du véhicule"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Véhicules"
+                ],
+                "summary": "Modifier un véhicule",
+                "operationId": "e47d72bcf3819bb9e157f081777aeb8b",
+                "responses": {
+                    "200": {
+                        "description": "Véhicule mis à jour"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Véhicules"
+                ],
+                "summary": "Supprimer un véhicule",
+                "operationId": "47026b1037d8824032d2d597b98d3c96",
+                "responses": {
+                    "200": {
+                        "description": "Véhicule supprimé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/vehicules/export/excel": {
+            "get": {
+                "tags": [
+                    "Véhicules"
+                ],
+                "summary": "Exporter les véhicules en Excel",
+                "operationId": "259428d91816654b5aa886ad5abd62a9",
+                "responses": {
+                    "200": {
+                        "description": "Fichier Excel généré"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/vehicules/import": {
+            "post": {
+                "tags": [
+                    "Véhicules"
+                ],
+                "summary": "Importer une liste de véhicules (Excel)",
+                "operationId": "c346a32b878d846fae59bba4c6ee0f37",
+                "responses": {
+                    "200": {
+                        "description": "Véhicules importés"
                     }
                 },
                 "security": [
@@ -4004,6 +4258,10 @@
             "description": "Gestion des départements par centre médical"
         },
         {
+            "name": "Chauffeurs",
+            "description": "Gestion des chauffeurs d'ambulances et véhicules"
+        },
+        {
             "name": "Pharmaciens (Admin)",
             "description": "Gestion du personnel de la pharmacie (Création compte + Affectation)"
         },
@@ -4018,6 +4276,10 @@
         {
             "name": "Stocks",
             "description": "Consultation des niveaux de stocks par succursale et par lot"
+        },
+        {
+            "name": "Véhicules",
+            "description": "Gestion des véhicules du parc hospitalier"
         },
         {
             "name": "Inventaires",
