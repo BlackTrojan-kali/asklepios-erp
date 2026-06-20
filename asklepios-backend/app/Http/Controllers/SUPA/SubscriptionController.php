@@ -391,4 +391,96 @@ class SubscriptionController extends Controller
         
         return $pdf->download('Facture_Asklepios_' . $safeHospitalName . '.pdf');
     }
+    /**
+     * Helper pour trouver l'hôpital selon le profil actif
+     */
+    private function resolveUserHospitalId($user)
+    {
+        return $user->profile_admin->hospital_id 
+            ?? $user->profile_pharm->hospital_id 
+            ?? $user->profile_doctor->hospital_id 
+            ?? $user->profile_lab->hospital_id 
+            ?? $user->profile_reception->hospital_id 
+            ?? null;
+    }
+/**
+     * Obtenir les jours restants de la souscription et les licences actives
+     * pour l'hôpital de l'utilisateur connecté.
+     */
+    #[OA\Get(
+        path: "/api/subscriptions/my-remaining-days",
+        operationId: "getMyRemainingDays",
+        summary: "Obtenir l'état de l'abonnement et les licences actives",
+        security: [["bearerAuth" => []]],
+        tags: ["Souscriptions (SUPA)"]
+    )]
+    #[OA\Response(response: 200, description: "Informations de l'abonnement récupérées avec succès")]
+    public function myRemainingDays(Request $request)
+    {
+        $user = $request->user();
+
+        // Si c'est un super admin global, il a un accès illimité à TOUTES les licences
+        if ($user->profile_super_admin) {
+            // On peut lui renvoyer fictivement toutes les licences existantes
+            $allLicences = \App\Models\Licence::all()->map(function($licence) {
+                return ['id' => $licence->id, 'name' => $licence->name];
+            });
+
+            return response()->json([
+                'days_remaining' => 9999,
+                'is_expired' => false,
+                'message' => 'Accès Super Admin illimité',
+                'licences' => $allLicences
+            ], 200);
+        }
+
+        $hospitalId = $this->resolveUserHospitalId($user);
+
+        if (!$hospitalId) {
+            return response()->json([
+                'message' => 'Aucun hôpital associé à ce profil.',
+                'days_remaining' => 0,
+                'is_expired' => true,
+                'licences' => []
+            ], 404);
+        }
+
+        // Récupérer la souscription la plus récente AVEC ses items et licences
+        $subscription = Subscription::with('items.licence')
+            ->where('hospital_id', $hospitalId)
+            ->latest('ending_date')
+            ->first();
+
+        if (!$subscription) {
+            return response()->json([
+                'message' => 'Aucune souscription trouvée pour cet hôpital.',
+                'days_remaining' => 0,
+                'is_expired' => true,
+                'licences' => []
+            ], 200);
+        }
+
+        $now = \Carbon\Carbon::now();
+        $endingDate = \Carbon\Carbon::parse($subscription->ending_date);
+
+        // Le paramètre "false" permet d'avoir un nombre négatif si la date est déjà passée
+        $daysRemaining = (int) $now->diffInDays($endingDate, false);
+
+        // Formatage de la liste des licences pour le front-end
+        $licences = $subscription->items->map(function ($item) {
+            return [
+                'id' => $item->licence->id,
+                'name' => $item->licence->name,
+                'description' => $item->licence->description
+            ];
+        });
+
+        return response()->json([
+            'hospital_id' => $hospitalId,
+            'ending_date' => $endingDate->format('Y-m-d H:i:s'),
+            'days_remaining' => $daysRemaining,
+            'is_expired' => $now->greaterThan($endingDate),
+            'licences' => $licences // <-- Ajout du tableau des licences ici
+        ], 200);
+    }
 }

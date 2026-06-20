@@ -21,7 +21,7 @@ const useLicenceStore = () => {
     const getLicences = useCallback(async (page: number = 1, search: string = '', perPage: number = 10) => {
         try {
             setLoading(true);
-            const res = await api.get<PaginatedResponse<LicenceDto>>("/licences", {
+            const res = await api.get<PaginatedResponse<LicenceDto>>("/supa/licences", {
                 params: { page, search, per_page: perPage }
             });
             
@@ -60,7 +60,7 @@ const useLicenceStore = () => {
         try {
             setLoading(true);
             
-            const res = await api.post("/licences", payload);
+            const res = await api.post("/supa/licences", payload);
             
             toast.success("Licence créée avec succès !");
             await getLicences(1); // Rafraîchit la liste en revenant à la première page
@@ -81,7 +81,7 @@ const useLicenceStore = () => {
         try {
             setLoading(true);
             
-            const res = await api.put(`/licences/${id}`, payload);
+            const res = await api.put(`/supa/licences/${id}`, payload);
             
             toast.success("Licence mise à jour avec succès !");
             await getLicences(pagination.currentPage); // Rafraîchit la page courante
@@ -102,7 +102,7 @@ const useLicenceStore = () => {
         try {
             setLoading(true);
             
-            await api.delete(`/licences/${id}`);
+            await api.delete(`/supa/licences/${id}`);
             
             toast.success("Licence supprimée avec succès !");
             await getLicences(pagination.currentPage); // Rafraîchit la page courante

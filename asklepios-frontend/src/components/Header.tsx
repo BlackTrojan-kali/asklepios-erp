@@ -1,4 +1,4 @@
-import { Power, Moon, Sun, Bell } from 'lucide-react';
+import { Power, Moon, Sun, Bell, Calendar, AlertTriangle } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { logout } from '../functions/auth/AuthMethods';
 import { useTheme } from '../hooks/useTheme';
@@ -8,6 +8,9 @@ import { useAuth } from '../contexts/AuthContext';
 import useNotificationStore from '../functions/notifications/useNotificationStore';
 import { NotificationPanel } from '../components/modals/Notifications/NotificationPanel';
 
+// Imports Souscriptions
+import useSubscriptionStore from '../functions/subscriptions/useSubscriptionStore';
+
 const Header = () => {
     const { theme, switchTheme } = useTheme();
     const { profile } = useAuth();
@@ -15,6 +18,9 @@ const Header = () => {
     // Store Notifications
     const { unreadCount, getUnreadCount } = useNotificationStore();
     const [isNotifOpen, setIsNotifOpen] = useState(false);
+
+    // Store Souscriptions
+    const { mySubscriptionStatus, getMyRemainingDays } = useSubscriptionStore();
 
     const isDark = theme === "dark";
 
@@ -28,6 +34,13 @@ const Header = () => {
         return () => clearInterval(interval);
     }, [getUnreadCount]);
 
+    // Récupération de l'état de l'abonnement au montage du Header
+    useEffect(() => {
+        if (profile?.role && profile.role !== 'super_admin') {
+            getMyRemainingDays();
+        }
+    }, [profile?.role, getMyRemainingDays]);
+
     const handleLogout = async () => {
         await logout();
         location.reload();
@@ -36,6 +49,37 @@ const Header = () => {
     const formattedRole = profile?.role 
         ? profile.role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())
         : 'Utilisateur';
+
+    // --- RENDU DU BADGE D'ABONNEMENT ---
+    const renderSubscriptionBadge = () => {
+        if (profile?.role === 'super_admin') return null; // Pas de badge pour le SUPA
+        if (!mySubscriptionStatus) return null;
+
+        const { days_remaining, is_expired } = mySubscriptionStatus;
+
+        if (is_expired) {
+            return (
+                <span className="flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 rounded-md border border-red-200 dark:border-red-800 shadow-sm transition-colors">
+                    <AlertTriangle size={12} /> Expiré
+                </span>
+            );
+        }
+
+        const isWarning = days_remaining <= 7;
+
+        return (
+            <span 
+                className={`flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-md border shadow-sm transition-colors cursor-default
+                ${isWarning 
+                    ? 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/40 dark:text-orange-400 dark:border-orange-800'
+                    : 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800'
+                }`}
+                title={`Expiration le ${new Date(mySubscriptionStatus.ending_date).toLocaleDateString('fr-FR')}`}
+            >
+                <Calendar size={12} /> {days_remaining} {days_remaining > 1 ? 'jours restants' : 'jour restant'}
+            </span>
+        );
+    };
 
     return (
         <>
@@ -54,14 +98,17 @@ const Header = () => {
                     </div>
                 </div>
 
-                {/* Centre : Titre Dynamique (Nom + Rôle) */}
-                <div className="hidden md:flex items-center">
+                {/* Centre : Titre Dynamique (Nom + Rôle) ET Abonnement */}
+                <div className="hidden md:flex items-center gap-4">
                     <span className="text-xs font-medium px-3 py-1.5 rounded-full border shadow-sm flex items-center gap-2 bg-white text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700">
                         <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
                         <span className="font-semibold">{profile?.first_name} {profile?.last_name}</span>
                         <span className="text-gray-400 dark:text-gray-500">|</span>
                         <span className="italic">{formattedRole}</span>
                     </span>
+
+                    {/* Affichage des jours restants ici */}
+                    {renderSubscriptionBadge()}
                 </div>
 
                 {/* Côté Droit : Contrôles */}

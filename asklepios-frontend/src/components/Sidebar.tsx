@@ -1,20 +1,35 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Menu, X, ChevronLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import SidebarItem from './SidebarItem';
 import { MENU_CONFIG } from '../config/menu.config';
+import useSubscriptionStore from '../functions/subscriptions/useSubscriptionStore'; // Ajuste le chemin selon ton dossier
 
 const Sidebar = () => {
     const { profile } = useAuth();
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-    // Extraction du rôle principal (ex: "pharmacy", "admin")
+    // Récupération du statut d'abonnement
+    const { mySubscriptionStatus, getMyRemainingDays } = useSubscriptionStore();
+
+    // Extraction du rôle et de la position
     const userRole = profile?.role || "";
-    
-    // Extraction de la position s'il s'agit d'un pharmacien ("magasin" ou "vente")
-    // Note: Utilisation de `any` temporaire si profile_pharm n'est pas typé globalement dans l'AuthContext
     const userPosition = (profile as any)?.profile_pharm?.position || "";
+
+    // Appel API pour récupérer les licences au montage (sauf pour le Super Admin)
+    useEffect(() => {
+        if (userRole && userRole !== 'super_admin') {
+            getMyRemainingDays();
+        }
+    }, [userRole, getMyRemainingDays]);
+
+    // Extraction de la liste des noms de licences actives depuis le store
+    const activeLicences = useMemo(() => {
+        if (!mySubscriptionStatus?.licences) return [];
+        return mySubscriptionStatus.licences.map(licence => licence.name);
+    }, [mySubscriptionStatus]);
+
     const filteredMenu = useMemo(() => {
         if (!userRole) return []; 
         
@@ -23,15 +38,22 @@ const Sidebar = () => {
             const hasRole = item.roles?.includes(userRole);
             if (!hasRole) return false;
 
-            // 2. S'il s'agit du rôle pharmacie ET que le menu cible une position spécifique
+            // 2. VÉRIFICATION DE LA LICENCE (Si le menu exige une licence et qu'on n'est pas super_admin)
+            if (item.requiredLicence && userRole !== 'super_admin') {
+                if (!activeLicences.includes(item.requiredLicence)) {
+                    return false; // On cache le menu
+                }
+            }
+
+            // 3. S'il s'agit du rôle pharmacie ET que le menu cible une position spécifique
             if (userRole === "pharmacy" && item.positions && item.positions.length > 0) {
                 return item.positions.includes(userPosition);
             }
 
-            // Pour les autres rôles (admin, super_admin), l'élément est validé
+            // Pour les autres rôles (admin, super_admin) ayant passé les vérifications précédentes
             return true;
         });
-    }, [userRole, userPosition]);
+    }, [userRole, userPosition, activeLicences]);
 
     return (
         <>
@@ -90,7 +112,7 @@ const Sidebar = () => {
                             />
                         ))
                     ) : (
-                        <p className="text-xs text-center text-gray-400 mt-4">Aucun accès défini.</p>
+                        <p className="text-xs text-center text-gray-400 mt-4">Aucun accès défini ou licence requise.</p>
                     )}
                 </div>
             </aside>

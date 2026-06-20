@@ -30,7 +30,7 @@ use App\Http\Controllers\SUPA\LicenceController;
 use App\Http\Controllers\SUPA\SubscriptionController;
 
 // ==========================================================
-// 1. AUTHENTICATION (PUBLIC)
+// 1. AUTHENTIFICATION (PUBLIC)
 // ==========================================================
 Route::prefix("auth")->group(function(){
     Route::post("/login", [AuthController::class, "login"]);
@@ -41,50 +41,43 @@ Route::prefix("auth")->group(function(){
 // 2. ROUTES AUTHENTIFIÉES (GLOBALES)
 // ==========================================================
 Route::middleware('auth:sanctum')->group(function () {
-    Route::prefix('notifications')->group(function () {
-        Route::get('/', [NotificationController::class, 'index']);
-        Route::get('/unread-count', [NotificationController::class, 'unreadCount']); // Utile pour un petit ping régulier
-        Route::patch('/{id}/read', [NotificationController::class, 'markAsRead']);
-        Route::post('/read-all', [NotificationController::class, 'markAllAsRead']);
-    });
-    // Profil de l'utilisateur courant
+    
+    // Profil utilisateur
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
 
-    // LECTURE SEULE : Pays (Accessible à tous les connectés)
+    // Configuration / Données publiques
     Route::get('/countries', [CountryController::class, 'index']);
     Route::get('/countries/{id}', [CountryController::class, 'show']);
 
+    // Notifications du système
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [NotificationController::class, 'index']);
+        Route::get('/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::patch('/{id}/read', [NotificationController::class, 'markAsRead']);
+        Route::post('/read-all', [NotificationController::class, 'markAllAsRead']);
+    });
+
+    // Endpoint Global : Jours restants de la souscription (utile pour le frontend)
+    Route::get('/subscriptions/my-remaining-days', [SubscriptionController::class, 'myRemainingDays']);
 
     // ==========================================================
-    // 3. SUPER ADMIN (SUPA)
+    // 3. SUPER ADMIN (Gestion SaaS)
     // ==========================================================
-    Route::middleware('role:super_admin')->group(function () {
+    Route::middleware('role:super_admin')->prefix('supa')->group(function () {
         
-        // PAYS (Écriture)
+        // Configuration de base
         Route::post('/countries', [CountryController::class, 'store']);
         Route::put('/countries/{id}', [CountryController::class, 'update']);
-
-        // HÔPITAUX
-        Route::get('/hospitals', [HospitalController::class, 'index']);
-        Route::post('/hospitals', [HospitalController::class, 'store']);
-        Route::get('/hospitals/{id}', [HospitalController::class, 'show']);
-        Route::put('/hospitals/{id}', [HospitalController::class, 'update']); // Nécessite _method=PUT depuis React pour les fichiers
-        Route::delete('/hospitals/{id}', [HospitalController::class, 'destroy']);
-
-        // ADMINISTRATEURS
-        Route::get('/admins', [AdminController::class, 'index']);
-        Route::post('/admins', [AdminController::class, 'store']);
-        Route::get('/admins/{id}', [AdminController::class, 'show']);
-        Route::put('/admins/{id}', [AdminController::class, 'update']);
-        Route::delete('/admins/{id}', [AdminController::class, 'destroy']);
-        Route::patch('/admins/{id}/password', [AdminController::class, 'updatePassword']);
-
-        // LICENCES
         Route::apiResource('licences', LicenceController::class);
 
-        // SOUSCRIPTIONS / CONTRATS
+        // Hôpitaux & Administrateurs clients
+        Route::apiResource('hospitals', HospitalController::class);
+        Route::patch('/admins/{id}/password', [AdminController::class, 'updatePassword']);
+        Route::apiResource('admins', AdminController::class);
+
+        // Souscriptions (Abonnements)
         Route::prefix('subscriptions')->group(function () {
             Route::get('/{id}/preview', [SubscriptionController::class, 'preview']);
             Route::patch('/{id}/renew', [SubscriptionController::class, 'renew']);
@@ -93,156 +86,149 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('subscriptions', SubscriptionController::class);
     });
 
-
     // ==========================================================
-    // 4. ADMINISTRATEUR DE L'HÔPITAL
+    // 4. MODULE DE BASE DE L'HÔPITAL (Hors Pharmacie)
     // ==========================================================
     Route::middleware('role:admin')->prefix('admin')->group(function () {
-        
-        // STRUCTURE HOSPITALIÈRE
         Route::apiResource('centers', CenterController::class);
         Route::apiResource('departments', DepartmentController::class);
-        Route::apiResource('pharmacy-branches', PharmacyBranchController::class);
-
-        // CATALOGUE (Lecture de listes complètes sans pagination en premier)
-        Route::get('/article-categories/all', [ArticleCategoryController::class, 'all']);
-        Route::apiResource('article-categories', ArticleCategoryController::class);
-
-        Route::get('/articles/all', [ArticleController::class, 'all']);
-        Route::post('/articles', [ArticleController::class, 'store']);
-        Route::put('/articles/{id}', [ArticleController::class, 'update']); // _method=PUT pour multipart
-        Route::delete('/articles/{id}', [ArticleController::class, 'destroy']);
-
-        // LOTS ET STOCKS GLOBAUX
-        Route::prefix('batches')->group(function () {
-            Route::get('/all', [BatchController::class, 'all']);
-            Route::post('/initialize-all-stocks', [BatchController::class, 'initializeAllStocks']);
-            Route::post('/{id}/initialize-stock', [BatchController::class, 'initializeBatchStock']);
-        });
-        Route::apiResource('batches', BatchController::class);
-        Route::get('/stocks/global', [StockController::class, 'getGlobalStocks']);
-
-        // PARC AUTOMOBILE & LOGISTIQUE
-        Route::prefix('vehicules')->group(function () {
-            Route::get('/export/excel', [VehiculeController::class, 'exportExcel']);
-            Route::post('/import', [VehiculeController::class, 'importExcel']);
-        });
-        Route::apiResource('vehicules', VehiculeController::class);
-
-        Route::prefix('drivers')->group(function () {
-            Route::get('/export/excel', [DriverController::class, 'exportExcel']);
-            Route::post('/import', [DriverController::class, 'importExcel']);
-        });
-        Route::apiResource('drivers', DriverController::class);
-
-        // TRANSFERTS DE STOCKS (Supervision Admin - Lecture seule)
-        Route::prefix('stock-transfers')->group(function () {
-            Route::get('/export/pdf', [StockTransferController::class, 'exportPdf']);
-            Route::get('/', [StockTransferController::class, 'index']);
-        });
-        
     });
 
-
     // ==========================================================
-    // 5. ROUTES PARTAGÉES (ADMIN + PHARMACIEN)
+    // 5. MODULE PHARMACIE (Protégé par la licence)
     // ==========================================================
-    // Ces routes sont accessibles par les deux rôles. 
-    // La sécurité des données est assurée par le getContext() dans les contrôleurs.
-    Route::middleware('role:admin,pharmacy')->group(function () {
+    Route::middleware(['licence:pharmacy'])->group(function () {
 
-        // --- Sous le préfixe /admin/ ---
-        Route::prefix('admin')->group(function () {
-            // LECTURE DES SUCCURSALES (Nécessaire au magasinier pour les transferts)
-            Route::get('/pharmacy-branches', [PharmacyBranchController::class, 'index']);
-            Route::get('/pharmacy-branches/{id}', [PharmacyBranchController::class, 'show']);
-        // LECTURE DU PARC AUTOMOBILE ET CHAUFFEURS (Utile pour les transferts du magasinier)
-            Route::get('/vehicules', [VehiculeController::class, 'index']);
-            Route::get('/vehicules/{id}', [VehiculeController::class, 'show']);
+        // ------------------------------------------------------
+        // 5.1. ACCÈS ADMINISTRATEUR EXCLUSIF (Configuration)
+        // ------------------------------------------------------
+        Route::middleware('role:admin')->prefix('admin')->group(function () {
             
-            Route::get('/drivers', [DriverController::class, 'index']);
-            Route::get('/drivers/{id}', [DriverController::class, 'show']);
-            // Piste d'audit / Mouvements
-            Route::prefix('stock-movements')->group(function () {
-                Route::get('/export/pdf', [StockMovementController::class, 'exportPdf']);
-                Route::get('/export/excel', [StockMovementController::class, 'exportExcel']);
-                Route::get('/', [StockMovementController::class, 'index']);
+            // Succursales
+            Route::apiResource('pharmacy-branches', PharmacyBranchController::class);
+
+            // Catalogue
+            Route::get('/article-categories/all', [ArticleCategoryController::class, 'all']);
+            Route::apiResource('article-categories', ArticleCategoryController::class);
+            Route::get('/articles/all', [ArticleController::class, 'all']);
+            Route::post('/articles', [ArticleController::class, 'store']);
+            Route::put('/articles/{id}', [ArticleController::class, 'update']);
+            Route::delete('/articles/{id}', [ArticleController::class, 'destroy']);
+
+            // Gestion globale des lots
+            Route::prefix('batches')->group(function () {
+                Route::get('/all', [BatchController::class, 'all']);
+                Route::post('/initialize-all-stocks', [BatchController::class, 'initializeAllStocks']);
+                Route::post('/{id}/initialize-stock', [BatchController::class, 'initializeBatchStock']);
             });
+            Route::apiResource('batches', BatchController::class);
+            Route::get('/stocks/global', [StockController::class, 'getGlobalStocks']);
 
-            // Pharmaciens
-            Route::get('/pharmaciens/paginated', [PharmacienController::class, 'indexPaginated']);
-            Route::apiResource('pharmaciens', PharmacienController::class);
-
-            // Fournisseurs
-            Route::prefix('providers')->group(function () {
-                Route::get('/paginated', [ProviderController::class, 'indexPaginated']);
-                Route::get('/export/pdf', [ProviderController::class, 'exportPdf']);
-                Route::get('/export/excel', [ProviderController::class, 'exportExcel']);
-                Route::post('/import', [ProviderController::class, 'importExcel']);
+            // Logistique
+            Route::prefix('vehicules')->group(function () {
+                Route::get('/export/excel', [VehiculeController::class, 'exportExcel']);
+                Route::post('/import', [VehiculeController::class, 'importExcel']);
             });
-            Route::apiResource('providers', ProviderController::class)->except(['show']);
+            Route::apiResource('vehicules', VehiculeController::class);
 
-            // Articles (Lecture paginée/standard partagée)
-            Route::get('/articles', [ArticleController::class, 'index']);
-
-            // Commandes Fournisseurs
-            Route::prefix('purchase-orders')->group(function () {
-                Route::get('/export/pdf', [PurchaseOrderController::class, 'exportPdf']);
-                Route::get('/export/excel', [PurchaseOrderController::class, 'exportExcel']);
-                Route::post('/{id}/cancel', [PurchaseOrderController::class, 'cancelOrder']);
-                Route::post('/{id}/validate', [PurchaseOrderController::class, 'validateOrder']);
-                Route::get('/{id}/pdf', [PurchaseOrderController::class, 'downloadOrderForm']);
+            Route::prefix('drivers')->group(function () {
+                Route::get('/export/excel', [DriverController::class, 'exportExcel']);
+                Route::post('/import', [DriverController::class, 'importExcel']);
             });
-            Route::apiResource('purchase-orders', PurchaseOrderController::class);
+            Route::apiResource('drivers', DriverController::class);
 
-            // Retours Fournisseurs
-            Route::prefix('purchase-returns')->group(function () {
-                Route::get('/export/pdf', [PurchaseReturnController::class, 'exportPdf']);
-                Route::get('/export/excel', [PurchaseReturnController::class, 'exportExcel']);
-                Route::post('/{id}/cancel', [PurchaseReturnController::class, 'cancelReturn']);
-                Route::post('/{id}/validate', [PurchaseReturnController::class, 'validateReturn']);
-            });
-            Route::apiResource('purchase-returns', PurchaseReturnController::class);
-              Route::prefix('stock-transfers')->group(function () {
-                Route::get('/{id}/waybill', [StockTransferController::class, 'downloadWaybill']);
-        });
+            // Supervision des transferts (Lecture)
+            Route::get('/stock-transfers', [StockTransferController::class, 'index']);
+            Route::get('/stock-transfers/export/pdf', [StockTransferController::class, 'exportPdf']);
         });
 
-        // --- Sous le préfixe /pharmacy/ ---
-        Route::prefix('pharmacy')->group(function () {
-            // Inventaires
-            Route::prefix('inventories')->group(function () {
-                Route::get('/export/pdf', [InventoryController::class, 'exportPdf']);
-                Route::get('/export/excel', [InventoryController::class, 'exportExcel']);
-                Route::post('/{id}/validate', [InventoryController::class, 'validateInventory']);
+        // ------------------------------------------------------
+        // 5.2. ACCÈS PARTAGÉ (Admin + Pharmacien)
+        // ------------------------------------------------------
+        Route::middleware('role:admin,pharmacy')->group(function () {
+            
+            Route::prefix('admin')->group(function () {
+                // Lecture Logistique & Succursales (utile au pharmacien)
+                Route::get('/pharmacy-branches', [PharmacyBranchController::class, 'index']);
+                Route::get('/pharmacy-branches/{id}', [PharmacyBranchController::class, 'show']);
+                Route::get('/vehicules', [VehiculeController::class, 'index']);
+                Route::get('/vehicules/{id}', [VehiculeController::class, 'show']);
+                Route::get('/drivers', [DriverController::class, 'index']);
+                Route::get('/drivers/{id}', [DriverController::class, 'show']);
+                Route::get('/articles', [ArticleController::class, 'index']);
+                
+                // Mouvements de stock
+                Route::prefix('stock-movements')->group(function () {
+                    Route::get('/export/pdf', [StockMovementController::class, 'exportPdf']);
+                    Route::get('/export/excel', [StockMovementController::class, 'exportExcel']);
+                    Route::get('/', [StockMovementController::class, 'index']);
+                });
+
+                // Pharmaciens et Fournisseurs
+                Route::get('/pharmaciens/paginated', [PharmacienController::class, 'indexPaginated']);
+                Route::apiResource('pharmaciens', PharmacienController::class);
+
+                Route::prefix('providers')->group(function () {
+                    Route::get('/paginated', [ProviderController::class, 'indexPaginated']);
+                    Route::get('/export/pdf', [ProviderController::class, 'exportPdf']);
+                    Route::get('/export/excel', [ProviderController::class, 'exportExcel']);
+                    Route::post('/import', [ProviderController::class, 'importExcel']);
+                });
+                Route::apiResource('providers', ProviderController::class)->except(['show']);
+
+                // Achats
+                Route::prefix('purchase-orders')->group(function () {
+                    Route::get('/export/pdf', [PurchaseOrderController::class, 'exportPdf']);
+                    Route::get('/export/excel', [PurchaseOrderController::class, 'exportExcel']);
+                    Route::post('/{id}/cancel', [PurchaseOrderController::class, 'cancelOrder']);
+                    Route::post('/{id}/validate', [PurchaseOrderController::class, 'validateOrder']);
+                    Route::get('/{id}/pdf', [PurchaseOrderController::class, 'downloadOrderForm']);
+                });
+                Route::apiResource('purchase-orders', PurchaseOrderController::class);
+
+                // Retours
+                Route::prefix('purchase-returns')->group(function () {
+                    Route::get('/export/pdf', [PurchaseReturnController::class, 'exportPdf']);
+                    Route::get('/export/excel', [PurchaseReturnController::class, 'exportExcel']);
+                    Route::post('/{id}/cancel', [PurchaseReturnController::class, 'cancelReturn']);
+                    Route::post('/{id}/validate', [PurchaseReturnController::class, 'validateReturn']);
+                });
+                Route::apiResource('purchase-returns', PurchaseReturnController::class);
+
+                // Document logistique
+                Route::get('/stock-transfers/{id}/waybill', [StockTransferController::class, 'downloadWaybill']);
             });
-            Route::apiResource('inventories', InventoryController::class);
+
+            Route::prefix('pharmacy')->group(function () {
+                // Inventaires
+                Route::prefix('inventories')->group(function () {
+                    Route::get('/export/pdf', [InventoryController::class, 'exportPdf']);
+                    Route::get('/export/excel', [InventoryController::class, 'exportExcel']);
+                    Route::post('/{id}/validate', [InventoryController::class, 'validateInventory']);
+                });
+                Route::apiResource('inventories', InventoryController::class);
+            });
         });
 
-    });
+        // ------------------------------------------------------
+        // 5.3. ACCÈS PHARMACIEN EXCLUSIF (Opérations locales)
+        // ------------------------------------------------------
+        Route::middleware('role:pharmacy')->prefix('pharmacy')->group(function () {
+            
+            // Gestion du stock physique de la succursale
+            Route::get('/stocks/my-branch', [StockController::class, 'getMyBranchStocks']);
+            Route::post('/storage-locations/assign-stock', [StorageLocationController::class, 'assignToStock']);
+            Route::apiResource('storage-locations', StorageLocationController::class)->except(['show']);
 
-
-    // ==========================================================
-    // 6. PHARMACIEN / MAGASINIER (Opérations locales)
-    // ==========================================================
-    Route::middleware('role:pharmacy')->prefix('pharmacy')->group(function () {
-        
-        // Stocks locaux
-        Route::get('/stocks/my-branch', [StockController::class, 'getMyBranchStocks']);
-        
-        // Emplacements (Allées/Étagères)
-        Route::post('/storage-locations/assign-stock', [StorageLocationController::class, 'assignToStock']);
-        Route::apiResource('storage-locations', StorageLocationController::class)->except(['show']);
-
-        // Transferts de Stock (Actions d'expédition/réception)
-        Route::prefix('stock-transfers')->group(function () {
-            Route::get('/export/pdf', [StockTransferController::class, 'exportPdf']);
-            Route::post('/{id}/receive', [StockTransferController::class, 'receive']);
-            Route::post('/{id}/cancel', [StockTransferController::class, 'cancel']);
-            Route::get('/', [StockTransferController::class, 'index']);
-            Route::post('/', [StockTransferController::class, 'store']);
+            // Gestion logistique inter-pharmacies
+            Route::prefix('stock-transfers')->group(function () {
+                Route::get('/', [StockTransferController::class, 'index']);
+                Route::post('/', [StockTransferController::class, 'store']);
+                Route::post('/{id}/receive', [StockTransferController::class, 'receive']);
+                Route::post('/{id}/cancel', [StockTransferController::class, 'cancel']);
+                Route::get('/export/pdf', [StockTransferController::class, 'exportPdf']);
+            });
         });
 
-    });
-
-}); // FIN DU MIDDLEWARE AUTH:SANCTUM GLOBAL
+    }); // Fin Middleware Licence Pharmacie
+}); // Fin Middleware Auth:Sanctum

@@ -21,7 +21,7 @@ const useHospitalStore = () => {
     const getHospitals = useCallback(async (page: number = 1, search: string = '', perPage: number = 10) => {
         try {
             setLoading(true);
-            const res = await api.get<PaginatedResponse<HospitalDto>>("/hospitals", {
+            const res = await api.get<PaginatedResponse<HospitalDto>>("/supa/hospitals", {
                 params: { page, search, per_page: perPage }
             });
             
@@ -44,7 +44,7 @@ const useHospitalStore = () => {
     const getHospital = useCallback(async (id: number) => {
         try {
             setLoading(true);
-            const res = await api.get<HospitalDto>(`/hospitals/${id}`);
+            const res = await api.get<HospitalDto>(`/supa/hospitals/${id}`);
             setCurrentHospital(res.data);
             return res.data;
         } catch (error) {
@@ -69,7 +69,7 @@ const createHospital = async (payload: HospitalDto) => {
         }
 
         // ✅ AJOUT DES HEADERS ICI AUSSI
-        const res = await api.post("/hospitals", formData, {
+        const res = await api.post("/supa/hospitals", formData, {
             headers: {
                 'Content-Type': 'multipart/form-data'
             }
@@ -113,7 +113,7 @@ const updateHospital = async (id: number, payload: HospitalDto) => {
         console.log("Fichier prêt :", formData.get("logo")); // Tu peux le laisser pour vérifier
 
         // ✅ LA CORRECTION EST ICI : On ajoute les headers pour forcer le format fichier !
-        const res = await api.post(`/hospitals/${id}`, formData, {
+        const res = await api.post(`/supa/hospitals/${id}`, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data'
             }
@@ -137,7 +137,7 @@ const updateHospital = async (id: number, payload: HospitalDto) => {
     const deleteHospital = async (id: number) => {
         try {
             setLoading(true);
-            await api.delete(`/hospitals/${id}`);
+            await api.delete(`/supa/hospitals/${id}`);
             
             toast.success("Hôpital supprimé avec succès !");
             await getHospitals(pagination.currentPage); // On rafraîchit la page courante

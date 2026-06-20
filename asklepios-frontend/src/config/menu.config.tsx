@@ -12,14 +12,15 @@ export type MenuItemType = {
     icon?: React.ReactNode;
     path?: string;
     roles?: string[];
-    positions?: ("magasin" | "vente")[]; // Ajout du filtre par position
+    positions?: ("magasin" | "vente")[];
+    requiredLicence?: string; // <-- NOUVEAU: Le module requis pour afficher ce menu
     subItems?: MenuItemType[];
 };
 
 // --- 2. CONFIGURATION GLOBALE DES MENUS ---
 export const MENU_CONFIG: MenuItemType[] = [
     // ==========================================
-    // MENUS SUPER ADMIN
+    // MENUS SUPER ADMIN (Ignorent les licences)
     // ==========================================
     {
         title: "Pays",
@@ -71,6 +72,7 @@ export const MENU_CONFIG: MenuItemType[] = [
         title: "Pharmacies",
         icon: <Pill size={20}/>,
         roles: ["admin"],
+        requiredLicence: "pharmacy", // <-- CACHÉ SI PAS DE LICENCE
         subItems: [
             { title: "Pharmacies", path: "/admin/pharmacies" },
             { 
@@ -84,22 +86,11 @@ export const MENU_CONFIG: MenuItemType[] = [
             {
                 title:"Logistique",
                 subItems:[
-                    {
-                        title:"Vehicules",
-                        path:"/admin/vehicules"
-                    },
-                    {
-                        title:"Transfers",
-                        path:"/admin/transfers"
-                    },
-                    {
-                        title:"Chauffeurs",
-                        path:"/admin/drivers"
-                    }
+                    { title:"Vehicules", path:"/admin/vehicules" },
+                    { title:"Transfers", path:"/admin/transfers" },
+                    { title:"Chauffeurs", path:"/admin/drivers" }
                 ]
-
             },
-            
             { title: "Pharmaciens", path: "/admin/pharmaciens" },
             { title: "Versements", path: "/admin/pharmacy/versements" },
             { title: "Mouvements", path: "/admin/movements" },
@@ -117,6 +108,7 @@ export const MENU_CONFIG: MenuItemType[] = [
         title: "Commandes",
         icon: <ListOrdered/>,
         roles: ["admin"],
+        requiredLicence: "pharmacy", // <-- CACHÉ SI PAS DE LICENCE
         subItems: [
             { title: "Commandes effectuées", path: "/admin/orders" },
             { title: "Retours Commandes", path: "/admin/returns" }
@@ -126,12 +118,12 @@ export const MENU_CONFIG: MenuItemType[] = [
     // ==========================================
     // MENUS PHARMACIEN (MAGASIN)
     // ==========================================
-  
     {
         title: "Gestion des Stocks",
         icon: <Layers size={20} />,
         roles: ["pharmacy"],
         positions: ["magasin"],
+        requiredLicence: "pharmacy",
         subItems: [
             { title: "État des stocks", path: "/pharmacy" },
             { title: "Mouvements", path: "/pharmacy/movements" },
@@ -144,19 +136,20 @@ export const MENU_CONFIG: MenuItemType[] = [
         icon: <ListOrdered size={20} />,
         roles: ["pharmacy"],
         positions: ["magasin"],
+        requiredLicence: "pharmacy",
         subItems: [
             { title: "Commandes effectuées", path: "/pharmacy/orders" },
             { title: "Retours Commandes", path: "/pharmacy/returns" }
         ]
     },
-{
-    title:"Logistique",
-    icon:<Truck size={20}/>,
-    roles:["pharmacy"],
-    positions:["magasin"],
-    path:"pharmacy/stock_transfers",
-
-},
+    {
+        title:"Logistique",
+        icon:<Truck size={20}/>,
+        roles:["pharmacy"],
+        positions:["magasin"],
+        requiredLicence: "pharmacy",
+        path:"pharmacy/stock_transfers",
+    },
 
     // ==========================================
     // MENUS PHARMACIEN (COMMERCIAL / VENTE)
@@ -166,13 +159,15 @@ export const MENU_CONFIG: MenuItemType[] = [
         icon: <ShoppingCart size={20} />,
         roles: ["pharmacy"],
         positions: ["vente"],
-        path: "/pharmacy/pos" // À créer pour la caisse
+        requiredLicence: "pharmacy",
+        path: "/pharmacy/pos" 
     },
     {
         title: "Historique Ventes",
         icon: <Activity size={20} />,
         roles: ["pharmacy"],
         positions: ["vente"],
+        requiredLicence: "pharmacy",
         path: "/pharmacy/sales-history"
     },
     {
@@ -180,6 +175,7 @@ export const MENU_CONFIG: MenuItemType[] = [
         icon: <Search size={20} />,
         roles: ["pharmacy"],
         positions: ["vente"],
-        path: "/pharmacy/stocks-view" // Vue en lecture seule pour les vendeurs
+        requiredLicence: "pharmacy",
+        path: "/pharmacy/stocks-view" 
     }
 ];
