@@ -6,10 +6,6 @@
  * Type strict pour les différents types de succursales
  */
 export type PharmacyBranchType = "central_warehouse" | "retail_pos";
-// ==========================================
-// DTOs POUR LA GESTION DES PHARMACIES (ADMIN)
-// ==========================================
-
 
 /**
  * Représente une succursale de pharmacie telle qu'elle est renvoyée par l'API (GET)
@@ -17,16 +13,23 @@ export type PharmacyBranchType = "central_warehouse" | "retail_pos";
 export interface PharmacyBranchDto {
     id: number;
     hospital_id: number;
-    center_id: number | null; // Ajout du lien vers le centre (peut être null pour un magasin central)
+    center_id: number | null; // Lien vers le centre médical (si applicable)
+    country_id: number | null; // <-- NOUVEAU: Lien vers le pays
     name: string;
-    adress: string; // Attention: "adress" avec un seul 'd' comme défini dans ta migration
+    adress: string; // Attention: "adress" avec un seul 'd' (comme défini dans la migration)
     type: PharmacyBranchType;
     
-    // Relation chargée depuis le backend (si tu utilises with('center'))
+    // Relations chargées depuis le backend (si 'with' utilisé dans Laravel)
     center?: {
         id: number;
         name: string;
-        // Tu peux typer ça avec CenterDto si tu l'importes depuis ton fichier types.ts
+        // Tu peux remplacer par CenterDto si disponible
+    };
+    country?: {
+        id: number;
+        name: string;
+        code: string;
+        currency: string;
     };
 
     created_at?: string;
@@ -35,16 +38,16 @@ export interface PharmacyBranchDto {
 
 /**
  * Le format attendu par le formulaire pour créer ou modifier une succursale (POST / PUT)
- * Note : l'hospital_id n'est pas requis ici car le backend le déduit automatiquement.
  */
 export interface PharmacyBranchPayload {
     name: string;
     adress: string;
-    type: PharmacyBranchType | ""; // "" permet de gérer l'état initial vide du select
-    center_id: number | null; // Ajout du champ pour la création/modification
+    type: PharmacyBranchType | ""; 
+    center_id: number | null; 
+    country_id: number | null; // <-- NOUVEAU CHAMP
 }
-// Si tu as besoin de la réponse paginée plus tard, tu peux importer ton interface générique :
-// import { PaginatedResponse } from "./types";
+
+
 // ==========================================
 // DTOs POUR LA GESTION DES CATÉGORIES D'ARTICLES
 // ==========================================
@@ -72,9 +75,9 @@ export interface ArticleCategoryDto {
 export interface ArticleCategoryPayload {
     name: string;
     description: string;
-    // On utilise number | null pour gérer facilement le "Aucun parent" dans le Select
-    article_category_id: number | null; 
+    article_category_id: number | null; // Pour gérer le "Aucun parent"
 }
+
 
 // ==========================================
 // DTOs POUR LA GESTION DES ARTICLES (CATALOGUE)
@@ -83,10 +86,6 @@ export interface ArticleCategoryPayload {
 /**
  * Représente un article tel qu'il est renvoyé par l'API (GET)
  */
-// ==========================================
-// DTOs POUR LA GESTION DES ARTICLES (CATALOGUE)
-// ==========================================
-
 export interface ArticleDto {
     id: number;
     hospital_id: number;
@@ -95,12 +94,14 @@ export interface ArticleDto {
     barcode: string | null;
     global_min_qty: number;
     image_url: string | null;
-    track_batches: boolean; // <-- NOUVEAU CHAMP
+    track_batches: boolean;
     
     category?: ArticleCategoryDto; 
-    // --- NOUVEAUX CHAMPS OPTIONNELS (Calculés par le Backend) ---
+    
+    // Nouveaux champs optionnels calculés par le Backend
     stock_qty?: number; 
     has_expiring_batches?: boolean;
+    
     created_at?: string;
     updated_at?: string;
 }
@@ -110,7 +111,7 @@ export interface ArticlePayload {
     name: string;
     barcode: string;
     global_min_qty: number | ""; 
-    track_batches: boolean; // <-- NOUVEAU CHAMP
+    track_batches: boolean; 
     image: File | null; 
 }
 
@@ -123,7 +124,7 @@ export interface BatchDto {
     id: number;
     article_id: number;
     batch_number: string;
-    expire_date: string | null; // <-- PEUT DÉSORMAIS ÊTRE NULL
+    expire_date: string | null; // Peut être null si l'article n'a pas de date de péremption
     purchase_price: number;
     
     article?: ArticleDto; 
@@ -135,9 +136,11 @@ export interface BatchDto {
 export interface BatchPayload {
     article_id: number | "";
     batch_number: string;
-    expire_date: string; // Une chaîne vide "" sera envoyée comme null au backend
+    expire_date: string; // Envoyée comme string vide ("") au backend pour signifier "null"
     purchase_price: number | ""; 
 }
+
+
 // ==========================================
 // DTOs POUR LA GESTION DES UTILISATEURS
 // ==========================================
@@ -151,6 +154,7 @@ export interface UserDto {
     created_at?: string;
     updated_at?: string;
 }
+
 
 // ==========================================
 // DTOs POUR LA GESTION DES PHARMACIENS
@@ -168,7 +172,7 @@ export interface PharmacienDto {
     
     // Relations chargées depuis le backend
     user?: UserDto;
-    branch?: PharmacyBranchDto; // Assure-toi d'avoir ce DTO défini pour tes succursales
+    branch?: PharmacyBranchDto; 
     
     created_at?: string;
     updated_at?: string;
@@ -180,7 +184,7 @@ export interface PharmacienDto {
 export interface PharmacienPayload {
     first_name: string;
     last_name: string;
-    phone: string | number; // Le string gère mieux les inputs vides avant soumission
+    phone: string | number; // String gère mieux les inputs vides avant soumission
     email: string;
     password?: string; // Optionnel lors de la modification
     position: 'magasin' | 'vente' | ''; // '' pour l'état initial du select

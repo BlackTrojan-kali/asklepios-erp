@@ -17,7 +17,7 @@ const Inventories = () => {
     // --- STORES ---
     const { 
         inventories, meta, loading, actionLoading,
-        getInventories, deleteInventory, validateInventory, exportPdf, exportExcel 
+        getInventories, deleteInventory, validateInventory, exportPdf, exportExcel, getInventoryById
     } = useInventoryStore();
 
     // --- ÉTATS ---
@@ -31,7 +31,11 @@ const Inventories = () => {
 
     // --- CHARGEMENT ---
     useEffect(() => {
-        getInventories({ ...filters, page });
+        // Un petit délai (debounce) peut être utile si l'utilisateur tape vite les dates
+        const delayDebounce = setTimeout(() => {
+            getInventories({ ...filters, page });
+        }, 300);
+        return () => clearTimeout(delayDebounce);
     }, [getInventories, filters, page]);
 
     const handleRefresh = () => {
@@ -39,6 +43,14 @@ const Inventories = () => {
     };
 
     // --- ACTIONS ---
+    const handleEditClick = async (id: number) => {
+        // Charge l'inventaire COMPLET (avec ses lignes) avant d'ouvrir la modale
+        const fullInventory = await getInventoryById(id);
+        if (fullInventory) {
+            setSelectedForEdit(fullInventory);
+        }
+    };
+
     const handleDelete = async (id: number) => {
         const result = await Swal.fire({
             title: 'Supprimer ce brouillon ?',
@@ -235,7 +247,7 @@ const Inventories = () => {
                                                 {inv.status === 'PENDING' ? (
                                                     <>
                                                         <button 
-                                                            onClick={() => setSelectedForEdit(inv)}
+                                                            onClick={() => handleEditClick(inv.id)}
                                                             className="p-1.5 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
                                                             title="Reprendre le brouillon"
                                                         >
@@ -300,16 +312,13 @@ const Inventories = () => {
                 )}
             </div>
 
-            {/* MODALE DE CRÉATION/MODIFICATION (Brouillon) */}
+            {/* MODALE DE CRÉATION/MODIFICATION UNIFIÉE */}
             <InventoryModal 
-                isOpen={isCreateOpen} 
-                onClose={() => setIsCreateOpen(false)}
-                existingInventory={null}
-                onSuccess={handleRefresh}
-            />
-            <InventoryModal 
-                isOpen={!!selectedForEdit} 
-                onClose={() => setSelectedForEdit(null)}
+                isOpen={isCreateOpen || !!selectedForEdit} 
+                onClose={() => {
+                    setIsCreateOpen(false);
+                    setSelectedForEdit(null);
+                }}
                 existingInventory={selectedForEdit}
                 onSuccess={handleRefresh}
             />

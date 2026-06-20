@@ -95,7 +95,7 @@ class InventoryController extends Controller
     public function show($id)
     {
         $inventory = $this->getScopedQuery()
-                          ->with(['lines.batch.article', 'lines.storageLocation'])
+                          ->with(['lines.batch.article', 'lines.storageLocation',"user"])
                           ->findOrFail($id);
 
         return response()->json($inventory, 200);

@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId("hospital_id")->constrained("hospitals")->onDelete("cascade");
             $table->foreignId("center_id")->nullable()->constrained("centers")->onDelete("cascade");
+            $table->foreignId("country_id")->nullable()->constrained("countries")->onDelete("cascade");//nouveau champs
             $table->string("name");
             $table->string("adress");
             $table->enum("type",["central_warehouse","retail_pos"]);

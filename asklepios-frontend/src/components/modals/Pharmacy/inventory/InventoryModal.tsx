@@ -18,7 +18,6 @@ interface Props {
     onSuccess: () => void;
 }
 
-// Structure de travail locale pour les lignes de l'inventaire
 interface LocalLine {
     batch_id: number;
     storage_location_id: number | null;
@@ -34,12 +33,12 @@ export const InventoryModal: React.FC<Props> = ({ isOpen, onClose, existingInven
     const { stocks, getMyBranchStocks, loading: stockLoading } = useStockStore();
 
     // --- ÉTATS ---
-    const [executionDate, setExecutionDate] = useState<string>(new Date().toISOString().split('T')[0]);
+    const [executionDate, setExecutionDate] = useState<string>(new Date().toISOString().substring(0, 10));
     const [comment, setComment] = useState<string>('');
     const [lines, setLines] = useState<LocalLine[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
 
-    // --- CHARGEMENT INITIAL ---
+    // --- CHARGEMENT INITIAL (SÉCURISÉ) ---
     useEffect(() => {
         if (isOpen && !existingInventory) {
             getMyBranchStocks({});
@@ -50,39 +49,43 @@ export const InventoryModal: React.FC<Props> = ({ isOpen, onClose, existingInven
         if (!isOpen) return;
 
         if (existingInventory) {
-            // MODE ÉDITION : On charge les données du brouillon
-            setExecutionDate(existingInventory.execution_date.split('T')[0]);
+            // MODE ÉDITION
+            // .substring(0, 10) garantit qu'on extrait YYYY-MM-DD peu importe le format (avec ou sans "T")
+            const safeDate = existingInventory.execution_date ? String(existingInventory.execution_date).substring(0, 10) : new Date().toISOString().substring(0, 10);
+            setExecutionDate(safeDate);
             setComment(existingInventory.comment || '');
             
             const loadedLines: LocalLine[] = existingInventory.lines?.map(l => ({
-                batch_id: l.batch_id,
-                storage_location_id: l.storage_location_id,
+                batch_id: Number(l.batch_id),
+                storage_location_id: l.storage_location_id ? Number(l.storage_location_id) : null,
                 article_name: l.batch?.article?.name || 'Article inconnu',
                 batch_number: l.batch?.batch_number || 'N/A',
-                location_label: l.storageLocation ? `${l.storageLocation.aisle}-${l.storageLocation.shelf}` : 'Non rangé',
-                system_qty: l.system_qty,
-                physical_qty: l.physical_qty
+                location_label: l.storage_location ? `${l.storage_location.aisle}-${l.storage_location.shelf}` : 'Non rangé',
+                system_qty: Number(l.system_qty),
+                // On s'assure de bien convertir les "null" de l'API en champ vide ''
+                physical_qty: (l.physical_qty === null || l.physical_qty === undefined) ? '' : Number(l.physical_qty)
             })) || [];
             
             setLines(loadedLines);
         } else if (stocks.length > 0 && lines.length === 0) {
-            // MODE CRÉATION : On initialise les lignes à partir du stock actuel
-            setExecutionDate(new Date().toISOString().split('T')[0]);
+            // MODE CRÉATION
+            setExecutionDate(new Date().toISOString().substring(0, 10));
             setComment('');
             
             const initialLines: LocalLine[] = stocks.map(s => ({
-                batch_id: s.batch_id,
-                storage_location_id: s.storage_location_id,
+                batch_id: Number(s.batch_id),
+                storage_location_id: s.storage_location_id ? Number(s.storage_location_id) : null,
                 article_name: s.batch?.article?.name || 'Article inconnu',
                 batch_number: s.batch?.batch_number || 'N/A',
-                location_label: s.storageLocation ? `${s.storageLocation.aisle}-${s.storageLocation.shelf}` : 'Non rangé',
-                system_qty: s.qty,
-                physical_qty: '' // Vide par défaut pour forcer le comptage
+                location_label: s.storage_location ? `${s.storage_location.aisle}-${s.storage_location.shelf}` : 'Non rangé',
+                system_qty: Number(s.qty),
+                physical_qty: '' 
             }));
             
             setLines(initialLines);
         }
-    }, [isOpen, existingInventory, stocks]); // Ne pas ajouter `lines` en dépendance pour éviter les boucles infinies
+    // On écoute uniquement existingInventory?.id pour éviter la boucle d'écrasement infinie
+    }, [isOpen, existingInventory?.id, stocks.length]); 
 
     // Nettoyage à la fermeture
     useEffect(() => {
@@ -94,10 +97,11 @@ export const InventoryModal: React.FC<Props> = ({ isOpen, onClose, existingInven
 
     // --- LOGIQUE DE SAISIE ---
     const handleQtyChange = (batchId: number, locId: number | null, value: string) => {
-        const parsedValue = value === '' ? '' : Math.max(0, Number(value)); // Empêche le négatif
+        const parsedValue = value === '' ? '' : Math.max(0, Number(value)); 
         
         setLines(prev => prev.map(l => 
-            (l.batch_id === batchId && l.storage_location_id === locId) 
+            // On force la comparaison en Number et String pour éviter les conflits de types (ex: "null" vs null)
+            (Number(l.batch_id) === Number(batchId) && String(l.storage_location_id) === String(locId)) 
                 ? { ...l, physical_qty: parsedValue } 
                 : l
         ));
@@ -116,9 +120,9 @@ export const InventoryModal: React.FC<Props> = ({ isOpen, onClose, existingInven
         if (!searchTerm) return lines;
         const lowerSearch = searchTerm.toLowerCase();
         return lines.filter(l => 
-            l.article_name.toLowerCase().includes(lowerSearch) || 
-            l.batch_number.toLowerCase().includes(lowerSearch) ||
-            l.location_label.toLowerCase().includes(lowerSearch)
+            l.article_name?.toLowerCase().includes(lowerSearch) || 
+            l.batch_number?.toLowerCase().includes(lowerSearch) ||
+            l.location_label?.toLowerCase().includes(lowerSearch)
         );
     }, [lines, searchTerm]);
 
@@ -126,8 +130,8 @@ export const InventoryModal: React.FC<Props> = ({ isOpen, onClose, existingInven
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Validation : Toutes les lignes doivent être renseignées
-        const uncounted = lines.filter(l => l.physical_qty === '');
+        // Validation stricte incluant null et undefined
+        const uncounted = lines.filter(l => l.physical_qty === '' || l.physical_qty === null || l.physical_qty === undefined);
         if (uncounted.length > 0) {
             toast.error(`Il reste ${uncounted.length} ligne(s) non comptée(s). Saisissez 0 si le produit n'est plus là.`);
             return;
@@ -137,8 +141,8 @@ export const InventoryModal: React.FC<Props> = ({ isOpen, onClose, existingInven
             execution_date: executionDate,
             comment: comment || null,
             lines: lines.map(l => ({
-                batch_id: l.batch_id,
-                storage_location_id: l.storage_location_id,
+                batch_id: Number(l.batch_id),
+                storage_location_id: l.storage_location_id ? Number(l.storage_location_id) : null,
                 physical_qty: Number(l.physical_qty)
             }))
         };

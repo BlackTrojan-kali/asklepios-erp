@@ -40,7 +40,7 @@ class PharmacyBranchController extends Controller
         }
     }
 
-  /**
+    /**
      * Lister les succursales de la pharmacie (Accessible Admin + Pharmacien)
      */
     #[OA\Get(
@@ -59,7 +59,8 @@ class PharmacyBranchController extends Controller
         $context = $this->getContext();
         $hospitalId = $context['hospital_id'];
 
-        $query = PharmacyBranch::with('center')->where('hospital_id', $hospitalId);
+        // Chargement de 'center' et 'country'
+        $query = PharmacyBranch::with(['center', 'country'])->where('hospital_id', $hospitalId);
 
         // Recherche par nom ou adresse
         if ($request->filled('search')) {
@@ -86,6 +87,7 @@ class PharmacyBranchController extends Controller
         // Si pas de pagination demandée, on renvoie un tableau plat (pour les listes déroulantes)
         return response()->json($query->get(), 200);
     }
+
     /**
      * Détails d'une succursale (Accessible Admin + Pharmacien)
      */
@@ -101,7 +103,9 @@ class PharmacyBranchController extends Controller
     public function show($id)
     {
         $context = $this->getContext();
-        $branch = PharmacyBranch::with('center')->where('hospital_id', $context['hospital_id'])->findOrFail($id);
+        $branch = PharmacyBranch::with(['center', 'country'])
+            ->where('hospital_id', $context['hospital_id'])
+            ->findOrFail($id);
 
         return response()->json($branch, 200);
     }
@@ -124,7 +128,8 @@ class PharmacyBranchController extends Controller
                 new OA\Property(property: "name", type: "string", example: "Pharmacie Principale"),
                 new OA\Property(property: "adress", type: "string", example: "Bâtiment A, RDC"),
                 new OA\Property(property: "type", type: "string", enum: ["central_warehouse", "retail_pos"]),
-                new OA\Property(property: "center_id", type: "integer", nullable: true, example: 1)
+                new OA\Property(property: "center_id", type: "integer", nullable: true, example: 1),
+                new OA\Property(property: "country_id", type: "integer", nullable: true, example: 1)
             ]
         )
     )]
@@ -139,6 +144,7 @@ class PharmacyBranchController extends Controller
             'name' => 'required|string|max:255',
             'adress' => 'required|string|max:255',
             'type' => 'required|in:central_warehouse,retail_pos',
+            'country_id' => 'nullable|exists:countries,id',
             'center_id' => [
                 'nullable',
                 Rule::exists('centers', 'id')->where(function ($query) use ($hospitalId) {
@@ -153,7 +159,7 @@ class PharmacyBranchController extends Controller
 
         return response()->json([
             'message' => 'Succursale de pharmacie créée avec succès',
-            'data' => $branch->load('center')
+            'data' => $branch->load(['center', 'country'])
         ], 201);
     }
 
@@ -180,6 +186,7 @@ class PharmacyBranchController extends Controller
             'name' => 'sometimes|required|string|max:255',
             'adress' => 'sometimes|required|string|max:255',
             'type' => 'sometimes|required|in:central_warehouse,retail_pos',
+            'country_id' => 'nullable|exists:countries,id',
             'center_id' => [
                 'nullable',
                 Rule::exists('centers', 'id')->where(function ($query) use ($hospitalId) {
@@ -192,7 +199,7 @@ class PharmacyBranchController extends Controller
 
         return response()->json([
             'message' => 'Succursale de pharmacie mise à jour',
-            'data' => $branch->load('center')
+            'data' => $branch->load(['center', 'country'])
         ], 200);
     }
 

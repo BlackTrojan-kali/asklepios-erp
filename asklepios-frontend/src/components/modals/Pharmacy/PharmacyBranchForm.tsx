@@ -1,15 +1,16 @@
 import React from 'react';
 import Select from 'react-select';
 import type { PharmacyBranchPayload, PharmacyBranchType } from '../../../types/PharmTypes';
-import type { CenterDto } from '../../../types/types'; // Importe ton type Center
+import type { CenterDto, CountryDto } from '../../../types/types'; 
 
 interface Props {
     payload: PharmacyBranchPayload;
     setPayload: (p: PharmacyBranchPayload) => void;
-    centers: CenterDto[]; // Nouvelle prop pour la liste des centres
+    centers: CenterDto[]; 
+    countries: CountryDto[]; // <-- NOUVELLE PROP
 }
 
-export const PharmacyBranchForm: React.FC<Props> = ({ payload, setPayload, centers }) => {
+export const PharmacyBranchForm: React.FC<Props> = ({ payload, setPayload, centers, countries }) => {
 
     // Options pour le type de succursale
     const typeOptions = [
@@ -17,8 +18,9 @@ export const PharmacyBranchForm: React.FC<Props> = ({ payload, setPayload, cente
         { value: 'retail_pos', label: 'Point de Vente (Détail / Comptoir)' }
     ];
 
-    // Formatage des centres pour react-select
+    // Formatage pour react-select
     const centerOptions = centers.map(c => ({ value: c.id, label: c.name }));
+    const countryOptions = countries.map(c => ({ value: c.id, label: c.name }));
 
     // Styles pour s'assurer que react-select passe par-dessus la modale
     const selectStyles = {
@@ -77,29 +79,52 @@ export const PharmacyBranchForm: React.FC<Props> = ({ payload, setPayload, cente
                 />
             </div>
 
-            {/* CENTRE MÉDICAL (Nouveau champ optionnel) */}
-            <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">
-                    Rattacher à un Centre (Optionnel)
-                </label>
-                <Select 
-                    options={centerOptions}
-                    value={centerOptions.find(opt => opt.value === payload.center_id) || null}
-                    onChange={(selected) => setPayload({ 
-                        ...payload, 
-                        center_id: selected ? selected.value : null 
-                    })}
-                    placeholder="Aucun centre spécifique..."
-                    isClearable
-                    menuPortalTarget={document.body}
-                    styles={selectStyles}
-                    className="react-select-container text-sm"
-                    classNamePrefix="react-select"
-                />
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 italic">
-                    Laissez vide si c'est un magasin central commun à l'hôpital.
-                </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* PAYS (Nouveau champ optionnel) */}
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">
+                        Pays d'implantation (Optionnel)
+                    </label>
+                    <Select 
+                        options={countryOptions}
+                        value={countryOptions.find(opt => opt.value === payload.country_id) || null}
+                        onChange={(selected) => setPayload({ 
+                            ...payload, 
+                            country_id: selected ? selected.value : null 
+                        })}
+                        placeholder="Sélectionner un pays..."
+                        isClearable
+                        menuPortalTarget={document.body}
+                        styles={selectStyles}
+                        className="react-select-container text-sm"
+                        classNamePrefix="react-select"
+                    />
+                </div>
+
+                {/* CENTRE MÉDICAL (Optionnel) */}
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">
+                        Rattacher à un Centre (Optionnel)
+                    </label>
+                    <Select 
+                        options={centerOptions}
+                        value={centerOptions.find(opt => opt.value === payload.center_id) || null}
+                        onChange={(selected) => setPayload({ 
+                            ...payload, 
+                            center_id: selected ? selected.value : null 
+                        })}
+                        placeholder="Aucun centre..."
+                        isClearable
+                        menuPortalTarget={document.body}
+                        styles={selectStyles}
+                        className="react-select-container text-sm"
+                        classNamePrefix="react-select"
+                    />
+                </div>
             </div>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 italic">
+                Laissez le centre vide s'il s'agit d'un magasin central commun à tout l'hôpital.
+            </p>
 
         </div>
     );

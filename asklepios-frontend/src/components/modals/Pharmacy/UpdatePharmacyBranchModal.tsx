@@ -2,23 +2,25 @@ import React, { useState, useEffect } from 'react';
 import usePharmacyStore from '../../../functions/pharmacy/usePharmacyStore';
 import { PharmacyBranchForm } from './PharmacyBranchForm';
 import type { PharmacyBranchDto, PharmacyBranchPayload } from '../../../types/PharmTypes';
-import type { CenterDto } from '../../../types/types';
+import type { CenterDto, CountryDto } from '../../../types/types';
 
 interface Props {
     isOpen: boolean;
     onClose: () => void;
     branch: PharmacyBranchDto | null;
-    centers: CenterDto[]; // Ajout de la prop
+    centers: CenterDto[]; 
+    countries: CountryDto[]; // <-- NOUVELLE PROP
 }
 
-export const UpdatePharmacyBranchModal: React.FC<Props> = ({ isOpen, onClose, branch, centers }) => {
+export const UpdatePharmacyBranchModal: React.FC<Props> = ({ isOpen, onClose, branch, centers, countries }) => {
     const { updatePharmacyBranch, actionLoading } = usePharmacyStore();
     
     const [payload, setPayload] = useState<PharmacyBranchPayload>({
         name: '',
         adress: '',
         type: '',
-        center_id: null // Initialisation
+        center_id: null,
+        country_id: null // <-- NOUVEAU CHAMP
     });
 
     // Remplissage du formulaire avec les données existantes
@@ -28,7 +30,8 @@ export const UpdatePharmacyBranchModal: React.FC<Props> = ({ isOpen, onClose, br
                 name: branch.name,
                 adress: branch.adress,
                 type: branch.type,
-                center_id: branch.center_id || null // Chargement du centre existant
+                center_id: branch.center_id || null, 
+                country_id: branch.country_id || null // <-- CHARGEMENT DE LA DONNÉE EXISTANTE
             });
         }
     }, [branch]);
@@ -52,7 +55,8 @@ export const UpdatePharmacyBranchModal: React.FC<Props> = ({ isOpen, onClose, br
                 <PharmacyBranchForm 
                     payload={payload} 
                     setPayload={setPayload} 
-                    centers={centers} // Passage des centres
+                    centers={centers} 
+                    countries={countries} // <-- PASSAGE DE LA PROP
                 />
 
                 <div className="mt-6 flex justify-end gap-3 border-t border-gray-100 dark:border-gray-800 pt-4">

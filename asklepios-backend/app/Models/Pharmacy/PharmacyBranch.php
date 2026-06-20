@@ -27,4 +27,8 @@ class PharmacyBranch extends Model
     {
         return $this->hasMany(Inventory::class);
     }
+    public function country()
+{
+    return $this->belongsTo(\App\Models\Country::class);
+}
 }

@@ -46,7 +46,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
-
+// LECTURE SEULE : Pays (Accessible à tous les connectés)
+        Route::get('/countries/all', [CountryController::class, 'all']); // <-- À PLACER EN PREMIER
     // Configuration / Données publiques
     Route::get('/countries', [CountryController::class, 'index']);
     Route::get('/countries/{id}', [CountryController::class, 'show']);

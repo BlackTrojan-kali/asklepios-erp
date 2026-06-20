@@ -11,6 +11,25 @@ use OpenApi\Attributes as OA;
 class CountryController extends Controller
 {
     /**
+     * Liste complète des pays (sans pagination) pour les listes déroulantes
+     */
+    #[OA\Get(
+        path: "/api/countries/all",
+        operationId: "getAllCountries",
+        summary: "Liste complète des pays (sans pagination)",
+        description: "Idéal pour remplir les composants Select (ex: React Select) côté frontend.",
+        security: [["bearerAuth" => []]],
+        tags: ["Pays (Countries)"]
+    )]
+    #[OA\Response(response: 200, description: "Liste complète récupérée avec succès")]
+    public function all()
+    {
+        // On récupère la liste complète, triée par ordre alphabétique
+        $countries = Country::orderBy('name', 'asc')->get();
+
+        return response()->json($countries, 200);
+    }
+    /**
      * Liste paginée et recherche de pays
      */
     #[OA\Get(

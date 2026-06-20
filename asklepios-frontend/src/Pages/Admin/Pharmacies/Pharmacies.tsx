@@ -12,14 +12,16 @@ import {
     Building2,
     RefreshCw,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    Globe // Pour l'icône du pays
 } from 'lucide-react';
 import Swal from 'sweetalert2';
-import Select from 'react-select'; // <-- IMPORT DU REACT-SELECT
+import Select from 'react-select'; 
 
 // Stores
 import usePharmacyStore from '../../../functions/pharmacy/usePharmacyStore'; 
 import useCenterStore from '../../../functions/center/useCenterStore'; 
+import useCountryStore from '../../../functions/country/useCountryStore'; // <-- Ajuste le chemin selon ton arborescence
 
 // Modèles et Types
 import type { PharmacyBranchDto } from '../../../types/PharmTypes';
@@ -29,14 +31,16 @@ import { CreatePharmacyBranchModal } from '../../../components/modals/Pharmacy/C
 import { UpdatePharmacyBranchModal } from '../../../components/modals/Pharmacy/UpdatePharmacyBranchModal';
 
 const Pharmacies = () => {
-    // Hooks des stores (ajout de la pagination)
+    // Hooks des stores
     const { 
         pharmacyBranches, loading, pagination, 
         getPharmacyBranches, deletePharmacyBranch 
     } = usePharmacyStore();
     
-    // Ajout du store pour récupérer les centres
     const { centers, getCenters } = useCenterStore();
+    
+    // NOUVEAU: Récupération des pays
+    const { allCountries, getAllCountries } = useCountryStore();
 
     // États pour les filtres
     const [filters, setFilters] = useState({
@@ -48,11 +52,12 @@ const Pharmacies = () => {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [selectedBranch, setSelectedBranch] = useState<PharmacyBranchDto | null>(null);
 
-    // Chargement initial des données (Pharmacies + Centres)
+    // Chargement initial des données (Pharmacies + Centres + Pays)
     useEffect(() => {
-        getPharmacyBranches(1, {}); // Chargement de la page 1 sans filtre
-        getCenters(1, {}, 100); // On récupère une large liste de centres pour les menus déroulants
-    }, [getPharmacyBranches, getCenters]);
+        getPharmacyBranches(1, {}); 
+        getCenters(1, {}, 100); 
+        getAllCountries(); // <-- AJOUT: Chargement de la liste complète des pays
+    }, [getPharmacyBranches, getCenters, getAllCountries]);
 
     // Rafraîchir la liste en conservant la page et les filtres actuels
     const handleRefresh = () => {
@@ -62,7 +67,7 @@ const Pharmacies = () => {
     // Soumission du formulaire de filtre
     const handleFilterSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        getPharmacyBranches(1, filters); // Retour à la page 1 lors d'une nouvelle recherche
+        getPharmacyBranches(1, filters); 
     };
 
     // Réinitialisation des filtres
@@ -149,7 +154,7 @@ const Pharmacies = () => {
                         />
                     </div>
 
-                    {/* Sélecteur de type : Forcé en Blanc & Noir pour compatibilité Mode Sombre */}
+                    {/* Sélecteur de type */}
                     <div>
                         <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Type de structure</label>
                         <Select 
@@ -184,22 +189,10 @@ const Pharmacies = () => {
                                     color: state.isSelected ? '#00a896' : '#000000', 
                                     cursor: 'pointer',
                                 }),
-                                singleValue: (base) => ({
-                                    ...base,
-                                    color: '#000000', 
-                                }),
-                                input: (base) => ({
-                                    ...base,
-                                    color: '#000000', 
-                                }),
-                                placeholder: (base) => ({
-                                    ...base,
-                                    color: '#6b7280', 
-                                }),
-                                indicatorSeparator: (base) => ({
-                                    ...base,
-                                    backgroundColor: '#e5e7eb',
-                                }),
+                                singleValue: (base) => ({ ...base, color: '#000000' }),
+                                input: (base) => ({ ...base, color: '#000000' }),
+                                placeholder: (base) => ({ ...base, color: '#6b7280' }),
+                                indicatorSeparator: (base) => ({ ...base, backgroundColor: '#e5e7eb' }),
                             }}
                         />
                     </div>
@@ -230,7 +223,7 @@ const Pharmacies = () => {
                             <tr className="bg-slate-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
                                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Succursale</th>
                                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Centre</th>
-                                <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Adresse</th>
+                                <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Adresse & Pays</th>
                                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Type</th>
                                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Actions</th>
                             </tr>
@@ -273,11 +266,19 @@ const Pharmacies = () => {
                                             )}
                                         </td>
                                         
-                                        {/* ADRESSE */}
+                                        {/* ADRESSE & PAYS */}
                                         <td className="p-4">
-                                            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-gray-400">
-                                                <MapPin size={16} className="text-gray-400" />
-                                                <span>{branch.adress}</span>
+                                            <div className="flex flex-col gap-1 text-sm text-slate-600 dark:text-gray-400">
+                                                <div className="flex items-center gap-2">
+                                                    <MapPin size={14} className="text-gray-400" />
+                                                    <span>{branch.adress}</span>
+                                                </div>
+                                                {branch.country && (
+                                                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                                                        <Globe size={12} className="text-gray-400" />
+                                                        <span>{branch.country.name}</span>
+                                                    </div>
+                                                )}
                                             </div>
                                         </td>
 
@@ -354,14 +355,16 @@ const Pharmacies = () => {
             <CreatePharmacyBranchModal 
                 isOpen={isCreateOpen} 
                 onClose={() => setIsCreateOpen(false)} 
-                centers={centers} // <-- PASSAGE DES CENTRES
+                centers={centers} 
+                countries={allCountries} // <-- PASSAGE DES PAYS
             />
 
             <UpdatePharmacyBranchModal 
                 isOpen={!!selectedBranch} 
                 onClose={() => setSelectedBranch(null)} 
                 branch={selectedBranch}
-                centers={centers} // <-- PASSAGE DES CENTRES
+                centers={centers} 
+                countries={allCountries} // <-- PASSAGE DES PAYS
             />
 
         </div>

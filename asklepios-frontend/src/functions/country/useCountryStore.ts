@@ -7,6 +7,7 @@ import type { CountryDto, PaginatedResponse } from "../../types/types";
 const useCountryStore = () => {
     // --- ÉTATS ---
     const [countries, setCountries] = useState<CountryDto[]>([]);
+    const [allCountries, setAllCountries] = useState<CountryDto[]>([]); // NOUVEAU : Liste brute sans pagination
     const [currentCountry, setCurrentCountry] = useState<CountryDto | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     
@@ -17,8 +18,7 @@ const useCountryStore = () => {
         total: 0
     });
 
-    // --- 1. LISTER & RECHERCHER (GET /countries) ---
-    // On utilise useCallback pour éviter que la fonction soit recréée à chaque rendu
+    // --- 1. LISTER & RECHERCHER AVEC PAGINATION (GET /countries) ---
     const getCountries = useCallback(async (page: number = 1, search: string = '', perPage: number = 10) => {
         try {
             setLoading(true);
@@ -42,7 +42,24 @@ const useCountryStore = () => {
         }
     }, []);
 
-    // --- 2. RÉCUPÉRER UN SEUL PAYS (GET /countries/{id}) ---
+    // --- 2. RÉCUPÉRER LA LISTE COMPLÈTE SANS PAGINATION (GET /countries/all) ---
+    const getAllCountries = useCallback(async () => {
+        try {
+            setLoading(true);
+            const res = await api.get<CountryDto[]>("/countries/all");
+            setAllCountries(res.data);
+            return res.data;
+        } catch (error) {
+            if (axios.isAxiosError(error) && !axios.isCancel(error)) {
+                toast.error("Erreur lors de la récupération de la liste complète des pays");
+            }
+            return [];
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    // --- 3. RÉCUPÉRER UN SEUL PAYS (GET /countries/{id}) ---
     const getCountry = useCallback(async (id: number) => {
         try {
             setLoading(true);
@@ -57,20 +74,20 @@ const useCountryStore = () => {
         }
     }, []);
 
-    // --- 3. CRÉER UN PAYS (POST /countries) ---
+    // --- 4. CRÉER UN PAYS (POST /countries) ---
     const createCountry = async (payload: CountryDto) => {
         try {
             setLoading(true);
             const res = await api.post("/countries", payload);
             toast.success("Pays ajouté avec succès !");
             
-            // Optionnel : Rafraîchir la liste après un ajout réussi
+            // Rafraîchir les listes après un ajout réussi
             await getCountries(1); 
+            await getAllCountries(); 
             
             return res.data;
         } catch (error) {
             if (axios.isAxiosError(error)) {
-                // Laravel renvoie les erreurs de validation en 422
                 toast.error(error.response?.data?.message || "Erreur lors de la création");
             }
             return false;
@@ -79,7 +96,7 @@ const useCountryStore = () => {
         }
     };
 
-    // --- 4. MODIFIER UN PAYS (PUT /countries/{id}) ---
+    // --- 5. MODIFIER UN PAYS (PUT /countries/{id}) ---
     const updateCountry = async (id: number, payload: CountryDto) => {
         try {
             setLoading(true);
@@ -88,6 +105,7 @@ const useCountryStore = () => {
             
             // Rafraîchir la liste courante pour voir les modifications
             await getCountries(pagination.currentPage); 
+            await getAllCountries(); 
             
             return res.data;
         } catch (error) {
@@ -100,13 +118,14 @@ const useCountryStore = () => {
         }
     };
 
-    // On retourne tous les états et fonctions pour pouvoir les utiliser dans nos composants
     return {
         countries,
+        allCountries,
         currentCountry,
         loading,
         pagination,
         getCountries,
+        getAllCountries,
         getCountry,
         createCountry,
         updateCountry

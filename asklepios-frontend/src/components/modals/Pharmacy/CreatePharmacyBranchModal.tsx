@@ -2,22 +2,24 @@ import React, { useState } from 'react';
 import usePharmacyStore from '../../../functions/pharmacy/usePharmacyStore';
 import { PharmacyBranchForm } from './PharmacyBranchForm';
 import type { PharmacyBranchPayload } from '../../../types/PharmTypes';
-import type { CenterDto } from '../../../types/types';
+import type { CenterDto, CountryDto } from '../../../types/types';
 
 interface Props {
     isOpen: boolean;
     onClose: () => void;
-    centers: CenterDto[]; // Ajout de la prop
+    centers: CenterDto[]; 
+    countries: CountryDto[]; // <-- NOUVELLE PROP
 }
 
-export const CreatePharmacyBranchModal: React.FC<Props> = ({ isOpen, onClose, centers }) => {
+export const CreatePharmacyBranchModal: React.FC<Props> = ({ isOpen, onClose, centers, countries }) => {
     const { createPharmacyBranch, actionLoading } = usePharmacyStore();
     
     const [payload, setPayload] = useState<PharmacyBranchPayload>({
         name: '',
         adress: '',
         type: '',
-        center_id: null // Initialisation du nouveau champ
+        center_id: null,
+        country_id: null // <-- NOUVEAU CHAMP
     });
 
     const handleSubmit = async () => {
@@ -25,7 +27,7 @@ export const CreatePharmacyBranchModal: React.FC<Props> = ({ isOpen, onClose, ce
         
         const success = await createPharmacyBranch(payload);
         if (success) {
-            setPayload({ name: '', adress: '', type: '', center_id: null });
+            setPayload({ name: '', adress: '', type: '', center_id: null, country_id: null });
             onClose();
         }
     };
@@ -40,7 +42,8 @@ export const CreatePharmacyBranchModal: React.FC<Props> = ({ isOpen, onClose, ce
                 <PharmacyBranchForm 
                     payload={payload} 
                     setPayload={setPayload} 
-                    centers={centers} // Passage des centres
+                    centers={centers} 
+                    countries={countries} // <-- PASSAGE DE LA PROP
                 />
                 
                 <div className="mt-6 flex justify-end gap-3 border-t border-gray-100 dark:border-gray-800 pt-4">
