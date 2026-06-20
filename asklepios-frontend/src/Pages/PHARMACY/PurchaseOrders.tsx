@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { 
     ShoppingCart, Plus, RefreshCw, Loader2, Edit, Trash2, 
-    XCircle, CheckSquare, Search, Filter, Eye, Undo2
+    XCircle, CheckSquare, Search, Filter, Eye, Undo2, FileDown
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
@@ -14,7 +14,7 @@ import { PurchaseOrderModal } from '../../components/modals/Pharmacy/purchase_or
 import { ExportPurchaseModal } from '../../components/modals/Pharmacy/purchase/ExportPurchaseModal';
 import { ReceiveOrderModal } from '../../components/modals/Pharmacy/purchase_order/ReceiveOrderModal';
 import { ViewOrderModal } from '../../components/modals/Pharmacy/purchase_order/ViewOrderModal';
-import { PurchaseReturnModal } from '../../components/modals/Pharmacy/purchase_return/PurchaseReturnModal'; // <-- IMPORT DE LA MODALE DE RETOUR
+import { PurchaseReturnModal } from '../../components/modals/Pharmacy/purchase_return/PurchaseReturnModal';
 
 // Types
 import type { PurchaseOrderDto } from '../../types/PurchaseTypes'; 
@@ -22,7 +22,7 @@ import type { PurchaseOrderDto } from '../../types/PurchaseTypes';
 const PurchaseOrders = () => {
     const { 
         orders, ordersMeta, loading, actionLoading,
-        getOrders, deleteOrder, cancelOrder 
+        getOrders, deleteOrder, cancelOrder, downloadOrderFormPdf // <-- Ajout de l'export PDF spécifique
     } = usePurchaseStore();
     const { providers, getProviders } = useProviderStore();
 
@@ -36,7 +36,7 @@ const PurchaseOrders = () => {
     const [selectedOrderForEdit, setSelectedOrderForEdit] = useState<PurchaseOrderDto | null>(null);
     const [selectedOrderForView, setSelectedOrderForView] = useState<PurchaseOrderDto | null>(null);
     const [selectedOrderForReceive, setSelectedOrderForReceive] = useState<PurchaseOrderDto | null>(null);
-    const [selectedOrderForReturn, setSelectedOrderForReturn] = useState<PurchaseOrderDto | null>(null); // <-- NOUVEL ÉTAT POUR LE RETOUR
+    const [selectedOrderForReturn, setSelectedOrderForReturn] = useState<PurchaseOrderDto | null>(null);
 
     useEffect(() => {
         getProviders({});
@@ -220,6 +220,16 @@ const PurchaseOrders = () => {
                                         <td className="p-4 text-right">
                                             <div className="flex justify-end items-center gap-1">
                                                 
+                                                {/* BOUTON TÉLÉCHARGER LE BON DE COMMANDE (PDF) */}
+                                                <button 
+                                                    onClick={() => downloadOrderFormPdf(order.id)}
+                                                    disabled={actionLoading}
+                                                    className="p-1.5 text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-900/30 rounded-lg transition-colors"
+                                                    title="Télécharger le bon de commande (PDF)"
+                                                >
+                                                    <FileDown size={18} />
+                                                </button>
+
                                                 {/* ÉDITION OU CONSULTATION SÉPARÉES */}
                                                 {order.status === 'PENDING' ? (
                                                     <button 
@@ -344,12 +354,11 @@ const PurchaseOrders = () => {
                 onSuccess={handleRefresh}
             />
 
-            {/* LA MODALE DE RETOUR INVOQUÉE DEPUIS LA COMMANDE */}
             <PurchaseReturnModal
                 isOpen={!!selectedOrderForReturn}
                 onClose={() => setSelectedOrderForReturn(null)}
                 existingReturn={null}
-                purchaseOrder={selectedOrderForReturn} // <-- Ajout essentiel
+                purchaseOrder={selectedOrderForReturn}
                 onSuccess={handleRefresh}
             />
 

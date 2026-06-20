@@ -122,11 +122,11 @@ const useStockTransferStore = () => {
     };
 
     // ======================================================
-    // 4. EXPORTATION PDF
+    // 4. EXPORTATION PDF & DOCUMENTS
     // ======================================================
     
     /**
-     * Exporter le rapport des transferts en PDF.
+     * Exporter le rapport global des transferts en PDF.
      * @param params Filtres appliqués à l'export
      * @param role 'pharmacy' ou 'admin'
      */
@@ -154,6 +154,36 @@ const useStockTransferStore = () => {
         }
     };
 
+    /**
+     * Télécharger le bordereau de route (Waybill) spécifique à un transfert.
+     * @param id ID du transfert
+     * @param role 'pharmacy' ou 'admin'
+     */
+    const downloadWaybillPdf = async (id: number, role:'admin') => {
+        try {
+            setActionLoading(true);
+            const response = await api.get(`/${role}/stock-transfers/${id}/waybill`, {
+                responseType: 'blob'
+            });
+            
+            const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+            const link = document.createElement('a');
+            link.href = url;
+            // Format du nom de fichier : Bordereau_Route_TRF_00012.pdf
+            link.setAttribute('download', `Bordereau_Route_TRF_${String(id).padStart(5, '0')}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+            
+            toast.success("Bordereau de route téléchargé !");
+        } catch (error) {
+            toast.error("Échec du téléchargement du bordereau de route.");
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
     return {
         // États
         transfers,
@@ -167,7 +197,8 @@ const useStockTransferStore = () => {
         createTransfer,
         receiveTransfer,
         cancelTransfer,
-        exportPdf
+        exportPdf,
+        downloadWaybillPdf // <-- NOUVELLE FONCTION EXPORTÉE
     };
 };
 

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { 
     Truck, Plus, RefreshCw, Loader2, FileText, 
     CheckCircle2, XCircle, MapPin, Calendar, 
-    ChevronDown, ChevronUp, Package, Eye
+    ChevronDown, ChevronUp, Package, Eye, FileDown
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
@@ -11,23 +11,21 @@ import toast from 'react-hot-toast';
 import useStockTransferStore from '../../functions/pharmacy/useStockTransferStore';
 import type { StockTransferDto } from '../../types/transferTypes';
 
-// ⚠️ IMPORT TON STORE D'AUTHENTIFICATION ICI POUR RÉCUPÉRER LE BRANCH_ID DU USER CONNECTÉ
-// import useAuthStore from '../../functions/auth/useAuthStore';
+// Context
+import { useAuth } from '../../contexts/AuthContext';
 
 // Composants
 import { StockTransferModal } from '../../components/modals/Pharmacy/Logistics/StockTransferModal';
-import { useAuth } from '../../contexts/AuthContext';
 
 const StockTransfers = () => {
     // --- STORES ---
     const { 
         transfers, pagination, loading, actionLoading,
-        getTransfers, receiveTransfer, cancelTransfer, exportPdf 
+        getTransfers, receiveTransfer, cancelTransfer, exportPdf, downloadWaybillPdf 
     } = useStockTransferStore();
 
-    // ⚠️ RÉCUPÉRATION DU BRANCH_ID DE L'UTILISATEUR CONNECTÉ
-    const { profile  } = useAuth();
-
+    // RÉCUPÉRATION DU BRANCH_ID DE L'UTILISATEUR CONNECTÉ
+    const { profile } = useAuth();
     const currentBranchId = profile?.profile_pharm?.branch_id;
 
     // --- ÉTATS & FILTRES ---
@@ -279,6 +277,16 @@ const StockTransfers = () => {
                                             <td className="p-4 text-right">
                                                 <div className="flex justify-end items-center gap-2">
                                                     
+                                                    {/* BOUTON TÉLÉCHARGER LE BORDEREAU DE ROUTE (Toujours visible) */}
+                                                    <button 
+                                                        onClick={() => downloadWaybillPdf(transfer.id, 'admin')}
+                                                        disabled={actionLoading}
+                                                        className="flex items-center gap-1 px-3 py-1.5 bg-orange-50 text-orange-600 hover:bg-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:hover:bg-orange-900/40 rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
+                                                        title="Télécharger le bordereau de route (PDF)"
+                                                    >
+                                                        <FileDown size={14} /> Bordereau
+                                                    </button>
+
                                                     {/* 1. BOUTON PRÉVISUALISER (Toujours visible) */}
                                                     <button 
                                                         onClick={() => setExpandedTransferId(expandedTransferId === transfer.id ? null : transfer.id)}

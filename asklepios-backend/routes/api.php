@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\PharmacyBranchController;
 use App\Http\Controllers\Admin\ProviderController;
 use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Admin\VehiculeController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Pharmacien\InventoryController;
 use App\Http\Controllers\Pharmacien\PurchaseOrderController;
 use App\Http\Controllers\Pharmacien\PurchaseReturnController;
@@ -40,7 +41,12 @@ Route::prefix("auth")->group(function(){
 // 2. ROUTES AUTHENTIFIÉES (GLOBALES)
 // ==========================================================
 Route::middleware('auth:sanctum')->group(function () {
-
+    Route::prefix('notifications')->group(function () {
+        Route::get('/', [NotificationController::class, 'index']);
+        Route::get('/unread-count', [NotificationController::class, 'unreadCount']); // Utile pour un petit ping régulier
+        Route::patch('/{id}/read', [NotificationController::class, 'markAsRead']);
+        Route::post('/read-all', [NotificationController::class, 'markAllAsRead']);
+    });
     // Profil de l'utilisateur courant
     Route::get('/user', function (Request $request) {
         return $request->user();
@@ -185,6 +191,7 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::get('/export/excel', [PurchaseOrderController::class, 'exportExcel']);
                 Route::post('/{id}/cancel', [PurchaseOrderController::class, 'cancelOrder']);
                 Route::post('/{id}/validate', [PurchaseOrderController::class, 'validateOrder']);
+                Route::get('/{id}/pdf', [PurchaseOrderController::class, 'downloadOrderForm']);
             });
             Route::apiResource('purchase-orders', PurchaseOrderController::class);
 
@@ -196,6 +203,9 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::post('/{id}/validate', [PurchaseReturnController::class, 'validateReturn']);
             });
             Route::apiResource('purchase-returns', PurchaseReturnController::class);
+              Route::prefix('stock-transfers')->group(function () {
+                Route::get('/{id}/waybill', [StockTransferController::class, 'downloadWaybill']);
+        });
         });
 
         // --- Sous le préfixe /pharmacy/ ---

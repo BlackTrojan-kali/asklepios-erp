@@ -39,7 +39,6 @@ const usePurchaseStore = () => {
         if (axios.isAxiosError(error)) {
             const responseData = error.response?.data;
             if (responseData?.errors) {
-                // Affiche la première erreur de validation trouvée
                 const firstError = Object.values(responseData.errors)[0] as string[];
                 toast.error(firstError[0]);
             } else {
@@ -58,7 +57,6 @@ const usePurchaseStore = () => {
         try {
             setLoading(true);
             const res = await api.get("/admin/purchase-orders", { params });
-            // Laravel renvoie les données paginées dans `data.data` et les métadonnées autour
             setOrders(res.data.data || []);
             setOrdersMeta({
                 current_page: res.data.current_page,
@@ -266,6 +264,9 @@ const usePurchaseStore = () => {
     const exportOrdersPdf = (params: any = {}) => downloadFile('/admin/purchase-orders/export/pdf', 'commandes.pdf', params);
     const exportOrdersExcel = (params: any = {}) => downloadFile('/admin/purchase-orders/export/excel', 'commandes.xlsx', params);
     
+    // NOUVEAU : Téléchargement du bon de commande spécifique
+    const downloadOrderFormPdf = (id: number) => downloadFile(`/admin/purchase-orders/${id}/pdf`, `Bon_de_Commande_N${String(id).padStart(5, '0')}.pdf`);
+    
     const exportReturnsPdf = (params: any = {}) => downloadFile('/admin/purchase-returns/export/pdf', 'retours.pdf', params);
     const exportReturnsExcel = (params: any = {}) => downloadFile('/admin/purchase-returns/export/excel', 'retours.xlsx', params);
 
@@ -297,6 +298,7 @@ const usePurchaseStore = () => {
         // Exports
         exportOrdersPdf,
         exportOrdersExcel,
+        downloadOrderFormPdf, // <-- Ajouté ici
         exportReturnsPdf,
         exportReturnsExcel
     };

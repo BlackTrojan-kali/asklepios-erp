@@ -6,11 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Services\StockMovementService;
 use App\Models\Pharmacy\StockTransfer;
 use App\Models\Pharmacy\StockTransferLine;
+use App\Models\User;
+use App\Notifications\TransferShippedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use OpenApi\Attributes as OA;
 use Exception;
+use Illuminate\Support\Facades\Notification;
 
 #[OA\Tag(name: "Transferts de Stock", description: "Gestion des transferts inter-pharmacies")]
 class StockTransferController extends Controller
@@ -22,9 +25,6 @@ class StockTransferController extends Controller
         $this->stockMovementService = $stockMovementService;
     }
 
-    /**
-     * Détermine le rôle et l'ID de la succursale selon l'utilisateur connecté
-     */
     private function getContext()
     {
         $user = auth()->user();
@@ -36,12 +36,8 @@ class StockTransferController extends Controller
         abort(403, "Profil non autorisé.");
     }
 
-    /**
-     * Applique les filtres de recherche
-     */
     private function applyFilters($query, Request $request, $context)
     {
-        // 1. Filtrage strict par rôle
         if ($context['role'] === 'pharmacy') {
             $branchId = $context['branch_id'];
             $query->where(function ($q) use ($branchId) {
@@ -49,7 +45,6 @@ class StockTransferController extends Controller
                   ->orWhere('destination_pharmacy_id', $branchId);
             });
         } elseif ($context['role'] === 'admin' && $request->filled('pharmacy_id')) {
-            // L'admin peut filtrer par pharmacie
             $pharmacyId = $request->query('pharmacy_id');
             $query->where(function ($q) use ($pharmacyId) {
                 $q->where('source_pharmacy_id', $pharmacyId)
@@ -57,7 +52,6 @@ class StockTransferController extends Controller
             });
         }
 
-        // 2. Filtres optionnels
         if ($request->filled('status')) {
             $query->where('status', $request->query('status'));
         }
@@ -106,7 +100,6 @@ class StockTransferController extends Controller
         DB::beginTransaction();
 
         try {
-            // 1. Créer le transfert
             $transfer = StockTransfer::create([
                 'source_pharmacy_id' => $context['branch_id'],
                 'destination_pharmacy_id' => $request->destination_pharmacy_id,
@@ -116,16 +109,14 @@ class StockTransferController extends Controller
                 'shipped_at' => now(),
             ]);
 
-            // 2. Traiter les lignes et déduire le stock (Source)
             foreach ($request->lines as $lineData) {
                 StockTransferLine::create([
                     'stock_transfer_id' => $transfer->id,
                     'batch_id' => $lineData['batch_id'],
                     'qty_requested' => $lineData['qty'],
-                    'qty_shipped' => $lineData['qty'] // À l'expédition, on envoie ce qui est demandé
+                    'qty_shipped' => $lineData['qty']
                 ]);
 
-                // Mouvement de SORTIE sur la succursale source
                 $this->stockMovementService->recordMovement(
                     'EXIT', 
                     'TRANSFER_OUT', 
@@ -136,6 +127,36 @@ class StockTransferController extends Controller
                     "Transfert initié vers la succursale #{$request->destination_pharmacy_id}"
                 );
             }
+
+            // =========================================================
+            // SYSTÈME DE NOTIFICATION CIBLÉE
+            // =========================================================
+
+            // On s'assure que la relation est chargée pour l'utiliser dans le template de la notification
+            $transfer->load('sourcePharmacy');
+
+            $hospitalId = auth()->user()->profile_pharm->hospital_id;
+            $destinationPharmacyId = $request->destination_pharmacy_id;
+
+            // 1. Cibler les Administrateurs de cet hôpital
+            $admins = User::whereHas('profile_admin', function($q) use ($hospitalId) {
+                $q->where('hospital_id', $hospitalId);
+            })->get();
+
+            // 2. Cibler les Pharmaciens (uniquement "magasin") de la succursale destinataire
+            $destinationPharmacists = User::whereHas('profile_pharm', function($q) use ($destinationPharmacyId) {
+                // Attention: Assure-toi que "branch_id" existe bien dans ta table profile_pharms
+                $q->where('branch_id', $destinationPharmacyId)
+                  ->where('position', 'magasin'); 
+            })->get();
+
+            // 3. Fusion et Envoi
+            $usersToNotify = $admins->merge($destinationPharmacists);
+
+            if ($usersToNotify->isNotEmpty()) {
+                Notification::send($usersToNotify, new TransferShippedNotification($transfer));
+            }
+            // =========================================================
 
             DB::commit();
             return response()->json(['message' => 'Transfert initié avec succès.', 'data' => $transfer->load('lines')], 201);
@@ -153,7 +174,6 @@ class StockTransferController extends Controller
         $context = $this->getContext();
         $transfer = StockTransfer::with('lines')->findOrFail($id);
 
-        // Seule la destination peut réceptionner
         if ($context['role'] !== 'pharmacy' || $transfer->destination_pharmacy_id !== $context['branch_id']) {
             return response()->json(['message' => 'Seule la pharmacie destinataire peut réceptionner ce transfert.'], 403);
         }
@@ -170,7 +190,6 @@ class StockTransferController extends Controller
                 'received_at' => now()
             ]);
 
-            // Mouvement d'ENTRÉE sur la succursale destination
             foreach ($transfer->lines as $line) {
                 $this->stockMovementService->recordMovement(
                     'ENTRY', 
@@ -199,7 +218,6 @@ class StockTransferController extends Controller
         $context = $this->getContext();
         $transfer = StockTransfer::with('lines')->findOrFail($id);
 
-        // Seule la source peut annuler
         if ($context['role'] !== 'pharmacy' || $transfer->source_pharmacy_id !== $context['branch_id']) {
             return response()->json(['message' => 'Seule la pharmacie expéditrice peut annuler ce transfert.'], 403);
         }
@@ -213,7 +231,6 @@ class StockTransferController extends Controller
         try {
             $transfer->update(['status' => 'CANCELLED']);
 
-            // RESTITUTION du stock à la source (Mouvement d'ENTRÉE)
             foreach ($transfer->lines as $line) {
                 $this->stockMovementService->recordMovement(
                     'ENTRY', 
@@ -251,5 +268,30 @@ class StockTransferController extends Controller
         ]);
 
         return $pdf->download('Rapport_Transferts_Stock_' . date('Ymd_His') . '.pdf');
+    }
+
+    #[OA\Get(path: "/api/stock-transfers/{id}/waybill", summary: "Télécharger le bordereau de route en PDF", security: [["bearerAuth" => []]], tags: ["Transferts de Stock"])]
+    #[OA\Response(response: 200, description: "Fichier PDF du bordereau de route")]
+    public function downloadWaybill(Request $request, $id)
+    {
+        $context = $this->getContext();
+
+        $query = StockTransfer::with(['sourcePharmacy', 'destinationPharmacy', 'driver', 'vehicule', 'lines.batch.article'])
+                              ->where('id', $id);
+
+        if ($context['role'] === 'pharmacy') {
+            $branchId = $context['branch_id'];
+            $query->where(function ($q) use ($branchId) {
+                $q->where('source_pharmacy_id', $branchId)
+                  ->orWhere('destination_pharmacy_id', $branchId);
+            });
+        }
+
+        $transfer = $query->firstOrFail();
+
+        $pdf = Pdf::loadView('exports.pdf.stock_transfer_waybill', compact('transfer'))
+                  ->setPaper('a4', 'portrait');
+
+        return $pdf->download("Bordereau_Route_TRF_" . str_pad($transfer->id, 5, '0', STR_PAD_LEFT) . "_" . date('Ymd') . ".pdf");
     }
 }

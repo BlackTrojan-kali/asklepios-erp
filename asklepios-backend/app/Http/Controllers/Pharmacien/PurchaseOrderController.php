@@ -380,4 +380,32 @@ $this->movementService->recordMovement(
             }
         }, "details_commandes_" . date('Ymd_His') . ".xlsx");
     }
+    // ==========================================
+    // 8. TÉLÉCHARGER LE BON DE COMMANDE (PDF FOURNISSEUR)
+    // ==========================================
+    #[OA\Get(path: "/api/purchase-orders/{id}/pdf", summary: "Télécharger le bon de commande en PDF", security: [["bearerAuth" => []]], tags: ["Commandes Fournisseurs"])]
+    #[OA\Response(response: 200, description: "Fichier PDF du bon de commande")]
+    public function downloadOrderForm(Request $request, $id)
+    {
+        $context = $this->getContext();
+
+        // Récupération de la commande avec toutes les relations utiles pour le bon
+        $query = PurchaseOrder::with(['provider', 'destinationPharmacy', 'hospital', 'lines.article', 'user'])
+                              ->where('id', $id);
+
+        // Sécurité : Vérifier que l'utilisateur a le droit d'accéder à cette commande
+        if ($context['role'] === 'admin') {
+            $query->where('hospital_id', $context['hospital_id']);
+        } else {
+            $query->where('destination_pharmacy_id', $context['branch_id']);
+        }
+
+        $order = $query->firstOrFail();
+
+        // Génération du PDF avec la vue dédiée (format A4 Portrait)
+        $pdf = Pdf::loadView('exports.pdf.purchase_order_form', compact('order'))
+                  ->setPaper('a4', 'portrait');
+
+        return $pdf->download("Bon_de_Commande_N" . str_pad($order->id, 5, '0', STR_PAD_LEFT) . "_" . date('Ymd') . ".pdf");
+    }
 }

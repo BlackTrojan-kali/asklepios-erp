@@ -1,13 +1,13 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { 
-    ShoppingCart, RefreshCw, Loader2, Eye
+    ShoppingCart, RefreshCw, Loader2, Eye, FileDown
 } from 'lucide-react';
 import Select from 'react-select';
 
 // Stores
 import usePurchaseStore from '../../../../functions/pharmacy/usePurchaseStore'; 
 import useProviderStore from '../../../../functions/pharmacy/useProviderStore';
-import usePharmacyStore from '../../../../functions/pharmacy/usePharmacyStore'; // <-- Hook mis à jour
+import usePharmacyStore from '../../../../functions/pharmacy/usePharmacyStore';
 
 // Modales (Uniquement Consultation et Exportation)
 import { ViewOrderModal } from '../../../../components/modals/Pharmacy/purchase_order/ViewOrderModal';
@@ -18,9 +18,9 @@ import type { PurchaseOrderDto } from '../../../../types/PurchaseTypes';
 
 const AdminPurchaseOrders = () => {
     // Stores
-    const { orders, ordersMeta, loading, getOrders } = usePurchaseStore();
+    const { orders, ordersMeta, loading, actionLoading, getOrders, downloadOrderFormPdf } = usePurchaseStore();
     const { providers, getProviders } = useProviderStore();
-    const { pharmacyBranches, getPharmacyBranches } = usePharmacyStore(); // <-- Utilisation du store correct
+    const { pharmacyBranches, getPharmacyBranches } = usePharmacyStore();
 
     // États de la page
     const [page, setPage] = useState(1);
@@ -235,15 +235,28 @@ const AdminPurchaseOrders = () => {
                                             {getStatusBadge(order.status)}
                                         </td>
                                         
-                                        {/* ACTIONS (LECTURE SEULE) */}
+                                        {/* ACTIONS (LECTURE SEULE + EXPORT PDF) */}
                                         <td className="p-4 text-right">
-                                            <button 
-                                                onClick={() => setSelectedOrderForView(order)}
-                                                className="p-2 text-slate-600 hover:bg-slate-100 dark:text-gray-300 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                                                title="Consulter les détails"
-                                            >
-                                                <Eye size={18} />
-                                            </button>
+                                            <div className="flex justify-end items-center gap-1">
+                                                {/* BOUTON TÉLÉCHARGER LE BON DE COMMANDE (PDF) */}
+                                                <button 
+                                                    onClick={() => downloadOrderFormPdf(order.id)}
+                                                    disabled={actionLoading}
+                                                    className="p-2 text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-900/30 rounded-lg transition-colors disabled:opacity-50"
+                                                    title="Télécharger le bon de commande (PDF)"
+                                                >
+                                                    <FileDown size={18} />
+                                                </button>
+
+                                                {/* BOUTON CONSULTATION */}
+                                                <button 
+                                                    onClick={() => setSelectedOrderForView(order)}
+                                                    className="p-2 text-slate-600 hover:bg-slate-100 dark:text-gray-300 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                                                    title="Consulter les détails"
+                                                >
+                                                    <Eye size={18} />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))

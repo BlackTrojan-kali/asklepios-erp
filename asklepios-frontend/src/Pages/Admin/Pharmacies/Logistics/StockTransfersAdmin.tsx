@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { 
     Truck, RefreshCw, Loader2, FileText, 
     CheckCircle2, XCircle, MapPin, Calendar, 
-    ChevronDown, ChevronUp, Package, Eye, Building2
+    ChevronDown, ChevronUp, Package, Eye, Building2, FileDown
 } from 'lucide-react';
 import Select from 'react-select';
 
@@ -53,7 +53,7 @@ const StockTransfersAdmin = () => {
     // --- STORES ---
     const { 
         transfers, pagination, loading, actionLoading,
-        getTransfers, exportPdf 
+        getTransfers, exportPdf, downloadWaybillPdf
     } = useStockTransferStore();
     
     const { pharmacyBranches, getPharmacyBranches } = usePharmacyStore();
@@ -168,9 +168,7 @@ const StockTransfersAdmin = () => {
             <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col lg:flex-row gap-4 items-end">
                 
                 <div className="w-full lg:w-[30%]">
-                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
-                        <Building2 size={14}/> Pharmacie Impliquée
-                    </label>
+                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1"><Building2 size={14}/> Pharmacie Impliquée</label>
                     <Select 
                         options={pharmacyOptions}
                         styles={customSelectStyles}
@@ -196,7 +194,7 @@ const StockTransfersAdmin = () => {
                             setPage(1); 
                         }}
                         isClearable
-                        isSearchable={false} // Pas besoin de recherche pour 3 options
+                        isSearchable={false}
                     />
                 </div>
 
@@ -294,22 +292,34 @@ const StockTransfersAdmin = () => {
                                                 {getStatusBadge(transfer.status)}
                                             </td>
                                             <td className="p-4 text-right">
-                                                {/* BOUTON LECTURE SEULE */}
-                                                <button 
-                                                    onClick={() => setExpandedTransferId(expandedTransferId === transfer.id ? null : transfer.id)}
-                                                    className="inline-flex items-center justify-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 rounded-lg text-xs font-bold transition-colors"
-                                                >
-                                                    <Eye size={14} /> {expandedTransferId === transfer.id ? 'Fermer' : 'Inspecter'}
-                                                </button>
+                                                <div className="flex justify-end items-center gap-2">
+                                                    {/* BOUTON TÉLÉCHARGER LE BORDEREAU DE ROUTE (Admin) */}
+                                                    <button 
+                                                        onClick={() => downloadWaybillPdf(transfer.id, 'admin')}
+                                                        disabled={actionLoading}
+                                                        className="inline-flex items-center justify-center gap-1 px-3 py-1.5 bg-orange-50 text-orange-600 hover:bg-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:hover:bg-orange-900/40 rounded-lg text-xs font-bold transition-colors disabled:opacity-50"
+                                                        title="Télécharger le bordereau de route (PDF)"
+                                                    >
+                                                        <FileDown size={14} /> Bordereau
+                                                    </button>
+
+                                                    {/* BOUTON LECTURE SEULE */}
+                                                    <button 
+                                                        onClick={() => setExpandedTransferId(expandedTransferId === transfer.id ? null : transfer.id)}
+                                                        className="inline-flex items-center justify-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 rounded-lg text-xs font-bold transition-colors"
+                                                    >
+                                                        <Eye size={14} /> {expandedTransferId === transfer.id ? 'Fermer' : 'Inspecter'}
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
 
                                         {/* LIGNE EXTENSIBLE : Détails des articles */}
                                         {expandedTransferId === transfer.id && (
-                                            <tr className="bg-slate-50/50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
+                                            <tr className="bg-indigo-50/50 dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
                                                 <td colSpan={6} className="p-0">
                                                     <div className="p-6 pl-16">
-                                                        <h4 className="text-xs font-bold text-slate-800 dark:text-gray-200 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                                        <h4 className="text-xs font-bold text-indigo-800 dark:text-indigo-400 uppercase tracking-wider mb-3 flex items-center gap-2">
                                                             <Package size={16} className="text-indigo-500" /> Contenu de l'expédition ({transfer.lines?.length || 0} références)
                                                         </h4>
                                                         

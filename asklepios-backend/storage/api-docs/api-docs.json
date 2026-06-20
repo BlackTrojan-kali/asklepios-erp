@@ -2321,6 +2321,86 @@
                 ]
             }
         },
+        "/api/notifications": {
+            "get": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Lister les notifications",
+                "description": "Récupère les notifications de l'utilisateur connecté",
+                "operationId": "911565ad9aff9ba7eded3f189509e578",
+                "responses": {
+                    "200": {
+                        "description": "Liste des notifications récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/notifications/unread-count": {
+            "get": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Compteur de notifications non lues",
+                "description": "Récupérer uniquement le compteur de notifications non lues (pour un rafraîchissement léger)",
+                "operationId": "0272623bed30dd4d72141741fb3f25da",
+                "responses": {
+                    "200": {
+                        "description": "Compteur récupéré avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/notifications/{id}/read": {
+            "patch": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Marquer une notification comme lue",
+                "description": "Marquer une notification spécifique comme lue",
+                "operationId": "65581bb40eba3764fb900f21495814de",
+                "responses": {
+                    "200": {
+                        "description": "Notification marquée comme lue"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/notifications/read-all": {
+            "post": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Tout marquer comme lu",
+                "description": "Marquer TOUTES les notifications de l'utilisateur comme lues",
+                "operationId": "80760dfd47d7dd101c507f26ca9f0de9",
+                "responses": {
+                    "200": {
+                        "description": "Toutes les notifications ont été marquées comme lues"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/pharmacy/inventories": {
             "get": {
                 "tags": [
@@ -2655,6 +2735,25 @@
                 ]
             }
         },
+        "/api/purchase-orders/{id}/pdf": {
+            "get": {
+                "tags": [
+                    "Commandes Fournisseurs"
+                ],
+                "summary": "Télécharger le bon de commande en PDF",
+                "operationId": "1411c3f3b16a255d0853a75e67d051ec",
+                "responses": {
+                    "200": {
+                        "description": "Fichier PDF du bon de commande"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/purchase-returns": {
             "get": {
                 "tags": [
@@ -2944,6 +3043,25 @@
                 "responses": {
                     "200": {
                         "description": "Fichier PDF généré"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/stock-transfers/{id}/waybill": {
+            "get": {
+                "tags": [
+                    "Transferts de Stock"
+                ],
+                "summary": "Télécharger le bordereau de route en PDF",
+                "operationId": "20652aad387e62d98f5f9b13069affb0",
+                "responses": {
+                    "200": {
+                        "description": "Fichier PDF du bordereau de route"
                     }
                 },
                 "security": [
@@ -4358,6 +4476,10 @@
         {
             "name": "Véhicules",
             "description": "Gestion des véhicules du parc hospitalier"
+        },
+        {
+            "name": "Notifications",
+            "description": "Gestion des notifications utilisateur"
         },
         {
             "name": "Inventaires",
