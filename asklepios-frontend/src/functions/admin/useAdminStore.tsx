@@ -21,7 +21,7 @@ const useAdminStore = () => {
     const getAdmins = useCallback(async (page: number = 1, search: string = '', perPage: number = 10) => {
         try {
             setLoading(true);
-            const res = await api.get<PaginatedResponse<AdminDto>>("/admins", {
+            const res = await api.get<PaginatedResponse<AdminDto>>("/supa/admins", {
                 params: { page, search, per_page: perPage }
             });
             
@@ -44,7 +44,7 @@ const useAdminStore = () => {
     const getAdmin = useCallback(async (id: number) => {
         try {
             setLoading(true);
-            const res = await api.get<AdminDto>(`/admins/${id}`);
+            const res = await api.get<AdminDto>(`/supa/admins/${id}`);
             setCurrentAdmin(res.data);
             return res.data;
         } catch (error) {
@@ -61,7 +61,7 @@ const useAdminStore = () => {
             setLoading(true);
             
             // On envoie directement l'objet JSON (pas besoin de FormData ici car pas de fichier)
-            const res = await api.post("/admins", payload);
+            const res = await api.post("/supa/admins", payload);
             
             toast.success("Administrateur créé avec succès !");
             await getAdmins(1); // Rafraîchit la liste
@@ -82,7 +82,7 @@ const useAdminStore = () => {
         try {
             setLoading(true);
             
-            const res = await api.put(`/admins/${id}`, payload);
+            const res = await api.put(`/supa/admins/${id}`, payload);
             
             toast.success("Informations mises à jour avec succès !");
             await getAdmins(pagination.currentPage); 
@@ -103,7 +103,7 @@ const useAdminStore = () => {
         try {
             setLoading(true);
             
-            await api.patch(`/admins/${id}/password`, { password });
+            await api.patch(`/supa/admins/${id}/password`, { password });
             
             toast.success("Mot de passe mis à jour avec succès !");
             return true;
@@ -122,7 +122,7 @@ const useAdminStore = () => {
     const deleteAdmin = async (id: number) => {
         try {
             setLoading(true);
-            await api.delete(`/admins/${id}`);
+            await api.delete(`/supa/admins/${id}`);
             
             toast.success("Administrateur supprimé avec succès !");
             await getAdmins(pagination.currentPage); 
