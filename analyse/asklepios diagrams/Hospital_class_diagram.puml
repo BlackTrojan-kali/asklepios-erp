@@ -1,0 +1,202 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam nodesep 35
+skinparam ranksep 45
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+title Architecture Asklepios : Files d'attente, Rendez-vous & DPI Complet
+
+' --- DEFINITION DES COULEURS PAR DOMAINE ---
+skinparam package {
+    BackgroundColor<<Identity>> #E3F2FD
+    BackgroundColor<<Infra>> #E8F5E9
+    BackgroundColor<<Workflow>> #FFF9C4
+    BackgroundColor<<Clinical>> #FCE4EC
+    BackgroundColor<<Billing>> #F3E5F5
+}
+
+package "1. Core, Identité & Staff" <<Identity>> {
+    class tenant {
+        id: UnsignedBigInteger
+        name: String
+    }
+    class patient {
+        id: UnsignedBigInteger
+        tenant_id: UnsignedBigInteger
+        patient_code: String
+        first_name: String
+        last_name: String
+        birth_date: Date
+        contact_phone: String
+    }
+    class receptionist {
+        id: UnsignedBigInteger
+        user_id: UnsignedBigInteger
+        desk_name: String
+    }
+    class practitioner {
+        id: UnsignedBigInteger
+        user_id: UnsignedBigInteger
+        department_id: UnsignedBigInteger
+        specialty: String
+        grade: String
+    }
+}
+
+package "2. Infrastructures (Espaces & Appareils)" <<Infra>> {
+    class department {
+        id: UnsignedBigInteger
+        name: String
+    }
+    class facility_room {
+        id: UnsignedBigInteger
+        department_id: UnsignedBigInteger
+        name: String (ex: Salle Attente B, Cabinet 4)
+        type: String ('WAITING_ROOM', 'CONSULTATION', 'WARD')
+    }
+    class bed {
+        id: UnsignedBigInteger
+        facility_room_id: UnsignedBigInteger
+        bed_number: String
+        price_per_night: float
+    }
+    class equipment {
+        id: UnsignedBigInteger
+        department_id: UnsignedBigInteger
+        name: String
+        status: String
+    }
+}
+
+package "3. Rendez-vous & File d'Attente" <<Workflow>> {
+    class appointment {
+        id: UnsignedBigInteger
+        patient_id: UnsignedBigInteger
+        practitioner_id: UnsignedBigInteger
+        scheduled_datetime: Datetime
+        reason: String
+        status: String ('SCHEDULED', 'CANCELLED', 'ARRIVED')
+    }
+    class patient_visit {
+        id: UnsignedBigInteger
+        patient_id: UnsignedBigInteger
+        receptionist_id: UnsignedBigInteger
+        appointment_id: UnsignedBigInteger_optional
+        waiting_room_id: UnsignedBigInteger_optional
+        consulting_room_id: UnsignedBigInteger_optional
+        arrival_time: Datetime
+        queue_number: Integer (Ordre de passage du jour)
+        status: String ('IN_WAITING_ROOM', 'IN_CONSULTATION', 'COMPLETED')
+        visit_type: String ('ROUTINE', 'EMERGENCY', 'FOLLOW_UP')
+    }
+}
+
+package "4. Dossier Clinique & Hospitalisation" <<Clinical>> {
+    class consultation {
+        id: UnsignedBigInteger
+        patient_visit_id: UnsignedBigInteger
+        practitioner_id: UnsignedBigInteger
+        chief_complaint: Text
+        clinical_data: JSON (Saisie dynamique)
+    }
+    class admission {
+        id: UnsignedBigInteger
+        patient_visit_id: UnsignedBigInteger
+        bed_id: UnsignedBigInteger
+        admission_date: Datetime
+        actual_discharge_date: Datetime_optional
+        status: String ('ADMITTED', 'DISCHARGED')
+    }
+    class prescription {
+        id: UnsignedBigInteger
+        consultation_id: UnsignedBigInteger
+        status: String
+    }
+    class prescription_line {
+        id: UnsignedBigInteger
+        prescription_id: UnsignedBigInteger
+        article_id: UnsignedBigInteger_optional (Pont Pharmacie)
+        custom_medication_name: String_optional
+        dosage: String
+    }
+}
+
+package "5. Actes Médicaux & Facturation" <<Billing>> {
+    class medical_act_catalog {
+        id: UnsignedBigInteger
+        department_id: UnsignedBigInteger_optional
+        name: String (ex: Détartrage, Échographie)
+        base_price: float
+    }
+    class performed_medical_act {
+        id: UnsignedBigInteger
+        patient_visit_id: UnsignedBigInteger
+        medical_act_catalog_id: UnsignedBigInteger
+        equipment_id: UnsignedBigInteger_optional
+        applied_price: float
+        performed_at: Datetime
+    }
+    class invoice {
+        id: UnsignedBigInteger
+        patient_id: UnsignedBigInteger
+        patient_visit_id: UnsignedBigInteger_optional
+        total_amount: float
+        status: String ('UNPAID', 'PAID')
+    }
+    class invoice_line {
+        id: UnsignedBigInteger
+        invoice_id: UnsignedBigInteger
+        reference_type: String (ex: performed_act, consultation, bed)
+        reference_id: UnsignedBigInteger
+        description: String
+        unit_price: float
+    }
+    class payment {
+        id: UnsignedBigInteger
+        invoice_id: UnsignedBigInteger
+        cashier_id: UnsignedBigInteger
+        amount: float
+        payment_method: String
+    }
+}
+
+' --- RELATIONS ---
+tenant "1" *-- "*" patient
+tenant "1" *-- "*" department
+department "1" *-- "*" facility_room
+department "1" *-- "*" practitioner
+facility_room "1" *-- "*" bed
+department "1" *-- "*" equipment
+
+patient "1" *-- "*" appointment
+practitioner "1" <-- "*" appointment
+patient "1" *-- "*" patient_visit
+receptionist "1" <-- "*" patient_visit
+appointment "1" <-- "1" patient_visit : honore <
+facility_room "1" <-- "*" patient_visit : attend dans <
+facility_room "1" <-- "*" patient_visit : consulté dans <
+
+department "1" *-- "*" medical_act_catalog
+medical_act_catalog "1" <-- "*" performed_medical_act
+patient_visit "1" *-- "*" performed_medical_act
+equipment "1" <-- "*" performed_medical_act
+
+patient_visit "1" *-- "1" consultation
+patient_visit "1" *-- "*" admission
+bed "1" <-- "*" admission
+consultation "1" *-- "1" prescription
+prescription "1" *-- "*" prescription_line
+
+patient "1" *-- "*" invoice
+patient_visit "1" <-- "*" invoice
+invoice "1" *-- "*" invoice_line
+invoice "1" *-- "*" payment
+
+performed_medical_act "1" .. "*" invoice_line
+consultation "1" .. "*" invoice_line
+admission "1" .. "*" invoice_line
+
+@enduml

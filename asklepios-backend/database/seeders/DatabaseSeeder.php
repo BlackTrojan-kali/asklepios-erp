@@ -24,7 +24,9 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             LicenceSeeder::class,
             DepartmentSeeder::class,
-            ArticleCategorySeeder::class,    
+            ArticleCategorySeeder::class,
+            // ... tes autres seeders (Hospitals, Licences, etc.)
+    ComptoirPatientSeeder::class,    
             // Tu pourras ajouter tes futurs seeders ici (UserSeeder, DepartmentSeeder, etc.)
         ]);
     }

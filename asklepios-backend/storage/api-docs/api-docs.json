@@ -1582,6 +1582,11 @@
                                         "type": "integer",
                                         "example": 1,
                                         "nullable": true
+                                    },
+                                    "country_id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -3506,6 +3511,26 @@
                 ]
             }
         },
+        "/api/countries/all": {
+            "get": {
+                "tags": [
+                    "Pays (Countries)"
+                ],
+                "summary": "Liste complète des pays (sans pagination)",
+                "description": "Idéal pour remplir les composants Select (ex: React Select) côté frontend.",
+                "operationId": "getAllCountries",
+                "responses": {
+                    "200": {
+                        "description": "Liste complète récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/countries": {
             "get": {
                 "tags": [
@@ -4410,6 +4435,26 @@
                 "responses": {
                     "200": {
                         "description": "Fichier PDF de la facture"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/subscriptions/my-remaining-days": {
+            "get": {
+                "tags": [
+                    "Souscriptions (SUPA)"
+                ],
+                "summary": "Obtenir l'état de l'abonnement et les licences actives",
+                "description": "Obtenir les jours restants de la souscription et les licences actives\npour l'hôpital de l'utilisateur connecté.",
+                "operationId": "getMyRemainingDays",
+                "responses": {
+                    "200": {
+                        "description": "Informations de l'abonnement récupérées avec succès"
                     }
                 },
                 "security": [
