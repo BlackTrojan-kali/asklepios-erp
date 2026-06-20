@@ -28,7 +28,7 @@ export interface InventoryLineDto {
 
     // Relations chargées par le backend
     batch?: BatchDto;
-    storageLocation?: StorageLocationDto;
+    storage_location?: StorageLocationDto;
 }
 
 /**

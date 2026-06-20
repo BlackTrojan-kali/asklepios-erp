@@ -104,7 +104,7 @@ export const ViewInventoryModal: React.FC<Props> = ({ isOpen, onClose, inventory
                                                     </span>
                                                 </td>
                                                 <td className="p-3 text-center text-xs text-gray-500 dark:text-gray-400">
-                                                    {line.storageLocation ? `${line.storageLocation.aisle}-${line.storageLocation.shelf}` : 'Non rangé'}
+                                                    {line.storage_location ? `${line.storage_location?.aisle}-${line?.storage_location.shelf}` : 'Non rangé'}
                                                 </td>
                                                 <td className="p-3 text-center font-mono text-sm text-gray-500 dark:text-gray-400">
                                                     {line.system_qty}
