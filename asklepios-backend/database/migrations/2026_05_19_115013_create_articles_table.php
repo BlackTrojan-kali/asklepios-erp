@@ -20,6 +20,7 @@ return new class extends Migration
             $table->float("global_min_qty")->default(0.0);
             $table->string("image_url")->nullable();
             $table->boolean("track_batches");
+            $table->boolean("is_prescripted")->default(false);
             $table->timestamps();
         });
     }

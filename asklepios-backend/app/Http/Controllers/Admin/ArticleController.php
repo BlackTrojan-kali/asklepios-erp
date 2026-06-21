@@ -213,14 +213,22 @@ class ArticleController extends Controller
             'name' => 'required|string|max:255',
             'barcode' => 'nullable|string|max:100',
             'global_min_qty' => 'nullable|numeric|min:0',
-            'track_batches' => 'required | string', // Validation du nouveau champ
+            'track_batches' => 'required|string', 
             'image' => 'nullable|image|mimes:jpeg,png,jpg,svg|max:2048',
+            'is_prescripted' => 'nullable|string', // <-- Changé ici (on s'attend à une string venant du FormData)
         ]);
         
         $validatedData['hospital_id'] = $hospitalId;
         
-        // On s'assure que ce soit bien casté en booléen
+        // --- CORRECTION ICI : Cast des booléens ---
         $validatedData['track_batches'] = filter_var($validatedData['track_batches'], FILTER_VALIDATE_BOOLEAN);
+        
+        if (isset($validatedData['is_prescripted'])) {
+            $validatedData['is_prescripted'] = filter_var($validatedData['is_prescripted'], FILTER_VALIDATE_BOOLEAN);
+        } else {
+            $validatedData['is_prescripted'] = false; // Valeur par défaut sécurisée
+        }
+        // ------------------------------------------
 
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('articles', 'public');
@@ -239,11 +247,10 @@ class ArticleController extends Controller
             'data' => $article->load('category')
         ], 201);
     }
-
     /**
      * Modifier un article
      */
-    #[OA\Post( 
+   #[OA\Post( 
         path: "/api/admin/articles/{id}",
         operationId: "updateAdminArticle",
         summary: "Modifier un article",
@@ -267,13 +274,20 @@ class ArticleController extends Controller
             'name' => 'sometimes|required|string|max:255',
             'barcode' => 'nullable|string|max:100',
             'global_min_qty' => 'nullable|numeric|min:0',
-            'track_batches' => 'sometimes|required|string', // Validation du nouveau champ
+            'track_batches' => 'sometimes|required|string', 
             'image' => 'nullable|image|mimes:jpeg,png,jpg,svg|max:2048',
+            'is_prescripted' => 'nullable|string', // <-- Changé ici
         ]);
 
+        // --- CORRECTION ICI : Cast des booléens ---
         if (isset($validatedData['track_batches'])) {
             $validatedData['track_batches'] = filter_var($validatedData['track_batches'], FILTER_VALIDATE_BOOLEAN);
         }
+
+        if (isset($validatedData['is_prescripted'])) {
+            $validatedData['is_prescripted'] = filter_var($validatedData['is_prescripted'], FILTER_VALIDATE_BOOLEAN);
+        }
+        // ------------------------------------------
 
         if ($request->hasFile('image')) {
             if ($article->image_url) {
@@ -288,7 +302,7 @@ class ArticleController extends Controller
 
         $article->update($validatedData);
 
-        // Appel du service au cas où l'admin aurait décoché le suivi des lots (track_batches passé à false)
+        // Appel du service au cas où l'admin aurait décoché le suivi des lots
         $this->batchService->handleStandardBatch($article);
 
         return response()->json([

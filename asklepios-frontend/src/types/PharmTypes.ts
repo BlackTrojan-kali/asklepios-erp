@@ -97,6 +97,7 @@ export interface ArticleDto {
     track_batches: boolean;
     
     category?: ArticleCategoryDto; 
+    is_prescripted: boolean;
     
     // Nouveaux champs optionnels calculés par le Backend
     stock_qty?: number; 
@@ -113,6 +114,8 @@ export interface ArticlePayload {
     global_min_qty: number | ""; 
     track_batches: boolean; 
     image: File | null; 
+    
+    is_prescripted: boolean;
 }
 
 

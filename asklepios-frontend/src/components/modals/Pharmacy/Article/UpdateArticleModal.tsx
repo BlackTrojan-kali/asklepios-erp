@@ -19,7 +19,8 @@ export const UpdateArticleModal: React.FC<Props> = ({ isOpen, onClose, article, 
         barcode: '',
         global_min_qty: '',
         track_batches: true,
-        image: null 
+        image: null ,
+        is_prescripted:false,
     });
 
     useEffect(() => {
@@ -30,14 +31,14 @@ export const UpdateArticleModal: React.FC<Props> = ({ isOpen, onClose, article, 
                 barcode: article.barcode || '',
                 global_min_qty: article.global_min_qty || '',
                 track_batches: article.track_batches, // On récupère la vraie valeur
-                image: null 
+                image: null,
+                is_prescripted:article.is_prescripted || false,
             });
         }
     }, [article]);
 
     const handleSubmit = async () => {
         if (!article || !payload.name || payload.category_id === '') return;
-
         const success = await updateArticle(article.id, payload);
         if (success) onClose();
     };

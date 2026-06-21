@@ -18,7 +18,8 @@ export const CreateArticleModal: React.FC<Props> = ({ isOpen, onClose, categorie
         barcode: '',
         global_min_qty: '',
         track_batches: true, // Coché par défaut
-        image: null
+        image: null,
+        is_prescripted:false,
     });
 
     const handleSubmit = async () => {
@@ -26,7 +27,7 @@ export const CreateArticleModal: React.FC<Props> = ({ isOpen, onClose, categorie
         
         const success = await createArticle(payload);
         if (success) {
-            setPayload({ category_id: '', name: '', barcode: '', global_min_qty: '', track_batches: true, image: null });
+            setPayload({ category_id: '', name: '', barcode: '', global_min_qty: '', track_batches: true, image: null,is_prescripted:false });
             onClose();
         }
     };

@@ -13,6 +13,7 @@ interface Props {
 export const ArticleForm: React.FC<Props> = ({ payload, setPayload, categories, existingImageUrl }) => {
     const [previewUrl, setPreviewUrl] = useState<string | null>(existingImageUrl || null);
 
+    // Gestion de la prévisualisation de l'image
     useEffect(() => {
         if (payload.image instanceof File) {
             const objectUrl = URL.createObjectURL(payload.image);
@@ -102,7 +103,7 @@ export const ArticleForm: React.FC<Props> = ({ payload, setPayload, categories, 
                     />
                 </div>
 
-                {/* GESTION DES LOTS (NOUVEAU CHAMP) */}
+                {/* GESTION DES LOTS */}
                 <div className="md:col-span-2 p-3 bg-slate-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md flex items-start gap-3">
                     <div className="pt-0.5">
                         <input 
@@ -122,6 +123,28 @@ export const ArticleForm: React.FC<Props> = ({ payload, setPayload, categories, 
                         </p>
                     </div>
                 </div>
+                
+                {/* EST PRESCRIT (Correction du texte) */}
+                <div className="md:col-span-2 p-3 bg-slate-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md flex items-start gap-3">
+                    <div className="pt-0.5">
+                        <input 
+                            type="checkbox" 
+                            id="is_prescripted"
+                            checked={payload.is_prescripted}
+                            onChange={(e) => setPayload({...payload, is_prescripted: e.target.checked})}
+                            className="w-5 h-5 text-[#00a896] bg-white border-gray-300 rounded focus:ring-[#00a896] dark:bg-gray-700 dark:border-gray-600"
+                        />
+                    </div>
+                    <div>
+                        <label htmlFor="is_prescripted" className="text-sm font-bold text-slate-800 dark:text-white cursor-pointer block">
+                            Soumis à prescription médicale (Ordonnance obligatoire)
+                        </label>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            Cochez cette case si ce produit exige une ordonnance. Une alerte sera affichée pour le pharmacien lors du passage en caisse.
+                        </p>
+                    </div>
+                </div>
+
             </div>
 
             {/* UPLOAD D'IMAGE */}

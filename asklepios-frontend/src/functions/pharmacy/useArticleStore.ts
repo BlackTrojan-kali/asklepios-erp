@@ -31,8 +31,9 @@ const useArticleStore = () => {
         formData.append('category_id', String(payload.category_id));
         formData.append('name', payload.name);
         
-        // Ajout du nouveau champ : Conversion du booléen en chaîne de caractères
+        // Conversion des booléens en chaînes de caractères ('true'/'false') pour le FormData
         formData.append('track_batches', payload.track_batches ? 'true' : 'false');
+        formData.append('is_prescripted', payload.is_prescripted ? 'true' : 'false'); // <-- LIGNE AJOUTÉE ICI
         
         if (payload.barcode) {
             formData.append('barcode', payload.barcode);
