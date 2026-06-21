@@ -1,6 +1,6 @@
 import { createBrowserRouter, Outlet } from "react-router-dom";
-import Login from "./Pages/Auth/Login"
-import AuthMiddleware from './middlewares/authMiddleware';
+import Login from "./Pages/Auth/Login";
+import AuthMiddleware from "./middlewares/authMiddleware";
 import AppLayout from "./Layouts/AppLayout";
 import CheckRole from "./middlewares/CheckRole";
 import NotFound from "./Pages/NotFound";
@@ -38,115 +38,134 @@ import Vehicules from "./Pages/Admin/Pharmacies/Logistics/Vehicules";
 import Drivers from "./Pages/Admin/Pharmacies/Logistics/Drivers";
 import StockTransfers from "./Pages/PHARMACY/StockTransfers";
 import StockTransfersAdmin from "./Pages/Admin/Pharmacies/Logistics/StockTransfersAdmin";
-
+import PointOfSale from "./Pages/PHARMACY/PointOfSale";
 
 const routes = createBrowserRouter([
-    // ==========================================
-    // 1. ROUTES D'AUTHENTIFICATION (Publiques)
-    // ==========================================
-    {
-        path: "/auth/login",
-        element: <Login />
-    },
+  // ==========================================
+  // 1. ROUTES D'AUTHENTIFICATION (Publiques)
+  // ==========================================
+  {
+    path: "/auth/login",
+    element: <Login />,
+  },
 
-    // ==========================================
-    // 2. APPLICATION PRINCIPALE (Protégée + Layout)
-    // ==========================================
-    {
-        path: "/",
+  // ==========================================
+  // 2. APPLICATION PRINCIPALE (Protégée + Layout)
+  // ==========================================
+  {
+    path: "/",
+    element: (
+      <AuthMiddleware>
+        <AppLayout>
+          <Outlet /> {/* <-- Le layout global est rendu UNE seule fois ici */}
+        </AppLayout>
+      </AuthMiddleware>
+    ),
+    children: [
+      // ----------------------------------------------------
+      // A. ROUTES SUPER ADMIN
+      // ----------------------------------------------------
+      {
         element: (
-            <AuthMiddleware>
-                <AppLayout>
-                    <Outlet /> {/* <-- Le layout global est rendu UNE seule fois ici */}
-                </AppLayout>
-            </AuthMiddleware>
+          <CheckRole roles={["super_admin"]}>
+            <Outlet />
+          </CheckRole>
         ),
         children: [
-            // ----------------------------------------------------
-            // A. ROUTES SUPER ADMIN
-            // ----------------------------------------------------
-            {
-                element: <CheckRole roles={["super_admin"]}><Outlet /></CheckRole>,
-                children: [
-                    { path: "countries", element: <Countries /> },
-                    { path: "hospitals", element: <Hospitals /> },
-                    { path: "admins", element: <Admins /> },
-                    { path: "licences", element: <Licences /> },
-                    { path: "subscriptions", element: <Subscriptions /> },
-                ]
-            },
+          { path: "countries", element: <Countries /> },
+          { path: "hospitals", element: <Hospitals /> },
+          { path: "admins", element: <Admins /> },
+          { path: "licences", element: <Licences /> },
+          { path: "subscriptions", element: <Subscriptions /> },
+        ],
+      },
 
-            // ----------------------------------------------------
-            // B. ROUTES ADMIN (/admin/...)
-            // ----------------------------------------------------
-            {
-                path: "admin",
-                element: <CheckRole roles={["admin"]}><Outlet /></CheckRole>,
-                children: [
-                    { path: "centers", element: <Centers /> },
-                    { path: "departments", element: <Departments /> },
-                    { path: "pharmacies", element: <Pharmacies /> },
-                    { path: "pharmaciens", element: <Pharmaciens /> },
-                    { path: "inventory", element: <AdminInventories /> },
-                    { path: "movements", element: <AdminStockMovements /> },
-                    { path: "orders", element: <AdminPurchaseOrders /> },
-                    { path: "returns", element: <AdminPurchaseReturns /> },
-                    
-                    // Sous-dossier Pharmacie côté Admin
-                    { path: "pharmacy/acticles-categories", element: <ArticleCategories /> },
-                    { path: "pharmacy/articles", element: <Articles /> },
-                    { path: "pharmacy/batch", element: <Batches /> },
-                    { path: "pharmacy/stocks", element: <Stocks /> },
-                    { path: "pharmacy/providers", element: <Providers /> },
-                    //logistique
-                    { path:"vehicules",element:<Vehicules/> },
-                    { path:"drivers",element:<Drivers/> },
-                    { path:"transfers",element:<StockTransfersAdmin/>}
-                ]
-            },
+      // ----------------------------------------------------
+      // B. ROUTES ADMIN (/admin/...)
+      // ----------------------------------------------------
+      {
+        path: "admin",
+        element: (
+          <CheckRole roles={["admin"]}>
+            <Outlet />
+          </CheckRole>
+        ),
+        children: [
+          { path: "centers", element: <Centers /> },
+          { path: "departments", element: <Departments /> },
+          { path: "pharmacies", element: <Pharmacies /> },
+          { path: "pharmaciens", element: <Pharmaciens /> },
+          { path: "inventory", element: <AdminInventories /> },
+          { path: "movements", element: <AdminStockMovements /> },
+          { path: "orders", element: <AdminPurchaseOrders /> },
+          { path: "returns", element: <AdminPurchaseReturns /> },
 
-            // ----------------------------------------------------
-            // C. ROUTES PARTAGÉES (ADMIN & PHARMACIE)
-            // ----------------------------------------------------
-            {
-                element: <CheckRole roles={["admin", "pharmacy"]}><Outlet /></CheckRole>,
-                children: [
-                    { path: "pharmacy/orders", element: <PurchaseOrders /> },
-                    { path: "pharmacy/returns", element: <PurchaseReturns /> },
-                ]
-            },
+          // Sous-dossier Pharmacie côté Admin
+          {
+            path: "pharmacy/acticles-categories",
+            element: <ArticleCategories />,
+          },
+          { path: "pharmacy/articles", element: <Articles /> },
+          { path: "pharmacy/batch", element: <Batches /> },
+          { path: "pharmacy/stocks", element: <Stocks /> },
+          { path: "pharmacy/providers", element: <Providers /> },
+          //logistique
+          { path: "vehicules", element: <Vehicules /> },
+          { path: "drivers", element: <Drivers /> },
+          { path: "transfers", element: <StockTransfersAdmin /> },
+        ],
+      },
 
-            // ----------------------------------------------------
-            // D. ROUTES PHARMACIEN (Rôle : "pharmacy")
-            // ----------------------------------------------------
-            {
-                element: <CheckRole roles={["pharmacy"]}><Outlet /></CheckRole>,
-                children: [
-                    // MAGASINIER
-                    // Si un jour CheckRole supporte les positions, on mettra ici : 
-                    // <CheckRole roles={["pharmacy"]} positions={["magasin"]}>
-                    { path: "pharmacy", element: <MagasinHome /> },
-                    { path: "pharmacy/inventory", element: <Inventories /> },
-                    { path: "pharmacy/movements", element: <StockMovements /> },
-                    { path: "pharmacy/storage_location", element: <StorageLocations /> },
-                    { path:"pharmacy/stock_transfers",element:<StockTransfers/>}
-                    // VENDEUR / COMMERCIAL
-                    // Si un jour CheckRole supporte les positions, on mettra ici : 
-                    // <CheckRole roles={["pharmacy"]} positions={["vente"]}>
-                    // { path: "pharmacy/pos", element: <PointOfSale /> },
-                    // { path: "pharmacy/sales", element: <SalesHistory /> },
-                ]
-            }
-        ]
-    },
+      // ----------------------------------------------------
+      // C. ROUTES PARTAGÉES (ADMIN & PHARMACIE)
+      // ----------------------------------------------------
+      {
+        element: (
+          <CheckRole roles={["admin", "pharmacy"]}>
+            <Outlet />
+          </CheckRole>
+        ),
+        children: [
+          { path: "pharmacy/orders", element: <PurchaseOrders /> },
+          { path: "pharmacy/returns", element: <PurchaseReturns /> },
+        ],
+      },
 
-    // ==========================================
-    // 3. PAGE 404 (Introuvable)
-    // ==========================================
-    {
-        path: "*",
-        element: <NotFound />
-    }
+      // ----------------------------------------------------
+      // D. ROUTES PHARMACIEN (Rôle : "pharmacy")
+      // ----------------------------------------------------
+      {
+        element: (
+          <CheckRole roles={["pharmacy"]}>
+            <Outlet />
+          </CheckRole>
+        ),
+        children: [
+          // MAGASINIER
+          // Si un jour CheckRole supporte les positions, on mettra ici :
+          // <CheckRole roles={["pharmacy"]} positions={["magasin"]}>
+          { path: "pharmacy", element: <MagasinHome /> },
+          { path: "pharmacy/inventory", element: <Inventories /> },
+          { path: "pharmacy/movements", element: <StockMovements /> },
+          { path: "pharmacy/storage_location", element: <StorageLocations /> },
+          { path: "pharmacy/stock_transfers", element: <StockTransfers /> },
+          // VENDEUR / COMMERCIAL
+          // Si un jour CheckRole supporte les positions, on mettra ici :
+          // <CheckRole roles={["pharmacy"]} positions={["vente"]}>
+          { path: "pharmacy/pos", element: <PointOfSale /> },
+          // { path: "pharmacy/sales", element: <SalesHistory /> },
+        ],
+      },
+    ],
+  },
+
+  // ==========================================
+  // 3. PAGE 404 (Introuvable)
+  // ==========================================
+  {
+    path: "*",
+    element: <NotFound />,
+  },
 ]);
 
 export default routes;

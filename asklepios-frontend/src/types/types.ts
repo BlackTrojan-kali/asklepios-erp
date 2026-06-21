@@ -9,6 +9,7 @@ export interface ProfileDto {
     last_name: string | null;
     role: "super_admin" | "admin" | "doctor" | "pharmacy" | "reception" | "laboratory";
     email: string;
+    
 }
 export  interface CountryDto{
     

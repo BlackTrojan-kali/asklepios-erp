@@ -1,59 +1,135 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🏥 Asklepios ERP - API Backend (Laravel)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Bienvenue sur le dépôt backend d'**Asklepios ERP**, une solution logicielle SaaS multi-locataire (Multi-tenant) de pointe conçue pour la gestion d'établissements hospitaliers, de services cliniques et de logistique pharmaceutique avancée.
 
-## About Laravel
+Le backend est propulsé par le framework **Laravel 12** avec une API REST moderne, sécurisée, entièrement documentée et prête pour la production.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## 🚀 Fonctionnalités & Modules Clés
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Asklepios ERP est architecturé autour de rôles d'utilisateurs distincts et de licences applicatives modulaires :
 
-## Learning Laravel
+### 1. 🌐 Administration SaaS (Super Admin - `SUPA`)
+* **Gestion Multi-tenant :** Création, activation et suivi des établissements hospitaliers affiliés.
+* **Licences & Abonnements :** Gestion des licences disponibles (`base_hospital`, `laboratory`, `pharmacy`) et cycle de vie des abonnements (création, renouvellement, historique de facturation).
+* **Facturation :** Génération automatique de factures acquittées au format PDF avec filigrane dynamique.
+* **Référentiel Géographique :** Gestion des pays pour l'expansion du SaaS.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### 2. 🏢 Administration Hospitalière (Admin)
+* **Configuration Structurelle :** Définition des centres hospitaliers et des départements cliniques (Ex. Pédiatrie, Urgences, Cardiologie).
+* **Gestion du Personnel :** Enrôlement des administrateurs d'hôpitaux, des pharmaciens, des médecins et autres profils professionnels.
+* **Logistique & Transports :** Enregistrement des véhicules de livraison et des chauffeurs avec outils d'importation/exportation Excel pour un gain de temps opérationnel.
+* **Catalogue Pharmaceutique Global :** Configuration des articles (médicaments, consommables), catégories et gestion globale des lots (Batches) avec traçabilité complète.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### 3. 🧪 Gestion Logistique & Pharmacie (Pharmacien / Admin)
+* **Emplacements de Stockage :** Découpage physique d'une pharmacie en allées et étagères pour localiser précisément les articles.
+* **Commandes & Retours d'Achat :** Processus complet d'approvisionnement auprès des fournisseurs (création, validation, annulation, génération automatique de bons de commande PDF).
+* **Transferts de Stock Inter-succursales :** Expédition et réception sécurisée d'articles d'une pharmacie à une autre avec génération de lettre de voiture (Waybill) et suivi logistique en temps réel.
+* **Inventaires Physiques :** Audits de stock périodiques avec ajustement automatique des stocks réels après validation.
+* **Mouvements de Stock :** Historique immuable de toutes les transactions de stock (entrées, sorties, transferts, ajustements).
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## 🛠️ Stack Technique & Dépendances
 
-### Premium Partners
+* **Framework :** Laravel v12.x
+* **Base de données :** SQLite (par défaut pour le développement) ou MySQL/PostgreSQL (production).
+* **Authentification :** Laravel Sanctum (tokens Bearer sécurisés).
+* **Génération PDF :** `barryvdh/laravel-dompdf` pour les factures, bons de commande et rapports.
+* **Import/Export Excel :** `maatwebsite/excel` pour les listes de fournisseurs, véhicules et chauffeurs.
+* **Documentation API :** `darkaonline/l5-swagger` (OpenAPI v3.0 annotations).
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+---
 
-## Contributing
+## 📂 Structure du Projet Backend
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+asklepios-backend/
+├── app/
+│   ├── Http/
+│   │   ├── Controllers/
+│   │   │   ├── Admin/         # Contrôleurs pour la gestion interne d'un hôpital
+│   │   │   ├── Auth/          # Contrôle d'accès et authentification
+│   │   │   ├── Pharmacien/    # Gestion des stocks, inventaires et achats
+│   │   │   └── SUPA/          # Espace Super Admin (gestion SaaS)
+│   │   └── Middleware/        # Middlewares de vérification de Rôles et Licences
+│   └── Models/
+│       ├── Pharmacy/          # Modèles logistiques (Article, Batch, Stock, Transfer...)
+│       └── ...                # Modèles de base (User, Hospital, Subscription, Role...)
+├── config/                    # Fichiers de configuration de l'application
+├── database/
+│   ├── migrations/            # Schéma de base de données (40+ migrations d'entités)
+│   └── seeders/               # Données de démonstration et rôles initiaux
+├── routes/
+│   └── api.php                # Définition complète des routes REST de l'ERP
+└── storage/api-docs/          # Spécifications OpenAPI/Swagger générées
+```
 
-## Code of Conduct
+---
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## ⚙️ Installation & Configuration
 
-## Security Vulnerabilities
+### Prérequis
+* PHP >= 8.2 (avec extensions curl, sqlite3, zip, mbstring)
+* Composer
+* Node.js & NPM (pour compiler les assets de base si nécessaire)
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### 1. Cloner et Initialiser le Projet
+Pour vous faciliter le travail, un script de configuration automatisé est inclus dans le fichier `composer.json`. Placez-vous dans le dossier `asklepios-backend` et lancez :
 
-## License
+```bash
+composer run setup
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Ce script va automatiquement :
+1. Installer les dépendances Composer (`composer install`).
+2. Créer le fichier d'environnement `.env` à partir de `.env.example`.
+3. Générer la clé d'application unique (`php artisan key:generate`).
+4. Préparer la base de données SQLite et appliquer toutes les migrations.
+5. Installer et compiler les paquets NPM.
+
+### 2. Base de données & Seeders
+Si vous souhaitez réinitialiser ou peupler la base de données avec les données initiales de démonstration (utilisateurs de test, hôpitaux, licences et rôles), exécutez la commande suivante :
+
+```bash
+php artisan migrate:fresh --seed
+```
+
+#### Identifiants par défaut (Super Admin)
+* **Email :** `admin@asklepios.com`
+* **Mot de passe :** `secrets`
+
+---
+
+## 💻 Démarrage du Serveur de Développement
+
+Pour démarrer simultanément le serveur de développement Laravel Artisan, le listener de files d'attente (Queue Worker), le logger interactif Pail et le serveur de build Vite, lancez :
+
+```bash
+composer run dev
+```
+
+L'API sera par défaut accessible sur **`http://localhost:8000`**.
+
+---
+
+## 📖 Documentation Interactive de l'API (Swagger)
+
+Le projet intègre une interface Swagger UI permettant de tester et d'interagir en temps réel avec tous les endpoints de l'API.
+
+* **URL de l'interface :** `http://localhost:8000/api/documentation`
+* **Mise à jour de la documentation :** Si vous modifiez les annotations dans vos contrôleurs, relancez le serveur de dev ou utilisez :
+  ```bash
+  php artisan l5-swagger:generate
+  ```
+
+---
+
+## 🧪 Tests Unitaires & d'Intégration
+
+Les tests automatisés d'Asklepios ERP couvrent les flux critiques comme l'authentification, les transactions de stock et l'attribution des licences. Pour exécuter la suite de tests PHPUnit :
+
+```bash
+composer run test
+```
