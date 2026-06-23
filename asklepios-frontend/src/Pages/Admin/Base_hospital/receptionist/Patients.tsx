@@ -121,8 +121,16 @@ const Patients = () => {
                         <Users size={24} />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Dossiers Patients</h1>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Gérez les admissions, les identités et les codes uniques des patients.</p>
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Dossiers Patients</h1>
+                            {/* AFFICHAGE DU NOMBRE TOTAL DE PATIENTS */}
+                            {pagination && (
+                                <span className="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 text-xs font-semibold px-2.5 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800">
+                                    {pagination.total} {pagination.total > 1 ? 'enregistrés' : 'enregistré'}
+                                </span>
+                            )}
+                        </div>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Gérez les admissions, les identités et les codes uniques des patients.</p>
                     </div>
                 </div>
                 
@@ -279,7 +287,7 @@ const Patients = () => {
                     <div className="p-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between bg-slate-50 dark:bg-gray-900/50">
                         <span className="text-sm text-gray-500 dark:text-gray-400">
                             Page <span className="font-semibold text-slate-800 dark:text-gray-200">{pagination.currentPage}</span> sur <span className="font-semibold text-slate-800 dark:text-gray-200">{pagination.lastPage}</span>
-                            <span className="ml-2 hidden sm:inline">({pagination.total} dossiers trouvés)</span>
+                            <span className="ml-2 hidden sm:inline">({pagination.total} dossiers trouvés pour cette recherche)</span>
                         </span>
                         
                         <div className="flex gap-2">
