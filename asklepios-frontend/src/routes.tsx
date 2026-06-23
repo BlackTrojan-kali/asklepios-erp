@@ -41,6 +41,7 @@ import StockTransfersAdmin from "./Pages/Admin/Pharmacies/Logistics/StockTransfe
 import PointOfSale from "./Pages/PHARMACY/PointOfSale";
 import Receptionists from "./Pages/Admin/Base_hospital/receptionist/Receptionist";
 import Patients from "./Pages/Admin/Base_hospital/receptionist/Patients";
+import Doctors from "./Pages/Admin/Base_hospital/doctor/Doctors";
 
 const routes = createBrowserRouter([
   // ==========================================
@@ -95,6 +96,8 @@ const routes = createBrowserRouter([
         children: [
           //receptioniste
           {path:"receptionists",element:<Receptionists/>},
+          //docteurs
+          {path:"doctors",element:<Doctors/>},
           //
           { path: "centers", element: <Centers /> },
           { path: "departments", element: <Departments /> },
@@ -164,7 +167,7 @@ const routes = createBrowserRouter([
       },
       {
           element: (
-          <CheckRole roles={["reception"]}>
+          <CheckRole roles={["reception","admin"]}>
             <Outlet />
           </CheckRole>
         ),

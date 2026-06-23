@@ -1095,6 +1095,227 @@
                 ]
             }
         },
+        "/api/admin/doctors": {
+            "get": {
+                "tags": [
+                    "Médecins (Admin)"
+                ],
+                "summary": "Lister les médecins de l'hôpital",
+                "description": "Lister et filtrer les médecins",
+                "operationId": "getDoctors",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Recherche par nom, email, téléphone ou spécialité",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "center_id",
+                        "in": "query",
+                        "description": "Filtrer par centre",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "department_id",
+                        "in": "query",
+                        "description": "Filtrer par département",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "paginated",
+                        "in": "query",
+                        "description": "true/false",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Médecins (Admin)"
+                ],
+                "summary": "Créer un profil médecin",
+                "description": "Créer un médecin",
+                "operationId": "storeDoctor",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "first_name",
+                                    "phone",
+                                    "email",
+                                    "password",
+                                    "speciality",
+                                    "center_id"
+                                ],
+                                "properties": {
+                                    "first_name": {
+                                        "type": "string",
+                                        "example": "Paul"
+                                    },
+                                    "last_name": {
+                                        "type": "string",
+                                        "example": "Durand",
+                                        "nullable": true
+                                    },
+                                    "phone": {
+                                        "type": "integer",
+                                        "example": 655443322
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "example": "paul.durand@hopital.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "example": "motdepasse123"
+                                    },
+                                    "speciality": {
+                                        "type": "string",
+                                        "example": "Cardiologue"
+                                    },
+                                    "specifications": {
+                                        "type": "string",
+                                        "example": "Pédiatrique",
+                                        "nullable": true
+                                    },
+                                    "center_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "department_id": {
+                                        "type": "integer",
+                                        "example": 2,
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Médecin créé avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/doctors/{id}": {
+            "get": {
+                "tags": [
+                    "Médecins (Admin)"
+                ],
+                "summary": "Détails d'un médecin",
+                "description": "Obtenir les détails d'un médecin",
+                "operationId": "showDoctor",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Médecin trouvé avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Médecins (Admin)"
+                ],
+                "summary": "Modifier un médecin",
+                "description": "Modifier un médecin",
+                "operationId": "updateDoctor",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Profil médecin mis à jour avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Médecins (Admin)"
+                ],
+                "summary": "Supprimer un médecin",
+                "description": "Supprimer un médecin",
+                "operationId": "deleteDoctor",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Médecin supprimé avec succès."
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/admin/drivers": {
             "get": {
                 "tags": [
@@ -4866,6 +5087,10 @@
         {
             "name": "Départements (Admin)",
             "description": "Gestion des départements par centre médical"
+        },
+        {
+            "name": "Médecins (Admin)",
+            "description": "Gestion du personnel médical de l'hôpital"
         },
         {
             "name": "Chauffeurs",

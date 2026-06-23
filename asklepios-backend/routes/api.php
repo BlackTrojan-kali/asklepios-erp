@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\ArticleController;
 use App\Http\Controllers\Admin\BatchController;
 use App\Http\Controllers\Admin\CenterController;
 use App\Http\Controllers\Admin\DepartmentController;
+use App\Http\Controllers\Admin\DoctorController;
 use App\Http\Controllers\Admin\DriverController;
 use App\Http\Controllers\Admin\PharmacienController;
 use App\Http\Controllers\Admin\PharmacyBranchController;
@@ -28,6 +29,7 @@ use App\Http\Controllers\SUPA\CountryController;
 use App\Http\Controllers\SUPA\HospitalController;
 use App\Http\Controllers\SUPA\LicenceController;
 use App\Http\Controllers\SUPA\SubscriptionController;
+use GuzzleHttp\Middleware;
 
 // ==========================================================
 // 1. AUTHENTIFICATION (PUBLIC)
@@ -107,7 +109,10 @@ Route::middleware('auth:sanctum')->group(function () {
         // 5.1. ACCÈS ADMINISTRATEUR EXCLUSIF (Configuration)
         // ------------------------------------------------------
         Route::middleware('role:admin')->prefix('admin')->group(function () {
-            
+            //docteurs
+
+                // Gestion complète (CRUD) des médecins de l'hôpital
+                Route::apiResource('doctors', DoctorController::class);
             // Succursales
             Route::apiResource('pharmacy-branches', PharmacyBranchController::class);
 
@@ -242,12 +247,23 @@ Route::middleware('auth:sanctum')->group(function () {
     // ---------------------------------------------------------
         // ACCÈS RÉCEPTIONNISTES ET MÉDECINS (Module Base Hôpital)
         // ---------------------------------------------------------
-        Route::middleware(['licence:base_hospital', 'role:reception,doctor'])
+        Route::middleware(['licence:base_hospital'])
             ->prefix('receptionist')
             ->group(function () {
-            
+            Route::middleware(["role:admin,reception"])->group(function(){
             // Dossiers Patients
             Route::apiResource('patients', \App\Http\Controllers\Receptionist\PatientController::class);
-            
+            });
+
+
+            // ---------------------------------------------------------
+            // 2. ACCÈS RÉCEPTIONNISTE
+            // ---------------------------------------------------------
+            Route::middleware(['role:reception'])->prefix('reception')->group(function () {
+                // ... (tes routes patients : Route::apiResource('patients', ...))
+                
+                // Lecture seule : Liste des médecins affiliés au centre du réceptionniste
+                Route::get('doctors', [DoctorController::class, 'index']);
+            });
         });
 }); // Fin Middleware Auth:Sanctum

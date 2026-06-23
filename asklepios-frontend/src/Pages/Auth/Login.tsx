@@ -18,7 +18,7 @@ const Login = () => {
       if(profile?.role == "super_admin"){
       navigate('/countries', { replace: true }); 
       }else if(profile?.role == "admin"){
-        navigate("/admin",{replace:true})
+        navigate("/admin/centers",{replace:true})
       }else if(profile?.role == "pharmacy")
       {
          navigate("/pharmacy",{replace:true})

@@ -15,6 +15,7 @@ import {
   Truck,
   Stethoscope,
   Computer,
+  Users,
 } from "lucide-react";
 
 // --- 1. DÉFINITION DES TYPES ---
@@ -86,6 +87,13 @@ export const MENU_CONFIG: MenuItemType[] = [
     requiredLicence:"base_hospital",
     path:"/admin/receptionists"
 
+  },
+  {
+    title:"Docteurs",
+    icon:<Stethoscope size={20}/>,
+    roles:["admin"],
+    requiredLicence:"base_hospital",
+    path:"/admin/doctors"
   },
   {
     title: "Pharmacies",
@@ -203,13 +211,13 @@ export const MENU_CONFIG: MenuItemType[] = [
 //=========================================================
 {
   title:"Gestion Patients",
-  icon:<Activity size={20}/>,
-  roles:["reception"],
+  icon:<Users size={20}/>,
+  roles:["reception","admin"],
   requiredLicence:"base_hospital",
   subItems:[
     {
       title:"Patients",
-      path:"receptionist/patients",
+      path:"reception/patients",
     }
   ]
   
