@@ -39,6 +39,11 @@ import Drivers from "./Pages/Admin/Pharmacies/Logistics/Drivers";
 import StockTransfers from "./Pages/PHARMACY/StockTransfers";
 import StockTransfersAdmin from "./Pages/Admin/Pharmacies/Logistics/StockTransfersAdmin";
 import PointOfSale from "./Pages/PHARMACY/PointOfSale";
+import SalesHistory from "./Pages/PHARMACY/SaleHistory";
+import DepositsHistory from "./Pages/PHARMACY/DepositsHistory";
+import MovementsHistory from "./Pages/PHARMACY/MovementsHistory";
+import RegisterSession from "./Pages/PHARMACY/RegisterSession";
+import SessionOpening from "./Pages/PHARMACY/SessionOpening";
 
 const routes = createBrowserRouter([
   // ==========================================
@@ -153,7 +158,11 @@ const routes = createBrowserRouter([
           // Si un jour CheckRole supporte les positions, on mettra ici :
           // <CheckRole roles={["pharmacy"]} positions={["vente"]}>
           { path: "pharmacy/pos", element: <PointOfSale /> },
-          // { path: "pharmacy/sales", element: <SalesHistory /> },
+          { path: "pharmacy/sales-history", element: <SalesHistory /> },
+          { path: "pharmacy/deposits-history", element: <DepositsHistory /> },
+          { path: "pharmacy/movements-history", element: <MovementsHistory /> },
+          { path: "pharmacy/cash-sessions/open", element: <RegisterSession /> },
+          { path: "pharmacy/cash-sessions/close", element: <SessionOpening /> },
         ],
       },
     ],

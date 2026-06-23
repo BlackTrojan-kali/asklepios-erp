@@ -10,9 +10,8 @@ import {
   ListOrdered,
   Layers,
   ShoppingCart,
-  Activity,
-  Search,
   Truck,
+  List,
 } from "lucide-react";
 
 // --- 1. DÉFINITION DES TYPES ---
@@ -172,19 +171,26 @@ export const MENU_CONFIG: MenuItemType[] = [
     path: "/pharmacy/pos",
   },
   {
-    title: "Historique Ventes",
-    icon: <Activity size={20} />,
+    title: "Historiques",
+    icon: <List size={20} />,
     roles: ["pharmacy"],
     positions: ["vente"],
     requiredLicence: "pharmacy",
-    path: "/pharmacy/sales-history",
+    subItems: [
+      { title: "Ventes", path: "/pharmacy/sales-history" },
+      { title: "Versements", path: "/pharmacy/deposits-history" },
+      { title: "Mouvements", path: "/pharmacy/movements-history" },
+    ],
   },
   {
-    title: "Consulter Stocks",
-    icon: <Search size={20} />,
+    title: "Gestion des sessions",
+    icon: <List size={20} />,
     roles: ["pharmacy"],
     positions: ["vente"],
     requiredLicence: "pharmacy",
-    path: "/pharmacy/stocks-view",
+    subItems: [
+      { title: "Ouverture de caisse", path: "/pharmacy/cash-sessions/open" },
+      { title: "Cloture de caisse", path: "/pharmacy/cash-sessions/close" },
+    ],
   },
 ];
