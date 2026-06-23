@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('patients', function (Blueprint $table) {
             $table->id();
             $table->foreignId("hospital_id")->constrained("hospitals")->onDelete("cascade");
+            $table->softDeletes(); // <-- À ajouter si ce n'est pas encore fait
             $table->string("patient_code");
             $table->string("first_name");
             $table->string("last_name")->nullable();

@@ -13,6 +13,8 @@ import {
   Activity,
   Search,
   Truck,
+  Stethoscope,
+  Computer,
 } from "lucide-react";
 
 // --- 1. DÉFINITION DES TYPES ---
@@ -76,6 +78,14 @@ export const MENU_CONFIG: MenuItemType[] = [
       { title: "Centres", path: "/admin/centers" },
       { title: "Départements", path: "/admin/departments" },
     ],
+  },
+  {
+    title:"Receptioniste",
+    icon:<Computer size={20}/>,
+    roles:["admin"],
+    requiredLicence:"base_hospital",
+    path:"/admin/receptionists"
+
   },
   {
     title: "Pharmacies",
@@ -187,4 +197,21 @@ export const MENU_CONFIG: MenuItemType[] = [
     requiredLicence: "pharmacy",
     path: "/pharmacy/stocks-view",
   },
+
+//=========================================================
+//  MENU RECEPTIONNISTE 
+//=========================================================
+{
+  title:"Gestion Patients",
+  icon:<Activity size={20}/>,
+  roles:["reception"],
+  requiredLicence:"base_hospital",
+  subItems:[
+    {
+      title:"Patients",
+      path:"receptionist/patients",
+    }
+  ]
+  
+}
 ];

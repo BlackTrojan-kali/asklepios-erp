@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext'; 
 import FormInput from '../../components/ui/form/FormInput';
 import FormButton from '../../components/ui/form/FormButton';
-import toast from 'react-hot-toast';
 import { login } from '../../functions/auth/AuthMethods';
 
 const Login = () => {
@@ -23,6 +22,8 @@ const Login = () => {
       }else if(profile?.role == "pharmacy")
       {
          navigate("/pharmacy",{replace:true})
+      }else if(profile?.role== "reception"){
+        navigate("/reception/patients",{replace:true})
       }
     }
   }, [token, navigate]);

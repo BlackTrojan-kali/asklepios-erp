@@ -1964,13 +1964,194 @@
                 ]
             }
         },
+        "/api/admin/receptionists": {
+            "get": {
+                "tags": [
+                    "Réceptionnistes (Admin)"
+                ],
+                "summary": "Lister les réceptionnistes de l'hôpital",
+                "description": "Lister et filtrer les réceptionnistes (Paginé)",
+                "operationId": "getReceptionists",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Recherche par nom, email, ou téléphone",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "center_id",
+                        "in": "query",
+                        "description": "Filtrer par centre",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Réceptionnistes (Admin)"
+                ],
+                "summary": "Créer un réceptionniste",
+                "description": "Créer un nouveau réceptionniste",
+                "operationId": "storeReceptionist",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "first_name",
+                                    "phone",
+                                    "email",
+                                    "password",
+                                    "center_id",
+                                    "desk_name"
+                                ],
+                                "properties": {
+                                    "first_name": {
+                                        "type": "string",
+                                        "example": "Jeanne"
+                                    },
+                                    "last_name": {
+                                        "type": "string",
+                                        "example": "Dupont"
+                                    },
+                                    "phone": {
+                                        "type": "integer",
+                                        "example": 690000000
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "example": "jeanne@asklepios.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "example": "password123"
+                                    },
+                                    "center_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "desk_name": {
+                                        "type": "string",
+                                        "example": "Accueil Principal"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Réceptionniste créé avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/receptionists/{id}": {
+            "get": {
+                "tags": [
+                    "Réceptionnistes (Admin)"
+                ],
+                "summary": "Détails d'un réceptionniste",
+                "description": "Obtenir les détails d'un réceptionniste",
+                "operationId": "showReceptionist",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Détails trouvés"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Réceptionnistes (Admin)"
+                ],
+                "summary": "Modifier un réceptionniste",
+                "description": "Modifier un réceptionniste",
+                "operationId": "updateReceptionist",
+                "responses": {
+                    "200": {
+                        "description": "Réceptionniste mis à jour"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Réceptionnistes (Admin)"
+                ],
+                "summary": "Supprimer un réceptionniste",
+                "description": "Supprimer un réceptionniste",
+                "operationId": "deleteReceptionist",
+                "responses": {
+                    "200": {
+                        "description": "Réceptionniste supprimé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/admin/stocks/global": {
             "get": {
                 "tags": [
                     "Stocks"
                 ],
                 "summary": "Voir les stocks globaux paginés (Toutes succursales)",
-                "description": "1. VUE GLOBALE PAGINÉE (Pour les Administrateurs ou Superviseurs)\nListe tous les stocks de l'hôpital, avec possibilité de filtrer par succursale.",
+                "description": "1. VUE GLOBALE PAGINÉE (Pour les Administrateurs ou Superviseurs)\r\nListe tous les stocks de l'hôpital, avec possibilité de filtrer par succursale.",
                 "operationId": "getGlobalStocks",
                 "parameters": [
                     {
@@ -2039,7 +2220,7 @@
                     "Stocks"
                 ],
                 "summary": "Voir les stocks paginés de ma succursale",
-                "description": "2. VUE LOCALE PAGINÉE (Pour les Pharmaciens / Vendeurs)\nListe uniquement les stocks de la succursale du pharmacien connecté.",
+                "description": "2. VUE LOCALE PAGINÉE (Pour les Pharmaciens / Vendeurs)\r\nListe uniquement les stocks de la succursale du pharmacien connecté.",
                 "operationId": "getMyBranchStocks",
                 "parameters": [
                     {
@@ -3245,6 +3426,194 @@
                 "responses": {
                     "200": {
                         "description": "Rangement mis à jour avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/receptionist/patients": {
+            "get": {
+                "tags": [
+                    "Patients (Réception)"
+                ],
+                "summary": "Lister et filtrer les patients",
+                "description": "Lister les patients (Paginé + Filtres OU Liste brute pour React-Select)",
+                "operationId": "getReceptionistPatients",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Recherche par code, nom, prénom ou téléphone",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "paginated",
+                        "in": "query",
+                        "description": "true pour paginer, false pour tout récupérer (React-Select)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Patients (Réception)"
+                ],
+                "summary": "Enregistrer un nouveau patient",
+                "description": "Créer un dossier patient avec génération automatique de code",
+                "operationId": "storeReceptionistPatient",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "first_name",
+                                    "bith_date",
+                                    "contact_phone"
+                                ],
+                                "properties": {
+                                    "first_name": {
+                                        "type": "string",
+                                        "example": "John"
+                                    },
+                                    "last_name": {
+                                        "type": "string",
+                                        "example": "Doe",
+                                        "nullable": true
+                                    },
+                                    "bith_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "1995-05-15"
+                                    },
+                                    "contact_phone": {
+                                        "type": "string",
+                                        "example": "677123456"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Patient enregistré avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/receptionist/patients/{id}": {
+            "get": {
+                "tags": [
+                    "Patients (Réception)"
+                ],
+                "summary": "Détails d'un dossier patient",
+                "description": "Afficher les détails d'un patient",
+                "operationId": "showReceptionistPatient",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Détails récupérés avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Patients (Réception)"
+                ],
+                "summary": "Modifier un dossier patient",
+                "description": "Modifier un dossier patient existant",
+                "operationId": "updateReceptionistPatient",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Dossier patient mis à jour avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Patients (Réception)"
+                ],
+                "summary": "Supprimer un dossier patient (Soft Delete)",
+                "description": "Supprimer un patient (Soft Delete)",
+                "operationId": "deleteReceptionistPatient",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Patient archivé avec succès"
                     }
                 },
                 "security": [
@@ -4515,6 +4884,10 @@
             "description": "Gestion des fournisseurs de la pharmacie"
         },
         {
+            "name": "Réceptionnistes (Admin)",
+            "description": "Gestion des réceptionnistes de l'hôpital"
+        },
+        {
             "name": "Stocks",
             "description": "Consultation des niveaux de stocks par succursale et par lot"
         },
@@ -4549,6 +4922,10 @@
         {
             "name": "Gestion Espace & Aménagement",
             "description": "Outils de rangement et d'organisation physique des stocks pour les pharmaciens"
+        },
+        {
+            "name": "Patients (Réception)",
+            "description": "Gestion des dossiers patients par le personnel d'accueil"
         },
         {
             "name": "Administrateurs (SUPA)",

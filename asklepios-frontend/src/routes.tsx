@@ -39,6 +39,8 @@ import Drivers from "./Pages/Admin/Pharmacies/Logistics/Drivers";
 import StockTransfers from "./Pages/PHARMACY/StockTransfers";
 import StockTransfersAdmin from "./Pages/Admin/Pharmacies/Logistics/StockTransfersAdmin";
 import PointOfSale from "./Pages/PHARMACY/PointOfSale";
+import Receptionists from "./Pages/Admin/Base_hospital/receptionist/Receptionist";
+import Patients from "./Pages/Admin/Base_hospital/receptionist/Patients";
 
 const routes = createBrowserRouter([
   // ==========================================
@@ -91,6 +93,9 @@ const routes = createBrowserRouter([
           </CheckRole>
         ),
         children: [
+          //receptioniste
+          {path:"receptionists",element:<Receptionists/>},
+          //
           { path: "centers", element: <Centers /> },
           { path: "departments", element: <Departments /> },
           { path: "pharmacies", element: <Pharmacies /> },
@@ -113,6 +118,7 @@ const routes = createBrowserRouter([
           { path: "vehicules", element: <Vehicules /> },
           { path: "drivers", element: <Drivers /> },
           { path: "transfers", element: <StockTransfersAdmin /> },
+          
         ],
       },
 
@@ -156,6 +162,17 @@ const routes = createBrowserRouter([
           // { path: "pharmacy/sales", element: <SalesHistory /> },
         ],
       },
+      {
+          element: (
+          <CheckRole roles={["reception"]}>
+            <Outlet />
+          </CheckRole>
+        ),
+        
+        children:[
+          {path:"reception/patients",element:<Patients/>}
+        ]
+      }
     ],
   },
 

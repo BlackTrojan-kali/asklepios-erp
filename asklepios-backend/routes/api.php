@@ -90,9 +90,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // ==========================================================
     // 4. MODULE DE BASE DE L'HÔPITAL (Hors Pharmacie)
     // ==========================================================
+    Route::middleware(["licence:base_hospital"])->group(function(){
     Route::middleware('role:admin')->prefix('admin')->group(function () {
         Route::apiResource('centers', CenterController::class);
         Route::apiResource('departments', DepartmentController::class);
+        Route::apiResource('receptionists', \App\Http\Controllers\Admin\ReceptionistController::class);
+    });
     });
 
     // ==========================================================
@@ -232,4 +235,19 @@ Route::middleware('auth:sanctum')->group(function () {
         });
 
     }); // Fin Middleware Licence Pharmacie
+
+    // ---------------------------------------------------------
+        // ACCÈS RÉCEPTIONNISTES ET MÉDECINS (Module Base Hôpital)
+        // ---------------------------------------------------------
+    // ---------------------------------------------------------
+        // ACCÈS RÉCEPTIONNISTES ET MÉDECINS (Module Base Hôpital)
+        // ---------------------------------------------------------
+        Route::middleware(['licence:base_hospital', 'role:reception,doctor'])
+            ->prefix('receptionist')
+            ->group(function () {
+            
+            // Dossiers Patients
+            Route::apiResource('patients', \App\Http\Controllers\Receptionist\PatientController::class);
+            
+        });
 }); // Fin Middleware Auth:Sanctum
