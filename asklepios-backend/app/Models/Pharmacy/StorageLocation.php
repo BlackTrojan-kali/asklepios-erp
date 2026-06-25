@@ -28,4 +28,9 @@ class StorageLocation extends Model
     {
         return $this->hasMany(Stock::class, 'storage_location_id');
     }
+
+    public function branchArticles()
+    {
+        return $this->hasMany(PharmacyBranchArticle::class, 'default_storage_location_id');
+    }
 }

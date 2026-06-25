@@ -16,6 +16,7 @@ import {
   ShoppingCart,
   X,
 } from "lucide-react";
+import useArticleStore from "../../../../functions/pharmacy/useArticleStore";
 
 // --- TYPES ---
 interface Product {
@@ -111,33 +112,12 @@ export default function SaleModal({
   const [amountReceived, setAmountReceived] = useState<number>(0);
 
   const searchSelectRef = useRef<any>(null);
-
-  // Écouteur pour le raccourci F12
+  const { loading, allArticles, getAllArticles } = useArticleStore();
+  // Chargement initial
   useEffect(() => {
-    if (!isOpen) return; // Ne fait rien si la modale est fermée
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "F12") {
-        e.preventDefault();
-        const canValidate =
-          cart.length > 0 &&
-          (hasPrescription ||
-            !cart.some((i) => i.product.requiresPrescription));
-        if (canValidate) {
-          handleValidateSale();
-        }
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [
-    cart,
-    hasPrescription,
-    amountReceived,
-    paymentMethod,
-    customerName,
-    isOpen,
-  ]);
+    getAllArticles();
+  }, [getAllArticles]);
+  console.log("all article", allArticles);
 
   // --- CALCULS (MEMOIZED) ---
   const totals = useMemo(() => {

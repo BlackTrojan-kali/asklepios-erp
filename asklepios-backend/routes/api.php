@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\CenterController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\DriverController;
 use App\Http\Controllers\Admin\PharmacienController;
+use App\Http\Controllers\Admin\PharmacyBranchArticleController;
 use App\Http\Controllers\Admin\PharmacyBranchController;
 use App\Http\Controllers\Admin\ProviderController;
 use App\Http\Controllers\Admin\StockController;
@@ -46,7 +47,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
-// LECTURE SEULE : Pays (Accessible à tous les connectés)
+    // LECTURE SEULE : Pays (Accessible à tous les connectés)
         Route::get('/countries/all', [CountryController::class, 'all']); // <-- À PLACER EN PREMIER
     // Configuration / Données publiques
     Route::get('/countries', [CountryController::class, 'index']);
@@ -115,6 +116,11 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/articles', [ArticleController::class, 'store']);
             Route::put('/articles/{id}', [ArticleController::class, 'update']);
             Route::delete('/articles/{id}', [ArticleController::class, 'destroy']);
+            
+            Route::get('/branch/articles/export/excel', [PharmacyBranchArticleController::class, 'exportExcel']);
+            Route::get('/branch/articles', [PharmacyBranchArticleController::class, 'index']); //->withoutMiddleware(['licence:pharmacy', 'auth:sanctum', 'role:admin']);
+            Route::get('/branch/{id}/articles', [PharmacyBranchArticleController::class, 'show']); 
+            Route::post('/branch/articles/update-price', [PharmacyBranchArticleController::class, 'updatePrice']); 
 
             // Gestion globale des lots
             Route::prefix('batches')->group(function () {

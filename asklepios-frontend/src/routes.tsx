@@ -38,12 +38,13 @@ import Vehicules from "./Pages/Admin/Pharmacies/Logistics/Vehicules";
 import Drivers from "./Pages/Admin/Pharmacies/Logistics/Drivers";
 import StockTransfers from "./Pages/PHARMACY/StockTransfers";
 import StockTransfersAdmin from "./Pages/Admin/Pharmacies/Logistics/StockTransfersAdmin";
-import PointOfSale from "./Pages/PHARMACY/PointOfSale";
 import SalesHistory from "./Pages/PHARMACY/SaleHistory";
 import DepositsHistory from "./Pages/PHARMACY/DepositsHistory";
 import MovementsHistory from "./Pages/PHARMACY/MovementsHistory";
 import RegisterSession from "./Pages/PHARMACY/RegisterSession";
 import SessionOpening from "./Pages/PHARMACY/SessionOpening";
+import CashHome from "./Pages/PHARMACY/CashHome";
+import ArticlePricing from "./Pages/Admin/Pharmacies/Articles/ArticlePricing";
 
 const routes = createBrowserRouter([
   // ==========================================
@@ -114,6 +115,8 @@ const routes = createBrowserRouter([
           { path: "pharmacy/batch", element: <Batches /> },
           { path: "pharmacy/stocks", element: <Stocks /> },
           { path: "pharmacy/providers", element: <Providers /> },
+          { path: "pharmacy/articles/pricing", element: <ArticlePricing /> },
+
           //logistique
           { path: "vehicules", element: <Vehicules /> },
           { path: "drivers", element: <Drivers /> },
@@ -154,15 +157,21 @@ const routes = createBrowserRouter([
           { path: "pharmacy/movements", element: <StockMovements /> },
           { path: "pharmacy/storage_location", element: <StorageLocations /> },
           { path: "pharmacy/stock_transfers", element: <StockTransfers /> },
-          // VENDEUR / COMMERCIAL
+          // VENDEUR / CAISSIER
           // Si un jour CheckRole supporte les positions, on mettra ici :
           // <CheckRole roles={["pharmacy"]} positions={["vente"]}>
-          { path: "pharmacy/pos", element: <PointOfSale /> },
-          { path: "pharmacy/sales-history", element: <SalesHistory /> },
-          { path: "pharmacy/deposits-history", element: <DepositsHistory /> },
-          { path: "pharmacy/movements-history", element: <MovementsHistory /> },
-          { path: "pharmacy/cash-sessions/open", element: <RegisterSession /> },
-          { path: "pharmacy/cash-sessions/close", element: <SessionOpening /> },
+          { path: "pharmacy/cash", element: <CashHome /> },
+          { path: "pharmacy/cash/sales-history", element: <SalesHistory /> },
+          {
+            path: "pharmacy/cash/deposits-history",
+            element: <DepositsHistory />,
+          },
+          {
+            path: "pharmacy/cash/movements-history",
+            element: <MovementsHistory />,
+          },
+          { path: "pharmacy/cash/session/open", element: <RegisterSession /> },
+          { path: "pharmacy/cash/session/close", element: <SessionOpening /> },
         ],
       },
     ],

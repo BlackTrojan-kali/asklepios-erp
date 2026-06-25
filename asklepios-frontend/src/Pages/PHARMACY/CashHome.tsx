@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import SaleModal from "../../components/modals/Pharmacy/Pharmacien/CreateSaleModal";
 
-export default function PointOfSale() {
+export default function CashHome() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 

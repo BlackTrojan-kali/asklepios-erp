@@ -110,6 +110,10 @@ export const MENU_CONFIG: MenuItemType[] = [
         ],
       },
       { title: "Fournisseurs", path: "/admin/pharmacy/providers" },
+      {
+        title: "Prix de Vente",
+        path: "/admin/pharmacy/articles/pricing",
+      },
     ],
   },
   {

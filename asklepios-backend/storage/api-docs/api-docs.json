@@ -1498,6 +1498,161 @@
                 ]
             }
         },
+        "/api/admin/branch/articles": {
+            "get": {
+                "tags": [
+                    "Tarification Branches (Admin)"
+                ],
+                "summary": "Lister les configurations d'articles de toutes les succursales",
+                "operationId": "getBranchArticles",
+                "responses": {
+                    "200": {
+                        "description": "Liste récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/branch/{id}/articles": {
+            "get": {
+                "tags": [
+                    "Tarification Branches (Admin)"
+                ],
+                "summary": "Récupérer tous les articles avec les prix et configurations spécifiques d'une succursale (Paginé)",
+                "operationId": "getBranchArticlesById",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la succursale de pharmacie",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Recherche par nom ou code-barres de l'article",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Numéro de la page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Nombre d'éléments par page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste des articles de la succursale récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/branch/articles/update-price": {
+            "post": {
+                "tags": [
+                    "Tarification Branches (Admin)"
+                ],
+                "summary": "Mettre à jour ou créer un prix de vente spécifique pour un article dans une succursale",
+                "operationId": "updateBranchArticlePrice",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "pharmacy_branch_id",
+                                    "article_id"
+                                ],
+                                "properties": {
+                                    "pharmacy_branch_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "article_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "special_selling_price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 1700,
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Prix mis à jour avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/branch/articles/export/excel": {
+            "get": {
+                "tags": [
+                    "Tarification Branches (Admin)"
+                ],
+                "summary": "Exporter la tarification des articles en Excel",
+                "operationId": "exportBranchArticlesExcel",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "ID de la succursale (optionnel, si non fourni exporte toutes les succursales)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Fichier Excel généré et téléchargé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/admin/pharmacy-branches": {
             "get": {
                 "tags": [
@@ -4505,6 +4660,10 @@
         {
             "name": "Pharmaciens (Admin)",
             "description": "Gestion du personnel de la pharmacie (Création compte + Affectation)"
+        },
+        {
+            "name": "Tarification Branches (Admin)",
+            "description": "Gestion des prix et configurations des articles par succursale"
         },
         {
             "name": "Pharmacies (Admin)",
