@@ -78,6 +78,7 @@ export const MENU_CONFIG: MenuItemType[] = [
     subItems: [
       { title: "Centres", path: "/admin/centers" },
       { title: "Départements", path: "/admin/departments" },
+      {title:"Categories Chambres",path:"/admin/room_categories"}
     ],
   },
   {

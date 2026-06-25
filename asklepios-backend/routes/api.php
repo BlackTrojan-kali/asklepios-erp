@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\DriverController;
 use App\Http\Controllers\Admin\PharmacienController;
 use App\Http\Controllers\Admin\PharmacyBranchController;
 use App\Http\Controllers\Admin\ProviderController;
+use App\Http\Controllers\Admin\RoomCategoryController;
 use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Admin\VehiculeController;
 use App\Http\Controllers\NotificationController;
@@ -248,9 +249,9 @@ Route::middleware('auth:sanctum')->group(function () {
         // ACCÈS RÉCEPTIONNISTES ET MÉDECINS (Module Base Hôpital)
         // ---------------------------------------------------------
         Route::middleware(['licence:base_hospital'])
-            ->prefix('receptionist')
             ->group(function () {
-            Route::middleware(["role:admin,reception"])->group(function(){
+            Route::middleware(["role:admin,reception"])
+            ->prefix('receptionist')->group(function(){
             // Dossiers Patients
             Route::apiResource('patients', \App\Http\Controllers\Receptionist\PatientController::class);
             });
@@ -265,5 +266,25 @@ Route::middleware('auth:sanctum')->group(function () {
                 // Lecture seule : Liste des médecins affiliés au centre du réceptionniste
                 Route::get('doctors', [DoctorController::class, 'index']);
             });
+            // ---------------------------------------------------------
+    // ACCÈS PARTAGÉ (Admin, Docteur, Réception)
+    // Utile pour alimenter les listes déroulantes (React-Select)
+    // ---------------------------------------------------------
+    Route::middleware(['role:admin|doctor|reception'])->prefix('shared')->group(function () {
+        // Lecture seule des catégories (Paginé ou flat list)
+        Route::get('room-categories', [RoomCategoryController::class, 'index']);
+    });
+
+
+    // ---------------------------------------------------------
+    // ACCÈS ADMINISTRATEUR EXCLUSIF
+    // ---------------------------------------------------------
+    Route::middleware(['role:admin'])->prefix('admin')->group(function () {
+        
+        // Gestion complète (CRUD) des catégories de chambres
+        // Note: L'index est aussi disponible ici pour l'admin (via apiResource)
+        Route::apiResource('room-categories', RoomCategoryController::class);
+
+    });
         });
 }); // Fin Middleware Auth:Sanctum

@@ -42,6 +42,7 @@ import PointOfSale from "./Pages/PHARMACY/PointOfSale";
 import Receptionists from "./Pages/Admin/Base_hospital/receptionist/Receptionist";
 import Patients from "./Pages/Admin/Base_hospital/receptionist/Patients";
 import Doctors from "./Pages/Admin/Base_hospital/doctor/Doctors";
+import RoomCategories from "./Pages/Admin/Base_hospital/room_category/RoomCategories";
 
 const routes = createBrowserRouter([
   // ==========================================
@@ -107,6 +108,7 @@ const routes = createBrowserRouter([
           { path: "movements", element: <AdminStockMovements /> },
           { path: "orders", element: <AdminPurchaseOrders /> },
           { path: "returns", element: <AdminPurchaseReturns /> },
+          {path:"room_categories",element:<RoomCategories/>},
 
           // Sous-dossier Pharmacie côté Admin
           {

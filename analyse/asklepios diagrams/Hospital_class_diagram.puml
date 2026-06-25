@@ -7,7 +7,7 @@ skinparam linetype ortho
 skinparam classAttributeIconSize 0
 skinparam shadowing false
 
-title Architecture Asklepios : Files d'attente, Rendez-vous & DPI Complet
+title Architecture Asklepios : Multi-Centres, Files d'attente, Rendez-vous & DPI
 
 ' --- DEFINITION DES COULEURS PAR DOMAINE ---
 skinparam package {
@@ -18,10 +18,17 @@ skinparam package {
     BackgroundColor<<Billing>> #F3E5F5
 }
 
-package "1. Core, Identité & Staff" <<Identity>> {
+package "1. Core, Groupement & Identité" <<Identity>> {
     class tenant {
         id: UnsignedBigInteger
         name: String
+    }
+    class hospital_branch {
+        id: UnsignedBigInteger
+        tenant_id: UnsignedBigInteger
+        name: String
+        address: String
+        contact_phone: String
     }
     class patient {
         id: UnsignedBigInteger
@@ -35,33 +42,43 @@ package "1. Core, Identité & Staff" <<Identity>> {
     class receptionist {
         id: UnsignedBigInteger
         user_id: UnsignedBigInteger
+        hospital_branch_id: UnsignedBigInteger
         desk_name: String
     }
     class practitioner {
         id: UnsignedBigInteger
         user_id: UnsignedBigInteger
-        department_id: UnsignedBigInteger
+        tenant_id: UnsignedBigInteger
         specialty: String
         grade: String
+        default_consultation_price: float
     }
 }
 
-package "2. Infrastructures (Espaces & Appareils)" <<Infra>> {
+package "2. Infrastructures & Tarification Hébergement" <<Infra>> {
     class department {
         id: UnsignedBigInteger
+        hospital_branch_id: UnsignedBigInteger
         name: String
+    }
+    class room_category {
+        id: UnsignedBigInteger
+        hospital_branch_id: UnsignedBigInteger
+        name: String
+        price_per_night: float
     }
     class facility_room {
         id: UnsignedBigInteger
         department_id: UnsignedBigInteger
-        name: String (ex: Salle Attente B, Cabinet 4)
+        room_category_id: UnsignedBigInteger_optional
+        name: String
         type: String ('WAITING_ROOM', 'CONSULTATION', 'WARD')
     }
     class bed {
         id: UnsignedBigInteger
         facility_room_id: UnsignedBigInteger
         bed_number: String
-        price_per_night: float
+        status: String ('AVAILABLE', 'OCCUPIED', 'CLEANING', 'MAINTENANCE')
     }
     class equipment {
         id: UnsignedBigInteger
@@ -76,6 +93,7 @@ package "3. Rendez-vous & File d'Attente" <<Workflow>> {
         id: UnsignedBigInteger
         patient_id: UnsignedBigInteger
         practitioner_id: UnsignedBigInteger
+        hospital_branch_id: UnsignedBigInteger
         scheduled_datetime: Datetime
         reason: String
         status: String ('SCHEDULED', 'CANCELLED', 'ARRIVED')
@@ -83,12 +101,13 @@ package "3. Rendez-vous & File d'Attente" <<Workflow>> {
     class patient_visit {
         id: UnsignedBigInteger
         patient_id: UnsignedBigInteger
+        hospital_branch_id: UnsignedBigInteger
         receptionist_id: UnsignedBigInteger
         appointment_id: UnsignedBigInteger_optional
         waiting_room_id: UnsignedBigInteger_optional
         consulting_room_id: UnsignedBigInteger_optional
         arrival_time: Datetime
-        queue_number: Integer (Ordre de passage du jour)
+        queue_number: Integer
         status: String ('IN_WAITING_ROOM', 'IN_CONSULTATION', 'COMPLETED')
         visit_type: String ('ROUTINE', 'EMERGENCY', 'FOLLOW_UP')
     }
@@ -100,7 +119,8 @@ package "4. Dossier Clinique & Hospitalisation" <<Clinical>> {
         patient_visit_id: UnsignedBigInteger
         practitioner_id: UnsignedBigInteger
         chief_complaint: Text
-        clinical_data: JSON (Saisie dynamique)
+        clinical_data: JSON
+        consultation_price: float
     }
     class admission {
         id: UnsignedBigInteger
@@ -118,7 +138,7 @@ package "4. Dossier Clinique & Hospitalisation" <<Clinical>> {
     class prescription_line {
         id: UnsignedBigInteger
         prescription_id: UnsignedBigInteger
-        article_id: UnsignedBigInteger_optional (Pont Pharmacie)
+        article_id: UnsignedBigInteger_optional
         custom_medication_name: String_optional
         dosage: String
     }
@@ -127,8 +147,9 @@ package "4. Dossier Clinique & Hospitalisation" <<Clinical>> {
 package "5. Actes Médicaux & Facturation" <<Billing>> {
     class medical_act_catalog {
         id: UnsignedBigInteger
+        tenant_id: UnsignedBigInteger
         department_id: UnsignedBigInteger_optional
-        name: String (ex: Détartrage, Échographie)
+        name: String
         base_price: float
     }
     class performed_medical_act {
@@ -142,6 +163,7 @@ package "5. Actes Médicaux & Facturation" <<Billing>> {
     class invoice {
         id: UnsignedBigInteger
         patient_id: UnsignedBigInteger
+        hospital_branch_id: UnsignedBigInteger
         patient_visit_id: UnsignedBigInteger_optional
         total_amount: float
         status: String ('UNPAID', 'PAID')
@@ -149,7 +171,7 @@ package "5. Actes Médicaux & Facturation" <<Billing>> {
     class invoice_line {
         id: UnsignedBigInteger
         invoice_id: UnsignedBigInteger
-        reference_type: String (ex: performed_act, consultation, bed)
+        reference_type: String
         reference_id: UnsignedBigInteger
         description: String
         unit_price: float
@@ -163,14 +185,26 @@ package "5. Actes Médicaux & Facturation" <<Billing>> {
     }
 }
 
-' --- RELATIONS ---
+' --- RELATIONS CORE & MULTI-CENTRES ---
+tenant "1" *-- "*" hospital_branch
 tenant "1" *-- "*" patient
-tenant "1" *-- "*" department
+tenant "1" *-- "*" practitioner
+tenant "1" *-- "*" medical_act_catalog
+
+hospital_branch "1" *-- "*" receptionist
+hospital_branch "1" *-- "*" room_category
+hospital_branch "1" *-- "*" department
+hospital_branch "1" <-- "*" appointment : a lieu à <
+hospital_branch "1" <-- "*" patient_visit : se déroule à <
+hospital_branch "1" *-- "*" invoice : émise par >
+
+' --- RELATIONS INFRASTRUCTURES ---
 department "1" *-- "*" facility_room
-department "1" *-- "*" practitioner
+room_category "1" <-- "*" facility_room : classifie _optional <
 facility_room "1" *-- "*" bed
 department "1" *-- "*" equipment
 
+' --- RELATIONS WORKFLOW ---
 patient "1" *-- "*" appointment
 practitioner "1" <-- "*" appointment
 patient "1" *-- "*" patient_visit
@@ -179,7 +213,7 @@ appointment "1" <-- "1" patient_visit : honore <
 facility_room "1" <-- "*" patient_visit : attend dans <
 facility_room "1" <-- "*" patient_visit : consulté dans <
 
-department "1" *-- "*" medical_act_catalog
+' --- RELATIONS ACTES & CLINIQUE ---
 medical_act_catalog "1" <-- "*" performed_medical_act
 patient_visit "1" *-- "*" performed_medical_act
 equipment "1" <-- "*" performed_medical_act
@@ -190,6 +224,7 @@ bed "1" <-- "*" admission
 consultation "1" *-- "1" prescription
 prescription "1" *-- "*" prescription_line
 
+' --- RELATIONS FACTURATION ---
 patient "1" *-- "*" invoice
 patient_visit "1" <-- "*" invoice
 invoice "1" *-- "*" invoice_line
