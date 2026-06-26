@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { branchArticleService, type UpdatePricePayload } from "../../services/branchArticleService";
+import { branchArticleService, type UpdatePricePayload } from "../../services/pharmacy/branchArticleService";
 
 
 export const useBranchArticles = (

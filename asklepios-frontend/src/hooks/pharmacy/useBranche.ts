@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { branchService } from "../../services/branchService";
+import { branchService } from "../../services/pharmacy/branchService";
 
 export const useBranches = () => {
   return useQuery({

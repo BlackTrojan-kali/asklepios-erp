@@ -44,7 +44,8 @@ import MovementsHistory from "./Pages/PHARMACY/MovementsHistory";
 import RegisterSession from "./Pages/PHARMACY/RegisterSession";
 import SessionOpening from "./Pages/PHARMACY/SessionOpening";
 import CashHome from "./Pages/PHARMACY/CashHome";
-import ArticlePricing from "./Pages/Admin/Pharmacies/Articles/ArticlePricing";
+import ArticlePricing from "./Pages/Admin/Pharmacies/Sale/ArticlePricing";
+import CashRegister from "./Pages/Admin/Pharmacies/Sale/CashRegister";
 
 const routes = createBrowserRouter([
   // ==========================================
@@ -115,6 +116,9 @@ const routes = createBrowserRouter([
           { path: "pharmacy/batch", element: <Batches /> },
           { path: "pharmacy/stocks", element: <Stocks /> },
           { path: "pharmacy/providers", element: <Providers /> },
+          // POINT DE VENTE
+
+          { path: "/admin/pharmacy/cash-register", element: <CashRegister /> },
           { path: "pharmacy/articles/pricing", element: <ArticlePricing /> },
 
           //logistique

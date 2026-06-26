@@ -111,8 +111,11 @@ export const MENU_CONFIG: MenuItemType[] = [
       },
       { title: "Fournisseurs", path: "/admin/pharmacy/providers" },
       {
-        title: "Prix de Vente",
-        path: "/admin/pharmacy/articles/pricing",
+        title: "Point de Vente",
+        subItems: [
+          { title: "Gerer les Prix", path: "/admin/pharmacy/articles/pricing" },
+          { title: "Caisse", path: "/admin/pharmacy/cash-register" },
+        ],
       },
     ],
   },

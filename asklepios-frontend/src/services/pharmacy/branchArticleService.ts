@@ -1,5 +1,5 @@
-import api from "../api/api";
-import type { ArticleCategoryDto } from "../types/PharmTypes";
+import api from "../../api/api";
+import type { ArticleCategoryDto } from "../../types/PharmTypes";
 
 // --- Types & Interfaces ---
 export interface BatchStockDto {

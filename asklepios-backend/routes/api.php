@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\BatchController;
 use App\Http\Controllers\Admin\CenterController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\DriverController;
+use App\Http\Controllers\Admin\CashRegisterController;
 use App\Http\Controllers\Admin\PharmacienController;
 use App\Http\Controllers\Admin\PharmacyBranchArticleController;
 use App\Http\Controllers\Admin\PharmacyBranchController;
@@ -108,6 +109,9 @@ Route::middleware('auth:sanctum')->group(function () {
             
             // Succursales
             Route::apiResource('pharmacy-branches', PharmacyBranchController::class);
+
+            // Caisses (CRUD Admin)
+            Route::apiResource('cash-registers', CashRegisterController::class)->only(['store', 'update', 'destroy']);
 
             // Catalogue
             Route::get('/article-categories/all', [ArticleCategoryController::class, 'all']);
@@ -207,7 +211,11 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::get('/branch/{id}/articles/all', [PharmacyBranchArticleController::class, 'all']);
                 Route::get('/branch/{id}/articles/', [PharmacyBranchArticleController::class, 'show']); 
                 Route::post('/branch/articles/update-price', [PharmacyBranchArticleController::class, 'updatePrice']); 
-            });
+
+                // Caisses (Accès partagé)
+                Route::get('/cash-registers', [CashRegisterController::class, 'index']);
+                Route::get('/cash-registers/{id}', [CashRegisterController::class, 'show']);
+            });           
 
             Route::prefix('pharmacy')->group(function () {
                 // Inventaires
@@ -237,6 +245,12 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::post('/{id}/receive', [StockTransferController::class, 'receive']);
                 Route::post('/{id}/cancel', [StockTransferController::class, 'cancel']);
                 Route::get('/export/pdf', [StockTransferController::class, 'exportPdf']);
+            });
+            // Caisses Sessions (Pharmacien caissier exclusif)
+            Route::prefix('cash-registers')->group(function () {
+                Route::post('/{id}/sessions/open', [CashRegisterController::class, 'openSession']);
+                Route::post('/sessions/{sessionId}/close', [CashRegisterController::class, 'closeSession']);
+                Route::get('/active-session/me', [CashRegisterController::class, 'myActiveSession']);
             });
         });
 
