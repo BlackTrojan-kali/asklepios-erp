@@ -17,11 +17,11 @@ import {
 import toast from "react-hot-toast";
 
 import {
-  useBranches,
   useBranchArticles,
   useUpdateBranchArticlePrice,
   useExportBranchArticlesExcel,
-} from "../../../../hooks/pharmacy/useBranchArticle";
+} from "../../../../hooks/pharmacy/useBrancheArticle";
+import { useBranches } from "../../../../hooks/pharmacy/useBranche";
 
 function BranchesSkeleton() {
   return (

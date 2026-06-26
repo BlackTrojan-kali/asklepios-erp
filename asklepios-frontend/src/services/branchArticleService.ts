@@ -1,6 +1,7 @@
 import api from "../api/api";
-import type { PharmacyBranchDto, ArticleCategoryDto } from "../types/PharmTypes";
+import type { ArticleCategoryDto } from "../types/PharmTypes";
 
+// --- Types & Interfaces ---
 export interface BatchStockDto {
   id: number;
   batch_number: string;
@@ -36,10 +37,11 @@ export interface BranchArticleDto {
   batches?: BatchStockDto[];
 }
 
-export const getBranches = async (): Promise<PharmacyBranchDto[]> => {
-  const response = await api.get<PharmacyBranchDto[]>("/admin/pharmacy-branches");
-  return response.data;
-};
+export interface UpdatePricePayload {
+  branch_id: number;
+  article_id: number;
+  special_selling_price: number | null;
+}
 
 export interface PaginatedResponse<T> {
   data: T[];
@@ -50,40 +52,36 @@ export interface PaginatedResponse<T> {
   all?: boolean;
 }
 
-export const getBranchArticles = async (
+// --- Fonctions de service internes ---
+
+const get = async (
   id: number,
   page: number = 1,
   search: string = "",
   perPage: number = 15
-): Promise<PaginatedResponse<BranchArticleDto>> => {
+) => {
   const response = await api.get<PaginatedResponse<BranchArticleDto>>(`/admin/branch/${id}/articles`, {
     params: { page, search, per_page: perPage }
   });
   return response.data;
 };
 
-export const getBranchArticlesAll = async (
+const getAll = async (
   id: number,
   search: string = ""
-): Promise<BranchArticleDto[]> => {
+) => {
   const response = await api.get<BranchArticleDto[]>(`/admin/branch/${id}/articles/all`, {
     params: { search }
   });
   return response.data;
 };
 
-export interface UpdatePricePayload {
-  branch_id: number;
-  article_id: number;
-  special_selling_price: number | null;
-}
-
-export const updateBranchArticlePrice = async (payload: UpdatePricePayload): Promise<any> => {
+const updatePrice = async (payload: UpdatePricePayload)=> {
   const response = await api.post("/admin/branch/articles/update-price", payload);
   return response.data;
 };
 
-export const exportBranchArticlesExcel = async (branchId?: number | null): Promise<Blob> => {
+const exportExcel = async (branchId?: number | null) => {
   const response = await api.get("/admin/branch/articles/export/excel", {
     params: branchId ? { branch_id: branchId } : {},
     responseType: "blob",
@@ -91,3 +89,10 @@ export const exportBranchArticlesExcel = async (branchId?: number | null): Promi
   return response.data;
 };
 
+// --- Exportation du Service ---
+export const branchArticleService = {
+  get,
+  getAll,
+  updatePrice,
+  exportExcel,
+};

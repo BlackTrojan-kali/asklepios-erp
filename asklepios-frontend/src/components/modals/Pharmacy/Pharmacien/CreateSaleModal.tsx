@@ -17,7 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { useAuth } from "../../../../contexts/AuthContext";
-import { useBranchArticlesAll } from "../../../../hooks/pharmacy/useBranchArticle";
+import { useBranchArticlesAll } from "../../../../hooks/pharmacy/useBrancheArticle";
 
 // --- TYPES ---
 interface Product {
@@ -68,8 +68,9 @@ export default function SaleModal({
   // RÉCUPÉRATION DU BRANCH_ID ET DES PRODUITS DE LA BRANCHE
   const { profile } = useAuth();
   const currentBranchId = profile?.profile_pharm?.branch_id;
-  const { data: branchArticles, isLoading: loading } =
-    useBranchArticlesAll(currentBranchId || null);
+  const { data: branchArticles, isLoading: loading } = useBranchArticlesAll(
+    currentBranchId || null,
+  );
   console.log(branchArticles);
 
   // Conversion des articles de la succursale au format Product attendu par le panier, avec gestion et tri des lots (FEFO)
