@@ -117,11 +117,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::put('/articles/{id}', [ArticleController::class, 'update']);
             Route::delete('/articles/{id}', [ArticleController::class, 'destroy']);
             
-            Route::get('/branch/articles/export/excel', [PharmacyBranchArticleController::class, 'exportExcel']);
-            Route::get('/branch/articles', [PharmacyBranchArticleController::class, 'index']); //->withoutMiddleware(['licence:pharmacy', 'auth:sanctum', 'role:admin']);
-            Route::get('/branch/{id}/articles', [PharmacyBranchArticleController::class, 'show']); 
-            Route::post('/branch/articles/update-price', [PharmacyBranchArticleController::class, 'updatePrice']); 
-
+         
             // Gestion globale des lots
             Route::prefix('batches')->group(function () {
                 Route::get('/all', [BatchController::class, 'all']);
@@ -204,6 +200,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
                 // Document logistique
                 Route::get('/stock-transfers/{id}/waybill', [StockTransferController::class, 'downloadWaybill']);
+
+                // Articles d'une branche de pharmacie (Accès partagé Admin + Pharmacy)
+                Route::get('/branch/articles/export/excel', [PharmacyBranchArticleController::class, 'exportExcel']);
+                Route::get('/branch/articles', [PharmacyBranchArticleController::class, 'index']);
+                Route::get('/branch/{id}/articles/all', [PharmacyBranchArticleController::class, 'all']);
+                Route::get('/branch/{id}/articles/', [PharmacyBranchArticleController::class, 'show']); 
+                Route::post('/branch/articles/update-price', [PharmacyBranchArticleController::class, 'updatePrice']); 
             });
 
             Route::prefix('pharmacy')->group(function () {

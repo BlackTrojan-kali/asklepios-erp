@@ -1,10 +1,19 @@
 import api from "../api/api";
 import type { PharmacyBranchDto, ArticleCategoryDto } from "../types/PharmTypes";
 
+export interface BatchStockDto {
+  id: number;
+  batch_number: string;
+  expire_date: string | null;
+  purchase_price: number;
+  qty: number;
+}
+
 export interface BranchArticleDto {
   id: number;
   name: string;
   image_url: string | null;
+  barcode: string | null;
   track_batches: boolean;
   is_prescripted: boolean;
   category: ArticleCategoryDto | null;
@@ -24,22 +33,24 @@ export interface BranchArticleDto {
     code: string;
   } | null;
   stock_qty: number;
+  batches?: BatchStockDto[];
 }
 
-export const getPharmacyBranches = async (): Promise<PharmacyBranchDto[]> => {
+export const getBranches = async (): Promise<PharmacyBranchDto[]> => {
   const response = await api.get<PharmacyBranchDto[]>("/admin/pharmacy-branches");
   return response.data;
 };
 
 export interface PaginatedResponse<T> {
   data: T[];
-  current_page: number;
-  last_page: number;
-  per_page: number;
-  total: number;
+  current_page?: number;
+  last_page?: number;
+  per_page?: number;
+  total?: number; 
+  all?: boolean;
 }
 
-export const getPharmacyBranchesById = async (
+export const getBranchArticles = async (
   id: number,
   page: number = 1,
   search: string = "",
@@ -51,13 +62,23 @@ export const getPharmacyBranchesById = async (
   return response.data;
 };
 
+export const getBranchArticlesAll = async (
+  id: number,
+  search: string = ""
+): Promise<BranchArticleDto[]> => {
+  const response = await api.get<BranchArticleDto[]>(`/admin/branch/${id}/articles/all`, {
+    params: { search }
+  });
+  return response.data;
+};
+
 export interface UpdatePricePayload {
-  pharmacy_branch_id: number;
+  branch_id: number;
   article_id: number;
   special_selling_price: number | null;
 }
 
-export const updatePharmacyBranchArticlePrice = async (payload: UpdatePricePayload): Promise<any> => {
+export const updateBranchArticlePrice = async (payload: UpdatePricePayload): Promise<any> => {
   const response = await api.post("/admin/branch/articles/update-price", payload);
   return response.data;
 };

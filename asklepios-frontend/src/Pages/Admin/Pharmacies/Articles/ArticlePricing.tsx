@@ -17,13 +17,13 @@ import {
 import toast from "react-hot-toast";
 
 import {
-  usePharmacyBranches,
-  usePharmacyBranchArticles,
-  useUpdatePharmacyBranchArticlePrice,
+  useBranches,
+  useBranchArticles,
+  useUpdateBranchArticlePrice,
   useExportBranchArticlesExcel,
-} from "../../../../hooks/pharmacy/usePharmacyBranch";
+} from "../../../../hooks/pharmacy/useBranchArticle";
 
-function PharmacyBranchesSkeleton() {
+function BranchesSkeleton() {
   return (
     <div className="space-y-4 animate-pulse">
       {[1, 2, 3].map((i) => (
@@ -131,9 +131,9 @@ function BranchArticlesList({ branchId, currency }: BranchArticlesListProps) {
     data: paginatedData,
     isLoading,
     error,
-  } = usePharmacyBranchArticles(branchId, page, search, 10);
+  } = useBranchArticles(branchId, page, search, 10);
 
-  const updatePriceMutation = useUpdatePharmacyBranchArticlePrice();
+  const updatePriceMutation = useUpdateBranchArticlePrice();
 
   // États pour gérer l'édition en ligne par double-clic
   const [editingArticleId, setEditingArticleId] = useState<number | null>(null);
@@ -169,7 +169,7 @@ function BranchArticlesList({ branchId, currency }: BranchArticlesListProps) {
 
     updatePriceMutation.mutate(
       {
-        pharmacy_branch_id: branchId,
+        branch_id: branchId,
         article_id: articleId,
         special_selling_price: finalPrice,
       },
@@ -402,7 +402,7 @@ function BranchArticlesList({ branchId, currency }: BranchArticlesListProps) {
 }
 
 export default function ArticlePricing() {
-  const { data: branches, isLoading, error } = usePharmacyBranches();
+  const { data: branches, isLoading, error } = useBranches();
 
   // ID de la pharmacie actuellement ouverte dans la vue déroulante/accordéon
   const [expandedBranchId, setExpandedBranchId] = useState<number | null>(null);
@@ -523,7 +523,7 @@ export default function ArticlePricing() {
       </div>
 
       {/* États de chargement et d'erreur */}
-      {isLoading && <PharmacyBranchesSkeleton />}
+      {isLoading && <BranchesSkeleton />}
 
       {error && (
         <div className="bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50 p-4 rounded-xl flex items-start gap-3">

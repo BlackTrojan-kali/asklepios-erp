@@ -172,7 +172,7 @@ export const MENU_CONFIG: MenuItemType[] = [
     roles: ["pharmacy"],
     positions: ["vente"],
     requiredLicence: "pharmacy",
-    path: "/pharmacy/pos",
+    path: "/pharmacy/cash",
   },
   {
     title: "Historiques",

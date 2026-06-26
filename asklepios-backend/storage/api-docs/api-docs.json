@@ -1520,9 +1520,9 @@
         "/api/admin/branch/{id}/articles": {
             "get": {
                 "tags": [
-                    "Tarification Branches (Admin)"
+                    "Article des Branches (Admin)"
                 ],
-                "summary": "Récupérer tous les articles avec les prix et configurations spécifiques d'une succursale (Paginé)",
+                "summary": "Récupérer tous les articles avec les prix et configurations spécifiques d'une succursale",
                 "operationId": "getBranchArticlesById",
                 "parameters": [
                     {
@@ -1555,10 +1555,19 @@
                     {
                         "name": "per_page",
                         "in": "query",
-                        "description": "Nombre d'éléments par page",
+                        "description": "Nombre d'éléments par page (ou -1 pour désactiver)",
                         "required": false,
                         "schema": {
                             "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "all",
+                        "in": "query",
+                        "description": "Si vrai, récupère tous les articles sans pagination",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
                         }
                     }
                 ],
@@ -4728,6 +4737,10 @@
         {
             "name": "Souscriptions (SUPA)",
             "description": "Gestion des abonnements et licences des hôpitaux"
+        },
+        {
+            "name": "Article des Branches (Admin)",
+            "description": "Article des Branches (Admin)"
         },
         {
             "name": "Authentification",

@@ -57,7 +57,7 @@ class PharmacyBranchArticleController extends Controller
         operationId: "getBranchArticlesById",
         summary: "Récupérer tous les articles avec les prix et configurations spécifiques d'une succursale (Paginé)",
         security: [["bearerAuth" => []]],
-        tags: ["Tarification Branches (Admin)"]
+        tags: ["Article des Branches (Admin)"]
     )]
     #[OA\Parameter(name: "id", in: "path", required: true, description: "ID de la succursale de pharmacie", schema: new OA\Schema(type: "integer"))]
     #[OA\Parameter(name: "search", in: "query", required: false, description: "Recherche par nom ou code-barres de l'article", schema: new OA\Schema(type: "string"))]
@@ -122,6 +122,7 @@ class PharmacyBranchArticleController extends Controller
                 'id' => $article->id,
                 'name' => $article->name,               
                 'image_url' => $article->image_url,
+                'barcode' => $article->barcode,
                 'track_batches' => $article->track_batches,
                 'is_prescripted' => $article->is_prescripted,
                 'category' => $article->category,                
@@ -148,6 +149,90 @@ class PharmacyBranchArticleController extends Controller
             'last_page' => $paginatedArticles->lastPage(),
             'per_page' => $paginatedArticles->perPage(),
         ], 200);
+    }
+
+    /* 
+    Récupérer TOUS les articles d'une succursale spécifique sans pagination, avec liaisons des lots
+    */
+    #[OA\Get(
+        path: "/api/admin/branch/{id}/articles/all",
+        operationId: "getBranchArticlesAllById",
+        summary: "Récupérer tous les articles d'une succursale avec leurs lots (Sans pagination)",
+        security: [["bearerAuth" => []]],
+        tags: ["Article des Branches (Admin)"]
+    )]
+    #[OA\Parameter(name: "id", in: "path", required: true, description: "ID de la succursale de pharmacie", schema: new OA\Schema(type: "integer"))]
+    #[OA\Response(response: 200, description: "Liste complète des articles de la succursale avec lots récupérée avec succès")]
+    public function all(Request $request, int $branch_id)
+    {
+        $hospitalId = $this->getHospitalId();
+        
+        $articles = Article::where('hospital_id', $hospitalId)
+            ->with([
+                'category',
+                'branchArticles' => function ($q) use ($branch_id) {
+                    $q->where('pharmacy_branch_id', $branch_id)
+                      ->with('defaultStorageLocation');
+                },
+                'batches' => function ($q) use ($branch_id) {
+                    $q->with(['stocks' => function ($sq) use ($branch_id) {
+                        $sq->where('pharmacy_branch_id', $branch_id);
+                    }]);
+                }
+            ])
+            ->get();
+            
+        $formattedArticles = $articles->map(function ($article) use ($branch_id) {
+            $branchConfig = $article->branchArticles->first();
+            
+            $sellingPrice = ($branchConfig && $branchConfig->special_selling_price !== null)
+                ? $branchConfig->special_selling_price
+                : $article->default_selling_price;
+                
+            $isActive = $branchConfig ? (bool) $branchConfig->is_active : true;
+            $defaultStorageLocation = $branchConfig ? $branchConfig->defaultStorageLocation : null;
+
+            // Formater les lots avec le stock de cette succursale
+            $formattedBatches = $article->batches->map(function ($batch) {
+                $stock = $batch->stocks->first();
+                $qty = $stock ? (float)$stock->qty : 0.0;
+                
+                return [
+                    'id' => $batch->id,
+                    'batch_number' => $batch->batch_number,
+                    'expire_date' => $batch->expire_date ? $batch->expire_date->format('Y-m-d') : null,
+                    'purchase_price' => (float)$batch->purchase_price,
+                    'qty' => $qty,
+                ];
+            });
+
+            // Calcul de la quantité physique cumulée en stock pour cette succursale
+            $stockQty = $formattedBatches->sum('qty');
+
+            return [
+                'id' => $article->id,
+                'name' => $article->name,               
+                'image_url' => $article->image_url,
+                'barcode' => $article->barcode,
+                'track_batches' => $article->track_batches,
+                'is_prescripted' => $article->is_prescripted,
+                'category' => $article->category,                
+                'default_selling_price' => $article->default_selling_price,
+                'branch_config' => $branchConfig ? [
+                    'id' => $branchConfig->id,
+                    'special_selling_price' => $branchConfig->special_selling_price,
+                    'is_active' => $branchConfig->is_active,
+                    'default_storage_location_id' => $branchConfig->default_storage_location_id,
+                ] : null,
+                'selling_price' => $sellingPrice,
+                'is_active' => $isActive,
+                'default_storage_location' => $defaultStorageLocation,
+                'stock_qty' => $stockQty, // Quantité physique totale en stock
+                'batches' => $formattedBatches, // Les lots avec leur quantité en stock locale
+            ];
+        });
+
+        return response()->json($formattedArticles, 200);
     }
 
     /* 

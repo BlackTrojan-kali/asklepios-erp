@@ -16,11 +16,15 @@ import {
   ShoppingCart,
   X,
 } from "lucide-react";
-import useArticleStore from "../../../../functions/pharmacy/useArticleStore";
+import { useAuth } from "../../../../contexts/AuthContext";
+import { useBranchArticlesAll } from "../../../../hooks/pharmacy/useBranchArticle";
 
 // --- TYPES ---
 interface Product {
   id: string;
+  articleId: number;
+  batchId?: number;
+  batchNumber?: string;
   name: string;
   code: string;
   price: number;
@@ -42,59 +46,7 @@ interface SaleModalProps {
   onSaleSuccess?: () => void;
 }
 
-// --- DONNÉES STATIQUES DE TEST ---
-const MOCK_PRODUCTS: Product[] = [
-  {
-    id: "1",
-    name: "Paracétamol 500mg (Efferalgan)",
-    code: "MED-001",
-    price: 1500,
-    stock: 45,
-    requiresPrescription: false,
-    expiryDate: "2027-12",
-    location: "Rayon A-3",
-  },
-  {
-    id: "2",
-    name: "Amoxicilline 1g (Clamoxyl)",
-    code: "MED-002",
-    price: 3500,
-    stock: 12,
-    requiresPrescription: true,
-    expiryDate: "2026-09",
-    location: "Rayon B-1",
-  },
-  {
-    id: "3",
-    name: "Ibuprofène 400mg",
-    code: "MED-003",
-    price: 1200,
-    stock: 3,
-    requiresPrescription: false,
-    expiryDate: "2026-05",
-    location: "Rayon A-1",
-  },
-  {
-    id: "4",
-    name: "Spasfon Lyoc",
-    code: "MED-004",
-    price: 2200,
-    stock: 25,
-    requiresPrescription: false,
-    expiryDate: "2028-02",
-    location: "Rayon C-2",
-  },
-  {
-    id: "5",
-    name: "Augmentin Enfant",
-    code: "MED-005",
-    price: 4800,
-    stock: 8,
-    requiresPrescription: true,
-    expiryDate: "2026-01",
-    location: "Frigo A",
-  },
-];
+// --- DONNÉES STATIQUES DE TEST SUPPRIMÉES ---
 
 export default function SaleModal({
   isOpen,
@@ -112,12 +64,95 @@ export default function SaleModal({
   const [amountReceived, setAmountReceived] = useState<number>(0);
 
   const searchSelectRef = useRef<any>(null);
-  const { loading, allArticles, getAllArticles } = useArticleStore();
-  // Chargement initial
-  useEffect(() => {
-    getAllArticles();
-  }, [getAllArticles]);
-  console.log("all article", allArticles);
+
+  // RÉCUPÉRATION DU BRANCH_ID ET DES PRODUITS DE LA BRANCHE
+  const { profile } = useAuth();
+  const currentBranchId = profile?.profile_pharm?.branch_id;
+  const { data: branchArticles, isLoading: loading } =
+    useBranchArticlesAll(currentBranchId || null);
+  console.log(branchArticles);
+
+  // Conversion des articles de la succursale au format Product attendu par le panier, avec gestion et tri des lots (FEFO)
+  const products = useMemo<Product[]>(() => {
+    if (!branchArticles) return [];
+
+    const list: Product[] = [];
+
+    branchArticles.forEach((article) => {
+      const locationStr = article.default_storage_location
+        ? `${article.default_storage_location.aisle || ""} - ${article.default_storage_location.shelf || ""} (${article.default_storage_location.code || ""})`
+        : "Non classé";
+
+      if (
+        article.track_batches &&
+        article.batches &&
+        article.batches.length > 0
+      ) {
+        // Pour les articles avec suivi des lots, on crée un produit distinct par lot disponible en stock
+        article.batches.forEach((batch) => {
+          if (batch.qty > 0) {
+            list.push({
+              id: `${article.id}-${batch.id}`,
+              articleId: article.id,
+              batchId: batch.id,
+              batchNumber: batch.batch_number,
+              name: `${article.name} [Lot: ${batch.batch_number}]`,
+              code: article.barcode || `ART-${article.id}`,
+              price: article.selling_price,
+              stock: batch.qty,
+              requiresPrescription: article.is_prescripted,
+              expiryDate: batch.expire_date || "Sans date",
+              location: locationStr,
+            });
+          }
+        });
+
+        // Si l'article n'a plus aucun stock de lot mais qu'il existe, on l'ajoute comme rupture
+        const totalStock = article.batches.reduce((sum, b) => sum + b.qty, 0);
+        if (totalStock === 0) {
+          list.push({
+            id: `${article.id}-rupture`,
+            articleId: article.id,
+            name: `${article.name} (Rupture)`,
+            code: article.barcode || `ART-${article.id}`,
+            price: article.selling_price,
+            stock: 0,
+            requiresPrescription: article.is_prescripted,
+            expiryDate: "N/A",
+            location: locationStr,
+          });
+        }
+      } else {
+        // Articles sans lots
+        list.push({
+          id: article.id.toString(),
+          articleId: article.id,
+          name: article.name,
+          code: article.barcode || `ART-${article.id}`,
+          price: article.selling_price,
+          stock: article.stock_qty,
+          requiresPrescription: article.is_prescripted,
+          expiryDate: "N/A",
+          location: locationStr,
+        });
+      }
+    });
+
+    // Tri par date d'expiration (FEFO : First Expired First Out)
+    // Les produits périmant le plus tôt sont affichés en premier. Ceux sans date d'expiration (N/A) vont à la fin.
+    return list.sort((a, b) => {
+      const isANa = a.expiryDate === "N/A" || a.expiryDate === "Sans date";
+      const isBNa = b.expiryDate === "N/A" || b.expiryDate === "Sans date";
+
+      if (isANa && !isBNa) return 1;
+      if (!isANa && isBNa) return -1;
+      if (isANa && isBNa) return 0;
+
+      return (
+        new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime()
+      );
+    });
+  }, [branchArticles]);
 
   // --- CALCULS (MEMOIZED) ---
   const totals = useMemo(() => {
@@ -245,11 +280,18 @@ export default function SaleModal({
     });
   };
 
-  const productOptions = MOCK_PRODUCTS.map((p) => ({
-    value: p.id,
-    label: `${p.code} - ${p.name} (${p.price} XAF)`,
-    product: p,
-  }));
+  const productOptions = useMemo(() => {
+    return products.map((p) => {
+      const expLabel =
+        p.expiryDate !== "N/A" ? ` [Périm: ${p.expiryDate}]` : "";
+      const stockLabel = ` (Stock: ${p.stock})`;
+      return {
+        value: p.id,
+        label: `${p.code} - ${p.name}${expLabel}${stockLabel} - ${p.price} XAF`,
+        product: p,
+      };
+    });
+  }, [products]);
 
   // 2. LE RETOUR CONDITIONNEL S'EFFECTUE UNIQUEMENT APRÈS TOUS LES HOOKS
   if (!isOpen) return null;
