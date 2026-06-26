@@ -35,4 +35,8 @@ class PharmacyBranch extends Model
     {
         return $this->hasMany(PharmacyBranchArticle::class, 'pharmacy_branch_id');
     }
+    public function registers()
+    {
+        return $this->hasMany(CashRegister::class, 'pharmacy_branch_id');
+    }
 }

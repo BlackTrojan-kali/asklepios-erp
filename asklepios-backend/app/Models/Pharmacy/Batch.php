@@ -30,4 +30,9 @@ class Batch extends Model
     {
         return $this->hasMany(Stock::class, 'batch_id');
     }
+
+    public function saleItems()
+    {
+        return $this->hasMany(PosSaleItem::class, 'batch_id');
+    }
 }
