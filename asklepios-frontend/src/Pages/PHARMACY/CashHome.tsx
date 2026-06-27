@@ -7,6 +7,7 @@ import {
   Search,
   Layers,
   AlertCircle,
+  Loader2,
 } from "lucide-react";
 import SaleModal from "../../components/modals/Pharmacy/Pharmacien/CreateSaleModal";
 import { useMyActiveSession } from "../../hooks/pharmacy/useCashRegisterSession";
@@ -17,15 +18,19 @@ export default function CashHome() {
   const [searchQuery, setSearchQuery] = useState("");
 
   // Récupérer la session de caisse active du pharmacien
-  const { data: myActiveSession, isLoading: isLoadingSession, refetch } = useMyActiveSession();
+  const {
+    data: myActiveSession,
+    isLoading: isLoadingSession,
+    refetch,
+  } = useMyActiveSession();
 
   // Récupérer les articles configurés pour cette succursale
   const currentBranchId = myActiveSession?.register?.branch_id;
-  const { data: branchArticles, isLoading: isLoadingArticles } = useBranchArticlesAll(
-    currentBranchId || null
-  );
+  const { data: branchArticles, isLoading: isLoadingArticles } =
+    useBranchArticlesAll(currentBranchId || null);
 
-  const currency = myActiveSession?.register?.branch?.country?.currency || "XAF";
+  const currency =
+    myActiveSession?.register?.branch?.country?.currency || "XAF";
 
   // Formater les articles configurés au format produit simple pour la recherche
   const products = useMemo(() => {
@@ -85,7 +90,7 @@ export default function CashHome() {
       .filter(
         (p) =>
           p.name.toLowerCase().includes(query) ||
-          p.code.toLowerCase().includes(query)
+          p.code.toLowerCase().includes(query),
       )
       .slice(0, 5);
   }, [searchQuery, products]);
@@ -95,12 +100,14 @@ export default function CashHome() {
     : "Caissier";
 
   const loginTime = myActiveSession?.opened_at
-    ? new Date(myActiveSession.opened_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    ? new Date(myActiveSession.opened_at).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
     : "--:--";
 
   return (
     <div className="p-6 bg-slate-50 dark:bg-gray-900 min-h-screen text-slate-900 dark:text-white transition-colors duration-200 animate-in fade-in duration-300">
-      
       {/* Header du Dashboard (Statique - Chargé Immédiatement) */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
@@ -124,9 +131,12 @@ export default function CashHome() {
       {!isLoadingSession && !myActiveSession ? (
         <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl border border-slate-200 dark:border-gray-700 max-w-xl mx-auto text-center shadow-xs space-y-4 mb-8">
           <AlertCircle className="w-14 h-14 text-rose-500 mx-auto" />
-          <h2 className="text-lg font-bold text-slate-800 dark:text-white">Aucune session active</h2>
+          <h2 className="text-lg font-bold text-slate-800 dark:text-white">
+            Aucune session active
+          </h2>
           <p className="text-sm text-slate-500 dark:text-gray-400">
-            Vous devez ouvrir une session de caisse avant de pouvoir effectuer des ventes ou utiliser le tableau de bord.
+            Vous devez ouvrir une session de caisse avant de pouvoir effectuer
+            des ventes ou utiliser le tableau de bord.
           </p>
           <button
             onClick={() => refetch()}
@@ -139,7 +149,6 @@ export default function CashHome() {
         <>
           {/* Grille des KPIs */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            
             {/* KPI Solde de Caisse */}
             <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-gray-700 flex items-center gap-4 hover:border-slate-300 dark:hover:border-gray-600 transition-colors">
               <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl text-emerald-600 dark:text-emerald-400">
@@ -153,7 +162,8 @@ export default function CashHome() {
                   <div className="h-7 w-28 bg-slate-200 dark:bg-gray-700 animate-pulse rounded-md mt-1" />
                 ) : (
                   <h3 className="text-2xl font-black text-slate-900 dark:text-white font-mono mt-0.5">
-                    {(myActiveSession?.current_balance || 0).toLocaleString()} {currency}
+                    {(myActiveSession?.current_balance || 0).toLocaleString()}{" "}
+                    {currency}
                   </h3>
                 )}
               </div>
@@ -217,7 +227,6 @@ export default function CashHome() {
 
           {/* Détails des ventes du jour */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            
             {/* Répartition des encaissements */}
             <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-gray-700">
               <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-gray-400 mb-4">
@@ -226,7 +235,10 @@ export default function CashHome() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {isLoadingSession ? (
                   [1, 2, 3].map((n) => (
-                    <div key={n} className="bg-slate-50 dark:bg-gray-900/30 p-4 rounded-xl border border-slate-100 dark:border-gray-750 space-y-2">
+                    <div
+                      key={n}
+                      className="bg-slate-50 dark:bg-gray-900/30 p-4 rounded-xl border border-slate-100 dark:border-gray-750 space-y-2"
+                    >
                       <div className="h-3 w-16 bg-slate-200 dark:bg-gray-700 animate-pulse rounded-md" />
                       <div className="h-6 w-24 bg-slate-200 dark:bg-gray-700 animate-pulse rounded-md" />
                     </div>
@@ -234,21 +246,36 @@ export default function CashHome() {
                 ) : (
                   <>
                     <div className="bg-slate-50 dark:bg-gray-900/40 p-4 rounded-xl border border-slate-100 dark:border-gray-700/50">
-                      <span className="text-xs text-slate-500 dark:text-gray-400 font-bold block mb-1">Espèces</span>
+                      <span className="text-xs text-slate-500 dark:text-gray-400 font-bold block mb-1">
+                        Espèces
+                      </span>
                       <span className="text-lg font-black text-slate-800 dark:text-white font-mono">
-                        {(myActiveSession?.sales_totals?.cash || 0).toLocaleString()} {currency}
+                        {(
+                          myActiveSession?.sales_totals?.cash || 0
+                        ).toLocaleString()}{" "}
+                        {currency}
                       </span>
                     </div>
                     <div className="bg-slate-50 dark:bg-gray-900/40 p-4 rounded-xl border border-slate-100 dark:border-gray-700/50">
-                      <span className="text-xs text-slate-500 dark:text-gray-400 font-bold block mb-1">Mobile Money</span>
+                      <span className="text-xs text-slate-500 dark:text-gray-400 font-bold block mb-1">
+                        Mobile Money
+                      </span>
                       <span className="text-lg font-black text-slate-800 dark:text-white font-mono">
-                        {(myActiveSession?.sales_totals?.mobile_money || 0).toLocaleString()} {currency}
+                        {(
+                          myActiveSession?.sales_totals?.mobile_money || 0
+                        ).toLocaleString()}{" "}
+                        {currency}
                       </span>
                     </div>
                     <div className="bg-slate-50 dark:bg-gray-900/40 p-4 rounded-xl border border-slate-100 dark:border-gray-700/50">
-                      <span className="text-xs text-slate-500 dark:text-gray-400 font-bold block mb-1">Carte Bancaire</span>
+                      <span className="text-xs text-slate-500 dark:text-gray-400 font-bold block mb-1">
+                        Carte Bancaire
+                      </span>
                       <span className="text-lg font-black text-slate-800 dark:text-white font-mono">
-                        {(myActiveSession?.sales_totals?.card || 0).toLocaleString()} {currency}
+                        {(
+                          myActiveSession?.sales_totals?.card || 0
+                        ).toLocaleString()}{" "}
+                        {currency}
                       </span>
                     </div>
                   </>
@@ -265,7 +292,10 @@ export default function CashHome() {
                 <div className="space-y-3">
                   {isLoadingSession ? (
                     [1, 2, 3].map((n) => (
-                      <div key={n} className="flex justify-between items-center pb-2 border-b border-slate-50 dark:border-gray-700/50 last:border-b-0">
+                      <div
+                        key={n}
+                        className="flex justify-between items-center pb-2 border-b border-slate-50 dark:border-gray-700/50 last:border-b-0"
+                      >
                         <div className="h-3.5 w-16 bg-slate-200 dark:bg-gray-700 animate-pulse rounded-md" />
                         <div className="h-3.5 w-24 bg-slate-200 dark:bg-gray-700 animate-pulse rounded-md" />
                       </div>
@@ -273,18 +303,31 @@ export default function CashHome() {
                   ) : (
                     <>
                       <div className="flex justify-between text-xs border-b border-slate-100 dark:border-gray-700 pb-2">
-                        <span className="text-slate-500 dark:text-gray-400 font-medium">Terminal :</span>
-                        <span className="font-bold text-slate-800 dark:text-white">{myActiveSession?.register?.name}</span>
+                        <span className="text-slate-500 dark:text-gray-400 font-medium">
+                          Terminal :
+                        </span>
+                        <span className="font-bold text-slate-800 dark:text-white">
+                          {myActiveSession?.register?.name}
+                        </span>
                       </div>
                       <div className="flex justify-between text-xs border-b border-slate-100 dark:border-gray-700 pb-2">
-                        <span className="text-slate-500 dark:text-gray-400 font-medium">Fonds de départ :</span>
+                        <span className="text-slate-500 dark:text-gray-400 font-medium">
+                          Fonds de départ :
+                        </span>
                         <span className="font-mono font-bold text-slate-800 dark:text-white">
-                          {myActiveSession?.opening_balance.toLocaleString()} {currency}
+                          {(
+                            myActiveSession?.opening_balance || 0
+                          ).toLocaleString()}{" "}
+                          {currency}
                         </span>
                       </div>
                       <div className="flex justify-between text-xs">
-                        <span className="text-slate-500 dark:text-gray-400 font-medium">Succursale :</span>
-                        <span className="font-bold text-slate-800 dark:text-white">{myActiveSession?.register?.branch?.name}</span>
+                        <span className="text-slate-500 dark:text-gray-400 font-medium">
+                          Succursale :
+                        </span>
+                        <span className="font-bold text-slate-800 dark:text-white">
+                          {myActiveSession?.register?.branch?.name}
+                        </span>
                       </div>
                     </>
                   )}
@@ -304,8 +347,8 @@ export default function CashHome() {
       {/* Moteur de Recherche Rapide (Prix / Stock) - Toujours affiché immédiatement */}
       <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-gray-700">
         <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 dark:text-gray-400 mb-4 flex items-center gap-1.5">
-          <Layers className="w-4 h-4 text-slate-500 dark:text-gray-400" /> Vérification rapide de
-          produit (Prix / Stock)
+          <Layers className="w-4 h-4 text-slate-500 dark:text-gray-400" />{" "}
+          Vérification rapide de produit (Prix / Stock)
         </h2>
         <div className="relative max-w-xl">
           <Search className="absolute left-3 top-3.5 w-4 h-4 text-slate-400 dark:text-gray-500" />
@@ -324,7 +367,10 @@ export default function CashHome() {
             {isLoadingArticles ? (
               <div className="divide-y divide-slate-100 dark:divide-gray-700">
                 {[1, 2, 3].map((n) => (
-                  <div key={n} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-pulse">
+                  <div
+                    key={n}
+                    className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-pulse"
+                  >
                     <div className="space-y-2">
                       <div className="h-4 w-48 bg-slate-200 dark:bg-gray-700 rounded-md" />
                       <div className="h-3.5 w-72 bg-slate-150 dark:bg-gray-750 rounded-md" />
@@ -345,31 +391,71 @@ export default function CashHome() {
             ) : filteredProducts.length > 0 ? (
               <div className="divide-y divide-slate-100 dark:divide-gray-700">
                 {filteredProducts.map((p) => {
-                  let stockColor = "text-emerald-600 bg-emerald-50 border-emerald-100 dark:text-emerald-400 dark:bg-emerald-950/20 dark:border-emerald-900/30";
-                  if (p.stock === 0) stockColor = "text-rose-600 bg-rose-50 border-rose-100 dark:text-rose-400 dark:bg-rose-950/20 dark:border-rose-900/30";
-                  else if (p.stock < 10) stockColor = "text-amber-600 bg-amber-50 border-amber-100 dark:text-amber-400 dark:bg-amber-950/20 dark:border-amber-900/30";
+                  let stockColor =
+                    "text-emerald-600 bg-emerald-50 border-emerald-100 dark:text-emerald-400 dark:bg-emerald-950/20 dark:border-emerald-900/30";
+                  if (p.stock === 0)
+                    stockColor =
+                      "text-rose-600 bg-rose-50 border-rose-100 dark:text-rose-400 dark:bg-rose-950/20 dark:border-rose-900/30";
+                  else if (p.stock < 10)
+                    stockColor =
+                      "text-amber-600 bg-amber-50 border-amber-100 dark:text-amber-400 dark:bg-amber-950/20 dark:border-amber-900/30";
 
                   return (
-                    <div key={p.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/50 dark:hover:bg-gray-750/30 border-b border-slate-100 dark:border-gray-700 last:border-b-0 transition-colors">
+                    <div
+                      key={p.id}
+                      className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/50 dark:hover:bg-gray-750/30 border-b border-slate-100 dark:border-gray-700 last:border-b-0 transition-colors"
+                    >
                       <div>
-                        <h4 className="font-bold text-slate-800 dark:text-white text-sm">{p.name}</h4>
+                        <h4 className="font-bold text-slate-800 dark:text-white text-sm">
+                          {p.name}
+                        </h4>
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-[11px] text-slate-500 dark:text-gray-400 font-medium">
-                          <span>Code : <span className="text-slate-700 dark:text-slate-300">{p.code}</span></span>
-                          {p.batchNumber && <span>Lot : <span className="text-slate-700 dark:text-slate-300">{p.batchNumber}</span></span>}
-                          <span>Emplacement : <span className="text-indigo-600 dark:text-teal-400 font-bold">{p.location}</span></span>
+                          <span>
+                            Code :{" "}
+                            <span className="text-slate-700 dark:text-slate-300">
+                              {p.code}
+                            </span>
+                          </span>
+                          {p.batchNumber && (
+                            <span>
+                              Lot :{" "}
+                              <span className="text-slate-700 dark:text-slate-300">
+                                {p.batchNumber}
+                              </span>
+                            </span>
+                          )}
+                          <span>
+                            Emplacement :{" "}
+                            <span className="text-indigo-600 dark:text-teal-400 font-bold">
+                              {p.location}
+                            </span>
+                          </span>
                           {p.expiryDate && p.expiryDate !== "N/A" && (
-                            <span>Exp : <span className="text-slate-700 dark:text-slate-300">{p.expiryDate}</span></span>
+                            <span>
+                              Exp :{" "}
+                              <span className="text-slate-700 dark:text-slate-300">
+                                {p.expiryDate}
+                              </span>
+                            </span>
                           )}
                         </div>
                       </div>
                       <div className="flex items-center justify-between sm:justify-end gap-6 border-t sm:border-t-0 border-slate-100 dark:border-gray-700 pt-2 sm:pt-0">
                         <div className="text-left sm:text-right">
-                          <span className="text-[9px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-wider block">Prix Unitaire</span>
-                          <span className="font-bold text-slate-800 dark:text-white text-sm">{p.price.toLocaleString()} {currency}</span>
+                          <span className="text-[9px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-wider block">
+                            Prix Unitaire
+                          </span>
+                          <span className="font-bold text-slate-800 dark:text-white text-sm">
+                            {p.price.toLocaleString()} {currency}
+                          </span>
                         </div>
                         <div className="text-left sm:text-right">
-                          <span className="text-[9px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-wider block">Stock Libre</span>
-                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold border ${stockColor}`}>
+                          <span className="text-[9px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-wider block">
+                            Stock Libre
+                          </span>
+                          <span
+                            className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold border ${stockColor}`}
+                          >
                             {p.stock} U
                           </span>
                         </div>
@@ -388,7 +474,11 @@ export default function CashHome() {
       </div>
 
       {/* Injection de la Modale de Vente */}
-      <SaleModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSaleSuccess={() => refetch()} />
+      <SaleModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSaleSuccess={() => refetch()}
+      />
     </div>
   );
 }
