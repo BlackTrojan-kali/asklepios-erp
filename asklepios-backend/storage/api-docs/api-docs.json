@@ -687,7 +687,6 @@
                 ]
             }
         },
-<<<<<<< HEAD
         "/api/shared/rooms/{roomId}/beds": {
             "get": {
                 "tags": [
@@ -732,34 +731,11 @@
                         "schema": {
                             "type": "string"
                         }
-=======
-        "/api/admin/cash-registers": {
-            "get": {
-                "tags": [
-                    "Caisses (Admin)"
-                ],
-                "summary": "Lister les caisses de l'hôpital (filtre par branche optionnel)",
-                "description": "Lister les caisses de l'hôpital (filtre par branche optionnel)",
-                "operationId": "getAdminCashRegisters",
-                "parameters": [
-                    {
-                        "name": "pharmacy_branch_id",
-                        "in": "query",
-                        "description": "ID de la succursale",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
->>>>>>> develop
                     }
                 ],
                 "responses": {
                     "200": {
-<<<<<<< HEAD
                         "description": "Liste récupérée avec succès"
-=======
-                        "description": "Liste des caisses récupérée avec succès"
->>>>>>> develop
                     }
                 },
                 "security": [
@@ -767,7 +743,6 @@
                         "bearerAuth": []
                     }
                 ]
-<<<<<<< HEAD
             }
         },
         "/api/admin/beds": {
@@ -778,23 +753,12 @@
                 "summary": "Créer un lit",
                 "description": "Créer un nouveau lit (Admin uniquement)",
                 "operationId": "storeBed",
-=======
-            },
-            "post": {
-                "tags": [
-                    "Caisses (Admin)"
-                ],
-                "summary": "Créer une nouvelle caisse (Admin uniquement)",
-                "description": "Créer une nouvelle caisse (Admin uniquement)",
-                "operationId": "storeAdminCashRegister",
->>>>>>> develop
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "required": [
-<<<<<<< HEAD
                                     "facility_room_id",
                                     "bed_number",
                                     "state"
@@ -816,7 +780,154 @@
                                             "OCCUPIED",
                                             "CLEANING",
                                             "MAINTENANCE"
-=======
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Lit créé avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/beds/{id}": {
+            "put": {
+                "tags": [
+                    "Lits d'Hospitalisation"
+                ],
+                "summary": "Modifier un lit",
+                "description": "Modifier un lit",
+                "operationId": "updateBed",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID du lit",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "bed_number": {
+                                        "type": "string",
+                                        "example": "LIT-02"
+                                    },
+                                    "state": {
+                                        "type": "string",
+                                        "enum": [
+                                            "AVAILABLE",
+                                            "OCCUPIED",
+                                            "CLEANING",
+                                            "MAINTENANCE"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Lit mis à jour avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Lits d'Hospitalisation"
+                ],
+                "summary": "Supprimer un lit",
+                "description": "Supprimer un lit",
+                "operationId": "deleteBed",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID du lit",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lit supprimé avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/cash-registers": {
+            "get": {
+                "tags": [
+                    "Caisses (Admin)"
+                ],
+                "summary": "Lister les caisses de l'hôpital (filtre par branche optionnel)",
+                "description": "Lister les caisses de l'hôpital (filtre par branche optionnel)",
+                "operationId": "getAdminCashRegisters",
+                "parameters": [
+                    {
+                        "name": "pharmacy_branch_id",
+                        "in": "query",
+                        "description": "ID de la succursale",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste des caisses récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Caisses (Admin)"
+                ],
+                "summary": "Créer une nouvelle caisse (Admin uniquement)",
+                "description": "Créer une nouvelle caisse (Admin uniquement)",
+                "operationId": "storeAdminCashRegister",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
                                     "name",
                                     "pharmacy_branch_id"
                                 ],
@@ -835,7 +946,6 @@
                                         "enum": [
                                             "active",
                                             "inactive"
->>>>>>> develop
                                         ]
                                     }
                                 },
@@ -846,9 +956,6 @@
                 },
                 "responses": {
                     "201": {
-<<<<<<< HEAD
-                        "description": "Lit créé avec succès"
-=======
                         "description": "Caisse créée avec succès"
                     },
                     "404": {
@@ -856,7 +963,6 @@
                     },
                     "422": {
                         "description": "Erreur de validation"
->>>>>>> develop
                     }
                 },
                 "security": [
@@ -866,16 +972,6 @@
                 ]
             }
         },
-<<<<<<< HEAD
-        "/api/admin/beds/{id}": {
-            "put": {
-                "tags": [
-                    "Lits d'Hospitalisation"
-                ],
-                "summary": "Modifier un lit",
-                "description": "Modifier un lit",
-                "operationId": "updateBed",
-=======
         "/api/admin/cash-registers/{id}": {
             "get": {
                 "tags": [
@@ -884,14 +980,10 @@
                 "summary": "Détails d'une caisse",
                 "description": "Détails d'une caisse",
                 "operationId": "getAdminCashRegisterDetails",
->>>>>>> develop
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-<<<<<<< HEAD
-                        "description": "ID du lit",
-=======
                         "description": "ID de la caisse",
                         "required": true,
                         "schema": {
@@ -925,7 +1017,6 @@
                         "name": "id",
                         "in": "path",
                         "description": "ID de la caisse",
->>>>>>> develop
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -938,19 +1029,6 @@
                         "application/json": {
                             "schema": {
                                 "properties": {
-<<<<<<< HEAD
-                                    "bed_number": {
-                                        "type": "string",
-                                        "example": "LIT-02"
-                                    },
-                                    "state": {
-                                        "type": "string",
-                                        "enum": [
-                                            "AVAILABLE",
-                                            "OCCUPIED",
-                                            "CLEANING",
-                                            "MAINTENANCE"
-=======
                                     "name": {
                                         "type": "string",
                                         "example": "Caisse Principale"
@@ -961,7 +1039,6 @@
                                         "enum": [
                                             "active",
                                             "inactive"
->>>>>>> develop
                                         ]
                                     }
                                 },
@@ -972,9 +1049,6 @@
                 },
                 "responses": {
                     "200": {
-<<<<<<< HEAD
-                        "description": "Lit mis à jour avec succès"
-=======
                         "description": "Caisse mise à jour avec succès"
                     },
                     "404": {
@@ -982,7 +1056,6 @@
                     },
                     "422": {
                         "description": "Erreur de validation"
->>>>>>> develop
                     }
                 },
                 "security": [
@@ -993,28 +1066,16 @@
             },
             "delete": {
                 "tags": [
-<<<<<<< HEAD
-                    "Lits d'Hospitalisation"
-                ],
-                "summary": "Supprimer un lit",
-                "description": "Supprimer un lit",
-                "operationId": "deleteBed",
-=======
                     "Caisses (Admin)"
                 ],
                 "summary": "Supprimer une caisse (Admin uniquement)",
                 "description": "Supprimer une caisse (Admin uniquement)",
                 "operationId": "deleteAdminCashRegister",
->>>>>>> develop
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-<<<<<<< HEAD
-                        "description": "ID du lit",
-=======
                         "description": "ID de la caisse",
->>>>>>> develop
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -1023,9 +1084,6 @@
                 ],
                 "responses": {
                     "200": {
-<<<<<<< HEAD
-                        "description": "Lit supprimé avec succès"
-=======
                         "description": "Caisse supprimée avec succès"
                     },
                     "400": {
@@ -1033,7 +1091,6 @@
                     },
                     "404": {
                         "description": "Caisse non trouvée"
->>>>>>> develop
                     }
                 },
                 "security": [
@@ -6918,13 +6975,12 @@
             "description": "Gestion des lots (Batches) avec dates de péremption et prix d'achat"
         },
         {
-<<<<<<< HEAD
             "name": "Lits d'Hospitalisation",
             "description": "Gestion des lits dans les salles d'hospitalisation"
-=======
+        },
+        {
             "name": "Caisses (Admin)",
             "description": "Configuration et administration des caisses physiques de la pharmacie"
->>>>>>> develop
         },
         {
             "name": "Centres (Admin)",
