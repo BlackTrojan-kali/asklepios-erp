@@ -196,8 +196,8 @@ export const MENU_CONFIG: MenuItemType[] = [
     positions: ["vente"],
     requiredLicence: "pharmacy",
     subItems: [
-      { title: "Ouverture de caisse", path: "/pharmacy/cash-sessions/open" },
-      { title: "Cloture de caisse", path: "/pharmacy/cash-sessions/close" },
+      { title: "Ouverture de caisse", path: "/pharmacy/cash/session/open" },
+      { title: "Cloture de caisse", path: "pharmacy/cash/session/close" },
     ],
   },
 ];

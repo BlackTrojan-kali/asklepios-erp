@@ -9,6 +9,11 @@ export interface CashRegisterSessionDto {
   closed_at: string | null;
   opening_balance: number;
   closing_balance: number | null;
+  sales_totals?: {
+    cash: number;
+    mobile_money: number;
+    card: number;
+  };
   created_at?: string;
   updated_at?: string;
   user?: {
@@ -49,6 +54,7 @@ export interface OpenSessionPayload {
 
 export interface CloseSessionPayload {
   closing_balance: number;
+  password?: string;
 }
 
 const getCashRegisters = async (branchId?: number): Promise<CashRegisterDto[]> => {
@@ -85,7 +91,7 @@ const openSession = async (
   payload: OpenSessionPayload
 ): Promise<CashRegisterSessionDto> => {
   const response = await api.post<CashRegisterSessionDto>(
-    `/admin/cash-registers/${registerId}/sessions/open`,
+    `/pharmacy/cash-registers/${registerId}/sessions/open`,
     payload
   );
   return response.data;
@@ -96,7 +102,7 @@ const closeSession = async (
   payload: CloseSessionPayload
 ): Promise<CashRegisterSessionDto> => {
   const response = await api.post<CashRegisterSessionDto>(
-    `/admin/cash-registers/sessions/${sessionId}/close`,
+    `/pharmacy/cash-registers/sessions/${sessionId}/close`,
     payload
   );
   return response.data;
@@ -104,7 +110,7 @@ const closeSession = async (
 
 const getMyActiveSession = async (): Promise<CashRegisterSessionDto | null> => {
   const response = await api.get<CashRegisterSessionDto | null>(
-    "/admin/cash-registers/active-session/me"
+    "/pharmacy/cash-registers/active-session/me"
   );
   return response.data;
 };

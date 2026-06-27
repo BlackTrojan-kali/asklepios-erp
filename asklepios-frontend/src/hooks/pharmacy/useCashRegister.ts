@@ -50,9 +50,9 @@ export const useOpenCashRegisterSession = () => {
   return useMutation({
     mutationFn: ({ registerId, payload }: { registerId: number; payload: OpenSessionPayload }) =>
       cashRegisterService.openSession(registerId, payload),
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["cashRegisters"] });
-      queryClient.invalidateQueries({ queryKey: ["myActiveSession"] });
+      queryClient.setQueryData(["myActiveSession"], data);
     },
   });
 };
@@ -64,7 +64,7 @@ export const useCloseCashRegisterSession = () => {
       cashRegisterService.closeSession(sessionId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cashRegisters"] });
-      queryClient.invalidateQueries({ queryKey: ["myActiveSession"] });
+      queryClient.setQueryData(["myActiveSession"], null);
     },
   });
 };

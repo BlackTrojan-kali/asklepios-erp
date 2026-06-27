@@ -16,6 +16,17 @@ class CashRegisterSession extends Model
         'closing_balance' => 'float',
     ];
 
+    protected $appends = ['sales_totals'];
+
+    public function getSalesTotalsAttribute()
+    {
+        return [
+            'cash' => (float) $this->sales()->where('payment_method', 'CASH')->sum('total_amount'),
+            'mobile_money' => (float) $this->sales()->where('payment_method', 'MOBILE_MONEY')->sum('total_amount'),
+            'card' => (float) $this->sales()->where('payment_method', 'CARD')->sum('total_amount'),
+        ];
+    }
+
     public function register()
     {
         return $this->belongsTo(CashRegister::class, 'cash_register_id');

@@ -8,6 +8,7 @@ use App\Models\Pharmacy\CashRegisterSession;
 use App\Models\Pharmacy\PharmacyBranch;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use OpenApi\Attributes as OA;
 
 class CashRegisterController extends Controller
@@ -193,9 +194,20 @@ class CashRegisterController extends Controller
             return response()->json(['message' => 'Cette session est déjà fermée.'], 400);
         }
 
+        // Vérifier que la session appartient bien à l'utilisateur connecté
+        if ($session->user_id !== Auth::id()) {
+            return response()->json(['message' => 'Vous ne pouvez pas fermer une session qui ne vous appartient pas.'], 403);
+        }
+
         $validated = $request->validate([
             'closing_balance' => 'required|numeric|min:0',
+            'password' => 'required|string',
         ]);
+
+        // Vérifier le mot de passe de l'utilisateur
+        if (!Hash::check($validated['password'], Auth::user()->password)) {
+            return response()->json(['message' => 'Le mot de passe fourni est incorrect.'], 422);
+        }
 
         $session->update([
             'closed_at' => now(),

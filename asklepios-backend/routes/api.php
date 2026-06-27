@@ -215,6 +215,7 @@ Route::middleware('auth:sanctum')->group(function () {
                 // Caisses (Accès partagé)
                 Route::get('/cash-registers', [CashRegisterController::class, 'index']);
                 Route::get('/cash-registers/{id}', [CashRegisterController::class, 'show']);
+             
             });           
 
             Route::prefix('pharmacy')->group(function () {
@@ -246,12 +247,14 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::post('/{id}/cancel', [StockTransferController::class, 'cancel']);
                 Route::get('/export/pdf', [StockTransferController::class, 'exportPdf']);
             });
-            // Caisses Sessions (Pharmacien caissier exclusif)
+
+                // Caisses Sessions (Pharmacien caissier exclusif)
             Route::prefix('cash-registers')->group(function () {
                 Route::post('/{id}/sessions/open', [CashRegisterController::class, 'openSession']);
                 Route::post('/sessions/{sessionId}/close', [CashRegisterController::class, 'closeSession']);
                 Route::get('/active-session/me', [CashRegisterController::class, 'myActiveSession']);
             });
+           
         });
 
     }); // Fin Middleware Licence Pharmacie
