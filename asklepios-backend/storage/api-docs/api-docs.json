@@ -687,6 +687,221 @@
                 ]
             }
         },
+        "/api/admin/cash-registers": {
+            "get": {
+                "tags": [
+                    "Caisses (Admin)"
+                ],
+                "summary": "Lister les caisses de l'hôpital (filtre par branche optionnel)",
+                "description": "Lister les caisses de l'hôpital (filtre par branche optionnel)",
+                "operationId": "getAdminCashRegisters",
+                "parameters": [
+                    {
+                        "name": "pharmacy_branch_id",
+                        "in": "query",
+                        "description": "ID de la succursale",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste des caisses récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Caisses (Admin)"
+                ],
+                "summary": "Créer une nouvelle caisse (Admin uniquement)",
+                "description": "Créer une nouvelle caisse (Admin uniquement)",
+                "operationId": "storeAdminCashRegister",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "pharmacy_branch_id"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Caisse 1"
+                                    },
+                                    "pharmacy_branch_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "example": "active",
+                                        "enum": [
+                                            "active",
+                                            "inactive"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Caisse créée avec succès"
+                    },
+                    "404": {
+                        "description": "Succursale non trouvée"
+                    },
+                    "422": {
+                        "description": "Erreur de validation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/cash-registers/{id}": {
+            "get": {
+                "tags": [
+                    "Caisses (Admin)"
+                ],
+                "summary": "Détails d'une caisse",
+                "description": "Détails d'une caisse",
+                "operationId": "getAdminCashRegisterDetails",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la caisse",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Détails de la caisse récupérés avec succès"
+                    },
+                    "404": {
+                        "description": "Caisse non trouvée"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Caisses (Admin)"
+                ],
+                "summary": "Modifier une caisse (Admin uniquement)",
+                "description": "Modifier une caisse (Admin uniquement)",
+                "operationId": "updateAdminCashRegister",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la caisse",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Caisse Principale"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "example": "inactive",
+                                        "enum": [
+                                            "active",
+                                            "inactive"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Caisse mise à jour avec succès"
+                    },
+                    "404": {
+                        "description": "Caisse non trouvée"
+                    },
+                    "422": {
+                        "description": "Erreur de validation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Caisses (Admin)"
+                ],
+                "summary": "Supprimer une caisse (Admin uniquement)",
+                "description": "Supprimer une caisse (Admin uniquement)",
+                "operationId": "deleteAdminCashRegister",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la caisse",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Caisse supprimée avec succès"
+                    },
+                    "400": {
+                        "description": "Impossible de supprimer la caisse car elle a une session active"
+                    },
+                    "404": {
+                        "description": "Caisse non trouvée"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/admin/centers": {
             "get": {
                 "tags": [
@@ -2591,6 +2806,172 @@
                 ]
             }
         },
+        "/api/pharmacy/cash-registers/{id}/sessions/open": {
+            "post": {
+                "tags": [
+                    "Sessions Caisses (Pharmacy)"
+                ],
+                "summary": "Ouvrir une session de caisse (Pharmacien caissier uniquement)",
+                "description": "Ouvrir une session de caisse (Pharmacien caissier uniquement)",
+                "operationId": "openCashRegisterSession",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la caisse",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "opening_balance"
+                                ],
+                                "properties": {
+                                    "opening_balance": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 50000
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Session de caisse ouverte avec succès"
+                    },
+                    "400": {
+                        "description": "Caisse inactive, déjà active ou l'utilisateur a déjà une session ouverte"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/pharmacy/cash-registers/sessions/{sessionId}/close": {
+            "post": {
+                "tags": [
+                    "Sessions Caisses (Pharmacy)"
+                ],
+                "summary": "Fermer une session de caisse (Pharmacien caissier uniquement)",
+                "description": "Fermer une session de caisse (Pharmacien caissier uniquement)",
+                "operationId": "closeCashRegisterSession",
+                "parameters": [
+                    {
+                        "name": "sessionId",
+                        "in": "path",
+                        "description": "ID de la session de caisse",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "closing_balance",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "closing_balance": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 75000
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Session de caisse fermée avec succès"
+                    },
+                    "400": {
+                        "description": "Session déjà fermée"
+                    },
+                    "403": {
+                        "description": "Accès refusé ou session n'appartenant pas à l'utilisateur"
+                    },
+                    "422": {
+                        "description": "Mot de passe incorrect ou erreur de validation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/pharmacy/cash-registers/active-session/me": {
+            "get": {
+                "tags": [
+                    "Sessions Caisses (Pharmacy)"
+                ],
+                "summary": "Récupérer la session active de l'utilisateur connecté",
+                "description": "Récupérer la session active de l'utilisateur connecté",
+                "operationId": "getMyActiveCashRegisterSession",
+                "responses": {
+                    "200": {
+                        "description": "Données de la session active de caisse récupérées avec succès (ou null si aucune session)"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/pharmacy/cashier/articles": {
+            "get": {
+                "tags": [
+                    "Articles Caissier (Pharmacy)"
+                ],
+                "summary": "Récupérer tous les articles de l'hôpital du caissier connecté",
+                "description": "Récupérer tous les articles de l'hôpital du caissier connecté",
+                "operationId": "getCashierArticles",
+                "responses": {
+                    "200": {
+                        "description": "Liste des articles récupérée avec succès"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/pharmacy/inventories": {
             "get": {
                 "tags": [
@@ -2728,6 +3109,238 @@
                 "responses": {
                     "200": {
                         "description": "Fichier Excel généré"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/pharmacy/pos-sales": {
+            "get": {
+                "tags": [
+                    "Ventes POS (Pharmacy)"
+                ],
+                "summary": "Lister les ventes de la succursale du pharmacien connecté",
+                "description": "Lister les ventes de la succursale du pharmacien connecté",
+                "operationId": "getPosSales",
+                "responses": {
+                    "200": {
+                        "description": "Liste des ventes récupérée avec succès"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Ventes POS (Pharmacy)"
+                ],
+                "summary": "Créer une vente et enregistrer la sortie de stock (FEFO)",
+                "description": "Créer une vente et enregistrer la sortie de stock (FEFO)",
+                "operationId": "storePosSale",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "payment_method",
+                                    "items"
+                                ],
+                                "properties": {
+                                    "customer_name": {
+                                        "type": "string",
+                                        "example": "Jean Dupont"
+                                    },
+                                    "has_prescription": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "prescription_ref": {
+                                        "type": "string",
+                                        "example": "ORD-9988"
+                                    },
+                                    "payment_method": {
+                                        "type": "string",
+                                        "example": "CASH",
+                                        "enum": [
+                                            "CASH",
+                                            "MOBILE_MONEY",
+                                            "CARD"
+                                        ]
+                                    },
+                                    "amount_received": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 5000
+                                    },
+                                    "items": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "article_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "batch_id": {
+                                                    "type": "integer",
+                                                    "example": 5,
+                                                    "nullable": true
+                                                },
+                                                "qty": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 2
+                                                },
+                                                "unit_price": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 1500
+                                                },
+                                                "discount": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 0
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Vente enregistrée avec succès"
+                    },
+                    "400": {
+                        "description": "Données incorrectes ou stock insuffisant"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/pharmacy/pos-sales/{id}": {
+            "get": {
+                "tags": [
+                    "Ventes POS (Pharmacy)"
+                ],
+                "summary": "Détails d'une vente",
+                "description": "Détails d'une vente",
+                "operationId": "getPosSaleDetails",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la vente",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Détails de la vente récupérés avec succès"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    },
+                    "404": {
+                        "description": "Vente non trouvée"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/pharmacy/pos-sales/{id}/pdf": {
+            "get": {
+                "tags": [
+                    "Ventes POS (Pharmacy)"
+                ],
+                "summary": "Générer le PDF de la facture de vente",
+                "description": "Générer le PDF de la facture de vente",
+                "operationId": "exportPosSalePdf",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la vente",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Flux binaire du PDF de la facture"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    },
+                    "404": {
+                        "description": "Vente non trouvée"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/pharmacy/pos-sale-items": {
+            "get": {
+                "tags": [
+                    "Ventes POS (Pharmacy)"
+                ],
+                "summary": "Lister les éléments d'une vente spécifique",
+                "description": "Lister les éléments d'une vente spécifique",
+                "operationId": "getPosSaleItems",
+                "parameters": [
+                    {
+                        "name": "pos_sale_id",
+                        "in": "query",
+                        "description": "ID de la vente POS",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste des éléments de la vente récupérée avec succès"
+                    },
+                    "400": {
+                        "description": "L'identifiant de la vente est requis"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
                     }
                 },
                 "security": [
@@ -4676,6 +5289,10 @@
             "description": "Gestion des lots (Batches) avec dates de péremption et prix d'achat"
         },
         {
+            "name": "Caisses (Admin)",
+            "description": "Configuration et administration des caisses physiques de la pharmacie"
+        },
+        {
             "name": "Centres (Admin)",
             "description": "Gestion des centres médicaux de l'hôpital de l'administrateur"
         },
@@ -4716,8 +5333,20 @@
             "description": "Gestion des notifications utilisateur"
         },
         {
+            "name": "Sessions Caisses (Pharmacy)",
+            "description": "Ouverture, fermeture et consultation des sessions de caisse active"
+        },
+        {
+            "name": "Articles Caissier (Pharmacy)",
+            "description": "Gestion et consultation des articles par le caissier"
+        },
+        {
             "name": "Inventaires",
             "description": "Gestion des inventaires de la pharmacie"
+        },
+        {
+            "name": "Ventes POS (Pharmacy)",
+            "description": "Gestion des ventes directes en caisse et des factures PDF"
         },
         {
             "name": "Commandes Fournisseurs",

@@ -6,12 +6,25 @@ use App\Http\Controllers\Controller;
 use App\Models\Pharmacy\PosSaleItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use OpenApi\Attributes as OA;
 
+#[OA\Tag(name: "Ventes POS (Pharmacy)", description: "Gestion des ventes directes en caisse et des factures PDF")]
 class PosSaleItemController extends Controller
 {
     /**
      * Lister les éléments d'une vente spécifique
      */
+    #[OA\Get(
+        path: "/api/pharmacy/pos-sale-items",
+        operationId: "getPosSaleItems",
+        summary: "Lister les éléments d'une vente spécifique",
+        security: [["bearerAuth" => []]],
+        tags: ["Ventes POS (Pharmacy)"]
+    )]
+    #[OA\Parameter(name: "pos_sale_id", in: "query", required: true, description: "ID de la vente POS", schema: new OA\Schema(type: "integer"))]
+    #[OA\Response(response: 200, description: "Liste des éléments de la vente récupérée avec succès")]
+    #[OA\Response(response: 400, description: "L'identifiant de la vente est requis")]
+    #[OA\Response(response: 403, description: "Accès refusé")]
     public function index(Request $request)
     {
         $profile = Auth::user()->profile_pharm;

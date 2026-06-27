@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use OpenApi\Attributes as OA;
 
+#[OA\Tag(name: "Caisses (Admin)", description: "Configuration et administration des caisses physiques de la pharmacie")]
 class CashRegisterController extends Controller
 {
     private function getHospitalId()
@@ -27,6 +28,15 @@ class CashRegisterController extends Controller
     /**
      * Lister les caisses de l'hôpital (filtre par branche optionnel)
      */
+    #[OA\Get(
+        path: "/api/admin/cash-registers",
+        operationId: "getAdminCashRegisters",
+        summary: "Lister les caisses de l'hôpital (filtre par branche optionnel)",
+        security: [["bearerAuth" => []]],
+        tags: ["Caisses (Admin)"]
+    )]
+    #[OA\Parameter(name: "pharmacy_branch_id", in: "query", required: false, description: "ID de la succursale", schema: new OA\Schema(type: "integer"))]
+    #[OA\Response(response: 200, description: "Liste des caisses récupérée avec succès")]
     public function index(Request $request)
     {
         $hospitalId = $this->getHospitalId();
@@ -45,6 +55,16 @@ class CashRegisterController extends Controller
     /**
      * Détails d'une caisse
      */
+    #[OA\Get(
+        path: "/api/admin/cash-registers/{id}",
+        operationId: "getAdminCashRegisterDetails",
+        summary: "Détails d'une caisse",
+        security: [["bearerAuth" => []]],
+        tags: ["Caisses (Admin)"]
+    )]
+    #[OA\Parameter(name: "id", in: "path", required: true, description: "ID de la caisse", schema: new OA\Schema(type: "integer"))]
+    #[OA\Response(response: 200, description: "Détails de la caisse récupérés avec succès")]
+    #[OA\Response(response: 404, description: "Caisse non trouvée")]
     public function show($id)
     {
         $hospitalId = $this->getHospitalId();
@@ -59,6 +79,27 @@ class CashRegisterController extends Controller
     /**
      * Créer une nouvelle caisse (Admin uniquement)
      */
+    #[OA\Post(
+        path: "/api/admin/cash-registers",
+        operationId: "storeAdminCashRegister",
+        summary: "Créer une nouvelle caisse (Admin uniquement)",
+        security: [["bearerAuth" => []]],
+        tags: ["Caisses (Admin)"]
+    )]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ["name", "pharmacy_branch_id"],
+            properties: [
+                new OA\Property(property: "name", type: "string", example: "Caisse 1"),
+                new OA\Property(property: "pharmacy_branch_id", type: "integer", example: 1),
+                new OA\Property(property: "status", type: "string", enum: ["active", "inactive"], example: "active")
+            ]
+        )
+    )]
+    #[OA\Response(response: 201, description: "Caisse créée avec succès")]
+    #[OA\Response(response: 404, description: "Succursale non trouvée")]
+    #[OA\Response(response: 422, description: "Erreur de validation")]
     public function store(Request $request)
     {
         $hospitalId = $this->getHospitalId();
@@ -84,6 +125,26 @@ class CashRegisterController extends Controller
     /**
      * Modifier une caisse (Admin uniquement)
      */
+    #[OA\Put(
+        path: "/api/admin/cash-registers/{id}",
+        operationId: "updateAdminCashRegister",
+        summary: "Modifier une caisse (Admin uniquement)",
+        security: [["bearerAuth" => []]],
+        tags: ["Caisses (Admin)"]
+    )]
+    #[OA\Parameter(name: "id", in: "path", required: true, description: "ID de la caisse", schema: new OA\Schema(type: "integer"))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: "name", type: "string", example: "Caisse Principale"),
+                new OA\Property(property: "status", type: "string", enum: ["active", "inactive"], example: "inactive")
+            ]
+        )
+    )]
+    #[OA\Response(response: 200, description: "Caisse mise à jour avec succès")]
+    #[OA\Response(response: 404, description: "Caisse non trouvée")]
+    #[OA\Response(response: 422, description: "Erreur de validation")]
     public function update(Request $request, $id)
     {
         $hospitalId = $this->getHospitalId();
@@ -105,6 +166,17 @@ class CashRegisterController extends Controller
     /**
      * Supprimer une caisse (Admin uniquement)
      */
+    #[OA\Delete(
+        path: "/api/admin/cash-registers/{id}",
+        operationId: "deleteAdminCashRegister",
+        summary: "Supprimer une caisse (Admin uniquement)",
+        security: [["bearerAuth" => []]],
+        tags: ["Caisses (Admin)"]
+    )]
+    #[OA\Parameter(name: "id", in: "path", required: true, description: "ID de la caisse", schema: new OA\Schema(type: "integer"))]
+    #[OA\Response(response: 200, description: "Caisse supprimée avec succès")]
+    #[OA\Response(response: 400, description: "Impossible de supprimer la caisse car elle a une session active")]
+    #[OA\Response(response: 404, description: "Caisse non trouvée")]
     public function destroy($id)
     {
         $hospitalId = $this->getHospitalId();

@@ -9,7 +9,9 @@ use App\Models\Pharmacy\CashRegister;
 use App\Models\Pharmacy\CashRegisterSession;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use OpenApi\Attributes as OA;
 
+#[OA\Tag(name: "Sessions Caisses (Pharmacy)", description: "Ouverture, fermeture et consultation des sessions de caisse active")]
 class CashRegisterSessionController extends Controller
 {
     private function getHospitalId()
@@ -26,6 +28,26 @@ class CashRegisterSessionController extends Controller
     /**
      * Ouvrir une session de caisse (Pharmacien caissier uniquement)
      */
+    #[OA\Post(
+        path: "/api/pharmacy/cash-registers/{id}/sessions/open",
+        operationId: "openCashRegisterSession",
+        summary: "Ouvrir une session de caisse (Pharmacien caissier uniquement)",
+        security: [["bearerAuth" => []]],
+        tags: ["Sessions Caisses (Pharmacy)"]
+    )]
+    #[OA\Parameter(name: "id", in: "path", required: true, description: "ID de la caisse", schema: new OA\Schema(type: "integer"))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ["opening_balance"],
+            properties: [
+                new OA\Property(property: "opening_balance", type: "number", format: "float", example: 50000.0)
+            ]
+        )
+    )]
+    #[OA\Response(response: 201, description: "Session de caisse ouverte avec succès")]
+    #[OA\Response(response: 400, description: "Caisse inactive, déjà active ou l'utilisateur a déjà une session ouverte")]
+    #[OA\Response(response: 403, description: "Accès refusé")]
     public function openSession(Request $request, $id)
     {
         if (Auth::user()->role->name !== 'pharmacy') {
@@ -76,6 +98,28 @@ class CashRegisterSessionController extends Controller
     /**
      * Fermer une session de caisse (Pharmacien caissier uniquement)
      */
+    #[OA\Post(
+        path: "/api/pharmacy/cash-registers/sessions/{sessionId}/close",
+        operationId: "closeCashRegisterSession",
+        summary: "Fermer une session de caisse (Pharmacien caissier uniquement)",
+        security: [["bearerAuth" => []]],
+        tags: ["Sessions Caisses (Pharmacy)"]
+    )]
+    #[OA\Parameter(name: "sessionId", in: "path", required: true, description: "ID de la session de caisse", schema: new OA\Schema(type: "integer"))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ["closing_balance", "password"],
+            properties: [
+                new OA\Property(property: "closing_balance", type: "number", format: "float", example: 75000.0),
+                new OA\Property(property: "password", type: "string", format: "password", example: "password123")
+            ]
+        )
+    )]
+    #[OA\Response(response: 200, description: "Session de caisse fermée avec succès")]
+    #[OA\Response(response: 400, description: "Session déjà fermée")]
+    #[OA\Response(response: 403, description: "Accès refusé ou session n'appartenant pas à l'utilisateur")]
+    #[OA\Response(response: 422, description: "Mot de passe incorrect ou erreur de validation")]
     public function closeSession(Request $request, $sessionId)
     {
         if (Auth::user()->role->name !== 'pharmacy') {
@@ -118,6 +162,14 @@ class CashRegisterSessionController extends Controller
     /**
      * Récupérer la session active de l'utilisateur connecté
      */
+    #[OA\Get(
+        path: "/api/pharmacy/cash-registers/active-session/me",
+        operationId: "getMyActiveCashRegisterSession",
+        summary: "Récupérer la session active de l'utilisateur connecté",
+        security: [["bearerAuth" => []]],
+        tags: ["Sessions Caisses (Pharmacy)"]
+    )]
+    #[OA\Response(response: 200, description: "Données de la session active de caisse récupérées avec succès (ou null si aucune session)")]
     public function myActiveSession()
     {
         if (Auth::user()->role->name !== 'pharmacy') {

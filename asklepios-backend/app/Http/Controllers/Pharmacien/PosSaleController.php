@@ -13,12 +13,23 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Exception;
+use OpenApi\Attributes as OA;
 
+#[OA\Tag(name: "Ventes POS (Pharmacy)", description: "Gestion des ventes directes en caisse et des factures PDF")]
 class PosSaleController extends Controller
 {
     /**
      * Lister les ventes de la succursale du pharmacien connecté
      */
+    #[OA\Get(
+        path: "/api/pharmacy/pos-sales",
+        operationId: "getPosSales",
+        summary: "Lister les ventes de la succursale du pharmacien connecté",
+        security: [["bearerAuth" => []]],
+        tags: ["Ventes POS (Pharmacy)"]
+    )]
+    #[OA\Response(response: 200, description: "Liste des ventes récupérée avec succès")]
+    #[OA\Response(response: 403, description: "Accès refusé")]
     public function index()
     {
         $profile = Auth::user()->profile_pharm;
@@ -37,6 +48,17 @@ class PosSaleController extends Controller
     /**
      * Détails d'une vente
      */
+    #[OA\Get(
+        path: "/api/pharmacy/pos-sales/{id}",
+        operationId: "getPosSaleDetails",
+        summary: "Détails d'une vente",
+        security: [["bearerAuth" => []]],
+        tags: ["Ventes POS (Pharmacy)"]
+    )]
+    #[OA\Parameter(name: "id", in: "path", required: true, description: "ID de la vente", schema: new OA\Schema(type: "integer"))]
+    #[OA\Response(response: 200, description: "Détails de la vente récupérés avec succès")]
+    #[OA\Response(response: 403, description: "Accès refusé")]
+    #[OA\Response(response: 404, description: "Vente non trouvée")]
     public function show($id)
     {
         $profile = Auth::user()->profile_pharm;
@@ -54,6 +76,42 @@ class PosSaleController extends Controller
     /**
      * Créer une vente et enregistrer la sortie de stock (FEFO)
      */
+    #[OA\Post(
+        path: "/api/pharmacy/pos-sales",
+        operationId: "storePosSale",
+        summary: "Créer une vente et enregistrer la sortie de stock (FEFO)",
+        security: [["bearerAuth" => []]],
+        tags: ["Ventes POS (Pharmacy)"]
+    )]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ["payment_method", "items"],
+            properties: [
+                new OA\Property(property: "customer_name", type: "string", example: "Jean Dupont"),
+                new OA\Property(property: "has_prescription", type: "boolean", example: true),
+                new OA\Property(property: "prescription_ref", type: "string", example: "ORD-9988"),
+                new OA\Property(property: "payment_method", type: "string", enum: ["CASH", "MOBILE_MONEY", "CARD"], example: "CASH"),
+                new OA\Property(property: "amount_received", type: "number", format: "float", example: 5000.0),
+                new OA\Property(
+                    property: "items",
+                    type: "array",
+                    items: new OA\Items(
+                        properties: [
+                            new OA\Property(property: "article_id", type: "integer", example: 1),
+                            new OA\Property(property: "batch_id", type: "integer", nullable: true, example: 5),
+                            new OA\Property(property: "qty", type: "number", format: "float", example: 2.0),
+                            new OA\Property(property: "unit_price", type: "number", format: "float", example: 1500.0),
+                            new OA\Property(property: "discount", type: "number", format: "float", example: 0.0)
+                        ]
+                    )
+                )
+            ]
+        )
+    )]
+    #[OA\Response(response: 201, description: "Vente enregistrée avec succès")]
+    #[OA\Response(response: 400, description: "Données incorrectes ou stock insuffisant")]
+    #[OA\Response(response: 403, description: "Accès refusé")]
     public function store(Request $request)
     {
         $profile = Auth::user()->profile_pharm;
@@ -189,6 +247,17 @@ class PosSaleController extends Controller
     /**
      * Générer le PDF de la facture de vente
      */
+    #[OA\Get(
+        path: "/api/pharmacy/pos-sales/{id}/pdf",
+        operationId: "exportPosSalePdf",
+        summary: "Générer le PDF de la facture de vente",
+        security: [["bearerAuth" => []]],
+        tags: ["Ventes POS (Pharmacy)"]
+    )]
+    #[OA\Parameter(name: "id", in: "path", required: true, description: "ID de la vente", schema: new OA\Schema(type: "integer"))]
+    #[OA\Response(response: 200, description: "Flux binaire du PDF de la facture")]
+    #[OA\Response(response: 403, description: "Accès refusé")]
+    #[OA\Response(response: 404, description: "Vente non trouvée")]
     public function exportPdf($id)
     {
         $profile = Auth::user()->profile_pharm;
