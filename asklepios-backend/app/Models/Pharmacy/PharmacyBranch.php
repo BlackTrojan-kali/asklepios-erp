@@ -28,7 +28,15 @@ class PharmacyBranch extends Model
         return $this->hasMany(Inventory::class);
     }
     public function country()
-{
-    return $this->belongsTo(\App\Models\Country::class);
-}
+    {
+        return $this->belongsTo(\App\Models\Country::class);
+    }
+    public function branchArticles()
+    {
+        return $this->hasMany(PharmacyBranchArticle::class, 'pharmacy_branch_id');
+    }
+    public function registers()
+    {
+        return $this->hasMany(CashRegister::class, 'pharmacy_branch_id');
+    }
 }

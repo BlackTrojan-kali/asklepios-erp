@@ -14,7 +14,13 @@ use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\DoctorController;
 use App\Http\Controllers\Admin\DriverController;
 use App\Http\Controllers\Admin\FacilityRoomController;
+use App\Http\Controllers\Admin\CashRegisterController;
+use App\Http\Controllers\Pharmacien\CashRegisterSessionController;
+use App\Http\Controllers\Pharmacien\PosSaleController;
+use App\Http\Controllers\Pharmacien\PosSaleItemController;
+use App\Http\Controllers\Pharmacien\CashierController;
 use App\Http\Controllers\Admin\PharmacienController;
+use App\Http\Controllers\Admin\PharmacyBranchArticleController;
 use App\Http\Controllers\Admin\PharmacyBranchController;
 use App\Http\Controllers\Admin\ProviderController;
 use App\Http\Controllers\Admin\RoomCategoryController;
@@ -52,7 +58,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
-// LECTURE SEULE : Pays (Accessible à tous les connectés)
+    // LECTURE SEULE : Pays (Accessible à tous les connectés)
         Route::get('/countries/all', [CountryController::class, 'all']); // <-- À PLACER EN PREMIER
     // Configuration / Données publiques
     Route::get('/countries', [CountryController::class, 'index']);
@@ -120,6 +126,9 @@ Route::middleware('auth:sanctum')->group(function () {
             // Succursales
             Route::apiResource('pharmacy-branches', PharmacyBranchController::class);
 
+            // Caisses (CRUD Admin)
+            Route::apiResource('cash-registers', CashRegisterController::class)->only(['store', 'update', 'destroy']);
+
             // Catalogue
             Route::get('/article-categories/all', [ArticleCategoryController::class, 'all']);
             Route::apiResource('article-categories', ArticleCategoryController::class);
@@ -127,7 +136,8 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/articles', [ArticleController::class, 'store']);
             Route::put('/articles/{id}', [ArticleController::class, 'update']);
             Route::delete('/articles/{id}', [ArticleController::class, 'destroy']);
-
+            
+         
             // Gestion globale des lots
             Route::prefix('batches')->group(function () {
                 Route::get('/all', [BatchController::class, 'all']);
@@ -210,7 +220,19 @@ Route::middleware('auth:sanctum')->group(function () {
 
                 // Document logistique
                 Route::get('/stock-transfers/{id}/waybill', [StockTransferController::class, 'downloadWaybill']);
-            });
+
+                // Articles d'une branche de pharmacie (Accès partagé Admin + Pharmacy)
+                Route::get('/branch/articles/export/excel', [PharmacyBranchArticleController::class, 'exportExcel']);
+                Route::get('/branch/articles', [PharmacyBranchArticleController::class, 'index']);
+                Route::get('/branch/{id}/articles/all', [PharmacyBranchArticleController::class, 'all']);
+                Route::get('/branch/{id}/articles/', [PharmacyBranchArticleController::class, 'show']); 
+                Route::post('/branch/articles/update-price', [PharmacyBranchArticleController::class, 'updatePrice']); 
+
+                // Caisses (Accès partagé)
+                Route::get('/cash-registers', [CashRegisterController::class, 'index']);
+                Route::get('/cash-registers/{id}', [CashRegisterController::class, 'show']);
+             
+            });           
 
             Route::prefix('pharmacy')->group(function () {
                 // Inventaires
@@ -241,6 +263,20 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::post('/{id}/cancel', [StockTransferController::class, 'cancel']);
                 Route::get('/export/pdf', [StockTransferController::class, 'exportPdf']);
             });
+
+            // Caisses Sessions (Pharmacien caissier exclusif)
+            Route::prefix('cash-registers')->group(function () {
+                Route::post('/{id}/sessions/open', [CashRegisterSessionController::class, 'openSession']);
+                Route::post('/sessions/{sessionId}/close', [CashRegisterSessionController::class, 'closeSession']);
+                Route::get('/active-session/me', [CashRegisterSessionController::class, 'myActiveSession']);
+            });
+
+            // Point de Vente (Ventes POS)
+            Route::apiResource('pos-sales', PosSaleController::class)->only(['index', 'show', 'store']);
+            Route::get('pos-sales/{id}/pdf', [PosSaleController::class, 'exportPdf']);
+            Route::apiResource('pos-sale-items', PosSaleItemController::class)->only(['index']);
+            Route::get('cashier/articles', [CashierController::class, 'getAllArticles']);
+           
         });
 
     }); // Fin Middleware Licence Pharmacie

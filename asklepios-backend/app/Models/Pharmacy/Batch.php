@@ -22,4 +22,17 @@ class Batch extends Model
     {
         return $this->belongsTo(Article::class);
     }
+
+    /**
+     * Un lot peut avoir des stocks dans différentes succursales.
+     */
+    public function stocks()
+    {
+        return $this->hasMany(Stock::class, 'batch_id');
+    }
+
+    public function saleItems()
+    {
+        return $this->hasMany(PosSaleItem::class, 'batch_id');
+    }
 }
