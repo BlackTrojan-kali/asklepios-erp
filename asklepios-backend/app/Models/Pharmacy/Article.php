@@ -27,4 +27,14 @@ class Article extends Model
     {
         return $this->belongsTo(ArticleCategory::class, 'category_id');
     }
+
+    public function branchArticles()
+    {
+        return $this->hasMany(PharmacyBranchArticle::class, 'article_id');
+    }
+
+    public function batches()
+    {
+        return $this->hasMany(Batch::class, 'article_id');
+    }
 }

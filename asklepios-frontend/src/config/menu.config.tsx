@@ -10,9 +10,8 @@ import {
   ListOrdered,
   Layers,
   ShoppingCart,
-  Activity,
-  Search,
   Truck,
+  List,
 } from "lucide-react";
 
 // --- 1. DÉFINITION DES TYPES ---
@@ -111,6 +110,13 @@ export const MENU_CONFIG: MenuItemType[] = [
         ],
       },
       { title: "Fournisseurs", path: "/admin/pharmacy/providers" },
+      {
+        title: "Point de Vente",
+        subItems: [
+          { title: "Gerer les Prix", path: "/admin/pharmacy/articles/pricing" },
+          { title: "Caisse", path: "/admin/pharmacy/cash-register" },
+        ],
+      },
     ],
   },
   {
@@ -169,22 +175,29 @@ export const MENU_CONFIG: MenuItemType[] = [
     roles: ["pharmacy"],
     positions: ["vente"],
     requiredLicence: "pharmacy",
-    path: "/pharmacy/pos",
+    path: "/pharmacy/cash",
   },
   {
-    title: "Historique Ventes",
-    icon: <Activity size={20} />,
+    title: "Historiques",
+    icon: <List size={20} />,
     roles: ["pharmacy"],
     positions: ["vente"],
     requiredLicence: "pharmacy",
-    path: "/pharmacy/sales-history",
+    subItems: [
+      { title: "Ventes", path: "/pharmacy/sales-history" },
+      { title: "Versements", path: "/pharmacy/deposits-history" },
+      { title: "Mouvements", path: "/pharmacy/movements-history" },
+    ],
   },
   {
-    title: "Consulter Stocks",
-    icon: <Search size={20} />,
+    title: "Gestion des sessions",
+    icon: <List size={20} />,
     roles: ["pharmacy"],
     positions: ["vente"],
     requiredLicence: "pharmacy",
-    path: "/pharmacy/stocks-view",
+    subItems: [
+      { title: "Ouverture de caisse", path: "/pharmacy/cash/session/open" },
+      { title: "Cloture de caisse", path: "pharmacy/cash/session/close" },
+    ],
   },
 ];
