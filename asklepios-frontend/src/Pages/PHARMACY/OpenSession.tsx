@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import {
   KeyRound,
   User,
-  Monitor,
   Unlock,
   AlertTriangle,
   Calendar,
@@ -21,7 +20,7 @@ interface SessionOpeningProps {
 export default function OpenSession({ onSessionOpened }: SessionOpeningProps) {
   const { profile } = useAuth();
   const navigate = useNavigate();
-  
+
   const branchId = profile?.profile_pharm?.branch_id;
   const { data: registers, isLoading } = useCashRegisters(branchId);
   const openSessionMutation = useOpenCashRegisterSession();
@@ -31,7 +30,9 @@ export default function OpenSession({ onSessionOpened }: SessionOpeningProps) {
   const [openingBalance, setOpeningBalance] = useState<number>(0);
   const [notes, setNotes] = useState<string>("");
 
-  const cashierName = profile ? `${profile.first_name} ${profile.last_name || ""}` : "Caissier";
+  const cashierName = profile
+    ? `${profile.first_name} ${profile.last_name || ""}`
+    : "Caissier";
   const currentDate = new Date().toLocaleDateString("fr-FR", {
     day: "numeric",
     month: "long",
@@ -39,7 +40,8 @@ export default function OpenSession({ onSessionOpened }: SessionOpeningProps) {
   });
 
   // Filtrer les caisses actives et libres (sans session active)
-  const idleRegisters = registers?.filter((r) => r.status === "active" && !r.active_session) || [];
+  const idleRegisters =
+    registers?.filter((r) => r.status === "active" && !r.active_session) || [];
   const selectedRegister = registers?.find((r) => r.id === selectedRegisterId);
 
   // --- ACTIONS ---
@@ -96,7 +98,9 @@ export default function OpenSession({ onSessionOpened }: SessionOpeningProps) {
               navigate("/pharmacy/cash");
             },
             onError: (err: any) => {
-              const msg = err.response?.data?.message || "Impossible d'ouvrir la session de caisse.";
+              const msg =
+                err.response?.data?.message ||
+                "Impossible d'ouvrir la session de caisse.";
               Swal.fire({
                 title: "Erreur",
                 text: msg,
@@ -104,7 +108,7 @@ export default function OpenSession({ onSessionOpened }: SessionOpeningProps) {
                 confirmButtonColor: "#ef4444",
               });
             },
-          }
+          },
         );
       }
     });
@@ -145,7 +149,8 @@ export default function OpenSession({ onSessionOpened }: SessionOpeningProps) {
               Sécurité des Fonds :
             </strong>{" "}
             Veuillez recompter physiquement vos espèces avant de valider. Vous
-            êtes responsable du solde de ce terminal jusqu’à sa clôture définitive.
+            êtes responsable du solde de ce terminal jusqu’à sa clôture
+            définitive.
           </div>
         </div>
 
@@ -182,7 +187,9 @@ export default function OpenSession({ onSessionOpened }: SessionOpeningProps) {
             <select
               required
               value={selectedRegisterId}
-              onChange={(e) => setSelectedRegisterId(Number(e.target.value) || "")}
+              onChange={(e) =>
+                setSelectedRegisterId(Number(e.target.value) || "")
+              }
               className="w-full px-4 py-3 border border-slate-300 dark:border-gray-700 rounded-xl text-sm focus:outline-hidden focus:ring-2 focus:ring-emerald-500 bg-slate-50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-900 text-slate-800 dark:text-white transition-colors"
             >
               <option value="">-- Choisissez un terminal de caisse --</option>
@@ -194,7 +201,8 @@ export default function OpenSession({ onSessionOpened }: SessionOpeningProps) {
             </select>
             {idleRegisters.length === 0 && (
               <p className="text-[11px] text-rose-500 font-medium mt-1">
-                Aucune caisse active et libre n'est disponible dans votre succursale.
+                Aucune caisse active et libre n'est disponible dans votre
+                succursale.
               </p>
             )}
           </div>
@@ -215,7 +223,9 @@ export default function OpenSession({ onSessionOpened }: SessionOpeningProps) {
                 step="50"
                 placeholder="Ex: 15000"
                 value={openingBalance || ""}
-                onChange={(e) => setOpeningBalance(parseInt(e.target.value) || 0)}
+                onChange={(e) =>
+                  setOpeningBalance(parseInt(e.target.value) || 0)
+                }
                 className="w-full pl-20 pr-4 py-3 border border-slate-300 dark:border-gray-700 rounded-xl font-mono text-xl font-black text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500 bg-slate-50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-900 transition-colors"
               />
             </div>
@@ -246,7 +256,9 @@ export default function OpenSession({ onSessionOpened }: SessionOpeningProps) {
           <div className="pt-2">
             <button
               type="submit"
-              disabled={openSessionMutation.isPending || idleRegisters.length === 0}
+              disabled={
+                openSessionMutation.isPending || idleRegisters.length === 0
+              }
               className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 dark:disabled:bg-gray-700 disabled:text-slate-400 text-white font-black py-3.5 px-4 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 tracking-wide cursor-pointer disabled:cursor-not-allowed uppercase text-sm"
             >
               <Unlock className="w-4 h-4" />

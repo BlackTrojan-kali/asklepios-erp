@@ -43,7 +43,7 @@ import Receptionists from "./Pages/Admin/Base_hospital/receptionist/Receptionist
 import Patients from "./Pages/Admin/Base_hospital/receptionist/Patients";
 import Doctors from "./Pages/Admin/Base_hospital/doctor/Doctors";
 import RoomCategories from "./Pages/Admin/Base_hospital/room_category/RoomCategories";
-import ManageDepartment from './Pages/Admin/Base_hospital/ManageDepartment';
+import ManageDepartment from "./Pages/Admin/Base_hospital/ManageDepartment";
 import FacilityRoomsExplorer from "./Pages/Admin/Base_hospital/FacilityRoomsExplorer";
 import BedsExplorer from "./Pages/Admin/Base_hospital/BedsExplorer";
 
@@ -57,6 +57,7 @@ import ArticlePricing from "./Pages/Admin/Pharmacies/Sale/ArticlePricing";
 import CashRegister from "./Pages/Admin/Pharmacies/Sale/CashRegister";
 import CloseSession from "./Pages/PHARMACY/CloseSession";
 import OpenSession from "./Pages/PHARMACY/OpenSession";
+import CashSessionHistory from "./Pages/PHARMACY/CashSessionHistory";
 
 const routes = createBrowserRouter([
   // ==========================================
@@ -110,9 +111,9 @@ const routes = createBrowserRouter([
         ),
         children: [
           //receptioniste
-          {path:"receptionists",element:<Receptionists/>},
+          { path: "receptionists", element: <Receptionists /> },
           //docteurs
-          {path:"doctors",element:<Doctors/>},
+          { path: "doctors", element: <Doctors /> },
           //
           { path: "centers", element: <Centers /> },
           { path: "departments", element: <Departments /> },
@@ -122,10 +123,13 @@ const routes = createBrowserRouter([
           { path: "movements", element: <AdminStockMovements /> },
           { path: "orders", element: <AdminPurchaseOrders /> },
           { path: "returns", element: <AdminPurchaseReturns /> },
-          {path:"room_categories",element:<RoomCategories/>},
-          {path:"departments/:id/manage_department",element:<ManageDepartment/>},
-          {path:"departments/:id/rooms",element:<FacilityRoomsExplorer/>},
-          {path:"rooms/:id/beds",element:<BedsExplorer/>},
+          { path: "room_categories", element: <RoomCategories /> },
+          {
+            path: "departments/:id/manage_department",
+            element: <ManageDepartment />,
+          },
+          { path: "departments/:id/rooms", element: <FacilityRoomsExplorer /> },
+          { path: "rooms/:id/beds", element: <BedsExplorer /> },
 
           // Sous-dossier Pharmacie côté Admin
           {
@@ -145,7 +149,6 @@ const routes = createBrowserRouter([
           { path: "vehicules", element: <Vehicules /> },
           { path: "drivers", element: <Drivers /> },
           { path: "transfers", element: <StockTransfersAdmin /> },
-          
         ],
       },
 
@@ -191,7 +194,10 @@ const routes = createBrowserRouter([
             ),
             children: [
               { path: "pharmacy/cash", element: <CashHome /> },
-              { path: "pharmacy/cash/sales-history", element: <SalesHistory /> },
+              {
+                path: "pharmacy/cash/sales-history",
+                element: <SalesHistory />,
+              },
               {
                 path: "pharmacy/cash/deposits-history",
                 element: <DepositsHistory />,
@@ -200,23 +206,28 @@ const routes = createBrowserRouter([
                 path: "pharmacy/cash/movements-history",
                 element: <MovementsHistory />,
               },
-              { path: "pharmacy/cash/session/close", element: <CloseSession /> },
+              {
+                path: "pharmacy/cash/session/close",
+                element: <CloseSession />,
+              },
               { path: "pharmacy/cash/session/open", element: <OpenSession /> },
+              {
+                path: "pharmacy/cash/session/history",
+                element: <CashSessionHistory />,
+              },
             ],
           },
         ],
       },
       {
-          element: (
-          <CheckRole roles={["reception","admin"]}>
+        element: (
+          <CheckRole roles={["reception", "admin"]}>
             <Outlet />
           </CheckRole>
         ),
-        
-        children:[
-          {path:"reception/patients",element:<Patients/>}
-        ]
-      }
+
+        children: [{ path: "reception/patients", element: <Patients /> }],
+      },
     ],
   },
 

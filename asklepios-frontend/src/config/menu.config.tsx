@@ -77,23 +77,22 @@ export const MENU_CONFIG: MenuItemType[] = [
     subItems: [
       { title: "Centres", path: "/admin/centers" },
       { title: "Départements", path: "/admin/departments" },
-      {title:"Categories Chambres",path:"/admin/room_categories"}
+      { title: "Categories Chambres", path: "/admin/room_categories" },
     ],
   },
   {
-    title:"Receptioniste",
-    icon:<Computer size={20}/>,
-    roles:["admin"],
-    requiredLicence:"base_hospital",
-    path:"/admin/receptionists"
-
+    title: "Receptioniste",
+    icon: <Computer size={20} />,
+    roles: ["admin"],
+    requiredLicence: "base_hospital",
+    path: "/admin/receptionists",
   },
   {
-    title:"Docteurs",
-    icon:<Stethoscope size={20}/>,
-    roles:["admin"],
-    requiredLicence:"base_hospital",
-    path:"/admin/doctors"
+    title: "Docteurs",
+    icon: <Stethoscope size={20} />,
+    roles: ["admin"],
+    requiredLicence: "base_hospital",
+    path: "/admin/doctors",
   },
   {
     title: "Pharmacies",
@@ -217,23 +216,26 @@ export const MENU_CONFIG: MenuItemType[] = [
     subItems: [
       { title: "Ouverture de caisse", path: "/pharmacy/cash/session/open" },
       { title: "Cloture de caisse", path: "pharmacy/cash/session/close" },
+      {
+        title: "Historique de session",
+        path: "pharmacy/cash/session/history",
+      },
     ],
   },
 
-//=========================================================
-//  MENU RECEPTIONNISTE 
-//=========================================================
-{
-  title:"Gestion Patients",
-  icon:<Users size={20}/>,
-  roles:["reception","admin"],
-  requiredLicence:"base_hospital",
-  subItems:[
-    {
-      title:"Patients",
-      path:"reception/patients",
-    }
-  ]
-  
-}
+  //=========================================================
+  //  MENU RECEPTIONNISTE
+  //=========================================================
+  {
+    title: "Gestion Patients",
+    icon: <Users size={20} />,
+    roles: ["reception", "admin"],
+    requiredLicence: "base_hospital",
+    subItems: [
+      {
+        title: "Patients",
+        path: "reception/patients",
+      },
+    ],
+  },
 ];

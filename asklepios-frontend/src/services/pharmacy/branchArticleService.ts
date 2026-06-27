@@ -77,7 +77,11 @@ const getAll = async (
 };
 
 const updatePrice = async (payload: UpdatePricePayload)=> {
-  const response = await api.post("/admin/branch/articles/update-price", payload);
+  const response = await api.post("/admin/branch/articles/update-price", {
+    pharmacy_branch_id: payload.branch_id,
+    article_id: payload.article_id,
+    special_selling_price: payload.special_selling_price,
+  });
   return response.data;
 };
 
