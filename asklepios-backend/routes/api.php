@@ -314,7 +314,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('facility-rooms',FacilityRoomController::class)->except(['index', 'show']);
 
     });
-            Route::middleware(["role:admin,reception"])
+            Route::middleware(["role:admin,reception,doctor"])
             ->prefix('receptionist')->group(function(){
             // Dossiers Patients
             Route::apiResource('patients', \App\Http\Controllers\Receptionist\PatientController::class);

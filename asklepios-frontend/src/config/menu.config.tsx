@@ -15,6 +15,7 @@ import {
   Computer,
   Users,
   List,
+  Calendar,
 } from "lucide-react";
 
 // --- 1. DÉFINITION DES TYPES ---
@@ -235,5 +236,19 @@ export const MENU_CONFIG: MenuItemType[] = [
     }
   ]
   
+},
+//menus docteur
+{
+  title:"Rendez-Vous",
+  icon:<Calendar size={20}/>,
+  roles:["doctor"],
+  requiredLicence:"base_hospital",
+  subItems:[
+    {
+      title:"calendrier rendez-vous",
+      path:"doctor/appointments/calendar",
+    }
+  ]
+
 }
 ];

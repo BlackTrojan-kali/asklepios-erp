@@ -50,13 +50,12 @@ import BedsExplorer from "./Pages/Admin/Base_hospital/BedsExplorer";
 import SalesHistory from "./Pages/PHARMACY/SaleHistory";
 import DepositsHistory from "./Pages/PHARMACY/DepositsHistory";
 import MovementsHistory from "./Pages/PHARMACY/MovementsHistory";
-import RegisterSession from "./Pages/PHARMACY/CloseSession";
-import SessionOpening from "./Pages/PHARMACY/OpenSession";
 import CashHome from "./Pages/PHARMACY/CashHome";
 import ArticlePricing from "./Pages/Admin/Pharmacies/Sale/ArticlePricing";
 import CashRegister from "./Pages/Admin/Pharmacies/Sale/CashRegister";
 import CloseSession from "./Pages/PHARMACY/CloseSession";
 import OpenSession from "./Pages/PHARMACY/OpenSession";
+import DoctorAppointments from "./Pages/Doctor/DoctorAppointments";
 
 const routes = createBrowserRouter([
   // ==========================================
@@ -216,8 +215,22 @@ const routes = createBrowserRouter([
         children:[
           {path:"reception/patients",element:<Patients/>}
         ]
-      }
+      },
+      
+  //interface docteur
+  {
+    path:"doctor",
+    element:(
+      <CheckRole roles={["doctor"]}>
+        <Outlet/>
+      </CheckRole>
+    ),
+    children:[
+      { path:"appointments/calendar",element:<DoctorAppointments/>}
+    ]
+  },
     ],
+    
   },
 
   // ==========================================
