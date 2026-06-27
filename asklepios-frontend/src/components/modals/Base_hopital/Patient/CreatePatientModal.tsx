@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import usePatientStore from '../../../../functions/base_hospital/usePatientStore'; // Ajuste le chemin
+import usePatientStore from '../../../../functions/base_hospital/usePatientStore';
 import { PatientForm } from './PatientForm';
 import type { PatientPayload } from '../../../../types/PatientTypes';
 
@@ -15,17 +15,26 @@ export const CreatePatientModal: React.FC<Props> = ({ isOpen, onClose }) => {
         first_name: '',
         last_name: '',
         bith_date: '',
-        contact_phone: ''
+        contact_phone: '',
+        birth_place: '',
+        address: '',
+        emergency_contact_name: '',
+        emergency_contact_number: '',
+        gender: ''
     });
 
-    const isFormValid = payload.first_name && payload.bith_date && payload.contact_phone;
+    // Validation : Prénom, Date de naissance, Téléphone et Genre sont obligatoires
+    const isFormValid = payload.first_name && payload.bith_date && payload.contact_phone && payload.gender !== '';
 
     const handleSubmit = async () => {
         if (!isFormValid) return;
         
         const success = await createPatient(payload);
         if (success) {
-            setPayload({ first_name: '', last_name: '', bith_date: '', contact_phone: '' });
+            setPayload({ 
+                first_name: '', last_name: '', bith_date: '', contact_phone: '',
+                birth_place: '', address: '', emergency_contact_name: '', emergency_contact_number: '', gender: ''
+            });
             onClose();
         }
     };
@@ -34,7 +43,7 @@ export const CreatePatientModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
     return (
         <div className="fixed inset-0 bg-black/50 dark:bg-black/80 flex items-center justify-center z-50 transition-opacity p-4">
-            <div className="bg-white dark:bg-gray-900 rounded-lg w-full max-w-lg p-6 shadow-xl border border-transparent dark:border-gray-800">
+            <div className="bg-white dark:bg-gray-900 rounded-lg w-full max-w-2xl p-6 shadow-xl border border-transparent dark:border-gray-800">
                 <h2 className="text-xl font-bold mb-5 text-slate-800 dark:text-white">Nouveau Dossier Patient</h2>
                 
                 <PatientForm 

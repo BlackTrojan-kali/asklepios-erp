@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Select from 'react-select';
+import { useNavigate } from 'react-router-dom';
 import { 
     LayoutGrid, 
     Plus, 
@@ -8,8 +9,9 @@ import {
     Trash2, 
     Building2, 
     Loader2, 
-    Hash,
-    RefreshCw
+    RefreshCw,
+    Folder,
+    FolderOpen
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
@@ -25,6 +27,8 @@ import { CreateDepartmentModal } from '../../../components/modals/Department/Cre
 import { UpdateDepartmentModal } from '../../../components/modals/Department/UpdateDepartmentModal';
 
 const Departments = () => {
+    const navigate = useNavigate();
+
     // Hooks des stores
     const { centers, getCenters } = useCenterStore();
     const { 
@@ -63,8 +67,16 @@ const Departments = () => {
         }
     };
 
+    // Action : Naviguer vers l'intérieur du dossier (Gestion des salles)
+    const handleOpenFolder = (dept: DepartmentDto) => {
+        // TODO: Ajuste cette URL selon tes routes réelles pour la page d'exploration du département
+        navigate(`/admin/departments/${dept.id}/manage_department`, { state: { department: dept } });
+    };
+
     // Action : Supprimer un département
-    const handleDelete = async (id: number) => {
+    const handleDelete = async (e: React.MouseEvent, id: number) => {
+        e.stopPropagation(); // Empêche l'ouverture du dossier lors du clic sur la poubelle
+
         if (!selectedCenterOption) return;
 
         const result = await Swal.fire({
@@ -83,6 +95,12 @@ const Departments = () => {
         if (result.isConfirmed) {
             await deleteDepartment(id, selectedCenterOption.value);
         }
+    };
+
+    // Action : Modifier un département
+    const handleEdit = (e: React.MouseEvent, dept: DepartmentDto) => {
+        e.stopPropagation(); // Empêche l'ouverture du dossier lors du clic sur l'édition
+        setSelectedDept(dept);
     };
 
     // Styles personnalisés pour React-Select (Dark Mode compatible)
@@ -121,7 +139,7 @@ const Departments = () => {
                     </div>
                     <div>
                         <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Départements Médicaux</h1>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Configurez les services internes de chaque centre.</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Gérez les départements et explorez leurs installations.</p>
                     </div>
                 </div>
                 
@@ -186,77 +204,69 @@ const Departments = () => {
                 </div>
             </div>
 
-            {/* LISTE DES DÉPARTEMENTS */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+            {/* ZONE EXPLORATEUR DE DOSSIERS */}
+            <div className="bg-slate-50 dark:bg-gray-900/30 rounded-xl border border-gray-100 dark:border-gray-800 min-h-[400px] p-6">
                 {!selectedCenterOption ? (
-                    <div className="p-16 text-center">
-                        <div className="max-w-xs mx-auto">
-                            <Building2 size={48} className="mx-auto text-gray-300 dark:text-gray-600 mb-4" />
-                            <h3 className="text-lg font-medium text-slate-700 dark:text-gray-300">Aucun centre sélectionné</h3>
-                            <p className="text-sm text-gray-500 mt-2">Veuillez choisir un centre médical ci-dessus pour afficher et gérer ses départements hospitaliers.</p>
-                        </div>
+                    <div className="flex flex-col items-center justify-center h-full text-center py-20">
+                        <Building2 size={64} className="text-gray-300 dark:text-gray-600 mb-4" />
+                        <h3 className="text-xl font-medium text-slate-700 dark:text-gray-300">Aucun centre sélectionné</h3>
+                        <p className="text-sm text-gray-500 mt-2 max-w-sm">Veuillez choisir un centre médical ci-dessus pour explorer ses départements.</p>
+                    </div>
+                ) : loading ? (
+                    <div className="flex flex-col items-center justify-center h-full py-20">
+                        <Loader2 size={48} className="animate-spin text-[#00a896] mb-4" />
+                        <p className="text-sm text-gray-500 uppercase tracking-widest font-medium">Chargement des dossiers...</p>
+                    </div>
+                ) : departments.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full text-center py-20">
+                        <FolderOpen size={64} className="text-gray-300 dark:text-gray-600 mb-4" />
+                        <p className="text-lg text-slate-600 dark:text-gray-400 font-medium">Ce centre est vide.</p>
+                        <p className="text-sm text-gray-500 mt-1">Créez un nouveau département pour commencer.</p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="bg-slate-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
-                                    <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Nom du Département</th>
-                                    <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Alias / Code</th>
-                                    <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                                {loading ? (
-                                    <tr>
-                                        <td colSpan={3} className="p-12 text-center">
-                                            <Loader2 size={32} className="animate-spin text-[#00a896] mx-auto mb-2" />
-                                            <p className="text-xs text-gray-500 uppercase tracking-widest">Chargement...</p>
-                                        </td>
-                                    </tr>
-                                ) : departments.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={3} className="p-12 text-center text-gray-500 dark:text-gray-400">
-                                            Aucun département trouvé pour ce centre.
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    departments.map((dept) => (
-                                        <tr key={dept.id} className="hover:bg-slate-50 dark:hover:bg-gray-700/30 transition-colors">
-                                            <td className="p-4">
-                                                <div className="font-bold text-slate-800 dark:text-gray-200">{dept.name}</div>
-                                            </td>
-                                            <td className="p-4">
-                                                <div className="flex items-center gap-1.5">
-                                                    <Hash size={14} className="text-gray-400" />
-                                                    <span className="px-2 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-xs font-bold rounded border border-indigo-100 dark:border-indigo-800 uppercase">
-                                                        {dept.alias || '---'}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td className="p-4 text-right">
-                                                <div className="flex justify-end items-center gap-2">
-                                                    <button 
-                                                        onClick={() => setSelectedDept(dept)} 
-                                                        className="p-2 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-                                                        title="Modifier"
-                                                    >
-                                                        <Edit3 size={18} />
-                                                    </button>
-                                                    <button 
-                                                        onClick={() => handleDelete(dept.id)} 
-                                                        className="p-2 text-red-500 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                                                        title="Supprimer"
-                                                    >
-                                                        <Trash2 size={18} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {departments.map((dept) => (
+                            <div 
+                                key={dept.id}
+                                onClick={() => handleOpenFolder(dept)}
+                                className="group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 flex flex-col hover:border-[#00a896] dark:hover:border-[#00a896] hover:shadow-md transition-all cursor-pointer relative overflow-hidden"
+                            >
+                                {/* Icône de dossier et nom */}
+                                <div className="flex items-start gap-3 mb-4">
+                                    <div className="p-2.5 bg-indigo-50 text-indigo-500 dark:bg-indigo-900/30 dark:text-indigo-400 rounded-lg group-hover:bg-[#00a896]/10 group-hover:text-[#00a896] transition-colors">
+                                        <Folder size={28} className="fill-current opacity-20" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="font-bold text-slate-800 dark:text-gray-200 truncate" title={dept.name}>
+                                            {dept.name}
+                                        </h3>
+                                        {dept.alias && (
+                                            <span className="inline-block mt-1 px-2 py-0.5 bg-slate-100 dark:bg-gray-700 text-slate-500 dark:text-gray-400 text-[10px] font-bold rounded uppercase tracking-wider">
+                                                {dept.alias}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Actions rapides (Éditer / Supprimer) - Apparaissent au survol */}
+                                <div className="mt-auto flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button 
+                                        onClick={(e) => handleEdit(e, dept)}
+                                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-md transition-colors"
+                                        title="Renommer / Modifier"
+                                    >
+                                        <Edit3 size={16} />
+                                    </button>
+                                    <button 
+                                        onClick={(e) => handleDelete(e, dept.id)}
+                                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors"
+                                        title="Supprimer"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 )}
             </div>

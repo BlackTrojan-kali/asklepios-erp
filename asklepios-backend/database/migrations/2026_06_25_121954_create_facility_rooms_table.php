@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('facility_rooms', function (Blueprint $table) {
             $table->id();
-            $table->foreignId("departement_id")->constrained("departments")->onDelete("cascade");
+            $table->foreignId("department_id")->constrained("departments")->onDelete("cascade");
             $table->foreignId("room_category_id")->nullable()->constrained("room_categories");
             $table->string("name");
             $table->enum("type",["WAITING_ROOM","CONSULTATION","WARD"]);

@@ -36,8 +36,14 @@ package "1. Core, Groupement & Identité" <<Identity>> {
         patient_code: String
         first_name: String
         last_name: String
+        gender: String ('M', 'F', 'OTHER')
         birth_date: Date
+        birth_place: String_optional
         contact_phone: String
+        email: String_optional
+        address: Text_optional
+        emergency_contact_name: String_optional
+        emergency_contact_phone: String_optional
     }
     class receptionist {
         id: UnsignedBigInteger
@@ -114,6 +120,15 @@ package "3. Rendez-vous & File d'Attente" <<Workflow>> {
 }
 
 package "4. Dossier Clinique & Hospitalisation" <<Clinical>> {
+    class medical_background {
+        id: UnsignedBigInteger
+        patient_id: UnsignedBigInteger
+        blood_type: String_optional
+        allergies: JSON_optional
+        chronic_conditions: JSON_optional
+        family_history: Text_optional
+        last_updated_at: Datetime
+    }
     class consultation {
         id: UnsignedBigInteger
         patient_visit_id: UnsignedBigInteger
@@ -214,6 +229,8 @@ facility_room "1" <-- "*" patient_visit : attend dans <
 facility_room "1" <-- "*" patient_visit : consulté dans <
 
 ' --- RELATIONS ACTES & CLINIQUE ---
+patient "1" *-- "1" medical_background : possède historique >
+
 medical_act_catalog "1" <-- "*" performed_medical_act
 patient_visit "1" *-- "*" performed_medical_act
 equipment "1" <-- "*" performed_medical_act
@@ -234,4 +251,4 @@ performed_medical_act "1" .. "*" invoice_line
 consultation "1" .. "*" invoice_line
 admission "1" .. "*" invoice_line
 
-@enduml
+@enduml 

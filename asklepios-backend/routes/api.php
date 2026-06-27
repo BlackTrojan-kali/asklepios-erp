@@ -8,10 +8,12 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Admin\ArticleCategoryController;
 use App\Http\Controllers\Admin\ArticleController;
 use App\Http\Controllers\Admin\BatchController;
+use App\Http\Controllers\Admin\BedController;
 use App\Http\Controllers\Admin\CenterController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\DoctorController;
 use App\Http\Controllers\Admin\DriverController;
+use App\Http\Controllers\Admin\FacilityRoomController;
 use App\Http\Controllers\Admin\PharmacienController;
 use App\Http\Controllers\Admin\PharmacyBranchController;
 use App\Http\Controllers\Admin\ProviderController;
@@ -25,6 +27,7 @@ use App\Http\Controllers\Pharmacien\PurchaseReturnController;
 use App\Http\Controllers\Pharmacien\StockMovementController;
 use App\Http\Controllers\Pharmacien\StockTransferController;
 use App\Http\Controllers\Pharmacien\StorageLocationController;
+use App\Http\Controllers\Receptionist\AppointmentController;
 use App\Http\Controllers\SUPA\AdminController;
 use App\Http\Controllers\SUPA\CountryController;
 use App\Http\Controllers\SUPA\HospitalController;
@@ -250,6 +253,31 @@ Route::middleware('auth:sanctum')->group(function () {
         // ---------------------------------------------------------
         Route::middleware(['licence:base_hospital'])
             ->group(function () {
+
+            // ---------------------------------------------------------
+    // ACCÈS PARTAGÉ (Admin, Docteur, Réception)
+    // ---------------------------------------------------------
+    Route::middleware(["role:admin,doctor,reception"])->prefix('shared')->group(function () {
+        
+        // ... tes autres routes partagées (room-categories, etc.)
+
+        // Lecture des salles d'un département (Pour l'interface type "Explorateur de fichiers")
+        Route::get('departments/{departmentId}/facility-rooms', [FacilityRoomController::class, 'index']);
+        
+    });
+
+
+    // ---------------------------------------------------------
+    // ACCÈS ADMINISTRATEUR EXCLUSIF
+    // ---------------------------------------------------------
+    Route::middleware(['role:admin'])->prefix('admin')->group(function () {
+        
+        // ... tes autres routes admin
+
+        // Gestion CRUD des Salles (excepté l'index qui est géré dans "shared" ci-dessus)
+        Route::apiResource('facility-rooms',FacilityRoomController::class)->except(['index', 'show']);
+
+    });
             Route::middleware(["role:admin,reception"])
             ->prefix('receptionist')->group(function(){
             // Dossiers Patients
@@ -270,9 +298,29 @@ Route::middleware('auth:sanctum')->group(function () {
     // ACCÈS PARTAGÉ (Admin, Docteur, Réception)
     // Utile pour alimenter les listes déroulantes (React-Select)
     // ---------------------------------------------------------
-    Route::middleware(['role:admin|doctor|reception'])->prefix('shared')->group(function () {
+    Route::middleware(["role:admin,doctor,reception"])->prefix('shared')->group(function () {
         // Lecture seule des catégories (Paginé ou flat list)
+        // 1. Export PDF (À placer IMPÉRATIVEMENT avant les routes avec {id})
+        Route::get('appointments/export-pdf', [AppointmentController::class, 'exportPdf']);
+
+        // 2. CRUD standard des rendez-vous (On exclut 'destroy' car on utilise 'cancel' pour garder l'historique)
+        Route::apiResource('appointments', AppointmentController::class)->except(['destroy', 'show']);
+
+        // 3. Actions spécifiques sur un rendez-vous
+        Route::prefix('appointments/{appointment}')->group(function () {
+            Route::put('reschedule', [AppointmentController::class, 'reschedule']);
+            Route::patch('cancel', [AppointmentController::class, 'cancel']);
+            
+            // Admission à l'accueil (Création de la file d'attente)
+            Route::post('admit', [AppointmentController::class, 'admitToWaitingRoom']);
+        });
+
+        // 4. Actions sur la visite en cours (Déplacement dans l'hôpital)
+        Route::patch('visits/{visit}/consultation', [AppointmentController::class, 'admitToConsultation']);
+        
+
         Route::get('room-categories', [RoomCategoryController::class, 'index']);
+        Route::get('rooms/{roomId}/beds', [BedController::class, 'index']);
     });
 
 
@@ -283,7 +331,9 @@ Route::middleware('auth:sanctum')->group(function () {
         
         // Gestion complète (CRUD) des catégories de chambres
         // Note: L'index est aussi disponible ici pour l'admin (via apiResource)
+        Route::post('facility-rooms/sync-waiting-rooms', [FacilityRoomController::class, 'syncWaitingRooms']);
         Route::apiResource('room-categories', RoomCategoryController::class);
+        Route::apiResource('beds', BedController::class)->except(['index', 'show']);
 
     });
         });

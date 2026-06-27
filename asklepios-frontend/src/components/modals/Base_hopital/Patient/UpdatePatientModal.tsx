@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import usePatientStore from '../../../../functions/base_hospital/usePatientStore'; // Ajuste le chemin
+import usePatientStore from '../../../../functions/base_hospital/usePatientStore';
 import { PatientForm } from './PatientForm';
 import type { PatientDto, PatientPayload } from '../../../../types/PatientTypes';
 
@@ -16,7 +16,12 @@ export const UpdatePatientModal: React.FC<Props> = ({ isOpen, onClose, patient }
         first_name: '',
         last_name: '',
         bith_date: '',
-        contact_phone: ''
+        contact_phone: '',
+        birth_place: '',
+        address: '',
+        emergency_contact_name: '',
+        emergency_contact_number: '',
+        gender: ''
     });
 
     // Remplissage du formulaire avec les données de l'API
@@ -25,14 +30,18 @@ export const UpdatePatientModal: React.FC<Props> = ({ isOpen, onClose, patient }
             setPayload({
                 first_name: patient.first_name,
                 last_name: patient.last_name || '',
-                // On extrait juste la partie YYYY-MM-DD si la date contient une heure
                 bith_date: patient.bith_date ? patient.bith_date.split('T')[0] : '',
-                contact_phone: patient.contact_phone
+                contact_phone: patient.contact_phone,
+                birth_place: patient.birth_place || '',
+                address: patient.address || '',
+                emergency_contact_name: patient.emergency_contact_name || '',
+                emergency_contact_number: patient.emergency_contact_number || '',
+                gender: patient.gender || ''
             });
         }
     }, [patient]);
 
-    const isFormValid = payload.first_name && payload.bith_date && payload.contact_phone;
+    const isFormValid = payload.first_name && payload.bith_date && payload.contact_phone && payload.gender !== '';
 
     const handleSubmit = async () => {
         if (!patient || !isFormValid) return;
@@ -45,15 +54,17 @@ export const UpdatePatientModal: React.FC<Props> = ({ isOpen, onClose, patient }
 
     return (
         <div className="fixed inset-0 bg-black/50 dark:bg-black/80 flex items-center justify-center z-50 transition-opacity p-4">
-            <div className="bg-white dark:bg-gray-900 rounded-lg w-full max-w-lg p-6 shadow-xl border border-transparent dark:border-gray-800">
+            <div className="bg-white dark:bg-gray-900 rounded-lg w-full max-w-2xl p-6 shadow-xl border border-transparent dark:border-gray-800">
                 <div className="flex justify-between items-center mb-5">
                     <h2 className="text-xl font-bold text-slate-800 dark:text-white">Modifier le Patient</h2>
                 </div>
                 
-                {/* On affiche le code généré en lecture seule à titre informatif */}
-                <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Code Patient</p>
-                    <p className="font-mono font-bold text-slate-800 dark:text-gray-200">{patient.patient_code}</p>
+                {/* Affichage du code généré en lecture seule */}
+                <div className="mb-4 p-3 bg-indigo-50 dark:bg-indigo-900/30 rounded-md border border-indigo-100 dark:border-indigo-800/50 flex justify-between items-center">
+                    <div>
+                        <p className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold uppercase tracking-wider">Code Patient</p>
+                        <p className="font-mono font-bold text-indigo-900 dark:text-indigo-200 text-lg">{patient.patient_code}</p>
+                    </div>
                 </div>
 
                 <PatientForm 

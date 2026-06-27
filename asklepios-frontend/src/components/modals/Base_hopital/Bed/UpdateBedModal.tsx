@@ -1,0 +1,67 @@
+import React, { useState, useEffect } from 'react';
+import useBedStore from '../../../../functions/base_hospital/useBedStore';
+import { BedForm } from './BedForm';
+import type { BedDto, BedPayload } from '../../../../types/BedTypes';
+
+interface Props {
+    isOpen: boolean;
+    onClose: () => void;
+    bed: BedDto | null;
+}
+
+export const UpdateBedModal: React.FC<Props> = ({ isOpen, onClose, bed }) => {
+    const { updateBed, actionLoading } = useBedStore();
+
+    const [payload, setPayload] = useState<BedPayload>({
+        facility_room_id: '',
+        bed_number: '',
+        state: ''
+    });
+
+    useEffect(() => {
+        if (bed) {
+            setPayload({
+                facility_room_id: bed.facility_room_id,
+                bed_number: bed.bed_number,
+                state: bed.state
+            });
+        }
+    }, [bed]);
+
+    const isFormValid = payload.bed_number.trim() !== '' && payload.state !== '';
+
+    const handleSubmit = async () => {
+        if (!bed || !isFormValid) return;
+
+        const success = await updateBed(bed.id, payload);
+        if (success) onClose();
+    };
+
+    if (!isOpen || !bed) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/80 flex items-center justify-center z-50 transition-opacity p-4">
+            <div className="bg-white dark:bg-gray-900 rounded-lg w-full max-w-md p-6 shadow-xl border border-transparent dark:border-gray-800">
+                <h2 className="text-xl font-bold mb-5 text-slate-800 dark:text-white">Modifier le Lit</h2>
+                
+                <BedForm payload={payload} setPayload={setPayload} />
+
+                <div className="mt-6 flex justify-end gap-3 border-t border-gray-100 dark:border-gray-800 pt-4">
+                    <button
+                        onClick={onClose}
+                        className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors font-medium text-sm"
+                    >
+                        Annuler
+                    </button>
+                    <button
+                        onClick={handleSubmit}
+                        disabled={actionLoading || !isFormValid}
+                        className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm font-medium text-sm"
+                    >
+                        {actionLoading ? "Mise à jour..." : "Enregistrer"}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};

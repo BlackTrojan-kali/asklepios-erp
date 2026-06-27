@@ -687,6 +687,204 @@
                 ]
             }
         },
+        "/api/shared/rooms/{roomId}/beds": {
+            "get": {
+                "tags": [
+                    "Lits d'Hospitalisation"
+                ],
+                "summary": "Lister les lits d'une salle",
+                "description": "Lister les lits d'une salle spécifique (Paginé et filtrable)",
+                "operationId": "getBeds",
+                "parameters": [
+                    {
+                        "name": "roomId",
+                        "in": "path",
+                        "description": "ID de la salle",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Recherche par numéro de lit",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "state",
+                        "in": "query",
+                        "description": "Filtrer par état (AVAILABLE, OCCUPIED, CLEANING, MAINTENANCE)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "paginated",
+                        "in": "query",
+                        "description": "true/false pour react-select",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/beds": {
+            "post": {
+                "tags": [
+                    "Lits d'Hospitalisation"
+                ],
+                "summary": "Créer un lit",
+                "description": "Créer un nouveau lit (Admin uniquement)",
+                "operationId": "storeBed",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "facility_room_id",
+                                    "bed_number",
+                                    "state"
+                                ],
+                                "properties": {
+                                    "facility_room_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "bed_number": {
+                                        "type": "string",
+                                        "example": "LIT-01"
+                                    },
+                                    "state": {
+                                        "type": "string",
+                                        "example": "AVAILABLE",
+                                        "enum": [
+                                            "AVAILABLE",
+                                            "OCCUPIED",
+                                            "CLEANING",
+                                            "MAINTENANCE"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Lit créé avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/beds/{id}": {
+            "put": {
+                "tags": [
+                    "Lits d'Hospitalisation"
+                ],
+                "summary": "Modifier un lit",
+                "description": "Modifier un lit",
+                "operationId": "updateBed",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID du lit",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "bed_number": {
+                                        "type": "string",
+                                        "example": "LIT-02"
+                                    },
+                                    "state": {
+                                        "type": "string",
+                                        "enum": [
+                                            "AVAILABLE",
+                                            "OCCUPIED",
+                                            "CLEANING",
+                                            "MAINTENANCE"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Lit mis à jour avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Lits d'Hospitalisation"
+                ],
+                "summary": "Supprimer un lit",
+                "description": "Supprimer un lit",
+                "operationId": "deleteBed",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID du lit",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lit supprimé avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/admin/centers": {
             "get": {
                 "tags": [
@@ -1434,6 +1632,232 @@
                 "responses": {
                     "200": {
                         "description": "Chauffeurs importés"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/facility-rooms/sync-waiting-rooms": {
+            "post": {
+                "tags": [
+                    "Salles et Installations"
+                ],
+                "summary": "Créer les salles d'attente manquantes",
+                "description": "Parcourt tous les départements de l'hôpital et crée une salle de type WAITING_ROOM pour ceux qui n'en ont pas.",
+                "operationId": "syncWaitingRooms",
+                "responses": {
+                    "200": {
+                        "description": "Synchronisation terminée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/shared/departments/{departmentId}/facility-rooms": {
+            "get": {
+                "tags": [
+                    "Salles et Installations"
+                ],
+                "summary": "Lister les salles d'un département",
+                "description": "Lister les salles d'un département spécifique (Paginé et filtrable)",
+                "operationId": "getFacilityRooms",
+                "parameters": [
+                    {
+                        "name": "departmentId",
+                        "in": "path",
+                        "description": "ID du département",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Recherche par nom",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "description": "Filtrer par type (WAITING_ROOM, CONSULTATION, WARD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "paginated",
+                        "in": "query",
+                        "description": "true/false pour react-select",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/facility-rooms": {
+            "post": {
+                "tags": [
+                    "Salles et Installations"
+                ],
+                "summary": "Créer une salle",
+                "description": "Créer une nouvelle salle (Admin uniquement)",
+                "operationId": "storeFacilityRoom",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "department_id",
+                                    "name",
+                                    "type"
+                                ],
+                                "properties": {
+                                    "department_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "room_category_id": {
+                                        "type": "integer",
+                                        "example": 2,
+                                        "nullable": true
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Salle de consultation A"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "CONSULTATION",
+                                        "enum": [
+                                            "WAITING_ROOM",
+                                            "CONSULTATION",
+                                            "WARD"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Salle créée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/facility-rooms/{id}": {
+            "put": {
+                "tags": [
+                    "Salles et Installations"
+                ],
+                "summary": "Modifier une salle",
+                "description": "Modifier une salle existante",
+                "operationId": "updateFacilityRoom",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la salle",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "room_category_id": {
+                                        "type": "integer",
+                                        "example": 3,
+                                        "nullable": true
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Chambre 101"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "WAITING_ROOM",
+                                            "CONSULTATION",
+                                            "WARD"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Salle mise à jour avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Salles et Installations"
+                ],
+                "summary": "Supprimer une salle",
+                "description": "Supprimer une salle",
+                "operationId": "deleteFacilityRoom",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la salle",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Salle supprimée avec succès"
                     }
                 },
                 "security": [
@@ -2357,6 +2781,231 @@
                 "responses": {
                     "200": {
                         "description": "Réceptionniste supprimé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/shared/room-categories": {
+            "get": {
+                "tags": [
+                    "Catégories de Chambres"
+                ],
+                "summary": "Lister les catégories de chambres (Paginé ou non)",
+                "description": "Lister et filtrer les catégories de chambres",
+                "operationId": "getRoomCategories",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Recherche par nom",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "center_id",
+                        "in": "query",
+                        "description": "Filtrer par centre",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "paginated",
+                        "in": "query",
+                        "description": "true/false pour react-select",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/room-categories": {
+            "post": {
+                "tags": [
+                    "Catégories de Chambres"
+                ],
+                "summary": "Créer une catégorie",
+                "description": "Créer une catégorie de chambre (Admin uniquement)",
+                "operationId": "storeRoomCategory",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "center_id",
+                                    "name",
+                                    "price_per_night"
+                                ],
+                                "properties": {
+                                    "center_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Chambre VIP"
+                                    },
+                                    "price_per_night": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 25000
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Catégorie créée avec succès"
+                    },
+                    "422": {
+                        "description": "Erreur de validation des données"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/room-categories/{id}": {
+            "get": {
+                "tags": [
+                    "Catégories de Chambres"
+                ],
+                "summary": "Détails d'une catégorie",
+                "description": "Obtenir les détails d'une catégorie",
+                "operationId": "showRoomCategory",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la catégorie",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Détails récupérés avec succès"
+                    },
+                    "404": {
+                        "description": "Catégorie non trouvée"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Catégories de Chambres"
+                ],
+                "summary": "Modifier une catégorie",
+                "description": "Modifier une catégorie de chambre",
+                "operationId": "updateRoomCategory",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la catégorie",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "center_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Chambre Standard"
+                                    },
+                                    "price_per_night": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 15000
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Catégorie mise à jour avec succès"
+                    },
+                    "404": {
+                        "description": "Catégorie non trouvée"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Catégories de Chambres"
+                ],
+                "summary": "Supprimer une catégorie",
+                "description": "Supprimer une catégorie de chambre",
+                "operationId": "deleteRoomCategory",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la catégorie",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Catégorie supprimée avec succès"
+                    },
+                    "404": {
+                        "description": "Catégorie non trouvée"
                     }
                 },
                 "security": [
@@ -3656,6 +4305,423 @@
                 ]
             }
         },
+        "/api/appointments": {
+            "get": {
+                "tags": [
+                    "Gestion des Rendez-vous"
+                ],
+                "summary": "Lister les rendez-vous",
+                "description": "Récupère la liste paginée des rendez-vous. Filtrage automatique par centre selon le rôle de l'utilisateur connecté.",
+                "operationId": "getAppointments",
+                "parameters": [
+                    {
+                        "name": "date",
+                        "in": "query",
+                        "description": "Filtrer par date précise (ex: 2026-06-25)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filtrer par statut",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "SCHEDULED",
+                                "CANCELLED",
+                                "ARRIVED"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "profile_doctor_id",
+                        "in": "query",
+                        "description": "Filtrer par médecin spécifique",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "center_id",
+                        "in": "query",
+                        "description": "Filtrer par centre (Réservé aux Administrateurs)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste des rendez-vous récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Gestion des Rendez-vous"
+                ],
+                "summary": "Programmer un rendez-vous",
+                "description": "Crée un nouveau rendez-vous avec le statut 'SCHEDULED' par défaut.",
+                "operationId": "storeAppointment",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "patient_id",
+                                    "profile_doctor_id",
+                                    "center_id",
+                                    "scheduled_datetime"
+                                ],
+                                "properties": {
+                                    "patient_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "profile_doctor_id": {
+                                        "type": "integer",
+                                        "example": 3
+                                    },
+                                    "center_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "scheduled_datetime": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2026-06-25 14:30:00"
+                                    },
+                                    "reason": {
+                                        "type": "string",
+                                        "example": "Consultation de suivi cardiologique"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Rendez-vous programmé avec succès"
+                    },
+                    "422": {
+                        "description": "Erreur de validation (ex: date dans le passé)"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/appointments/{id}": {
+            "put": {
+                "tags": [
+                    "Gestion des Rendez-vous"
+                ],
+                "summary": "Modifier les détails d'un rendez-vous",
+                "description": "Permet de modifier le motif, le médecin ou le centre d'un rendez-vous existant. Ne modifie pas la date/heure.",
+                "operationId": "updateAppointment",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID du rendez-vous",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "profile_doctor_id": {
+                                        "type": "integer",
+                                        "example": 4
+                                    },
+                                    "center_id": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "reason": {
+                                        "type": "string",
+                                        "example": "Nouveau motif de consultation"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Rendez-vous mis à jour avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/appointments/{id}/reschedule": {
+            "put": {
+                "tags": [
+                    "Gestion des Rendez-vous"
+                ],
+                "summary": "Reprogrammer un rendez-vous",
+                "description": "Modifie la date et l'heure d'un rendez-vous. Si le rendez-vous était annulé, son statut repasse à 'SCHEDULED'.",
+                "operationId": "rescheduleAppointment",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID du rendez-vous",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "scheduled_datetime"
+                                ],
+                                "properties": {
+                                    "scheduled_datetime": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2026-06-30 09:00:00"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Rendez-vous reprogrammé avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/appointments/{id}/cancel": {
+            "patch": {
+                "tags": [
+                    "Gestion des Rendez-vous"
+                ],
+                "summary": "Annuler un rendez-vous",
+                "description": "Change le statut d'un rendez-vous en 'CANCELLED'. Impossible d'annuler si le patient est déjà 'ARRIVED'.",
+                "operationId": "cancelAppointment",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID du rendez-vous",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Rendez-vous annulé avec succès"
+                    },
+                    "422": {
+                        "description": "Impossible d'annuler un rendez-vous en cours"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/appointments/{appointmentId}/admit": {
+            "post": {
+                "tags": [
+                    "Gestion des Rendez-vous"
+                ],
+                "summary": "Admettre un patient en salle d'attente",
+                "description": "Marque le rendez-vous comme 'ARRIVED', assigne le patient à une salle d'attente, calcule son numéro de file et notifie le médecin.",
+                "operationId": "admitToWaitingRoom",
+                "parameters": [
+                    {
+                        "name": "appointmentId",
+                        "in": "path",
+                        "description": "ID du rendez-vous",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "waiting_room_id",
+                                    "visit_type"
+                                ],
+                                "properties": {
+                                    "waiting_room_id": {
+                                        "description": "ID de la salle d'attente (facility_room)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "visit_type": {
+                                        "type": "string",
+                                        "example": "ROUTINE",
+                                        "enum": [
+                                            "ROUTINE",
+                                            "EMERGENCY",
+                                            "FOLLOW_UP"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Patient admis avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/visits/{visitId}/consultation": {
+            "patch": {
+                "tags": [
+                    "Gestion des Rendez-vous"
+                ],
+                "summary": "Admettre un patient en consultation",
+                "description": "Passe le statut de la visite à 'IN_CONSULTATION' et assigne le bureau médical.",
+                "operationId": "admitToConsultation",
+                "parameters": [
+                    {
+                        "name": "visitId",
+                        "in": "path",
+                        "description": "ID de la visite (patient_visit)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "consulting_room_id"
+                                ],
+                                "properties": {
+                                    "consulting_room_id": {
+                                        "description": "ID du bureau de consultation (facility_room)",
+                                        "type": "integer",
+                                        "example": 2
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Patient entré en consultation avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/appointments/export-pdf": {
+            "get": {
+                "tags": [
+                    "Gestion des Rendez-vous"
+                ],
+                "summary": "Télécharger le calendrier des rendez-vous en PDF",
+                "description": "Génère un document PDF affichant les rendez-vous selon les filtres (date, centre).",
+                "operationId": "exportAppointmentsPdf",
+                "parameters": [
+                    {
+                        "name": "date",
+                        "in": "query",
+                        "description": "Date spécifique pour le PDF",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "center_id",
+                        "in": "query",
+                        "description": "Filtrer par centre (Admin)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Fichier PDF généré pour le téléchargement"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/receptionist/patients": {
             "get": {
                 "tags": [
@@ -3719,7 +4785,8 @@
                                 "required": [
                                     "first_name",
                                     "bith_date",
-                                    "contact_phone"
+                                    "contact_phone",
+                                    "gender"
                                 ],
                                 "properties": {
                                     "first_name": {
@@ -3739,6 +4806,35 @@
                                     "contact_phone": {
                                         "type": "string",
                                         "example": "677123456"
+                                    },
+                                    "birth_place": {
+                                        "type": "string",
+                                        "example": "Douala",
+                                        "nullable": true
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "Akwa, Rue des manguiers",
+                                        "nullable": true
+                                    },
+                                    "emergency_contact_name": {
+                                        "type": "string",
+                                        "example": "Jane Doe",
+                                        "nullable": true
+                                    },
+                                    "emergency_contact_number": {
+                                        "type": "string",
+                                        "example": "699123456",
+                                        "nullable": true
+                                    },
+                                    "gender": {
+                                        "type": "string",
+                                        "example": "MALE",
+                                        "enum": [
+                                            "MALE",
+                                            "FEMALE",
+                                            "OTHER"
+                                        ]
                                     }
                                 },
                                 "type": "object"
@@ -5081,6 +6177,10 @@
             "description": "Gestion des lots (Batches) avec dates de péremption et prix d'achat"
         },
         {
+            "name": "Lits d'Hospitalisation",
+            "description": "Gestion des lits dans les salles d'hospitalisation"
+        },
+        {
             "name": "Centres (Admin)",
             "description": "Gestion des centres médicaux de l'hôpital de l'administrateur"
         },
@@ -5097,6 +6197,10 @@
             "description": "Gestion des chauffeurs d'ambulances et véhicules"
         },
         {
+            "name": "Salles et Installations",
+            "description": "Gestion des salles, bureaux et chambres d'hospitalisation"
+        },
+        {
             "name": "Pharmaciens (Admin)",
             "description": "Gestion du personnel de la pharmacie (Création compte + Affectation)"
         },
@@ -5111,6 +6215,10 @@
         {
             "name": "Réceptionnistes (Admin)",
             "description": "Gestion des réceptionnistes de l'hôpital"
+        },
+        {
+            "name": "Catégories de Chambres",
+            "description": "Gestion des types de chambres et tarifications"
         },
         {
             "name": "Stocks",
@@ -5147,6 +6255,10 @@
         {
             "name": "Gestion Espace & Aménagement",
             "description": "Outils de rangement et d'organisation physique des stocks pour les pharmaciens"
+        },
+        {
+            "name": "Gestion des Rendez-vous",
+            "description": "Planification, admission et suivi des rendez-vous des patients"
         },
         {
             "name": "Patients (Réception)",

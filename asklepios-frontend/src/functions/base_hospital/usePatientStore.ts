@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import api from "../../api/api"; // Ajuste le chemin selon ton architecture
-import type { PaginatedResponse } from "../../types/types"; // L'interface magique
+import type { PaginatedResponse } from "../../types/types"; 
 import type { PatientDto, PatientPayload } from "../../types/PatientTypes";
 
 export interface PaginationData {
@@ -58,7 +58,7 @@ const usePatientStore = () => {
     const getAllPatients = useCallback(async () => {
         try {
             const res = await api.get<PatientDto[]>("/receptionist/patients", {
-                params: { paginated: 'false' } // Déclenche la condition dans le contrôleur
+                params: { paginated: 'false' } 
             });
             setAllPatients(res.data);
             return res.data;

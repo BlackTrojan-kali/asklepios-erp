@@ -7,6 +7,7 @@ use App\Http\Services\PatientCodeService;
 use App\Models\Patient;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
+use Illuminate\Validation\Rule;
 
 #[OA\Tag(name: "Patients (Réception)", description: "Gestion des dossiers patients par le personnel d'accueil")]
 class PatientController extends Controller
@@ -22,7 +23,7 @@ class PatientController extends Controller
     }
 
     /**
-     * Récupère l'ID de l'hôpital depuis le profil réceptionniste connecté
+     * Récupère l'ID de l'hôpital depuis le profil connecté
      */
     private function getHospitalId()
     {
@@ -30,11 +31,11 @@ class PatientController extends Controller
         
         if ($user->profile_reception) {
             return $user->profile_reception->hospital_id;
-        }else if($user->profile_admin){
+        } else if ($user->profile_admin) {
             return $user->profile_admin->hospital_id;
         }
         
-        abort(403, "Profil non autorisé. Seul un réceptionniste peut interagir avec les dossiers patients.");
+        abort(403, "Profil non autorisé. Seul un réceptionniste ou un admin peut interagir avec les dossiers patients.");
     }
 
     /**
@@ -55,6 +56,7 @@ class PatientController extends Controller
     {
         $hospitalId = $this->getHospitalId();
         $query = Patient::where('hospital_id', $hospitalId);
+        
         // Filtre de recherche (Code, Nom, Prénom, Téléphone)
         if ($request->filled('search')) {
             $search = $request->query('search');
@@ -90,12 +92,17 @@ class PatientController extends Controller
     #[OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
-            required: ["first_name", "bith_date", "contact_phone"],
+            required: ["first_name", "bith_date", "contact_phone", "gender"],
             properties: [
                 new OA\Property(property: "first_name", type: "string", example: "John"),
                 new OA\Property(property: "last_name", type: "string", nullable: true, example: "Doe"),
                 new OA\Property(property: "bith_date", type: "string", format: "date", example: "1995-05-15"),
-                new OA\Property(property: "contact_phone", type: "string", example: "677123456")
+                new OA\Property(property: "contact_phone", type: "string", example: "677123456"),
+                new OA\Property(property: "birth_place", type: "string", nullable: true, example: "Douala"),
+                new OA\Property(property: "address", type: "string", nullable: true, example: "Akwa, Rue des manguiers"),
+                new OA\Property(property: "emergency_contact_name", type: "string", nullable: true, example: "Jane Doe"),
+                new OA\Property(property: "emergency_contact_number", type: "string", nullable: true, example: "699123456"),
+                new OA\Property(property: "gender", type: "string", enum: ["MALE", "FEMALE", "OTHER"], example: "MALE")
             ]
         )
     )]
@@ -105,10 +112,15 @@ class PatientController extends Controller
         $hospitalId = $this->getHospitalId();
 
         $validatedData = $request->validate([
-            'first_name'    => 'required|string|max:255',
-            'last_name'     => 'nullable|string|max:255',
-            'bith_date'     => 'required|date|before:tomorrow',
-            'contact_phone' => 'required|string|max:50',
+            'first_name'               => 'required|string|max:255',
+            'last_name'                => 'nullable|string|max:255',
+            'bith_date'                => 'required|date|before:tomorrow',
+            'contact_phone'            => 'required|string|max:50',
+            'birth_place'              => 'nullable|string|max:255',
+            'address'                  => 'nullable|string|max:255',
+            'emergency_contact_name'   => 'nullable|string|max:255',
+            'emergency_contact_number' => 'nullable|string|max:50',
+            'gender'                   => ['required', Rule::in(['MALE', 'FEMALE', 'OTHER'])],
         ]);
 
         // Génération du code unique à l'aide du service injecté
@@ -161,10 +173,15 @@ class PatientController extends Controller
         $patient = Patient::where('hospital_id', $hospitalId)->findOrFail($id);
 
         $validatedData = $request->validate([
-            'first_name'    => 'sometimes|required|string|max:255',
-            'last_name'     => 'nullable|string|max:255',
-            'bith_date'     => 'sometimes|required|date|before:tomorrow',
-            'contact_phone' => 'sometimes|required|string|max:50',
+            'first_name'               => 'sometimes|required|string|max:255',
+            'last_name'                => 'nullable|string|max:255',
+            'bith_date'                => 'sometimes|required|date|before:tomorrow',
+            'contact_phone'            => 'sometimes|required|string|max:50',
+            'birth_place'              => 'nullable|string|max:255',
+            'address'                  => 'nullable|string|max:255',
+            'emergency_contact_name'   => 'nullable|string|max:255',
+            'emergency_contact_number' => 'nullable|string|max:50',
+            'gender'                   => ['sometimes', 'required', Rule::in(['MALE', 'FEMALE', 'OTHER'])],
         ]);
 
         $patient->update($validatedData);

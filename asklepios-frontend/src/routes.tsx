@@ -43,6 +43,9 @@ import Receptionists from "./Pages/Admin/Base_hospital/receptionist/Receptionist
 import Patients from "./Pages/Admin/Base_hospital/receptionist/Patients";
 import Doctors from "./Pages/Admin/Base_hospital/doctor/Doctors";
 import RoomCategories from "./Pages/Admin/Base_hospital/room_category/RoomCategories";
+import ManageDepartment from './Pages/Admin/Base_hospital/ManageDepartment';
+import FacilityRoomsExplorer from "./Pages/Admin/Base_hospital/FacilityRoomsExplorer";
+import BedsExplorer from "./Pages/Admin/Base_hospital/BedsExplorer";
 
 const routes = createBrowserRouter([
   // ==========================================
@@ -109,6 +112,9 @@ const routes = createBrowserRouter([
           { path: "orders", element: <AdminPurchaseOrders /> },
           { path: "returns", element: <AdminPurchaseReturns /> },
           {path:"room_categories",element:<RoomCategories/>},
+          {path:"departments/:id/manage_department",element:<ManageDepartment/>},
+          {path:"departments/:id/rooms",element:<FacilityRoomsExplorer/>},
+          {path:"rooms/:id/beds",element:<BedsExplorer/>},
 
           // Sous-dossier Pharmacie côté Admin
           {

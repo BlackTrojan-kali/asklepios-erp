@@ -11,19 +11,24 @@ import {
     ChevronRight,
     Calendar,
     Phone,
-    Fingerprint
+    Fingerprint,
+    CalendarClock // Nouvel icône pour le bouton des rendez-vous
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
-// Stores
-import usePatientStore from '../../../../functions/base_hospital/usePatientStore'; // Ajuste le chemin
+// --- STORES ---
+import usePatientStore from '../../../../functions/base_hospital/usePatientStore';
+// Import du store des docteurs (ajuste le chemin exact si nécessaire)
+import useDoctorStore from '../../../../functions/base_hospital/useDoctorStore'; 
 
-// Types
+// --- TYPES ---
+import { PatientGender } from '../../../../types/PatientTypes';
 import type { PatientDto } from '../../../../types/PatientTypes';
 
-// Modales
+// --- MODALES ---
 import { CreatePatientModal } from '../../../../components/modals/Base_hopital/Patient/CreatePatientModal';
 import { UpdatePatientModal } from '../../../../components/modals/Base_hopital/Patient/UpdatePatientModal';
+import { PatientAppointmentManagerModal } from '../../../../components/modals/Base_hopital/Appointment/PatientAppointmentManagerModal';
 
 const Patients = () => {
     // --- STORES ---
@@ -31,6 +36,9 @@ const Patients = () => {
         patients, loading, pagination, 
         getPatients, deletePatient 
     } = usePatientStore();
+    
+    // On récupère la liste des docteurs pour le formulaire de RDV
+    const { allDoctors, getAllDoctors } = useDoctorStore();
 
     // --- ÉTATS ---
     const [page, setPage] = useState(1);
@@ -39,11 +47,22 @@ const Patients = () => {
     // États pour l'ouverture des modales
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [selectedPatient, setSelectedPatient] = useState<PatientDto | null>(null);
+    const [appointmentPatient, setAppointmentPatient] = useState<PatientDto | null>(null); // Pour la modale RDV
+
+    // Identifiant du centre actuel (À remplacer par l'ID de l'utilisateur connecté via ton store d'authentification)
+    const currentCenterId = 1; 
 
     // --- CHARGEMENT INITIAL ---
     useEffect(() => {
         getPatients(page, { search: searchQuery });
     }, [getPatients, page]);
+
+    // Chargement des médecins une seule fois au montage du composant
+// Dans Patients.tsx
+useEffect(() => {
+    getPatients(page, { search: searchQuery });
+    getAllDoctors(); // Charge la liste complète des médecins en arrière-plan
+}, [getPatients, page, getAllDoctors]);
 
     // Action : Rafraîchir la liste actuelle
     const handleRefresh = () => {
@@ -53,7 +72,7 @@ const Patients = () => {
     // Soumission du formulaire de recherche
     const handleSearchSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        setPage(1); // Retour à la page 1 lors d'une nouvelle recherche
+        setPage(1); 
         getPatients(1, { search: searchQuery });
     };
 
@@ -71,12 +90,10 @@ const Patients = () => {
             text: `Vous êtes sur le point de modifier le dossier de ${patient.first_name} ${patient.last_name || ''}. Confirmez-vous avoir vérifié l'identité du patient ?`,
             icon: 'info',
             showCancelButton: true,
-            confirmButtonColor: '#4f46e5', // Indigo-600
+            confirmButtonColor: '#4f46e5',
             cancelButtonText: 'Annuler',
             confirmButtonText: 'Oui, je confirme',
-            customClass: {
-                popup: 'rounded-2xl dark:bg-gray-800 dark:text-gray-200'
-            }
+            customClass: { popup: 'rounded-2xl dark:bg-gray-800 dark:text-gray-200' }
         });
         
         if (result.isConfirmed) {
@@ -94,9 +111,7 @@ const Patients = () => {
             confirmButtonColor: '#ef4444',
             cancelButtonText: 'Annuler',
             confirmButtonText: 'Oui, archiver',
-            customClass: {
-                popup: 'rounded-2xl dark:bg-gray-800 dark:text-gray-200'
-            }
+            customClass: { popup: 'rounded-2xl dark:bg-gray-800 dark:text-gray-200' }
         });
         
         if (result.isConfirmed) {
@@ -111,6 +126,16 @@ const Patients = () => {
         return date.toLocaleDateString('fr-FR');
     };
 
+    // Helper : Traduction du genre pour l'affichage
+    const getGenderLabel = (gender: PatientGender) => {
+        switch(gender) {
+            case PatientGender.MALE: return "Homme";
+            case PatientGender.FEMALE: return "Femme";
+            case PatientGender.OTHER: return "Autre";
+            default: return "Non spécifié";
+        }
+    };
+
     return (
         <div className="space-y-6">
             
@@ -123,7 +148,6 @@ const Patients = () => {
                     <div>
                         <div className="flex items-center gap-3">
                             <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Dossiers Patients</h1>
-                            {/* AFFICHAGE DU NOMBRE TOTAL DE PATIENTS */}
                             {pagination && (
                                 <span className="bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 text-xs font-semibold px-2.5 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800">
                                     {pagination.total} {pagination.total > 1 ? 'enregistrés' : 'enregistré'}
@@ -134,7 +158,6 @@ const Patients = () => {
                     </div>
                 </div>
                 
-                {/* Boutons d'action rapides */}
                 <div className="flex items-center gap-3 w-full sm:w-auto">
                     <button 
                         onClick={handleRefresh}
@@ -225,7 +248,6 @@ const Patients = () => {
                                 patients.map((item) => (
                                     <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-gray-700/30 transition-colors">
                                         
-                                        {/* CODE PATIENT */}
                                         <td className="p-4">
                                             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400 dark:border-indigo-800/50 font-mono text-xs font-bold tracking-wide">
                                                 <Fingerprint size={14} />
@@ -233,14 +255,17 @@ const Patients = () => {
                                             </div>
                                         </td>
 
-                                        {/* IDENTITÉ */}
                                         <td className="p-4">
                                             <div className="font-bold text-slate-800 dark:text-gray-200 uppercase">
                                                 {item.first_name} <span className="font-medium text-slate-600 dark:text-gray-400">{item.last_name}</span>
                                             </div>
+                                            {item.gender && (
+                                                <div className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                                                    {getGenderLabel(item.gender)}
+                                                </div>
+                                            )}
                                         </td>
 
-                                        {/* CONTACT */}
                                         <td className="p-4 font-medium text-slate-700 dark:text-gray-300">
                                             <div className="flex items-center gap-1.5">
                                                 <Phone size={14} className="text-gray-400 shrink-0" />
@@ -248,7 +273,6 @@ const Patients = () => {
                                             </div>
                                         </td>
                                         
-                                        {/* DATE DE NAISSANCE */}
                                         <td className="p-4">
                                             <div className="flex items-center gap-1.5 text-slate-700 dark:text-gray-300">
                                                 <Calendar size={14} className="text-gray-400 shrink-0" />
@@ -256,9 +280,17 @@ const Patients = () => {
                                             </div>
                                         </td>
 
-                                        {/* ACTIONS */}
                                         <td className="p-4 text-right">
                                             <div className="flex justify-end items-center gap-2">
+                                                {/* NOUVEAU BOUTON : Gestion des Rendez-vous */}
+                                                <button 
+                                                    onClick={() => setAppointmentPatient(item)} 
+                                                    title="Gérer les rendez-vous et admissions" 
+                                                    className="p-2 text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"
+                                                >
+                                                    <CalendarClock size={16} />
+                                                </button>
+
                                                 <button 
                                                     onClick={() => handleEditRequest(item)} 
                                                     title="Modifier le dossier" 
@@ -266,6 +298,7 @@ const Patients = () => {
                                                 >
                                                     <Edit size={16} />
                                                 </button>
+                                                
                                                 <button 
                                                     onClick={() => handleDelete(item.id, `${item.first_name} ${item.last_name || ''}`)} 
                                                     title="Archiver le dossier" 
@@ -294,14 +327,14 @@ const Patients = () => {
                             <button 
                                 onClick={() => setPage(page - 1)}
                                 disabled={pagination.currentPage === 1}
-                                className="p-2 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-600 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white dark:hover:bg-gray-800 transition-colors"
+                                className="p-2 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-600 dark:text-gray-300 disabled:opacity-50 hover:bg-white dark:hover:bg-gray-800 transition-colors"
                             >
                                 <ChevronLeft size={18} />
                             </button>
                             <button 
                                 onClick={() => setPage(page + 1)}
                                 disabled={pagination.currentPage === pagination.lastPage}
-                                className="p-2 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-600 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white dark:hover:bg-gray-800 transition-colors"
+                                className="p-2 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-600 dark:text-gray-300 disabled:opacity-50 hover:bg-white dark:hover:bg-gray-800 transition-colors"
                             >
                                 <ChevronRight size={18} />
                             </button>
@@ -320,6 +353,14 @@ const Patients = () => {
                 isOpen={!!selectedPatient} 
                 onClose={() => setSelectedPatient(null)} 
                 patient={selectedPatient}
+            />
+
+            <PatientAppointmentManagerModal
+                isOpen={!!appointmentPatient}
+                onClose={() => setAppointmentPatient(null)}
+                patient={appointmentPatient}
+                currentCenterId={currentCenterId}
+                doctors={allDoctors}
             />
 
         </div>

@@ -21,8 +21,13 @@ class Patient extends Model
         'patient_code',
         'first_name',
         'last_name',
-        'bith_date', // Aligné sur l'orthographe de la migration
+        'bith_date', // Typo conservée pour correspondre à la migration
         'contact_phone',
+        'birth_place',
+        'address',
+        'emergency_contact_name',
+        'emergency_contact_number',
+        'gender',
     ];
 
     /**

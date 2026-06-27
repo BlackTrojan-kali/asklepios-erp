@@ -82,7 +82,19 @@ class RoomCategoryController extends Controller
         security: [["bearerAuth" => []]],
         tags: ["Catégories de Chambres"]
     )]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ["center_id", "name", "price_per_night"],
+            properties: [
+                new OA\Property(property: "center_id", type: "integer", example: 1),
+                new OA\Property(property: "name", type: "string", example: "Chambre VIP"),
+                new OA\Property(property: "price_per_night", type: "number", format: "float", example: 25000)
+            ]
+        )
+    )]
     #[OA\Response(response: 201, description: "Catégorie créée avec succès")]
+    #[OA\Response(response: 422, description: "Erreur de validation des données")]
     public function store(Request $request)
     {
         $hospitalId = $this->getHospitalId();
@@ -114,6 +126,9 @@ class RoomCategoryController extends Controller
         security: [["bearerAuth" => []]],
         tags: ["Catégories de Chambres"]
     )]
+    #[OA\Parameter(name: "id", in: "path", required: true, description: "ID de la catégorie", schema: new OA\Schema(type: "integer"))]
+    #[OA\Response(response: 200, description: "Détails récupérés avec succès")]
+    #[OA\Response(response: 404, description: "Catégorie non trouvée")]
     public function show($id)
     {
         $hospitalId = $this->getHospitalId();
@@ -135,6 +150,19 @@ class RoomCategoryController extends Controller
         security: [["bearerAuth" => []]],
         tags: ["Catégories de Chambres"]
     )]
+    #[OA\Parameter(name: "id", in: "path", required: true, description: "ID de la catégorie", schema: new OA\Schema(type: "integer"))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: "center_id", type: "integer", example: 1),
+                new OA\Property(property: "name", type: "string", example: "Chambre Standard"),
+                new OA\Property(property: "price_per_night", type: "number", format: "float", example: 15000)
+            ]
+        )
+    )]
+    #[OA\Response(response: 200, description: "Catégorie mise à jour avec succès")]
+    #[OA\Response(response: 404, description: "Catégorie non trouvée")]
     public function update(Request $request, $id)
     {
         $hospitalId = $this->getHospitalId();
@@ -170,6 +198,9 @@ class RoomCategoryController extends Controller
         security: [["bearerAuth" => []]],
         tags: ["Catégories de Chambres"]
     )]
+    #[OA\Parameter(name: "id", in: "path", required: true, description: "ID de la catégorie", schema: new OA\Schema(type: "integer"))]
+    #[OA\Response(response: 200, description: "Catégorie supprimée avec succès")]
+    #[OA\Response(response: 404, description: "Catégorie non trouvée")]
     public function destroy($id)
     {
         $hospitalId = $this->getHospitalId();
