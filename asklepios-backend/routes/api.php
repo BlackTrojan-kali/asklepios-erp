@@ -26,6 +26,8 @@ use App\Http\Controllers\Admin\ProviderController;
 use App\Http\Controllers\Admin\RoomCategoryController;
 use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Admin\VehiculeController;
+use App\Http\Controllers\Doctor\EquipmentController;
+use App\Http\Controllers\Doctor\MedicalBackgroundController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Pharmacien\InventoryController;
 use App\Http\Controllers\Pharmacien\PurchaseOrderController;
@@ -289,14 +291,36 @@ Route::middleware('auth:sanctum')->group(function () {
         // ---------------------------------------------------------
         Route::middleware(['licence:base_hospital'])
             ->group(function () {
-
+// ==========================================================
+    Route::middleware(['role:admin,doctor'])->prefix('shared')->group(function () {
+        
+        Route::prefix('departments/{departmentId}')->group(function () {
+            
+            // Dashboard / Alertes (Placé IMPÉRATIVEMENT avant les routes avec {equipmentId})
+            Route::get('equipment/maintenance-alerts', [EquipmentController::class, 'maintenanceAlerts']);
+            
+            // Gestion complète (CRUD) des équipements
+            Route::get('equipment', [EquipmentController::class, 'index']);
+            Route::post('equipment', [EquipmentController::class, 'store']);
+            Route::get('equipment/{equipmentId}', [EquipmentController::class, 'show']);
+            Route::put('equipment/{equipmentId}', [EquipmentController::class, 'update']);
+            Route::delete('equipment/{equipmentId}', [EquipmentController::class, 'destroy']);
+            
+        });
+        
+    });
             // ---------------------------------------------------------
     // ACCÈS PARTAGÉ (Admin, Docteur, Réception)
     // ---------------------------------------------------------
     Route::middleware(["role:admin,doctor,reception"])->prefix('shared')->group(function () {
         
         // ... tes autres routes partagées (room-categories, etc.)
-
+Route::prefix('patients/{patientId}')->group(function () {
+        Route::get('medical-background', [MedicalBackgroundController::class, 'show']);
+        Route::post('medical-background', [MedicalBackgroundController::class, 'store']);
+        Route::put('medical-background', [MedicalBackgroundController::class, 'update']);
+        Route::delete('medical-background', [MedicalBackgroundController::class, 'destroy']);
+    });
         // Lecture des salles d'un département (Pour l'interface type "Explorateur de fichiers")
         Route::get('departments/{departmentId}/facility-rooms', [FacilityRoomController::class, 'index']);
         

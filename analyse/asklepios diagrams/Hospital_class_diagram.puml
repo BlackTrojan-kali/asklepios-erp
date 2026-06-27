@@ -7,7 +7,7 @@ skinparam linetype ortho
 skinparam classAttributeIconSize 0
 skinparam shadowing false
 
-title Architecture Asklepios : Multi-Centres, Files d'attente, Rendez-vous & DPI
+title Architecture Asklepios : Multi-Centres, Rendez-vous, DPI & Examens
 
 ' --- DEFINITION DES COULEURS PAR DOMAINE ---
 skinparam package {
@@ -119,7 +119,7 @@ package "3. Rendez-vous & File d'Attente" <<Workflow>> {
     }
 }
 
-package "4. Dossier Clinique & Hospitalisation" <<Clinical>> {
+package "4. Dossier Clinique, Hospitalisation & Examens" <<Clinical>> {
     class medical_background {
         id: UnsignedBigInteger
         patient_id: UnsignedBigInteger
@@ -156,6 +156,20 @@ package "4. Dossier Clinique & Hospitalisation" <<Clinical>> {
         article_id: UnsignedBigInteger_optional
         custom_medication_name: String_optional
         dosage: String
+    }
+    class exam_request {
+        id: UnsignedBigInteger
+        consultation_id: UnsignedBigInteger
+        status: String ('PENDING', 'COMPLETED')
+        created_at: Datetime
+    }
+    class exam_request_line {
+        id: UnsignedBigInteger
+        exam_request_id: UnsignedBigInteger
+        lab_parameter_id_optional: UnsignedBigInteger (Pont futur Module Labo)
+        exam_name: String (ex: Echographie Pelvienne, NFS)
+        result_notes: Text_optional (Saisie si Labo externe)
+        document_url: String_optional (Scan PDF du résultat externe)
     }
 }
 
@@ -238,8 +252,12 @@ equipment "1" <-- "*" performed_medical_act
 patient_visit "1" *-- "1" consultation
 patient_visit "1" *-- "*" admission
 bed "1" <-- "*" admission
+
+' --- RELATIONS PRESCRIPTIONS (MEDICAMENTS & EXAMENS) ---
 consultation "1" *-- "1" prescription
 prescription "1" *-- "*" prescription_line
+consultation "1" *-- "*" exam_request
+exam_request "1" *-- "1..*" exam_request_line
 
 ' --- RELATIONS FACTURATION ---
 patient "1" *-- "*" invoice
@@ -250,5 +268,6 @@ invoice "1" *-- "*" payment
 performed_medical_act "1" .. "*" invoice_line
 consultation "1" .. "*" invoice_line
 admission "1" .. "*" invoice_line
+exam_request_line "1" .. "*" invoice_line : facturé via _optional >
 
-@enduml 
+@enduml

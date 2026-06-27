@@ -56,6 +56,7 @@ import CashRegister from "./Pages/Admin/Pharmacies/Sale/CashRegister";
 import CloseSession from "./Pages/PHARMACY/CloseSession";
 import OpenSession from "./Pages/PHARMACY/OpenSession";
 import DoctorAppointments from "./Pages/Doctor/DoctorAppointments";
+import EquipmentExplorer from "./Pages/Admin/Base_hospital/EquipmentExplorer";
 
 const routes = createBrowserRouter([
   // ==========================================
@@ -125,7 +126,7 @@ const routes = createBrowserRouter([
           {path:"departments/:id/manage_department",element:<ManageDepartment/>},
           {path:"departments/:id/rooms",element:<FacilityRoomsExplorer/>},
           {path:"rooms/:id/beds",element:<BedsExplorer/>},
-
+          {path:"departments/:id/equipments",element:<EquipmentExplorer/>},
           // Sous-dossier Pharmacie côté Admin
           {
             path: "pharmacy/acticles-categories",

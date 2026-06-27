@@ -3421,7 +3421,7 @@
                     "Stocks"
                 ],
                 "summary": "Voir les stocks globaux paginés (Toutes succursales)",
-                "description": "1. VUE GLOBALE PAGINÉE (Pour les Administrateurs ou Superviseurs)\nListe tous les stocks de l'hôpital, avec possibilité de filtrer par succursale.",
+                "description": "1. VUE GLOBALE PAGINÉE (Pour les Administrateurs ou Superviseurs)\r\nListe tous les stocks de l'hôpital, avec possibilité de filtrer par succursale.",
                 "operationId": "getGlobalStocks",
                 "parameters": [
                     {
@@ -3490,7 +3490,7 @@
                     "Stocks"
                 ],
                 "summary": "Voir les stocks paginés de ma succursale",
-                "description": "2. VUE LOCALE PAGINÉE (Pour les Pharmaciens / Vendeurs)\nListe uniquement les stocks de la succursale du pharmacien connecté.",
+                "description": "2. VUE LOCALE PAGINÉE (Pour les Pharmaciens / Vendeurs)\r\nListe uniquement les stocks de la succursale du pharmacien connecté.",
                 "operationId": "getMyBranchStocks",
                 "parameters": [
                     {
@@ -3773,6 +3773,601 @@
                 "security": [
                     {
                         "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/departments/{departmentId}/equipment": {
+            "get": {
+                "tags": [
+                    "Équipements"
+                ],
+                "summary": "Lister les équipements d'un département",
+                "description": "Récupère la liste des équipements. Supporte la pagination, la recherche et le filtrage par statut.",
+                "operationId": "70482ff2a0684db0500a9ddc412af4ec",
+                "parameters": [
+                    {
+                        "name": "departmentId",
+                        "in": "path",
+                        "description": "ID du département",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Recherche par nom, modèle ou numéro de série",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filtrer par statut exact (ACTIVE, IN_MAINTENANCE...)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "paginated",
+                        "in": "query",
+                        "description": "Mettre à 'false' pour tout récupérer sans pagination",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Numéro de la page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Nombre d'éléments par page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Opération réussie"
+                    },
+                    "404": {
+                        "description": "Département introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Équipements"
+                ],
+                "summary": "Ajouter un nouvel équipement",
+                "description": "Crée un nouvel équipement et l'associe au département spécifié.",
+                "operationId": "e9b9034835568a0d9b572a3fa8376ad3",
+                "parameters": [
+                    {
+                        "name": "departmentId",
+                        "in": "path",
+                        "description": "ID du département",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "status"
+                                ],
+                                "properties": {
+                                    "facility_room_id": {
+                                        "description": "ID de la salle",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Échographe Portable"
+                                    },
+                                    "manufacturer": {
+                                        "type": "string",
+                                        "example": "Philips"
+                                    },
+                                    "model_number": {
+                                        "type": "string",
+                                        "example": "CX50"
+                                    },
+                                    "serial_number": {
+                                        "type": "string",
+                                        "example": "PH-987654"
+                                    },
+                                    "status": {
+                                        "description": "ACTIVE, IN_USE, IN_MAINTENANCE, OUT_OF_SERVICE, RETIRED",
+                                        "type": "string",
+                                        "example": "ACTIVE"
+                                    },
+                                    "last_maintenance_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-01-15"
+                                    },
+                                    "next_maintenance_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-07-15"
+                                    },
+                                    "purchase_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-05-10"
+                                    },
+                                    "warranty_expiry_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2027-05-10"
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "example": "Capteur linéaire inclus"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Équipement créé avec succès"
+                    },
+                    "422": {
+                        "description": "Erreur de validation des données"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/departments/{departmentId}/equipment/{equipmentId}": {
+            "get": {
+                "tags": [
+                    "Équipements"
+                ],
+                "summary": "Détails d'un équipement",
+                "description": "Affiche les détails complets d'une machine.",
+                "operationId": "2ca6397d475c7f4f45120bf75d166dc0",
+                "parameters": [
+                    {
+                        "name": "departmentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "equipmentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Détails récupérés avec succès"
+                    },
+                    "404": {
+                        "description": "Équipement non trouvé"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Équipements"
+                ],
+                "summary": "Mettre à jour un équipement",
+                "description": "Met à jour les informations d'un équipement existant.",
+                "operationId": "30f5c27b01afdef22b80036c28368c84",
+                "parameters": [
+                    {
+                        "name": "departmentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "equipmentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "status"
+                                ],
+                                "properties": {
+                                    "facility_room_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Échographe Portable V2"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "example": "IN_MAINTENANCE"
+                                    },
+                                    "serial_number": {
+                                        "type": "string",
+                                        "example": "PH-987654"
+                                    },
+                                    "next_maintenance_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-08-01"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Équipement mis à jour"
+                    },
+                    "422": {
+                        "description": "Données invalides"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Équipements"
+                ],
+                "summary": "Archiver un équipement",
+                "description": "Supprime l'équipement (Soft Delete) de la vue principale sans effacer son historique.",
+                "operationId": "50de7d9fa76be114bdf41bf05a6c12e7",
+                "parameters": [
+                    {
+                        "name": "departmentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "equipmentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Équipement archivé"
+                    },
+                    "404": {
+                        "description": "Équipement non trouvé"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/departments/{departmentId}/equipment/maintenance-alerts": {
+            "get": {
+                "tags": [
+                    "Équipements"
+                ],
+                "summary": "Alertes de maintenance",
+                "description": "Récupère tous les équipements dont la maintenance est prévue dans les 30 prochains jours ou dépassée.",
+                "operationId": "4595d01054d97896fd3105cabe404b17",
+                "parameters": [
+                    {
+                        "name": "departmentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste des alertes récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/shared/patients/{patientId}/medical-background": {
+            "get": {
+                "tags": [
+                    "Antécédents Médicaux"
+                ],
+                "summary": "Récupérer les antécédents médicaux d'un patient",
+                "description": "Affiche le groupe sanguin, les allergies, maladies chroniques et l'historique chirurgical/familial du patient.",
+                "operationId": "62e8c1f0a0859dea756199f658d4926f",
+                "parameters": [
+                    {
+                        "name": "patientId",
+                        "in": "path",
+                        "description": "ID du patient",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Données récupérées avec succès"
+                    },
+                    "404": {
+                        "description": "Patient ou dossier médical introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Antécédents Médicaux"
+                ],
+                "summary": "Mettre à jour les antécédents d'un patient",
+                "description": "Modifie les listes d'allergies, pathologies ou habitudes de vie.",
+                "operationId": "870961436a963d1f0642bbb33d2bb4a1",
+                "parameters": [
+                    {
+                        "name": "patientId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "blood_type": {
+                                        "type": "string",
+                                        "example": "AB-"
+                                    },
+                                    "allergies": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "example": [
+                                            "Pénicilline",
+                                            "Arachides"
+                                        ]
+                                    },
+                                    "general_notes": {
+                                        "type": "string",
+                                        "example": "Mise à jour suite à une nouvelle allergie détectée"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Dossier mis à jour avec succès"
+                    },
+                    "404": {
+                        "description": "Dossier introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Antécédents Médicaux"
+                ],
+                "summary": "Créer le dossier d'antécédents d'un patient",
+                "description": "Initialise la fiche des antécédents. Échoue si le patient possède déjà une fiche (Relation 1:1).",
+                "operationId": "416631d441f624c296909224ece8de90",
+                "parameters": [
+                    {
+                        "name": "patientId",
+                        "in": "path",
+                        "description": "ID du patient",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "blood_type": {
+                                        "description": "A+, A-, B+, B-, AB+, AB-, O+, O-, UNKNOWN",
+                                        "type": "string",
+                                        "example": "O+"
+                                    },
+                                    "allergies": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "example": [
+                                            "Pénicilline",
+                                            "Iode"
+                                        ]
+                                    },
+                                    "chronic_conditions": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "example": [
+                                            "Diabète Type 1",
+                                            "Asthme"
+                                        ]
+                                    },
+                                    "past_surgeries": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "example": [
+                                            "Appendicectomie (2018)"
+                                        ]
+                                    },
+                                    "current_medications": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "example": [
+                                            "Lantus 10 UI"
+                                        ]
+                                    },
+                                    "immunizations": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "example": [
+                                            "Hépatite B",
+                                            "Tétanos"
+                                        ]
+                                    },
+                                    "family_history": {
+                                        "type": "string",
+                                        "example": "Père cardiaque, Mère hypertendue"
+                                    },
+                                    "lifestyle_habits": {
+                                        "type": "string",
+                                        "example": "Non-fumeur, consommation occasionnelle d'alcool"
+                                    },
+                                    "general_notes": {
+                                        "type": "string",
+                                        "example": "Patient très coopératif, suivi régulier requis"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Dossier médical créé avec succès"
+                    },
+                    "422": {
+                        "description": "Erreur de validation (ex: la fiche existe déjà)"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Antécédents Médicaux"
+                ],
+                "summary": "Archiver le dossier d'antécédents",
+                "description": "Réalise un Soft Delete du dossier d'antécédents du patient.",
+                "operationId": "c25b1eef30d8918a3df96cd68ff72cdc",
+                "parameters": [
+                    {
+                        "name": "patientId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Dossier archivé avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
                     }
                 ]
             }
@@ -7033,6 +7628,14 @@
         {
             "name": "Véhicules",
             "description": "Gestion des véhicules du parc hospitalier"
+        },
+        {
+            "name": "Équipements",
+            "description": "API de gestion du matériel médical et des alertes de maintenance pour les départements."
+        },
+        {
+            "name": "Antécédents Médicaux",
+            "description": "API de gestion des dossiers d'antécédents médicaux (Profil médical de base) des patients."
         },
         {
             "name": "Notifications",

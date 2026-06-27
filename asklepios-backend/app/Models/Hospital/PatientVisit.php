@@ -47,4 +47,5 @@ class PatientVisit extends Model
     {
         return $this->belongsTo(FacilityRoom::class, 'consulting_room_id');
     }
+    
 }

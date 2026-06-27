@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Hospital\MedicalBackground;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -45,5 +46,11 @@ class Patient extends Model
     public function hospital(): BelongsTo
     {
         return $this->belongsTo(Hospital::class);
+    
+        }
+        // À ajouter dans app/Models/Patient.php
+    public function medicalBackground()
+    {
+        return $this->hasOne(MedicalBackground::class);
     }
 }
