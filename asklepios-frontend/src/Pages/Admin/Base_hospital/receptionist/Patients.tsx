@@ -12,13 +12,12 @@ import {
     Calendar,
     Phone,
     Fingerprint,
-    CalendarClock // Nouvel icône pour le bouton des rendez-vous
+    CalendarClock
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
 // --- STORES ---
 import usePatientStore from '../../../../functions/base_hospital/usePatientStore';
-// Import du store des docteurs (ajuste le chemin exact si nécessaire)
 import useDoctorStore from '../../../../functions/base_hospital/useDoctorStore'; 
 
 // --- TYPES ---
@@ -53,18 +52,20 @@ const Patients = () => {
     const currentCenterId = 1; 
 
     // --- CHARGEMENT INITIAL ---
+    
+    // 1. Chargement des patients (se déclenche au montage et à chaque changement de page)
     useEffect(() => {
         getPatients(page, { search: searchQuery });
     }, [getPatients, page]);
 
-    // Chargement des médecins une seule fois au montage du composant
-// Dans Patients.tsx
-useEffect(() => {
-    getPatients(page, { search: searchQuery });
-    getAllDoctors(); // Charge la liste complète des médecins en arrière-plan
-}, [getPatients, page, getAllDoctors]);
+    // 2. Chargement des médecins (se déclenche une seule fois au montage du composant)
+    useEffect(() => {
+        getAllDoctors(); // Charge la liste complète en arrière-plan pour la modale
+    }, [getAllDoctors]);
 
-    // Action : Rafraîchir la liste actuelle
+    // --- ACTIONS ---
+
+    // Rafraîchir la liste actuelle
     const handleRefresh = () => {
         getPatients(page, { search: searchQuery });
     };
@@ -83,7 +84,7 @@ useEffect(() => {
         getPatients(1, { search: '' });
     };
 
-    // Action : Demander confirmation AVANT d'ouvrir la modification
+    // Demander confirmation AVANT d'ouvrir la modification
     const handleEditRequest = async (patient: PatientDto) => {
         const result = await Swal.fire({
             title: 'Vérification d\'identité',
@@ -101,7 +102,7 @@ useEffect(() => {
         }
     };
 
-    // Action : Supprimer (Archiver) un patient
+    // Supprimer (Archiver) un patient
     const handleDelete = async (id: number, name: string) => {
         const result = await Swal.fire({
             title: 'Archiver ce dossier ?',
@@ -282,7 +283,7 @@ useEffect(() => {
 
                                         <td className="p-4 text-right">
                                             <div className="flex justify-end items-center gap-2">
-                                                {/* NOUVEAU BOUTON : Gestion des Rendez-vous */}
+                                                {/* BOUTON : Gestion des Rendez-vous */}
                                                 <button 
                                                     onClick={() => setAppointmentPatient(item)} 
                                                     title="Gérer les rendez-vous et admissions" 

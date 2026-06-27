@@ -59,7 +59,7 @@ const useDoctorStore = () => {
         try {
             // Note: Si le composant est utilisé par la réception, il faudra appeler /reception/doctors
             // Ici, on utilise l'endpoint admin par défaut avec paramètre paginated=false
-            const res = await api.get<DoctorDto[]>("/admin/doctors", {
+            const res = await api.get<DoctorDto[]>("/reception/doctors", {
                 params: { paginated: 'false', ...filters }
             });
             setAllDoctors(res.data);

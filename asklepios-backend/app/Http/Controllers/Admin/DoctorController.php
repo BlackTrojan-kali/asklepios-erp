@@ -23,6 +23,8 @@ class DoctorController extends Controller
         $user = auth()->user();
         if ($user->profile_admin) {
             return $user->profile_admin->hospital_id;
+        }else if($user->profile_reception){
+            return $user->profile_reception->hospital_id;
         }
         abort(403, "Action refusée. Seul un administrateur peut gérer le personnel médical.");
     }
