@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { useMyActiveSession } from "../hooks/pharmacy/useCashRegister";
+import { useMyActiveSession } from "../hooks/pharmacy/useCashRegisterSession";
 import { Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 

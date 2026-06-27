@@ -3,8 +3,6 @@ import {
   cashRegisterService,
   type CreateCashRegisterPayload,
   type UpdateCashRegisterPayload,
-  type OpenSessionPayload,
-  type CloseSessionPayload,
 } from "../../services/pharmacy/cashRegisterService";
 
 export const useCashRegisters = (branchId?: number) => {
@@ -45,33 +43,4 @@ export const useDeleteCashRegister = () => {
   });
 };
 
-export const useOpenCashRegisterSession = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ registerId, payload }: { registerId: number; payload: OpenSessionPayload }) =>
-      cashRegisterService.openSession(registerId, payload),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["cashRegisters"] });
-      queryClient.setQueryData(["myActiveSession"], data);
-    },
-  });
-};
 
-export const useCloseCashRegisterSession = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ sessionId, payload }: { sessionId: number; payload: CloseSessionPayload }) =>
-      cashRegisterService.closeSession(sessionId, payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cashRegisters"] });
-      queryClient.setQueryData(["myActiveSession"], null);
-    },
-  });
-};
-
-export const useMyActiveSession = () => {
-  return useQuery({
-    queryKey: ["myActiveSession"],
-    queryFn: cashRegisterService.getMyActiveSession,
-  });
-};

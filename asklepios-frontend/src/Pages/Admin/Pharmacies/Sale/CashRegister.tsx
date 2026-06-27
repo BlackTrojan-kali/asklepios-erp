@@ -24,10 +24,12 @@ import {
   useCreateCashRegister,
   useUpdateCashRegister,
   useDeleteCashRegister,
+} from "../../../../hooks/pharmacy/useCashRegister";
+import {
   useOpenCashRegisterSession,
   useCloseCashRegisterSession,
   useMyActiveSession,
-} from "../../../../hooks/pharmacy/useCashRegister";
+} from "../../../../hooks/pharmacy/useCashRegisterSession";
 import type { CashRegisterDto } from "../../../../services/pharmacy/cashRegisterService";
 
 function BranchesSkeleton() {

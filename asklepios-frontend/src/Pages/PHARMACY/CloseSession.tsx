@@ -16,7 +16,7 @@ import {
   Eye,
   EyeOff
 } from "lucide-react";
-import { useMyActiveSession, useCloseCashRegisterSession } from "../../hooks/pharmacy/useCashRegister";
+import { useMyActiveSession, useCloseCashRegisterSession } from "../../hooks/pharmacy/useCashRegisterSession";
 
 export default function CloseSession() {
   const navigate = useNavigate();

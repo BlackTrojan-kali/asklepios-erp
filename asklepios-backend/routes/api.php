@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\CenterController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\DriverController;
 use App\Http\Controllers\Admin\CashRegisterController;
+use App\Http\Controllers\Pharmacien\CashRegisterSessionController;
 use App\Http\Controllers\Admin\PharmacienController;
 use App\Http\Controllers\Admin\PharmacyBranchArticleController;
 use App\Http\Controllers\Admin\PharmacyBranchController;
@@ -248,11 +249,11 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::get('/export/pdf', [StockTransferController::class, 'exportPdf']);
             });
 
-                // Caisses Sessions (Pharmacien caissier exclusif)
+            // Caisses Sessions (Pharmacien caissier exclusif)
             Route::prefix('cash-registers')->group(function () {
-                Route::post('/{id}/sessions/open', [CashRegisterController::class, 'openSession']);
-                Route::post('/sessions/{sessionId}/close', [CashRegisterController::class, 'closeSession']);
-                Route::get('/active-session/me', [CashRegisterController::class, 'myActiveSession']);
+                Route::post('/{id}/sessions/open', [CashRegisterSessionController::class, 'openSession']);
+                Route::post('/sessions/{sessionId}/close', [CashRegisterSessionController::class, 'closeSession']);
+                Route::get('/active-session/me', [CashRegisterSessionController::class, 'myActiveSession']);
             });
            
         });

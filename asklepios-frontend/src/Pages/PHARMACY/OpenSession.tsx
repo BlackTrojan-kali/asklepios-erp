@@ -11,7 +11,8 @@ import {
   Loader2,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
-import { useCashRegisters, useOpenCashRegisterSession } from "../../hooks/pharmacy/useCashRegister";
+import { useCashRegisters } from "../../hooks/pharmacy/useCashRegister";
+import { useOpenCashRegisterSession } from "../../hooks/pharmacy/useCashRegisterSession";
 
 interface SessionOpeningProps {
   onSessionOpened?: (initialBalance: number) => void;
