@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\DoctorController;
 use App\Http\Controllers\Admin\DriverController;
 use App\Http\Controllers\Admin\FacilityRoomController;
 use App\Http\Controllers\Admin\CashRegisterController;
+use App\Http\Controllers\Admin\PosSaleController as AdminPosSaleController;
 use App\Http\Controllers\Pharmacien\CashRegisterSessionController;
 use App\Http\Controllers\Pharmacien\PosSaleController;
 use App\Http\Controllers\Pharmacien\PosSaleItemController;
@@ -169,6 +170,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // 5.2. ACCÈS PARTAGÉ (Admin + Pharmacien)
         // ------------------------------------------------------
         Route::middleware('role:admin,pharmacy')->group(function () {
+            Route::get('/pharmacy/pos-sales/{id}/pdf', [PosSaleController::class, 'exportPdf']);
             
             Route::prefix('admin')->group(function () {
                 // Lecture Logistique & Succursales (utile au pharmacien)
@@ -231,6 +233,10 @@ Route::middleware('auth:sanctum')->group(function () {
                 // Caisses (Accès partagé)
                 Route::get('/cash-registers', [CashRegisterController::class, 'index']);
                 Route::get('/cash-registers/{id}', [CashRegisterController::class, 'show']);
+
+                // Historique des Ventes (Admin)
+                Route::get('/pharmacy/pos-sales', [AdminPosSaleController::class, 'index']);
+                Route::get('/pharmacy/pos-sales/sellers', [AdminPosSaleController::class, 'sellers']);
              
             });           
 
@@ -269,11 +275,11 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::post('/{id}/sessions/open', [CashRegisterSessionController::class, 'openSession']);
                 Route::post('/sessions/{sessionId}/close', [CashRegisterSessionController::class, 'closeSession']);
                 Route::get('/active-session/me', [CashRegisterSessionController::class, 'myActiveSession']);
+                Route::get('/sessions/history', [CashRegisterSessionController::class, 'sessionHistory']);
             });
 
             // Point de Vente (Ventes POS)
             Route::apiResource('pos-sales', PosSaleController::class)->only(['index', 'show', 'store']);
-            Route::get('pos-sales/{id}/pdf', [PosSaleController::class, 'exportPdf']);
             Route::apiResource('pos-sale-items', PosSaleItemController::class)->only(['index']);
             Route::get('cashier/articles', [CashierController::class, 'getAllArticles']);
            

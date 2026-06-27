@@ -52,8 +52,48 @@ export interface PosSaleDto {
   items?: PosSaleItemDto[];
 }
 
-const getSales = async (): Promise<PosSaleDto[]> => {
-  const response = await api.get<PosSaleDto[]>("/pharmacy/pos-sales");
+export interface PaginatedResponse<T> {
+  current_page: number;
+  data: T[];
+  first_page_url: string;
+  from: number | null;
+  last_page: number;
+  last_page_url: string;
+  links: Array<{ url: string | null; label: string; active: boolean }>;
+  next_page_url: string | null;
+  path: string;
+  per_page: number;
+  prev_page_url: string | null;
+  to: number | null;
+  total: number;
+}
+
+export interface AdminSalesFilterParams {
+  pharmacy_branch_id?: number;
+  cash_register_id?: number;
+  user_id?: number;
+  start_date?: string;
+  end_date?: string;
+  search?: string;
+  page?: number;
+  per_page?: number;
+}
+
+export interface SellerDto {
+  id: number;
+  first_name: string;
+  last_name: string;
+}
+
+export interface SalesFilterParams {
+  scope?: "my-active-session" | "me" | "branch";
+  start_date?: string;
+  end_date?: string;
+  payment_method?: string;
+}
+
+const getSales = async (params?: SalesFilterParams): Promise<PosSaleDto[]> => {
+  const response = await api.get<PosSaleDto[]>("/pharmacy/pos-sales", { params });
   return response.data;
 };
 
@@ -71,9 +111,31 @@ const getSalePdfUrl = (id: number): string => {
   return `${api.defaults.baseURL}/pharmacy/pos-sales/${id}/pdf`;
 };
 
+export interface AdminSalesResponse {
+  sales: PaginatedResponse<PosSaleDto>;
+  total_amount_sum: number;
+}
+
+const getAdminSales = async (
+  params?: AdminSalesFilterParams
+): Promise<AdminSalesResponse> => {
+  const response = await api.get<AdminSalesResponse>(
+    "/admin/pharmacy/pos-sales",
+    { params }
+  );
+  return response.data;
+};
+
+const getAdminSellers = async (): Promise<SellerDto[]> => {
+  const response = await api.get<SellerDto[]>("/admin/pharmacy/pos-sales/sellers");
+  return response.data;
+};
+
 export const posSaleService = {
   getSales,
   getSaleDetails,
   createSale,
   getSalePdfUrl,
+  getAdminSales,
+  getAdminSellers,
 };

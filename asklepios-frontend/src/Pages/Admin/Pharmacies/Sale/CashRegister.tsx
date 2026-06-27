@@ -59,6 +59,34 @@ function BranchesSkeleton() {
   );
 }
 
+function CashRegistersSkeleton() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-pulse">
+      {[1, 2, 3].map((i) => (
+        <div
+          key={i}
+          className="bg-white dark:bg-gray-800 rounded-xl border border-gray-205 dark:border-gray-700 p-4 shadow-xs flex flex-col justify-between h-48"
+        >
+          <div>
+            <div className="flex justify-between items-start mb-3">
+              <div className="space-y-2">
+                <div className="h-5 bg-slate-200 dark:bg-gray-750 rounded w-24" />
+                <div className="h-3 bg-slate-100 dark:bg-gray-800 rounded w-12" />
+              </div>
+              <div className="h-5 bg-slate-200 dark:bg-gray-750 rounded-full w-14" />
+            </div>
+            <div className="h-10 bg-slate-100 dark:bg-gray-800 rounded-lg mb-3" />
+            <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+              <div className="h-3 bg-slate-100 dark:bg-gray-800 rounded w-16" />
+              <div className="h-4 bg-slate-200 dark:bg-gray-750 rounded w-32" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 interface BranchRegistersListProps {
   branchId: number;
   currency: string;
@@ -214,14 +242,7 @@ function BranchRegistersList({
   };
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center py-10">
-        <Loader2 className="h-8 w-8 text-teal-600 animate-spin" />
-        <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">
-          Chargement des caisses...
-        </span>
-      </div>
-    );
+    return <CashRegistersSkeleton />;
   }
 
   if (error) {

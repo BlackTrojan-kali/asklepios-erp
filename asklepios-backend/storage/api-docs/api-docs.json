@@ -2717,6 +2717,123 @@
                 ]
             }
         },
+        "/api/admin/pharmacy/pos-sales": {
+            "get": {
+                "tags": [
+                    "Historique des Ventes (Admin)"
+                ],
+                "summary": "Liste paginée de toutes les ventes de l'hôpital avec filtres (Admin)",
+                "description": "Liste paginée de toutes les ventes de l'hôpital avec filtres",
+                "operationId": "getAdminPosSales",
+                "parameters": [
+                    {
+                        "name": "pharmacy_branch_id",
+                        "in": "query",
+                        "description": "ID de la succursale",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "cash_register_id",
+                        "in": "query",
+                        "description": "ID de la caisse",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "user_id",
+                        "in": "query",
+                        "description": "ID du vendeur/caissier",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "Date de début (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "Date de fin (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Recherche par ticket, client ou ordonnance",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Numéro de page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Éléments par page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste paginée des ventes récupérée avec succès"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/pharmacy/pos-sales/sellers": {
+            "get": {
+                "tags": [
+                    "Historique des Ventes (Admin)"
+                ],
+                "summary": "Liste de tous les vendeurs/caissiers (Admin)",
+                "description": "Obtenir la liste de tous les vendeurs/caissiers de l'hôpital",
+                "operationId": "getAdminPosSalesSellers",
+                "responses": {
+                    "200": {
+                        "description": "Liste des vendeurs récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/admin/providers/export/pdf": {
             "get": {
                 "tags": [
@@ -4000,6 +4117,29 @@
                 ]
             }
         },
+        "/api/pharmacy/cash-registers/sessions/history": {
+            "get": {
+                "tags": [
+                    "Sessions Caisses (Pharmacy)"
+                ],
+                "summary": "Historique des sessions de caisse de l'utilisateur connecté (7 derniers jours)",
+                "description": "Récupérer l'historique des sessions de caisse de l'utilisateur connecté sur une semaine",
+                "operationId": "getMyCashRegisterSessionsHistory",
+                "responses": {
+                    "200": {
+                        "description": "Liste de l'historique des sessions de caisse récupérée avec succès"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/pharmacy/cashier/articles": {
             "get": {
                 "tags": [
@@ -4190,104 +4330,6 @@
                         "bearerAuth": []
                     }
                 ]
-            },
-            "post": {
-                "tags": [
-                    "Ventes POS (Pharmacy)"
-                ],
-                "summary": "Créer une vente et enregistrer la sortie de stock (FEFO)",
-                "description": "Créer une vente et enregistrer la sortie de stock (FEFO)",
-                "operationId": "storePosSale",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "payment_method",
-                                    "items"
-                                ],
-                                "properties": {
-                                    "customer_name": {
-                                        "type": "string",
-                                        "example": "Jean Dupont"
-                                    },
-                                    "has_prescription": {
-                                        "type": "boolean",
-                                        "example": true
-                                    },
-                                    "prescription_ref": {
-                                        "type": "string",
-                                        "example": "ORD-9988"
-                                    },
-                                    "payment_method": {
-                                        "type": "string",
-                                        "example": "CASH",
-                                        "enum": [
-                                            "CASH",
-                                            "MOBILE_MONEY",
-                                            "CARD"
-                                        ]
-                                    },
-                                    "amount_received": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 5000
-                                    },
-                                    "items": {
-                                        "type": "array",
-                                        "items": {
-                                            "properties": {
-                                                "article_id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "batch_id": {
-                                                    "type": "integer",
-                                                    "example": 5,
-                                                    "nullable": true
-                                                },
-                                                "qty": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 2
-                                                },
-                                                "unit_price": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 1500
-                                                },
-                                                "discount": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 0
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Vente enregistrée avec succès"
-                    },
-                    "400": {
-                        "description": "Données incorrectes ou stock insuffisant"
-                    },
-                    "403": {
-                        "description": "Accès refusé"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
             }
         },
         "/api/pharmacy/pos-sales/{id}": {
@@ -4312,43 +4354,6 @@
                 "responses": {
                     "200": {
                         "description": "Détails de la vente récupérés avec succès"
-                    },
-                    "403": {
-                        "description": "Accès refusé"
-                    },
-                    "404": {
-                        "description": "Vente non trouvée"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/pharmacy/pos-sales/{id}/pdf": {
-            "get": {
-                "tags": [
-                    "Ventes POS (Pharmacy)"
-                ],
-                "summary": "Générer le PDF de la facture de vente",
-                "description": "Générer le PDF de la facture de vente",
-                "operationId": "exportPosSalePdf",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "ID de la vente",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Flux binaire du PDF de la facture"
                     },
                     "403": {
                         "description": "Accès refusé"
@@ -7013,6 +7018,10 @@
         {
             "name": "Pharmacies (Admin)",
             "description": "Gestion des succursales et magasins de la pharmacie de l'hôpital"
+        },
+        {
+            "name": "Historique des Ventes (Admin)",
+            "description": "Consultation de toutes les ventes POS réalisées dans l'hôpital par l'administrateur"
         },
         {
             "name": "Fournisseurs (Admin)",

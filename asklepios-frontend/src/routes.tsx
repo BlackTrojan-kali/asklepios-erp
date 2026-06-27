@@ -47,17 +47,16 @@ import ManageDepartment from "./Pages/Admin/Base_hospital/ManageDepartment";
 import FacilityRoomsExplorer from "./Pages/Admin/Base_hospital/FacilityRoomsExplorer";
 import BedsExplorer from "./Pages/Admin/Base_hospital/BedsExplorer";
 
-import SalesHistory from "./Pages/PHARMACY/SaleHistory";
+import SalesHistory from "./Pages/PHARMACY/SalesHistory";
 import DepositsHistory from "./Pages/PHARMACY/DepositsHistory";
-import MovementsHistory from "./Pages/PHARMACY/MovementsHistory";
-import RegisterSession from "./Pages/PHARMACY/CloseSession";
-import SessionOpening from "./Pages/PHARMACY/OpenSession";
 import CashHome from "./Pages/PHARMACY/CashHome";
 import ArticlePricing from "./Pages/Admin/Pharmacies/Sale/ArticlePricing";
 import CashRegister from "./Pages/Admin/Pharmacies/Sale/CashRegister";
 import CloseSession from "./Pages/PHARMACY/CloseSession";
 import OpenSession from "./Pages/PHARMACY/OpenSession";
 import CashSessionHistory from "./Pages/PHARMACY/CashSessionHistory";
+import PosSalesHistory from "./Pages/Admin/Pharmacies/Sale/PosSalesHistory";
+import PosSessionsHistory from "./Pages/Admin/Pharmacies/Sale/PosSessionsHistory";
 
 const routes = createBrowserRouter([
   // ==========================================
@@ -144,6 +143,14 @@ const routes = createBrowserRouter([
 
           { path: "/admin/pharmacy/cash-register", element: <CashRegister /> },
           { path: "pharmacy/articles/pricing", element: <ArticlePricing /> },
+          {
+            path: "/admin/pharmacy/pos-sales-history",
+            element: <PosSalesHistory />,
+          },
+          {
+            path: "/admin/pharmacy/pos-sessions-history",
+            element: <PosSessionsHistory />,
+          },
 
           //logistique
           { path: "vehicules", element: <Vehicules /> },
@@ -194,18 +201,12 @@ const routes = createBrowserRouter([
             ),
             children: [
               { path: "pharmacy/cash", element: <CashHome /> },
-              {
-                path: "pharmacy/cash/sales-history",
-                element: <SalesHistory />,
-              },
+
               {
                 path: "pharmacy/cash/deposits-history",
                 element: <DepositsHistory />,
               },
-              {
-                path: "pharmacy/cash/movements-history",
-                element: <MovementsHistory />,
-              },
+
               {
                 path: "pharmacy/cash/session/close",
                 element: <CloseSession />,
@@ -214,6 +215,10 @@ const routes = createBrowserRouter([
               {
                 path: "pharmacy/cash/session/history",
                 element: <CashSessionHistory />,
+              },
+              {
+                path: "pharmacy/cash/sales/history",
+                element: <SalesHistory />,
               },
             ],
           },

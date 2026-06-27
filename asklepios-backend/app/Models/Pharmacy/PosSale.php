@@ -15,6 +15,13 @@ class PosSale extends Model
         'change_due' => 'float',
     ];
 
+    protected $appends = ['receipt_number'];
+
+    public function getReceiptNumberAttribute()
+    {
+        return 'FA-' . str_pad($this->id, 6, '0', STR_PAD_LEFT);
+    }
+
     public function branch()
     {
         return $this->belongsTo(PharmacyBranch::class, 'pharmacy_branch_id');

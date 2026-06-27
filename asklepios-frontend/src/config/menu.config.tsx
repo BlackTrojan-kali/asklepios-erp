@@ -133,6 +133,14 @@ export const MENU_CONFIG: MenuItemType[] = [
         subItems: [
           { title: "Gerer les Prix", path: "/admin/pharmacy/articles/pricing" },
           { title: "Caisse", path: "/admin/pharmacy/cash-register" },
+          {
+            title: "Historiques de ventes",
+            path: "/admin/pharmacy/pos-sales-history",
+          },
+          {
+            title: "Historique des sessions",
+            path: "/admin/pharmacy/pos-sessions-history",
+          },
         ],
       },
     ],
@@ -202,9 +210,8 @@ export const MENU_CONFIG: MenuItemType[] = [
     positions: ["vente"],
     requiredLicence: "pharmacy",
     subItems: [
-      { title: "Ventes", path: "/pharmacy/sales-history" },
+      { title: "Ventes", path: "pharmacy/cash/sales/history" },
       { title: "Versements", path: "/pharmacy/deposits-history" },
-      { title: "Mouvements", path: "/pharmacy/movements-history" },
     ],
   },
   {

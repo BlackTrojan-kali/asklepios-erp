@@ -86,7 +86,7 @@ const MOCK_SALES: SaleRecord[] = [
   },
 ];
 
-export default function SalesHistory() {
+export default function _SalesHistory() {
   // --- ÉTATS DES FILTRES ---
   const [search, setSearch] = useState("");
   const [startDate, setStartDate] = useState("");

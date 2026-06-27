@@ -39,8 +39,16 @@ const getMyActiveSession = async (): Promise<CashRegisterSessionDto | null> => {
   return response.data;
 };
 
+const getMySessionsHistory = async (): Promise<CashRegisterSessionDto[]> => {
+  const response = await api.get<CashRegisterSessionDto[]>(
+    "/pharmacy/cash-registers/sessions/history"
+  );
+  return response.data;
+};
+
 export const cashRegisterSessionService = {
   openSession,
   closeSession,
   getMyActiveSession,
+  getMySessionsHistory,
 };

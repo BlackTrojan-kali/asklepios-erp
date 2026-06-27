@@ -35,3 +35,10 @@ export const useMyActiveSession = () => {
     queryFn: cashRegisterSessionService.getMyActiveSession,
   });
 };
+
+export const useMySessionsHistory = () => {
+  return useQuery({
+    queryKey: ["mySessionsHistory"],
+    queryFn: cashRegisterSessionService.getMySessionsHistory,
+  });
+};

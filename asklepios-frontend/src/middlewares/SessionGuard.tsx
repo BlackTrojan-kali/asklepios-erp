@@ -23,7 +23,10 @@ const SessionGuard = ({ children }: SessionGuardProps) => {
       const currentPath = location.pathname;
 
       if (!myActiveSession || !myActiveSession.id) {
-        if (currentPath !== "/pharmacy/cash/session/open") {
+        if (
+          currentPath !== "/pharmacy/cash/session/open" &&
+          currentPath !== "/pharmacy/cash/session/history"
+        ) {
           toast.error(
             "Aucune session de caisse active. Veuillez d'abord en ouvrir une.",
           );
