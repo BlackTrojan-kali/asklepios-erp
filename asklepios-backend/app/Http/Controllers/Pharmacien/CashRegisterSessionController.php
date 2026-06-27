@@ -130,6 +130,22 @@ class CashRegisterSessionController extends Controller
             ->with(['register.branch', 'user'])
             ->first();
 
+        if ($session) {
+            $salesQuery = \App\Models\Pharmacy\PosSale::where('cash_register_session_id', $session->id);
+            
+            $cash = (float)$salesQuery->clone()->where('payment_method', 'CASH')->sum('total_amount');
+            $mobileMoney = (float)$salesQuery->clone()->where('payment_method', 'MOBILE_MONEY')->sum('total_amount');
+            $card = (float)$salesQuery->clone()->where('payment_method', 'CARD')->sum('total_amount');
+
+            $session->sales_totals = [
+                'cash' => $cash,
+                'mobile_money' => $mobileMoney,
+                'card' => $card,
+            ];
+            
+            $session->current_balance = (float)$session->opening_balance + $cash;
+        }
+
         return response()->json($session, 200);
     }
 }

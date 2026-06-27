@@ -1522,7 +1522,7 @@
                 "tags": [
                     "Article des Branches (Admin)"
                 ],
-                "summary": "Récupérer tous les articles avec les prix et configurations spécifiques d'une succursale",
+                "summary": "Récupérer tous les articles avec les prix et configurations spécifiques d'une succursale (Paginé)",
                 "operationId": "getBranchArticlesById",
                 "parameters": [
                     {
@@ -1555,25 +1555,46 @@
                     {
                         "name": "per_page",
                         "in": "query",
-                        "description": "Nombre d'éléments par page (ou -1 pour désactiver)",
+                        "description": "Nombre d'éléments par page",
                         "required": false,
                         "schema": {
                             "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "all",
-                        "in": "query",
-                        "description": "Si vrai, récupère tous les articles sans pagination",
-                        "required": false,
-                        "schema": {
-                            "type": "boolean"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "Liste des articles de la succursale récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/branch/{id}/articles/all": {
+            "get": {
+                "tags": [
+                    "Article des Branches (Admin)"
+                ],
+                "summary": "Récupérer tous les articles d'une succursale avec leurs lots (Sans pagination)",
+                "operationId": "getBranchArticlesAllById",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la succursale de pharmacie",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste complète des articles de la succursale avec lots récupérée avec succès"
                     }
                 },
                 "security": [

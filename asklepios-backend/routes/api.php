@@ -13,6 +13,8 @@ use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\DriverController;
 use App\Http\Controllers\Admin\CashRegisterController;
 use App\Http\Controllers\Pharmacien\CashRegisterSessionController;
+use App\Http\Controllers\Pharmacien\PosSaleController;
+use App\Http\Controllers\Pharmacien\PosSaleItemController;
 use App\Http\Controllers\Admin\PharmacienController;
 use App\Http\Controllers\Admin\PharmacyBranchArticleController;
 use App\Http\Controllers\Admin\PharmacyBranchController;
@@ -255,6 +257,11 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::post('/sessions/{sessionId}/close', [CashRegisterSessionController::class, 'closeSession']);
                 Route::get('/active-session/me', [CashRegisterSessionController::class, 'myActiveSession']);
             });
+
+            // Point de Vente (Ventes POS)
+            Route::apiResource('pos-sales', PosSaleController::class)->only(['index', 'show', 'store']);
+            Route::get('pos-sales/{id}/pdf', [PosSaleController::class, 'exportPdf']);
+            Route::apiResource('pos-sale-items', PosSaleItemController::class)->only(['index']);
            
         });
 
