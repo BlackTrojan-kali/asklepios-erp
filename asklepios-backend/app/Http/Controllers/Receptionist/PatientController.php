@@ -57,7 +57,7 @@ class PatientController extends Controller
     public function index(Request $request)
     {
         $hospitalId = $this->getHospitalId();
-        $query = Patient::where('hospital_id', $hospitalId);
+        $query = Patient::where('hospital_id', $hospitalId)->with(["medicalBackground"]);
         
         // Filtre de recherche (Code, Nom, Prénom, Téléphone)
         if ($request->filled('search')) {

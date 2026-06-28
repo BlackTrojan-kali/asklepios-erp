@@ -3777,6 +3777,125 @@
                 ]
             }
         },
+        "/api/doctor/consultations": {
+            "get": {
+                "tags": [
+                    "Consultations Médicales"
+                ],
+                "summary": "Lister les consultations du médecin",
+                "description": "Récupère l'historique des consultations effectuées par le médecin connecté.",
+                "operationId": "6e1a57b51ca9232d4ed3bfcc267616aa",
+                "responses": {
+                    "200": {
+                        "description": "Liste récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Consultations Médicales"
+                ],
+                "summary": "Enregistrer une nouvelle consultation complète",
+                "description": "Crée la consultation, génère les ordonnances, les demandes d'examens et enregistre les actes médicaux réalisés en une seule transaction.",
+                "operationId": "7d07e953cf55021806bf07307e6b84cc",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "patient_visit_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "chief_complaint": {
+                                        "type": "string",
+                                        "example": "Maux de tête intenses"
+                                    },
+                                    "medical_acts": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "medical_act_catalog_id": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                },
+                                                "equipment_id": {
+                                                    "type": "integer",
+                                                    "example": 5,
+                                                    "nullable": true
+                                                },
+                                                "applied_price": {
+                                                    "type": "number",
+                                                    "example": 15000
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Consultation finalisée avec succès"
+                    },
+                    "422": {
+                        "description": "Erreur de validation ou visite déjà traitée"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/doctor/consultations/{id}": {
+            "get": {
+                "tags": [
+                    "Consultations Médicales"
+                ],
+                "summary": "Voir les détails d'une consultation",
+                "operationId": "f549961819d49ef7acaf2945e817a040",
+                "responses": {
+                    "200": {
+                        "description": "Elements recupere avec success"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Consultations Médicales"
+                ],
+                "summary": "Mettre à jour les notes cliniques",
+                "description": "Permet au médecin de corriger ses notes cliniques après coup.",
+                "operationId": "5cff848d585852d8248e448a0637745b",
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/departments/{departmentId}/equipment": {
             "get": {
                 "tags": [
@@ -4140,6 +4259,255 @@
                 ]
             }
         },
+        "/api/shared/departments/{departmentId}/medical-acts": {
+            "get": {
+                "tags": [
+                    "Catalogue des Actes Médicaux"
+                ],
+                "summary": "Lister les actes médicaux d'un département",
+                "description": "Récupère le catalogue des actes. Supporte la recherche par nom et la pagination.",
+                "operationId": "caafb6583b6095c85e6707ca244fb77a",
+                "parameters": [
+                    {
+                        "name": "departmentId",
+                        "in": "path",
+                        "description": "ID du département",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Recherche par nom de l'acte",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "paginated",
+                        "in": "query",
+                        "description": "Mettre à 'false' pour tout récupérer sans pagination",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Opération réussie"
+                    },
+                    "404": {
+                        "description": "Département introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Catalogue des Actes Médicaux"
+                ],
+                "summary": "Ajouter un acte médical",
+                "description": "Crée un nouvel acte médical facturable pour ce département.",
+                "operationId": "dab54c77b6aecee654febc300f2e5847",
+                "parameters": [
+                    {
+                        "name": "departmentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "hospital_id",
+                                    "name",
+                                    "base_price"
+                                ],
+                                "properties": {
+                                    "hospital_id": {
+                                        "description": "ID de l'hôpital de rattachement",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Consultation Spécialisée Cardio"
+                                    },
+                                    "base_price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 15000
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Acte créé avec succès"
+                    },
+                    "422": {
+                        "description": "Erreur de validation"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/shared/departments/{departmentId}/medical-acts/{actId}": {
+            "get": {
+                "tags": [
+                    "Catalogue des Actes Médicaux"
+                ],
+                "summary": "Détails d'un acte médical",
+                "description": "Affiche les détails d'un acte spécifique.",
+                "operationId": "f0d083a4bde8c346f7da09735298cdef",
+                "parameters": [
+                    {
+                        "name": "departmentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "actId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Détails récupérés"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Catalogue des Actes Médicaux"
+                ],
+                "summary": "Mettre à jour un acte",
+                "description": "Modifie le nom ou le prix de base d'un acte médical.",
+                "operationId": "2e83ba368c5416459546af2042ad4515",
+                "parameters": [
+                    {
+                        "name": "departmentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "actId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "base_price"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Consultation Spécialisée Cardio (Tarif Révisé)"
+                                    },
+                                    "base_price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 17500
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Acte mis à jour"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Catalogue des Actes Médicaux"
+                ],
+                "summary": "Archiver un acte médical",
+                "description": "Désactive un acte (Soft Delete) pour qu'il ne soit plus facturable, tout en conservant l'historique des factures passées.",
+                "operationId": "eae85ed62ffead4b270fa998f243bf28",
+                "parameters": [
+                    {
+                        "name": "departmentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "actId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Acte archivé"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/shared/patients/{patientId}/medical-background": {
             "get": {
                 "tags": [
@@ -4363,6 +4731,53 @@
                 "responses": {
                     "200": {
                         "description": "Dossier archivé avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/shared/patients/{patientId}/medical-record/download": {
+            "get": {
+                "tags": [
+                    "Antécédents Médicaux"
+                ],
+                "summary": "Télécharger le carnet médical complet (PDF)",
+                "description": "Génère et renvoie le document PDF contenant les infos du patient, ses antécédents et tout l'historique de ses visites.",
+                "operationId": "f1eff2e036264ecf0aafb4be7ec3e9d1",
+                "parameters": [
+                    {
+                        "name": "patientId",
+                        "in": "path",
+                        "description": "ID du patient",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "action",
+                        "in": "query",
+                        "description": "Action souhaitée: 'stream' (afficher dans le nav) ou 'download' (forcer le DL). Défaut: stream.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "stream",
+                                "download"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Fichier PDF généré"
+                    },
+                    "404": {
+                        "description": "Patient introuvable"
                     }
                 },
                 "security": [
@@ -7630,8 +8045,16 @@
             "description": "Gestion des véhicules du parc hospitalier"
         },
         {
+            "name": "Consultations Médicales",
+            "description": "API de gestion des consultations, incluant la création simultanée d'ordonnances, d'examens et d'actes médicaux."
+        },
+        {
             "name": "Équipements",
             "description": "API de gestion du matériel médical et des alertes de maintenance pour les départements."
+        },
+        {
+            "name": "Catalogue des Actes Médicaux",
+            "description": "API de gestion de la tarification et du catalogue des actes médicaux par département."
         },
         {
             "name": "Antécédents Médicaux",

@@ -37,7 +37,7 @@ class PatientVisit extends Model
     {
         return $this->belongsTo(Appointment::class);
     }
-
+    
     public function waitingRoom()
     {
         return $this->belongsTo(FacilityRoom::class, 'waiting_room_id');
@@ -48,4 +48,15 @@ class PatientVisit extends Model
         return $this->belongsTo(FacilityRoom::class, 'consulting_room_id');
     }
     
+    // ==========================================
+    // 🚨 LA RELATION MANQUANTE EST ICI 🚨
+    // ==========================================
+    public function consultations()
+    {
+        // Une visite peut avoir une consultation (Le PDF utilise une boucle @forelse, donc on met hasMany)
+        return $this->hasMany(Consultation::class);
+    }
+    public function performedMedicalActs(){
+        return $this->hasMany(PerformedMedicalAct::class);
+    }
 }

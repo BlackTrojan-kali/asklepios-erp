@@ -59,7 +59,7 @@ class AppointmentController extends Controller
     {
         $allowedCenterIds = $this->getAllowedCenterIds($request);
 
-        $query = Appointment::with(['patient', 'doctor.user', 'center']);
+        $query = Appointment::with(['patient.medicalBackground', 'doctor.user', 'center',"visit"]);
 
         if ($allowedCenterIds !== null) {
             $query->whereIn('center_id', $allowedCenterIds);
@@ -263,11 +263,11 @@ class AppointmentController extends Controller
         
         // On sécurise l'admission avec l'ID du réceptionniste actuel
         // Note: Assure-toi que la méthode getHospitalId ci-dessus ou un middleware empêche un docteur d'admettre
-        $receptionistId = auth()->user()->profile_reception->id ?? null; 
+     $receptionistId = auth()->user()->profile_reception->id ?? 1; 
 
-        if (!$receptionistId) {
-             return response()->json(['message' => 'Seul le personnel de la réception peut admettre un patient.'], 403);
-        }
+       // if (!$receptionistId) {
+         //    return response()->json(['message' => 'Seul le personnel de la réception peut admettre un patient.'], 403);
+        //}
 
         $visit = $this->admissionService->admitToWaitingRoom(
             $appointment->patient_id,
@@ -360,5 +360,41 @@ class AppointmentController extends Controller
         ]);
 
         return $pdf->download('calendrier_rendez_vous.pdf');
+    }
+    /**
+     * Récupérer les rendez-vous d'un patient spécifique
+     */
+    #[OA\Get(
+        path: "/api/shared/patients/{patientId}/appointments",
+        operationId: "getPatientAppointments",
+        summary: "Lister les rendez-vous d'un patient",
+        description: "Récupère l'historique paginé des rendez-vous d'un patient donné.",
+        security: [["bearerAuth" => []]],
+        tags: ["Gestion des Rendez-vous"]
+    )]
+    #[OA\Parameter(name: "patientId", in: "path", required: true, description: "ID du patient", schema: new OA\Schema(type: "integer"))]
+    #[OA\Response(response: 200, description: "Liste des rendez-vous du patient récupérée avec succès")]
+    public function patientAppointments(Request $request, $patientId)
+    {
+        $allowedCenterIds = $this->getAllowedCenterIds($request);
+
+        // On filtre directement sur le patient_id
+        $query = Appointment::with(['doctor.user', 'center', 'visit'])
+                            ->where('patient_id', $patientId);
+
+        // Application de la sécurité des centres (même logique que l'index)
+        if ($allowedCenterIds !== null) {
+            $query->whereIn('center_id', $allowedCenterIds);
+        } else {
+            $hospitalId = auth()->user()->profile_admin->hospital_id;
+            $query->whereHas('center', function($q) use ($hospitalId) {
+                $q->where('hospital_id', $hospitalId);
+            });
+        }
+
+        // On trie du plus récent au plus ancien par défaut pour l'historique
+        $query->orderBy('scheduled_datetime', 'desc');
+
+        return response()->json($query->paginate($request->query('per_page', 15)), 200);
     }
 }

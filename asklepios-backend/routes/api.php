@@ -26,7 +26,9 @@ use App\Http\Controllers\Admin\ProviderController;
 use App\Http\Controllers\Admin\RoomCategoryController;
 use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Admin\VehiculeController;
+use App\Http\Controllers\Doctor\ConsultationController;
 use App\Http\Controllers\Doctor\EquipmentController;
+use App\Http\Controllers\Doctor\MedicalActCatalogController;
 use App\Http\Controllers\Doctor\MedicalBackgroundController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Pharmacien\InventoryController;
@@ -111,7 +113,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('receptionists', \App\Http\Controllers\Admin\ReceptionistController::class);
     });
     });
+    Route::middleware(["licence:pharmacy,base_hospital"])->group(function(){
 
+    Route::middleware('role:admin,doctor,pharmacy')->prefix('admin')->group(function () {
+            Route::get('admin/articles/all', [ArticleController::class, 'all']);
+            });
+    });
     // ==========================================================
     // 5. MODULE PHARMACIE (Protégé par la licence)
     // ==========================================================
@@ -134,7 +141,6 @@ Route::middleware('auth:sanctum')->group(function () {
             // Catalogue
             Route::get('/article-categories/all', [ArticleCategoryController::class, 'all']);
             Route::apiResource('article-categories', ArticleCategoryController::class);
-            Route::get('/articles/all', [ArticleController::class, 'all']);
             Route::post('/articles', [ArticleController::class, 'store']);
             Route::put('/articles/{id}', [ArticleController::class, 'update']);
             Route::delete('/articles/{id}', [ArticleController::class, 'destroy']);
@@ -291,8 +297,29 @@ Route::middleware('auth:sanctum')->group(function () {
         // ---------------------------------------------------------
         Route::middleware(['licence:base_hospital'])
             ->group(function () {
+
+
+   
+// ==========================================================
+// ESPACE DOCTEUR
+// ==========================================================
+Route::middleware(['role:doctor'])->prefix('doctor')->group(function () {
+    
+    // Consultations
+    Route::get('consultations', [ConsultationController::class, 'index']);
+    Route::post('consultations', [ConsultationController::class, 'store']);
+    Route::get('consultations/{id}', [ConsultationController::class, 'show']);
+    Route::put('consultations/{id}', [ConsultationController::class, 'update']);
+    
+});
 // ==========================================================
     Route::middleware(['role:admin,doctor'])->prefix('shared')->group(function () {
+        Route::prefix('departments/{departmentId}')->group(function () {
+        // Seuls l'admin et le docteur peuvent créer, modifier ou supprimer
+        Route::post('medical-acts', [MedicalActCatalogController::class, 'store']);
+        Route::put('medical-acts/{actId}', [MedicalActCatalogController::class, 'update']);
+        Route::delete('medical-acts/{actId}', [MedicalActCatalogController::class, 'destroy']);
+    });
         
         Route::prefix('departments/{departmentId}')->group(function () {
             
@@ -320,6 +347,10 @@ Route::prefix('patients/{patientId}')->group(function () {
         Route::post('medical-background', [MedicalBackgroundController::class, 'store']);
         Route::put('medical-background', [MedicalBackgroundController::class, 'update']);
         Route::delete('medical-background', [MedicalBackgroundController::class, 'destroy']);
+        // NOUVEAU : Téléchargement du Carnet Médical Complet (PDF)
+        Route::get('medical-record/download', [MedicalBackgroundController::class, 'downloadMedicalRecord']);
+        // 👉 NOUVELLE ROUTE AJOUTÉE ICI :
+            Route::get('appointments', [AppointmentController::class, 'patientAppointments']);
     });
         // Lecture des salles d'un département (Pour l'interface type "Explorateur de fichiers")
         Route::get('departments/{departmentId}/facility-rooms', [FacilityRoomController::class, 'index']);
@@ -381,6 +412,11 @@ Route::prefix('patients/{patientId}')->group(function () {
 
         Route::get('room-categories', [RoomCategoryController::class, 'index']);
         Route::get('rooms/{roomId}/beds', [BedController::class, 'index']);
+        Route::prefix('departments/{departmentId}')->group(function () {
+        // Le réceptionniste peut voir le catalogue et les détails d'un acte
+        Route::get('medical-acts', [MedicalActCatalogController::class, 'index']);
+        Route::get('medical-acts/{actId}', [MedicalActCatalogController::class, 'show']);
+    });
     });
 
 

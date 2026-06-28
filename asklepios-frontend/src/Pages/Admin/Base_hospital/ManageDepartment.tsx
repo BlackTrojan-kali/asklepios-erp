@@ -8,18 +8,19 @@ import {
     Construction, 
     FolderOpen,
     Wand2,
-    Loader2
+    Loader2,
+    FileText
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
 // --- STORES ---
 import useFacilityRoomStore from '../../../functions/base_hospital/useFacilityRoomStore';
+import { useAuth } from '../../../contexts/AuthContext';
 
 const ManageDepartment = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const location = useLocation();
-
     // Hook du store pour l'initialisation des salles
     const { syncWaitingRooms, actionLoading } = useFacilityRoomStore();
 
@@ -46,6 +47,15 @@ const ManageDepartment = () => {
             colorClass: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 group-hover:bg-emerald-600 group-hover:text-white',
             borderColorClass: 'hover:border-emerald-500',
             path: `/admin/departments/${id}/equipments`
+        },
+        {
+            id: 'medical_acts',
+            title: 'Catalogue des Actes',
+            description: 'Gestion de la tarification et des prestations médicales facturables.',
+            icon: <FileText size={28} />,
+            colorClass: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 group-hover:bg-amber-600 group-hover:text-white',
+            borderColorClass: 'hover:border-amber-500',
+            path: `/admin/departments/${id}/medical-acts`
         }
     ];
 
@@ -135,7 +145,7 @@ const ManageDepartment = () => {
                     Sous-dossiers de gestion
                 </h2>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                     {subFolders.map((folder) => (
                         <div
                             key={folder.id}

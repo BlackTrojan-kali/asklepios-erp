@@ -25,7 +25,7 @@ const Login = () => {
       }else if(profile?.role== "reception"){
         navigate("/reception/patients",{replace:true})
       }else if(profile?.role == "doctor"){
-        navigate("/doctor/room",{replace:true})
+        navigate("/doctor/home",{replace:true})
       }
     }
   }, [token, navigate]);

@@ -31,3 +31,13 @@ body {
 html {
   @apply overflow-x-hidden;
 }
+/* Adaptation du style de Quill à ton mode sombre et ta charte */
+.custom-quill-container .ql-container {
+  @apply font-brand text-slate-800 dark:text-white border-none;
+}
+.custom-quill-container .ql-toolbar {
+  @apply border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 rounded-t-lg;
+}
+.custom-quill-container .ql-editor {
+  @apply min-h-[200px] bg-white dark:bg-gray-900;
+}

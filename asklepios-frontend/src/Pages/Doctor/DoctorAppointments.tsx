@@ -8,7 +8,9 @@ import {
     User, 
     AlertCircle,
     Plus,
-    XCircle
+    XCircle,
+    Activity,
+    CheckCircle2
 } from 'lucide-react';
 
 // --- STORES & CONTEXTS ---
@@ -118,15 +120,15 @@ const DoctorAppointments = () => {
     return (
         <div className="h-[calc(100vh-100px)] flex flex-col space-y-6 relative">
             
-            {/* EN-TÊTE DE LA PAGE (Épuré) */}
+            {/* EN-TÊTE DE LA PAGE */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
                 <div className="flex items-center gap-3">
                     <div className="p-2.5 bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 rounded-lg">
                         <CalendarDays size={26} />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Mon Planning</h1>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Gérez vos consultations et disponibilités.</p>
+                        <h1 className="text-2xl font-bold text-slate-800 dark:text-white font-brand">Mon Planning</h1>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-lato">Gérez vos consultations et disponibilités.</p>
                     </div>
                 </div>
                 
@@ -270,11 +272,11 @@ const DoctorAppointments = () => {
                     
                     <div className="p-5 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shrink-0 flex justify-between items-center">
                         <div>
-                            <h2 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                            <h2 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2 font-brand">
                                 <Clock className="text-indigo-500" size={20} />
                                 Agenda du jour
                             </h2>
-                            <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400 mt-1 capitalize">
+                            <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400 mt-1 capitalize font-lato">
                                 {selectedDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
                             </p>
                         </div>
@@ -304,67 +306,97 @@ const DoctorAppointments = () => {
                                 <p className="text-xs mt-1">Cliquez sur le calendrier pour planifier.</p>
                             </div>
                         ) : (
-                            selectedDateAppointments.map(app => (
-                                <div key={app.id} className={`group bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border ${app.status === 'CANCELLED' ? 'border-red-200 dark:border-red-900/50 opacity-60' : 'border-gray-100 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-700'} transition-all`}>
-                                    
-                                    <div className="flex justify-between items-start mb-3">
-                                        <div className="flex items-center gap-2">
-                                            <span className="bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 font-bold px-2 py-1 rounded text-sm">
-                                                {new Date(app.scheduled_datetime.replace(' ', 'T')).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                                            </span>
-                                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${app.status === 'ARRIVED' ? 'bg-emerald-100 text-emerald-700' : app.status === 'CANCELLED' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'}`}>
-                                                {app.status}
-                                            </span>
-                                        </div>
+                            selectedDateAppointments.map(app => {
+                                const isScheduled = app.status === 'SCHEDULED';
+                                const isWaiting = app.status === 'ARRIVED' && app.patient_visit?.status === 'IN_WAITING_ROOM';
+                                const isConsulting = app.status === 'ARRIVED' && app.patient_visit?.status === 'IN_CONSULTATION';
+                                const isComplete = app.patient_visit?.status === 'COMPLETE';
+                                const isCancelled = app.status === 'CANCELLED';
+
+                                return (
+                                    <div key={app.id} className={`group bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border ${isCancelled ? 'border-red-200 dark:border-red-900/50 opacity-60' : 'border-gray-100 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-700'} transition-all`}>
                                         
-                                        {/* Bouton Annuler */}
-                                        {app.status === 'SCHEDULED' && (
-                                            <button 
-                                                onClick={() => setApptToCancel(app)}
-                                                className="text-gray-300 hover:text-red-500 dark:text-gray-600 dark:hover:text-red-400 transition-colors p-1"
-                                                title="Annuler ce rendez-vous"
-                                            >
-                                                <XCircle size={18} />
-                                            </button>
+                                        <div className="flex justify-between items-start mb-3">
+                                            <div className="flex items-center gap-2">
+                                                <span className="bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 font-bold px-2 py-1 rounded text-sm font-mono">
+                                                    {new Date(app.scheduled_datetime.replace(' ', 'T')).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                                {/* BADGE DE STATUT CLARIFIÉ */}
+                                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider ${
+                                                    isComplete ? 'bg-emerald-100 text-emerald-700' :
+                                                    isConsulting ? 'bg-blue-100 text-blue-700' :
+                                                    isWaiting ? 'bg-orange-100 text-orange-700' :
+                                                    isCancelled ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                                                }`}>
+                                                    {isComplete ? 'Terminé' : isConsulting ? 'En Examen' : isWaiting ? 'En Attente' : isCancelled ? 'Annulé' : 'Prévu'}
+                                                </span>
+                                            </div>
+                                            
+                                            {/* Bouton Annuler (Uniquement si prévu) */}
+                                            {isScheduled && (
+                                                <button 
+                                                    onClick={() => setApptToCancel(app)}
+                                                    className="text-gray-300 hover:text-red-500 dark:text-gray-600 dark:hover:text-red-400 transition-colors p-1"
+                                                    title="Annuler ce rendez-vous"
+                                                >
+                                                    <XCircle size={18} />
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-gray-700 flex items-center justify-center text-slate-500 shrink-0">
+                                                <User size={16} />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="font-bold text-slate-800 dark:text-white text-sm truncate font-brand">
+                                                    {app.patient?.first_name} {app.patient?.last_name}
+                                                </p>
+                                                <p className="text-xs text-gray-500 font-mono">{app.patient?.patient_code || `ID_${app.patient?.id}`}</p>
+                                            </div>
+                                        </div>
+
+                                        {app.reason && (
+                                            <div className="mt-3 text-xs text-slate-600 dark:text-gray-400 bg-slate-50 dark:bg-gray-900/50 p-2 rounded line-clamp-2">
+                                                <span className="font-semibold">Motif :</span> {app.reason}
+                                            </div>
+                                        )}
+
+                                        {/* ACTIONS CONDITIONNELLES */}
+                                        
+                                        {/* S'il est juste prévu : On peut reprogrammer */}
+                                        {isScheduled && (
+                                            <div className="mt-4 flex gap-2">
+                                                <button 
+                                                    onClick={() => handleOpenRescheduleModal(app)}
+                                                    className="flex-1 py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 dark:hover:bg-gray-600 rounded text-xs font-semibold transition-colors"
+                                                >
+                                                    Reprogrammer
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {/* S'il est arrivé ET en salle d'attente : On peut le faire entrer */}
+                                        {isWaiting && (
+                                            <div className="mt-4 flex gap-2">
+                                                <button 
+                                                    onClick={() => handleOpenConsultationModal(app)}
+                                                    className="flex-1 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded text-xs font-bold transition-colors flex items-center justify-center gap-1.5 border border-emerald-100 dark:border-emerald-800"
+                                                >
+                                                    Faire entrer en cabinet
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {/* S'il est déjà en consultation ou terminé, on informe juste */}
+                                        {isConsulting && (
+                                            <div className="mt-4 flex items-center justify-center gap-2 text-blue-600 dark:text-blue-400 text-xs font-bold bg-blue-50 dark:bg-blue-900/20 py-1.5 rounded border border-blue-100 dark:border-blue-800">
+                                                <Activity size={14} className="animate-pulse" /> Consultation en cours (Dashboard)
+                                            </div>
                                         )}
                                     </div>
-
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-gray-700 flex items-center justify-center text-slate-500">
-                                            <User size={16} />
-                                        </div>
-                                        <div>
-                                            <p className="font-bold text-slate-800 dark:text-white text-sm">
-                                                {app.patient?.first_name} {app.patient?.last_name}
-                                            </p>
-                                            <p className="text-xs text-gray-500 font-mono">{app.patient?.patient_code}</p>
-                                        </div>
-                                    </div>
-
-                                    {app.reason && (
-                                        <div className="mt-3 text-xs text-slate-600 dark:text-gray-400 bg-slate-50 dark:bg-gray-900/50 p-2 rounded">
-                                            <span className="font-semibold">Motif :</span> {app.reason}
-                                        </div>
-                                    )}
-
-                                    {app.status === 'SCHEDULED' && (
-                                        <div className="mt-4 grid grid-cols-2 gap-2">
-                                            <button 
-                                                onClick={() => handleOpenConsultationModal(app)}
-                                                className="py-1.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 dark:hover:bg-indigo-900/60 rounded text-xs font-semibold transition-colors"
-                                            >
-                                                Consulter
-                                            </button>
-                                            <button 
-                                                onClick={() => handleOpenRescheduleModal(app)}
-                                                className="py-1.5 bg-slate-50 hover:bg-slate-100 dark:bg-gray-700 text-slate-700 dark:text-gray-300 dark:hover:bg-gray-600 rounded text-xs font-semibold transition-colors"
-                                            >
-                                                Reprogrammer
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            ))
+                                );
+                            })
                         )}
                     </div>
                 </div>
@@ -379,7 +411,7 @@ const DoctorAppointments = () => {
                             <AlertCircle size={28} />
                             <h3 className="text-lg font-bold text-slate-800 dark:text-white">Annuler le rendez-vous ?</h3>
                         </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 font-lato">
                             Êtes-vous sûr de vouloir annuler la consultation de <strong>{apptToCancel.patient?.first_name} {apptToCancel.patient?.last_name}</strong> prévue à {new Date(apptToCancel.scheduled_datetime.replace(' ', 'T')).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} ?
                         </p>
                         <div className="flex justify-end gap-3">
@@ -410,7 +442,7 @@ const DoctorAppointments = () => {
                 currentCenterId={currentCenterId}
                 currentDoctorId={currentDoctorId}
                 prefilledDate={selectedDate}
-                isDateLocked={true} // Transmission de l'état de verrouillage
+                isDateLocked={true} 
             />
 
             <MultiPatientSchedulingModal
@@ -419,7 +451,7 @@ const DoctorAppointments = () => {
                 currentCenterId={currentCenterId}
                 doctors={currentDoctorOption}
                 prefilledDate={selectedDate}
-                isDateLocked={true} // Transmission de l'état de verrouillage
+                isDateLocked={true} 
             />
 
             <DoctorRescheduleModal
@@ -430,8 +462,11 @@ const DoctorAppointments = () => {
 
             <AdmitToConsultationModal
                 isOpen={!!apptToConsult}
-                onClose={() => setApptToConsult(null)}
-                appointment={apptToConsult}
+                onClose={() => {
+                    setApptToConsult(null);
+                    fetchAppointments(); // Rafraîchit le planning après admission
+                }}
+                appointment={apptToConsult} // Appelle la modale qui prend bien l'appointment en prop et utilise appointment.patient_visit.id
                 currentDepartmentId={currentDepartmentId}
             />
             

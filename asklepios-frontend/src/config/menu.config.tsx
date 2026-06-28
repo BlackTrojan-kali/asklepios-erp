@@ -20,7 +20,8 @@ import {
   Tags,
   Wallet,
   Building2,
-  Activity
+  Activity,
+  Workflow
 } from "lucide-react";
 
 // --- 1. DÉFINITION DES TYPES ---
@@ -261,12 +262,28 @@ export const MENU_CONFIG: MenuItemType[] = [
   // MENUS DOCTEUR
   // ==========================================
   {
+    title:"Acceuil",
+    icon:<Computer size={20}/>,
+    roles:["doctor"],
+    requiredLicence:"base_hospital",
+    path:"/doctor/home"
+  },
+  {
     title: "Mes Consultations",
     icon: <Calendar size={20} />,
     roles: ["doctor"],
     requiredLicence: "base_hospital",
     subItems: [
       { title: "Agenda des RDV", path: "/doctor/appointments/calendar" }, // Correction du slash
+    ]
+  },
+  {
+    title:"Cabinet / Departement",
+    icon:<Workflow/>,
+    roles:["doctor"],
+    requiredLicence:"base_hospital",
+    subItems:[
+      {title:"Act Medicaux",path:"/doctor/medical_act"}
     ]
   }
 ];

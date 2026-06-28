@@ -215,7 +215,34 @@ const useAppointmentStore = () => {
             setActionLoading(false);
         }
     };
+// --- RÉCUPÉRER LES RENDEZ-VOUS D'UN PATIENT SPÉCIFIQUE (Paginé) ---
+const getPatientAppointments = useCallback(async (
+    patientId: number,
+    page: number = 1,
+    perPage: number = 15
+) => {
+    try {
+        setLoading(true);
+        const res = await api.get<PaginatedResponse<AppointmentDto>>(`/shared/patients/${patientId}/appointments`, {
+            params: { page, per_page: perPage }
+        });
 
+        // Ici, on peut soit mettre à jour le state 'appointments', 
+        // soit en créer un nouveau 'patientAppointments' si tu veux éviter de mélanger.
+        setAppointments(res.data.data || []);
+        setPagination({
+            currentPage: res.data.current_page || 1,
+            lastPage: res.data.last_page || 1,
+            total: res.data.total || 0
+        });
+        return res.data;
+    } catch (error) {
+        toast.error("Erreur lors de la récupération de l'historique des RDV");
+        return null;
+    } finally {
+        setLoading(false);
+    }
+}, []);
     return {
         // États
         appointments,
@@ -235,7 +262,7 @@ const useAppointmentStore = () => {
         admitToConsultation,
 
         // Utils
-        exportPdf
+        exportPdf,
     };
 };
 

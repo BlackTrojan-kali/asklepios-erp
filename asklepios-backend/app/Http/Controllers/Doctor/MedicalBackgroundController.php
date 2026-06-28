@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Doctor;
 use App\Http\Controllers\Controller;
 use App\Models\Patient;
 use App\Models\Hospital\MedicalBackground;
+use App\Http\Services\MedicalRecordPdfService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use OpenApi\Attributes as OA;
@@ -152,4 +153,30 @@ class MedicalBackgroundController extends Controller
             'message' => 'Dossier des antécédents médicaux archivé avec succès.'
         ]);
     }
+    #[OA\Get(
+        path: "/api/shared/patients/{patientId}/medical-record/download",
+        summary: "Télécharger le carnet médical complet (PDF)",
+        description: "Génère et renvoie le document PDF contenant les infos du patient, ses antécédents et tout l'historique de ses visites.",
+        security: [["sanctum" => []]],
+        tags: ["Antécédents Médicaux"]
+    )]
+    #[OA\Parameter(name: "patientId", in: "path", required: true, description: "ID du patient", schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "action", in: "query", required: false, description: "Action souhaitée: 'stream' (afficher dans le nav) ou 'download' (forcer le DL). Défaut: stream.", schema: new OA\Schema(type: "string", enum: ["stream", "download"]))]
+    #[OA\Response(response: 200, description: "Fichier PDF généré")]
+    #[OA\Response(response: 404, description: "Patient introuvable")]
+    public function downloadMedicalRecord(Request $request, $patientId, MedicalRecordPdfService $pdfService)
+    {
+        // Vérification rapide que le patient existe avant de lancer le gros service
+        $patient = Patient::findOrFail($patientId);
+
+        $action = $request->query('action', 'stream'); // 'stream' par défaut pour l'affichage in-browser
+        
+        // On s'assure de ne pas accepter n'importe quoi en paramètre
+        if (!in_array($action, ['stream', 'download'])) {
+            $action = 'stream';
+        }
+
+        return $pdfService->generateRecord($patient->id, $action);
+    }
+
 }

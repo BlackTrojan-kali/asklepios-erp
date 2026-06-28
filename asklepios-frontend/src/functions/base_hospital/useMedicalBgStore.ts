@@ -94,7 +94,27 @@ const useMedicalBgStore = () => {
             setActionLoading(false);
         }
     };
+// --- TÉLÉCHARGER LE CARNET MÉDICAL COMPLET ---
+    const downloadMedicalRecord = async (patientId: number, action: 'stream' | 'download' = 'stream') => {
+        try {
+            setActionLoading(true);
+            const response = await api.get(`/shared/patients/${patientId}/medical-record/download?action=${action}`, {
+                responseType: 'blob'
+            });
 
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Carnet_Medical_${patientId}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (error) {
+            toast.error("Erreur lors du téléchargement du carnet médical");
+        } finally {
+            setActionLoading(false);
+        }
+    };
     return {
         // États
         medicalBackground,
@@ -105,7 +125,8 @@ const useMedicalBgStore = () => {
         getMedicalBackground,
         createMedicalBackground,
         updateMedicalBackground,
-        deleteMedicalBackground
+        deleteMedicalBackground,
+        downloadMedicalRecord
     };
 };
 

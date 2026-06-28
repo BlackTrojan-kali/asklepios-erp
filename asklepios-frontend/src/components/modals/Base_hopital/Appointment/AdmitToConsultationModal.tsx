@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Select from 'react-select';
 import { LogIn, X, Stethoscope } from 'lucide-react';
+import toast from 'react-hot-toast';
 import useAppointmentStore from '../../../../functions/base_hospital/useAppointmentStore';
 import useFacilityRoomStore from '../../../../functions/base_hospital/useFacilityRoomStore';
 import type { AppointmentDto } from '../../../../types/AppointmentTypes';
@@ -21,16 +22,24 @@ export const AdmitToConsultationModal: React.FC<Props> = ({ isOpen, onClose, app
     useEffect(() => {
         if (isOpen && currentDepartmentId) {
             // On récupère uniquement les bureaux de consultation
-            getSharedFacilityRooms(currentDepartmentId, { type: 'CONSULTING_ROOM' });
+            getSharedFacilityRooms(currentDepartmentId, { type: 'CONSULTATION' });
         }
     }, [isOpen, currentDepartmentId, getSharedFacilityRooms]);
 
     const handleSubmit = async () => {
+        // VÉRIFICATION CRUCIALE ICI : On s'assure que la visite existe bien
         if (!appointment || !roomId) return;
+        
+        // Si l'appointment n'a pas de visite liée (ce qui ne devrait pas arriver à ce stade)
+        // on bloque avec une erreur claire au lieu de faire planter le backend.
+        if (!appointment.visit || !appointment.visit.id) {
+            toast.error("Impossible de trouver le dossier de visite pour ce patient.");
+            return;
+        }
 
-        // Note : On passe appointment.id. Assure-toi que l'API récupère bien la visite liée à ce RDV.
-        const success = await admitToConsultation(appointment.id, {
-            consulting_room_id: roomId
+        // CORRECTION MAJEURE : On passe l'ID de la VISITE (appointment.visit.id) et non l'ID du RDV !
+        const success = await admitToConsultation(appointment.visit.id, {
+            consulting_room_id: Number(roomId)
         });
 
         if (success) {

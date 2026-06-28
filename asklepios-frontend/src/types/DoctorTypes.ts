@@ -3,7 +3,7 @@
 // ==========================================
 
 // Import des types globaux (Ajuste les chemins selon ton arborescence)
-import type { CenterDto, DepartmentDto, PaginatedResponse } from "./types";
+import type { CenterDto, DepartmentDto, HospitalDto, PaginatedResponse } from "./types";
 import type { UserDto } from "./PharmTypes"; // Assure-toi que UserDto est bien importé
 
 /**
@@ -44,7 +44,25 @@ export interface DoctorPayload {
     speciality: string;
     specifications?: string | null;
 }
-
+export interface ProfileDoctorDto {
+    id: number;
+    user_id: number;
+    center_id: number;
+    hospital_id: number;
+    speciality: string;
+    specifications: string | null;
+    
+    // Relations optionnelles (chargées dynamiquement par le backend)
+    center?: CenterDto;
+    hospital?: HospitalDto;
+    user?: { // Peut être remplacé par un UserDto global si tu l'as
+        id: number;
+        first_name: string;
+        last_name: string | null;
+        email: string;
+        phone: string | number;
+    };
+}
 // NOTE : Pour la pagination des médecins dans ton store admin, 
 // tu peux utiliser ton interface magique globale :
 // PaginatedResponse<DoctorDto>

@@ -57,6 +57,8 @@ import CloseSession from "./Pages/PHARMACY/CloseSession";
 import OpenSession from "./Pages/PHARMACY/OpenSession";
 import DoctorAppointments from "./Pages/Doctor/DoctorAppointments";
 import EquipmentExplorer from "./Pages/Admin/Base_hospital/EquipmentExplorer";
+import MedicalActExplorer from "./Pages/Admin/Base_hospital/MedicalActExplorer";
+import DoctorDashboard from "./Pages/Doctor/DoctorDashboard";
 
 const routes = createBrowserRouter([
   // ==========================================
@@ -127,6 +129,7 @@ const routes = createBrowserRouter([
           {path:"departments/:id/rooms",element:<FacilityRoomsExplorer/>},
           {path:"rooms/:id/beds",element:<BedsExplorer/>},
           {path:"departments/:id/equipments",element:<EquipmentExplorer/>},
+          {path:"departments/:id/medical-acts",element:<MedicalActExplorer/>},
           // Sous-dossier Pharmacie côté Admin
           {
             path: "pharmacy/acticles-categories",
@@ -227,7 +230,9 @@ const routes = createBrowserRouter([
       </CheckRole>
     ),
     children:[
-      { path:"appointments/calendar",element:<DoctorAppointments/>}
+      { path:"appointments/calendar",element:<DoctorAppointments/>},
+      {path:"medical_act",element:<MedicalActExplorer/>},
+      {path:"home",element:<DoctorDashboard/>}
     ]
   },
     ],

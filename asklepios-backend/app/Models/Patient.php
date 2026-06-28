@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Hospital\MedicalBackground;
+use App\Models\Hospital\PatientVisit;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -52,5 +53,8 @@ class Patient extends Model
     public function medicalBackground()
     {
         return $this->hasOne(MedicalBackground::class);
+    }
+    public function patientVisits(){
+        return $this->hasMany(PatientVisit::class);
     }
 }

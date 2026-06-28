@@ -14,7 +14,7 @@ class Equipment extends Model
     /**
      * Le nom de la table associée au modèle.
      */
-    protected $table = 'equipment';
+    protected $table = 'equipments';
 
     /**
      * Les attributs qui sont assignables en masse.
