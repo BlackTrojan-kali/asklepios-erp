@@ -190,6 +190,9 @@ const routes = createBrowserRouter([
         children: [
           { path: "pharmacy/orders", element: <PurchaseOrders /> },
           { path: "pharmacy/returns", element: <PurchaseReturns /> },
+          
+          { path: "admin/inventory", element: <AdminInventories /> }, // Attention au doublon de nommage possible avec le magasinier
+          { path: "admin/movements", element: <AdminStockMovements /> },
         ],
       },
 

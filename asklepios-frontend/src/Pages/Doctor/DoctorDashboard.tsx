@@ -231,7 +231,7 @@ const DoctorDashboard = () => {
                                     <div className="h-14 w-14 rounded-full bg-[#00a896]/10 text-[#00a896] flex items-center justify-center shrink-0"><User size={28} /></div>
                                     <div>
                                         <h2 className="text-xl font-bold text-slate-800 dark:text-white font-brand leading-tight">{selectedAppointment.patient?.first_name} {selectedAppointment.patient?.last_name}</h2>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-0.5">Code Patient : {selectedAppointment.patient?.code || `ID_${selectedAppointment.patient?.id}`}</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-0.5">Code Patient : {selectedAppointment.patient?.patient_code || `ID_${selectedAppointment.patient?.id}`}</p>
                                     </div>
                                 </div>
                                 {renderActionButtons(selectedAppointment)}

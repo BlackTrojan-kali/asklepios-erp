@@ -86,7 +86,6 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
 
     const patient = visit.patient;
     const medicalBg = patient.medical_background;
-console.log(patient)
     // --- ACTIONS ---
     const handleDownloadRecord = async () => {
         toast.promise(
@@ -173,7 +172,7 @@ console.log(patient)
                                     <h3 className="font-bold text-lg text-gray-800 dark:text-white font-brand">
                                         {patient.first_name} {patient.last_name}
                                     </h3>
-                                    <p className="text-sm text-gray-500">{patient.gender === 'M' ? 'Homme' : 'Femme'} • {patient.birth_date || 'N/A'}</p>
+                                    <p className="text-sm text-gray-500">{patient.gender === 'M' ? 'Homme' : 'Femme'} • {patient.bith_date || 'N/A'}</p>
                                 </div>
                             </div>
                         </div>

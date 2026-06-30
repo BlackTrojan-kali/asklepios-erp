@@ -167,7 +167,7 @@ export const BedExplorer: React.FC<BedExplorerProps> = ({
                                                         {activeAdmission.patient.first_name} {activeAdmission.patient.last_name}
                                                     </p>
                                                     <p className="text-xs text-gray-500 font-mono">
-                                                        Code: {activeAdmission.patient.code || `ID_${activeAdmission.patient.id}`}
+                                                        Code: {activeAdmission.patient.patient_code || `ID_${activeAdmission.patient.id}`}
                                                     </p>
                                                 </div>
                                             ) : (
