@@ -57,4 +57,14 @@ class Patient extends Model
     public function patientVisits(){
         return $this->hasMany(PatientVisit::class);
     }
+    public function admissions()
+{
+    return $this->hasMany(\App\Models\Hospital\Admission::class);
+}
+
+public function currentAdmission()
+{
+    // Permet de récupérer rapidement l'hospitalisation en cours du patient
+    return $this->hasOne(\App\Models\Hospital\Admission::class)->where('status', 'ADMITTED');
+}
 }

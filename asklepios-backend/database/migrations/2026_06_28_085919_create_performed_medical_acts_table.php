@@ -16,7 +16,9 @@ return new class extends Migration
             $table->foreignId("patient_visit_id")->constrained("patient_visits")->onDelete("cascade");
             $table->foreignId("medical_act_catalog_id")->constrained("medical_act_catalogs")->onDelete("cascade");
             $table->foreignId("equipment_id")->nullable()->constrained("equipments");
-            $table->float("applied_price")->nullable();
+            $table->float("applied_price")->nullable();// --- NOUVELLES COLONNES DE FACTURATION ---
+            $table->boolean('is_billed')->default(false);
+            $table->unsignedBigInteger('invoice_id')->nullable(); //
             $table->timestamps();
         });
     }

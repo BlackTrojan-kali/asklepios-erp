@@ -8,47 +8,60 @@ use Illuminate\Support\Facades\Storage;
 
 class MedicalRecordPdfService
 {
-    /**
-     * Génère le PDF du carnet médical.
-     * * @param int $patientId
-     * @param string $action 'stream' (afficher) | 'download' (télécharger) | 'save' (stocker)
-     * @return mixed
-     */
     public function generateRecord(int $patientId, string $action = 'stream')
     {
-        // 1. Récupération complète du dossier patient (Eager Loading massif)
+        // 1. Récupération complète du dossier
         $patient = Patient::with([
+            'hospital',
             'medicalBackground',
-            'patientVisits' => function($query) {
-                $query->orderBy('arrival_time', 'desc'); // Du plus récent au plus ancien
-            },
-            'patientVisits.center.hospital',
+            'admissions' => function($query) { $query->orderBy('admission_date', 'desc'); },
+            'admissions.bed.facilityRoom',
+            'admissions.doctor.user',
+            
+            // CHARGEMENT DES VISITES
+            'patientVisits' => function($query) { $query->orderBy('arrival_time', 'desc'); },
+            'patientVisits.center',
             'patientVisits.consultations.profileDoctor.user',
             'patientVisits.consultations.prescriptions.prescriptionLines.article',
             'patientVisits.consultations.examRequests.examRequestLines',
+            
+            // AJOUT DU CHARGEMENT DES ACTES RÉALISÉS PENDANT LA VISITE
+            'patientVisits.performedMedicalActs.medicalActCatalog',
+            'patientVisits.performedMedicalActs.equipment' // S'il y a un équipement lié
         ])->findOrFail($patientId);
-
-        // 2. Conversion du logo Asclépios en Base64 (Évite les bugs de chemin avec DomPDF)
-        $logoPath = public_path('images/asklepios_logo.png'); // Assure-toi de placer ton logo ici
-        $logoBase64 = '';
-        if (file_exists($logoPath)) {
-            $logoData = file_get_contents($logoPath);
-            $logoBase64 = 'data:image/png;base64,' . base64_encode($logoData);
+        // ... Le reste du code des logos (Hospital et Asclépios) reste inchangé ...
+        
+        // 2. Gestion du Logo de l'Hôpital (En-tête)
+        $hospitalLogoBase64 = null;
+        if ($patient->hospital && $patient->hospital->logo_url) {
+            $hospitalLogoPath = public_path($patient->hospital->logo_url);
+            if (file_exists($hospitalLogoPath)) {
+                $logoData = file_get_contents($hospitalLogoPath);
+                $hospitalLogoBase64 = 'data:image/' . pathinfo($hospitalLogoPath, PATHINFO_EXTENSION) . ';base64,' . base64_encode($logoData);
+            }
         }
 
-        // 3. Préparation des données pour la vue Blade
+        // 3. Gestion du Logo Asclépios (Filigrane)
+        $asklepiosLogoBase64 = null;
+        $asklepiosLogoPath = public_path('images/asklepios_logo.png');
+        if (file_exists($asklepiosLogoPath)) {
+            $logoData = file_get_contents($asklepiosLogoPath);
+            $asklepiosLogoBase64 = 'data:image/png;base64,' . base64_encode($logoData);
+        }
+
         $data = [
-            'patient' => $patient,
-            'logoBase64' => $logoBase64,
-            'generated_at' => now()->format('d/m/Y H:i'),
+            'patient'             => $patient,
+            'hospital'            => $patient->hospital,
+            'medicalBg'           => $patient->medicalBackground,
+            'hospitalLogoBase64'  => $hospitalLogoBase64,
+            'asklepiosLogoBase64' => $asklepiosLogoBase64,
+            'generated_at'        => now()->format('d/m/Y H:i'),
         ];
 
-        // 4. Génération du PDF
-        $pdf = Pdf::loadView('pdf.medical_record', $data)
-                  ->setPaper('a4', 'portrait');
+        $pdf = Pdf::loadView('pdf.medical_record', $data)->setPaper('a4', 'portrait');
 
-        // 5. Action selon le besoin
-        $fileName = 'Carnet_Medical_' . str_replace(' ', '_', $patient->name) . '.pdf';
+        $safeName = preg_replace('/[^A-Za-z0-9\-]/', '_', $patient->first_name . '_' . $patient->last_name);
+        $fileName = 'Carnet_Medical_' . $safeName . '_' . $patient->patient_code . '.pdf';
 
         if ($action === 'save') {
             $filePath = 'patients/records/' . $fileName;

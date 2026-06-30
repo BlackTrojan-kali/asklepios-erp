@@ -3801,7 +3801,7 @@
                     "Consultations Médicales"
                 ],
                 "summary": "Enregistrer une nouvelle consultation complète",
-                "description": "Crée la consultation, génère les ordonnances, les demandes d'examens et enregistre les actes médicaux réalisés en une seule transaction.",
+                "description": "Crée la consultation, génère les ordonnances, les examens, enregistre les actes et clôture la visite.",
                 "operationId": "7d07e953cf55021806bf07307e6b84cc",
                 "requestBody": {
                     "required": true,
@@ -3817,22 +3817,22 @@
                                         "type": "string",
                                         "example": "Maux de tête intenses"
                                     },
+                                    "clinical_data": {
+                                        "type": "object"
+                                    },
                                     "medical_acts": {
                                         "type": "array",
                                         "items": {
                                             "properties": {
                                                 "medical_act_catalog_id": {
-                                                    "type": "integer",
-                                                    "example": 2
+                                                    "type": "integer"
                                                 },
                                                 "equipment_id": {
                                                     "type": "integer",
-                                                    "example": 5,
                                                     "nullable": true
                                                 },
                                                 "applied_price": {
-                                                    "type": "number",
-                                                    "example": 15000
+                                                    "type": "number"
                                                 }
                                             },
                                             "type": "object"
@@ -3887,6 +3887,27 @@
                 "responses": {
                     "200": {
                         "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Consultations Médicales"
+                ],
+                "summary": "Supprimer une consultation",
+                "description": "Annule et supprime une consultation si elle n'est pas encore facturée, et replace le patient en salle de consultation.",
+                "operationId": "067d99aaaa5080a4ae6796367c493b60",
+                "responses": {
+                    "200": {
+                        "description": "Consultation supprimée avec succès"
+                    },
+                    "422": {
+                        "description": "Impossible de supprimer une consultation déjà facturée"
                     }
                 },
                 "security": [
@@ -4778,6 +4799,64 @@
                     },
                     "404": {
                         "description": "Patient introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/shared/admissions": {
+            "get": {
+                "tags": [
+                    "Hospitalisations"
+                ],
+                "summary": "Lister l'historique des hospitalisations",
+                "description": "Permet à l'administrateur et aux médecins de voir les admissions en cours ou passées.",
+                "operationId": "8839eacd967f2bf7d9d10aea7d77dfac",
+                "responses": {
+                    "200": {
+                        "description": "Liste récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Hospitalisations"
+                ],
+                "summary": "Admettre un patient (Hospitalisation)",
+                "description": "Assigne un lit à un patient et marque le lit comme OCCUPIED.",
+                "operationId": "42ce7b5d4fdea52802f0f3c1f014a4bc",
+                "responses": {
+                    "201": {
+                        "description": "Patient admis avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/shared/admissions/{id}/discharge": {
+            "patch": {
+                "tags": [
+                    "Hospitalisations"
+                ],
+                "summary": "Autoriser la sortie d'un patient",
+                "description": "Clôture l'hospitalisation et libère le lit (le passe en statut CLEANING).",
+                "operationId": "c90317582f443f4f733edf6b36cbd676",
+                "responses": {
+                    "200": {
+                        "description": "Sortie enregistrée avec succès"
                     }
                 },
                 "security": [
@@ -6530,6 +6609,37 @@
                 ]
             }
         },
+        "/api/shared/patients/{patientId}/appointments": {
+            "get": {
+                "tags": [
+                    "Gestion des Rendez-vous"
+                ],
+                "summary": "Lister les rendez-vous d'un patient",
+                "description": "Récupère l'historique paginé des rendez-vous d'un patient donné.",
+                "operationId": "getPatientAppointments",
+                "parameters": [
+                    {
+                        "name": "patientId",
+                        "in": "path",
+                        "description": "ID du patient",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste des rendez-vous du patient récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/receptionist/patients": {
             "get": {
                 "tags": [
@@ -8059,6 +8169,10 @@
         {
             "name": "Antécédents Médicaux",
             "description": "API de gestion des dossiers d'antécédents médicaux (Profil médical de base) des patients."
+        },
+        {
+            "name": "Hospitalisations",
+            "description": "Gestion des admissions, des lits et des sorties des patients"
         },
         {
             "name": "Notifications",

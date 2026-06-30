@@ -27,12 +27,14 @@ interface ConsultationModalProps {
     isOpen: boolean;
     onClose: () => void;
     visit: PatientVisitDto | null;
+    isHospitalization?: boolean; // <-- AJOUTER ICI
 }
 
 export const ConsultationModal: React.FC<ConsultationModalProps> = ({
     isOpen,
     onClose,
-    visit
+    visit,
+    isHospitalization = false // <-- AJOUTER ICI
 }) => {
     const { profile } = useAuth();
     const departmentId = profile?.profile_doctor?.department_id || 0;
@@ -84,7 +86,7 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
 
     const patient = visit.patient;
     const medicalBg = patient.medical_background;
-
+console.log(patient)
     // --- ACTIONS ---
     const handleDownloadRecord = async () => {
         toast.promise(
@@ -127,28 +129,34 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
             
             <div className="bg-[#faf8f1] dark:bg-gray-900 w-full max-w-[95vw] h-[95vh] rounded-2xl shadow-2xl flex flex-col border border-gray-200 dark:border-gray-800 overflow-hidden">
                 
-                {/* --- HEADER GLOBAL --- */}
-                <div className="flex items-center justify-between p-4 bg-[#003366] text-white shrink-0">
-                    <div className="flex items-center gap-3">
-                        <Stethoscope size={24} className="text-[#00a896]" />
-                        <div>
-                            <h2 className="text-xl font-bold font-brand leading-tight">Consultation en cours</h2>
-                            <p className="text-sm text-blue-200">{patient.first_name} {patient.last_name}</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <button 
-                            onClick={handleDownloadRecord}
-                            className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm font-medium transition-colors"
-                        >
-                            <Download size={16} /> Carnet Médical
-                        </button>
-                        <button onClick={onClose} className="p-2 text-gray-300 hover:text-white hover:bg-red-500/20 rounded-full transition-colors">
-                            <X size={24} />
-                        </button>
-                    </div>
-                </div>
-
+{/* --- HEADER GLOBAL --- */}
+<div className="flex items-center justify-between p-4 bg-[#003366] text-white shrink-0">
+    <div className="flex items-center gap-3">
+        <Stethoscope size={24} className="text-[#00a896]" />
+        <div>
+            <h2 className="text-xl font-bold font-brand leading-tight">
+                {isHospitalization ? "Visite d'hospitalisation" : "Consultation en cours"}
+            </h2>
+            <div className="flex items-center gap-2 mt-0.5">
+                <p className="text-sm text-blue-100 font-medium">{patient.first_name} {patient.last_name}</p>
+                <span className="text-[10px] bg-blue-900/50 text-blue-200 px-1.5 py-0.5 rounded font-mono border border-blue-800">
+                    {patient.patient_code} {/* CORRECTION ICI */}
+                </span>
+            </div>
+        </div>
+    </div>
+    <div className="flex items-center gap-3">
+        <button 
+            onClick={handleDownloadRecord}
+            className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm font-medium transition-colors"
+        >
+            <Download size={16} /> Carnet Médical
+        </button>
+        <button onClick={onClose} className="p-2 text-gray-300 hover:text-white hover:bg-red-500/20 rounded-full transition-colors">
+            <X size={24} />
+        </button>
+    </div>
+</div>
                 {/* --- CORPS DE LA MODALE --- */}
                 <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
                     

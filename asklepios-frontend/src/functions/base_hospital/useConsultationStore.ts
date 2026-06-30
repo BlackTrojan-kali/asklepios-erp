@@ -35,7 +35,7 @@ const useConsultationStore = () => {
     // --- LISTER L'HISTORIQUE DES CONSULTATIONS DU MÉDECIN ---
     const getConsultations = useCallback(async (
         page: number = 1,
-        filters: { date?: string } = {},
+        filters: { date?: string; patient_id?: number } = {},
         perPage: number = 15
     ) => {
         try {
@@ -131,7 +131,26 @@ const useConsultationStore = () => {
             setActionLoading(false);
         }
     };
-// --- SOUMETTRE UN RÉSULTAT D'EXAMEN (Pour les Laborantins) ---
+
+    // --- SUPPRIMER UNE CONSULTATION (Annulation par le médecin) ---
+    const deleteConsultation = async (id: number) => {
+        try {
+            setActionLoading(true);
+            const res = await api.delete(`/doctor/consultations/${id}`);
+            
+            toast.success(res.data.message || "Consultation annulée avec succès.");
+            return true;
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                toast.error(error.response?.data?.message || "Erreur lors de l'annulation de la consultation");
+            }
+            return false;
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    // --- SOUMETTRE UN RÉSULTAT D'EXAMEN (Pour les Laborantins) ---
     const submitExamResult = async (examLineId: number, payload: { result_notes?: string, document_url?: string }) => {
         try {
             setActionLoading(true);
@@ -169,6 +188,7 @@ const useConsultationStore = () => {
         getConsultationDetails,
         createConsultation,
         updateConsultationNotes,
+        deleteConsultation, // <--- NOUVELLE MÉTHODE EXPOSÉE ICI
         submitExamResult,
         getMedicalActs
     };

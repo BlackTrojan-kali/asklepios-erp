@@ -24,4 +24,23 @@ class Bed extends Model
         // Comme FacilityRoom est dans le même namespace (Hospital), pas besoin de l'importer
         return $this->belongsTo(FacilityRoom::class, 'facility_room_id');
     }
+    
+
+    public function facilityRoom(){
+        return $this->belongsTo(Bed::class);
+    }
+    // Relation avec la chambre
+    
+
+    // Historique complet de toutes les admissions sur ce lit
+    public function admissions()
+    {
+        return $this->hasMany(Admission::class);
+    }
+
+    // NOUVEAU : Raccourci pour récupérer UNIQUEMENT l'admission active
+    public function currentAdmission()
+    {
+        return $this->hasOne(Admission::class)->where('status', 'ADMITTED');
+    }
 }

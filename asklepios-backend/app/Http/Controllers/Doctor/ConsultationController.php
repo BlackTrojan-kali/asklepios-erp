@@ -235,4 +235,57 @@ class ConsultationController extends Controller
             'data' => $consultation
         ]);
     }
+    #[OA\Delete(
+        path: "/api/doctor/consultations/{id}",
+        summary: "Supprimer une consultation",
+        description: "Annule et supprime une consultation si elle n'est pas encore facturée, et replace le patient en salle de consultation.",
+        security: [["sanctum" => []]],
+        tags: ["Consultations Médicales"]
+    )]
+    #[OA\Response(response: 200, description: "Consultation supprimée avec succès")]
+    #[OA\Response(response: 422, description: "Impossible de supprimer une consultation déjà facturée")]
+    public function destroy($id)
+    {
+        $user = auth()->user();
+
+        // Récupérer la consultation en s'assurant qu'elle appartient bien à ce docteur
+        $consultation = Consultation::where('profile_doctor_id', $user->profile_doctor->id ?? 0)
+            ->findOrFail($id);
+
+        // 1. Vérification stricte : est-elle associée à une facture ?
+        if ($consultation->is_billed || $consultation->invoice_id !== null) {
+            return response()->json([
+                'message' => 'Impossible de supprimer cette consultation car elle a déjà été facturée ou est en cours de paiement.'
+            ], 422);
+        }
+
+        try {
+            DB::transaction(function () use ($consultation) {
+                $visitId = $consultation->patient_visit_id;
+
+                // 2. Supprimer la consultation 
+                // (La DB gère la suppression en cascade des Prescriptions et ExamRequests via le onDelete('cascade'))
+                $consultation->delete();
+
+                // 3. Supprimer les actes médicaux liés à cette visite qui ne sont pas encore facturés
+                PerformedMedicalAct::where('patient_visit_id', $visitId)
+                    ->where('is_billed', false)
+                    ->delete();
+
+                // 4. Restaurer le statut de la visite pour permettre au médecin de recommencer
+                PatientVisit::where('id', $visitId)
+                    ->update(['status' => 'IN_CONSULTATION']);
+            });
+
+            return response()->json([
+                'message' => 'Consultation annulée avec succès. Le patient est de retour en examen clinique.'
+            ], 200);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'message' => 'Erreur lors de la suppression de la consultation.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

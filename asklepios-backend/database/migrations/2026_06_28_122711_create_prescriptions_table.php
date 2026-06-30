@@ -15,6 +15,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId("consultation_id")->constrained("consultations")->onDelete("cascade");
             $table->string("status");
+            // --- NOUVELLES COLONNES DE FACTURATION ---
+            $table->boolean('is_billed')->default(false);
+            $table->unsignedBigInteger('invoice_id')->nullable();
             $table->timestamps();
         });
     }

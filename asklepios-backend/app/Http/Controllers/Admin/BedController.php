@@ -45,13 +45,15 @@ class BedController extends Controller
     {
         $hospitalId = $this->getHospitalId();
 
-        // Vérification de sécurité : La salle appartient-elle bien à cet hôpital ?
+        // 1. On vérifie juste que la chambre appartient bien à l'hôpital (SANS le ->with)
         $room = FacilityRoom::whereHas('department.center', function($q) use ($hospitalId) {
             $q->where('hospital_id', $hospitalId);
         })->findOrFail($roomId);
 
-        // Construction de la requête
-        $query = Bed::where('facility_room_id', $room->id);
+        // 2. C'EST ICI qu'on charge les admissions et le patient pour chaque LIT
+        // Assure-toi d'avoir bien créé la méthode currentAdmission() dans le modèle Bed.php comme vu précédemment
+        $query = Bed::with(['currentAdmission.patient.medicalBackground'])
+                    ->where('facility_room_id', $room->id);
 
         // Filtre de recherche par numéro de lit
         if ($request->filled('search')) {
@@ -64,7 +66,7 @@ class BedController extends Controller
             $query->where('state', $request->query('state'));
         }
 
-        // Tri naturel (ex: Lit 1, Lit 2... plutôt que Lit 1, Lit 10, Lit 2)
+        // Tri naturel
         $query->orderBy('bed_number', 'asc');
 
         // Mode liste plate
@@ -172,7 +174,8 @@ class BedController extends Controller
 
         // Vérifier l'unicité si on change le nom du lit
         if (isset($validated['bed_number']) && $validated['bed_number'] !== $bed->bed_number) {
-            $exists = Bed::where('facility_room_id', $bed->facility_room_id)
+            $exists = Bed::with(['currentAdmission.patient'])
+            ->where('facility_room_id', $bed->facility_room_id)
                          ->where('bed_number', $validated['bed_number'])
                          ->exists();
 

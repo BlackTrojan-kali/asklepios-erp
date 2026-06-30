@@ -30,6 +30,7 @@ use App\Http\Controllers\Doctor\ConsultationController;
 use App\Http\Controllers\Doctor\EquipmentController;
 use App\Http\Controllers\Doctor\MedicalActCatalogController;
 use App\Http\Controllers\Doctor\MedicalBackgroundController;
+use App\Http\Controllers\Hospital\AdmissionController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Pharmacien\InventoryController;
 use App\Http\Controllers\Pharmacien\PurchaseOrderController;
@@ -310,6 +311,8 @@ Route::middleware(['role:doctor'])->prefix('doctor')->group(function () {
     Route::post('consultations', [ConsultationController::class, 'store']);
     Route::get('consultations/{id}', [ConsultationController::class, 'show']);
     Route::put('consultations/{id}', [ConsultationController::class, 'update']);
+    // 👉 NOUVELLE ROUTE AJOUTÉE ICI :
+    Route::delete('consultations/{id}', [ConsultationController::class, 'destroy']);
     
 });
 // ==========================================================
@@ -390,8 +393,13 @@ Route::prefix('patients/{patientId}')->group(function () {
     // Utile pour alimenter les listes déroulantes (React-Select)
     // ---------------------------------------------------------
     Route::middleware(["role:admin,doctor,reception"])->prefix('shared')->group(function () {
-        // Lecture seule des catégories (Paginé ou flat list)
+        
+    Route::get('admissions', [AdmissionController::class, 'index']);
+Route::post('admissions', [AdmissionController::class, 'store']);
+Route::patch('admissions/{id}/discharge', [AdmissionController::class, 'discharge']);
+    // Lecture seule des catégories (Paginé ou flat list)
         // 1. Export PDF (À placer IMPÉRATIVEMENT avant les routes avec {id})
+
         Route::get('appointments/export-pdf', [AppointmentController::class, 'exportPdf']);
 
         // 2. CRUD standard des rendez-vous (On exclut 'destroy' car on utilise 'cancel' pour garder l'historique)
@@ -423,7 +431,7 @@ Route::prefix('patients/{patientId}')->group(function () {
     // ---------------------------------------------------------
     // ACCÈS ADMINISTRATEUR EXCLUSIF
     // ---------------------------------------------------------
-    Route::middleware(['role:admin'])->prefix('admin')->group(function () {
+    Route::middleware(['role:admin,doctor'])->prefix('admin')->group(function () {
         
         // Gestion complète (CRUD) des catégories de chambres
         // Note: L'index est aussi disponible ici pour l'admin (via apiResource)

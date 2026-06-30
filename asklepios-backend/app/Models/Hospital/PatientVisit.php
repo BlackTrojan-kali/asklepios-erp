@@ -17,7 +17,6 @@ class PatientVisit extends Model
     protected $casts = [
         'arrival_time' => 'datetime',
     ];
-
     public function patient()
     {
         return $this->belongsTo(Patient::class);
@@ -59,4 +58,8 @@ class PatientVisit extends Model
     public function performedMedicalActs(){
         return $this->hasMany(PerformedMedicalAct::class);
     }
+    public function admission()
+{
+    return $this->hasOne(Admission::class);
+}
 }

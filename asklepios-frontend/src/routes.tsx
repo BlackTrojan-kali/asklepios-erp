@@ -1,4 +1,8 @@
 import { createBrowserRouter, Outlet } from "react-router-dom";
+
+// ============================================================================
+// IMPORTS : CŒUR & LAYOUTS
+// ============================================================================
 import Login from "./Pages/Auth/Login";
 import AuthMiddleware from "./middlewares/authMiddleware";
 import AppLayout from "./Layouts/AppLayout";
@@ -6,85 +10,112 @@ import CheckRole from "./middlewares/CheckRole";
 import SessionGuard from "./middlewares/SessionGuard";
 import NotFound from "./Pages/NotFound";
 
-// Pages Super Admin
+// ============================================================================
+// IMPORTS : SUPER ADMIN (Plateforme globale)
+// ============================================================================
 import Countries from "./Pages/SUPA/country/Countries";
 import Hospitals from "./Pages/SUPA/hospital/Hospital";
 import Admins from "./Pages/SUPA/admins/Admins";
 import Subscriptions from "./Pages/SUPA/subscriptions/Subscriptions";
 import Licences from "./Pages/SUPA/licence/Licences";
 
-// Pages Admin
+// ============================================================================
+// IMPORTS : ADMIN (Gestion Hôpital)
+// ============================================================================
 import Centers from "./Pages/Admin/Centers";
 import Departments from "./Pages/Admin/departments/Departments";
+import ManageDepartment from './Pages/Admin/Base_hospital/ManageDepartment';
+import RoomCategories from "./Pages/Admin/Base_hospital/room_category/RoomCategories";
+import FacilityRoomsExplorer from "./Pages/Admin/Base_hospital/FacilityRoomsExplorer";
+import BedsExplorer from "./Pages/Admin/Base_hospital/BedsExplorer";
+import EquipmentExplorer from "./Pages/Admin/Base_hospital/EquipmentExplorer";
+import MedicalActExplorer from "./Pages/Admin/Base_hospital/MedicalActExplorer";
+
+// Ressources Humaines
+import Receptionists from "./Pages/Admin/Base_hospital/receptionist/Receptionist";
+import Doctors from "./Pages/Admin/Base_hospital/doctor/Doctors";
+import Pharmaciens from "./Pages/Admin/Pharmacies/Pharmaciens";
+
+// ============================================================================
+// IMPORTS : ADMIN & PHARMACIE (Stock, Ventes, Logistique)
+// ============================================================================
 import Pharmacies from "./Pages/Admin/Pharmacies/Pharmacies";
 import ArticleCategories from "./Pages/Admin/Pharmacies/Articles/ArticleCategories";
 import Articles from "./Pages/Admin/Pharmacies/Articles/Articles";
 import Batches from "./Pages/Admin/Pharmacies/Articles/Batches";
-import Pharmaciens from "./Pages/Admin/Pharmacies/Pharmaciens";
 import Stocks from "./Pages/Admin/Pharmacies/Stock/Stocks";
 import Providers from "./Pages/Admin/Pharmacies/Providers";
 import AdminPurchaseOrders from "./Pages/Admin/Pharmacies/Stock/AdminPurchaseOrders";
 import AdminPurchaseReturns from "./Pages/Admin/Pharmacies/AdminPurchaseReturns";
 import AdminStockMovements from "./Pages/Admin/Pharmacies/Magasin/AdminStockMovements";
 import AdminInventories from "./Pages/Admin/Pharmacies/Stock/AdminInventories";
+import Vehicules from "./Pages/Admin/Pharmacies/Logistics/Vehicules";
+import Drivers from "./Pages/Admin/Pharmacies/Logistics/Drivers";
+import StockTransfersAdmin from "./Pages/Admin/Pharmacies/Logistics/StockTransfersAdmin";
+import ArticlePricing from "./Pages/Admin/Pharmacies/Sale/ArticlePricing";
+import CashRegister from "./Pages/Admin/Pharmacies/Sale/CashRegister";
 
-// Pages Pharmacie
+// ============================================================================
+// IMPORTS : PHARMACIE (Magasinier & Caissier)
+// ============================================================================
 import MagasinHome from "./Pages/Admin/Pharmacies/Magasin/MagasinHome";
 import StorageLocations from "./Pages/Admin/Pharmacies/Stock/StorageLocations";
 import PurchaseOrders from "./Pages/PHARMACY/PurchaseOrders";
 import PurchaseReturns from "./Pages/PHARMACY/PurchaseReturns";
 import StockMovements from "./Pages/Admin/Pharmacies/Stock/StockMovements";
 import Inventories from "./Pages/Admin/Pharmacies/Stock/Inventories";
-import Vehicules from "./Pages/Admin/Pharmacies/Logistics/Vehicules";
-import Drivers from "./Pages/Admin/Pharmacies/Logistics/Drivers";
 import StockTransfers from "./Pages/PHARMACY/StockTransfers";
-import StockTransfersAdmin from "./Pages/Admin/Pharmacies/Logistics/StockTransfersAdmin";
-import Receptionists from "./Pages/Admin/Base_hospital/receptionist/Receptionist";
-import Patients from "./Pages/Admin/Base_hospital/receptionist/Patients";
-import Doctors from "./Pages/Admin/Base_hospital/doctor/Doctors";
-import RoomCategories from "./Pages/Admin/Base_hospital/room_category/RoomCategories";
-import ManageDepartment from './Pages/Admin/Base_hospital/ManageDepartment';
-import FacilityRoomsExplorer from "./Pages/Admin/Base_hospital/FacilityRoomsExplorer";
-import BedsExplorer from "./Pages/Admin/Base_hospital/BedsExplorer";
-
+import CashHome from "./Pages/PHARMACY/CashHome";
 import SalesHistory from "./Pages/PHARMACY/SaleHistory";
 import DepositsHistory from "./Pages/PHARMACY/DepositsHistory";
 import MovementsHistory from "./Pages/PHARMACY/MovementsHistory";
-import CashHome from "./Pages/PHARMACY/CashHome";
-import ArticlePricing from "./Pages/Admin/Pharmacies/Sale/ArticlePricing";
-import CashRegister from "./Pages/Admin/Pharmacies/Sale/CashRegister";
 import CloseSession from "./Pages/PHARMACY/CloseSession";
 import OpenSession from "./Pages/PHARMACY/OpenSession";
-import DoctorAppointments from "./Pages/Doctor/DoctorAppointments";
-import EquipmentExplorer from "./Pages/Admin/Base_hospital/EquipmentExplorer";
-import MedicalActExplorer from "./Pages/Admin/Base_hospital/MedicalActExplorer";
-import DoctorDashboard from "./Pages/Doctor/DoctorDashboard";
 
+// ============================================================================
+// IMPORTS : RÉCEPTIONNISTE
+// ============================================================================
+import Patients from "./Pages/Admin/Base_hospital/receptionist/Patients";
+import ReceptionistAppointments from "./Pages/Reception/ReceptionistAppointments";
+
+// ============================================================================
+// IMPORTS : MÉDECIN
+// ============================================================================
+import DoctorDashboard from "./Pages/Doctor/DoctorDashboard";
+import DoctorAppointments from "./Pages/Doctor/DoctorAppointments";
+import DoctorWardManager from "./Pages/Doctor/DoctorWardManager"; // <-- NOUVEAU
+import DoctorAdmissions from "./Pages/Doctor/DoctorAdmissions";
+
+
+// ============================================================================
+// CONFIGURATION DES ROUTES
+// ============================================================================
 const routes = createBrowserRouter([
-  // ==========================================
+  // --------------------------------------------------------------------------
   // 1. ROUTES D'AUTHENTIFICATION (Publiques)
-  // ==========================================
+  // --------------------------------------------------------------------------
   {
     path: "/auth/login",
     element: <Login />,
   },
 
-  // ==========================================
-  // 2. APPLICATION PRINCIPALE (Protégée + Layout)
-  // ==========================================
+  // --------------------------------------------------------------------------
+  // 2. APPLICATION PRINCIPALE (Protégée + AppLayout Global)
+  // --------------------------------------------------------------------------
   {
     path: "/",
     element: (
       <AuthMiddleware>
         <AppLayout>
-          <Outlet /> {/* <-- Le layout global est rendu UNE seule fois ici */}
+          <Outlet /> {/* Le Layout global est rendu une seule fois ici */}
         </AppLayout>
       </AuthMiddleware>
     ),
     children: [
-      // ----------------------------------------------------
-      // A. ROUTES SUPER ADMIN
-      // ----------------------------------------------------
+      
+      // ====================================================
+      // A. ESPACE SUPER ADMIN
+      // ====================================================
       {
         element: (
           <CheckRole roles={["super_admin"]}>
@@ -100,61 +131,56 @@ const routes = createBrowserRouter([
         ],
       },
 
-      // ----------------------------------------------------
-      // B. ROUTES ADMIN (/admin/...)
-      // ----------------------------------------------------
+      // ====================================================
+      // B. ESPACE ADMINISTRATEUR (Base Hôpital & Paramétrages)
+      // ====================================================
       {
-        path: "admin",
+        path: "admin", // Préfixe appliqué à tous les enfants : /admin/...
         element: (
           <CheckRole roles={["admin"]}>
             <Outlet />
           </CheckRole>
         ),
         children: [
-          //receptioniste
-          {path:"receptionists",element:<Receptionists/>},
-          //docteurs
-          {path:"doctors",element:<Doctors/>},
-          //
+          // -- Ressources Humaines --
+          { path: "receptionists", element: <Receptionists /> },
+          { path: "doctors", element: <Doctors /> },
+          { path: "pharmaciens", element: <Pharmaciens /> },
+
+          // -- Structure de l'Hôpital --
           { path: "centers", element: <Centers /> },
           { path: "departments", element: <Departments /> },
+          { path: "departments/:id/manage_department", element: <ManageDepartment /> },
+          { path: "departments/:id/rooms", element: <FacilityRoomsExplorer /> },
+          { path: "departments/:id/equipments", element: <EquipmentExplorer /> },
+          { path: "departments/:id/medical-acts", element: <MedicalActExplorer /> },
+          { path: "rooms/:id/beds", element: <BedsExplorer /> },
+          { path: "room_categories", element: <RoomCategories /> },
+
+          // -- Pharmacie (Supervision Admin) --
           { path: "pharmacies", element: <Pharmacies /> },
-          { path: "pharmaciens", element: <Pharmaciens /> },
-          { path: "inventory", element: <AdminInventories /> },
-          { path: "movements", element: <AdminStockMovements /> },
-          { path: "orders", element: <AdminPurchaseOrders /> },
-          { path: "returns", element: <AdminPurchaseReturns /> },
-          {path:"room_categories",element:<RoomCategories/>},
-          {path:"departments/:id/manage_department",element:<ManageDepartment/>},
-          {path:"departments/:id/rooms",element:<FacilityRoomsExplorer/>},
-          {path:"rooms/:id/beds",element:<BedsExplorer/>},
-          {path:"departments/:id/equipments",element:<EquipmentExplorer/>},
-          {path:"departments/:id/medical-acts",element:<MedicalActExplorer/>},
-          // Sous-dossier Pharmacie côté Admin
-          {
-            path: "pharmacy/acticles-categories",
-            element: <ArticleCategories />,
-          },
+          { path: "pharmacy/acticles-categories", element: <ArticleCategories /> },
           { path: "pharmacy/articles", element: <Articles /> },
-          { path: "pharmacy/batch", element: <Batches /> },
-          { path: "pharmacy/stocks", element: <Stocks /> },
-          { path: "pharmacy/providers", element: <Providers /> },
-          // POINT DE VENTE
-
-          { path: "/admin/pharmacy/cash-register", element: <CashRegister /> },
           { path: "pharmacy/articles/pricing", element: <ArticlePricing /> },
+          { path: "pharmacy/batch", element: <Batches /> },
+          { path: "pharmacy/providers", element: <Providers /> },
+          { path: "pharmacy/stocks", element: <Stocks /> },
+          { path: "pharmacy/inventory", element: <AdminInventories /> }, // Attention au doublon de nommage possible avec le magasinier
+          { path: "pharmacy/movements", element: <AdminStockMovements /> },
+          { path: "pharmacy/orders", element: <AdminPurchaseOrders /> },
+          { path: "pharmacy/returns", element: <AdminPurchaseReturns /> },
+          { path: "pharmacy/cash-register", element: <CashRegister /> }, // <-- CORRECTION: Retrait du "/" initial
 
-          //logistique
+          // -- Logistique --
           { path: "vehicules", element: <Vehicules /> },
           { path: "drivers", element: <Drivers /> },
           { path: "transfers", element: <StockTransfersAdmin /> },
-          
         ],
       },
 
-      // ----------------------------------------------------
-      // C. ROUTES PARTAGÉES (ADMIN & PHARMACIE)
-      // ----------------------------------------------------
+      // ====================================================
+      // C. ESPACE PARTAGÉ (Admin & Pharmacie)
+      // ====================================================
       {
         element: (
           <CheckRole roles={["admin", "pharmacy"]}>
@@ -167,9 +193,9 @@ const routes = createBrowserRouter([
         ],
       },
 
-      // ----------------------------------------------------
-      // D. ROUTES PHARMACIEN (Rôle : "pharmacy")
-      // ----------------------------------------------------
+      // ====================================================
+      // D. ESPACE PHARMACIE (Magasinier & Caissier)
+      // ====================================================
       {
         element: (
           <CheckRole roles={["pharmacy"]}>
@@ -177,15 +203,14 @@ const routes = createBrowserRouter([
           </CheckRole>
         ),
         children: [
-          // MAGASINIER
-          // Si un jour CheckRole supporte les positions, on mettra ici :
-          // <CheckRole roles={["pharmacy"]} positions={["magasin"]}>
+          // -- Opérations Magasinier --
           { path: "pharmacy", element: <MagasinHome /> },
+          { path: "pharmacy/storage_location", element: <StorageLocations /> },
           { path: "pharmacy/inventory", element: <Inventories /> },
           { path: "pharmacy/movements", element: <StockMovements /> },
-          { path: "pharmacy/storage_location", element: <StorageLocations /> },
           { path: "pharmacy/stock_transfers", element: <StockTransfers /> },
-          // VENDEUR / CAISSIER
+
+          // -- Opérations Caissier (Protégé par Session) --
           {
             element: (
               <SessionGuard>
@@ -195,53 +220,54 @@ const routes = createBrowserRouter([
             children: [
               { path: "pharmacy/cash", element: <CashHome /> },
               { path: "pharmacy/cash/sales-history", element: <SalesHistory /> },
-              {
-                path: "pharmacy/cash/deposits-history",
-                element: <DepositsHistory />,
-              },
-              {
-                path: "pharmacy/cash/movements-history",
-                element: <MovementsHistory />,
-              },
-              { path: "pharmacy/cash/session/close", element: <CloseSession /> },
+              { path: "pharmacy/cash/deposits-history", element: <DepositsHistory /> },
+              { path: "pharmacy/cash/movements-history", element: <MovementsHistory /> },
               { path: "pharmacy/cash/session/open", element: <OpenSession /> },
+              { path: "pharmacy/cash/session/close", element: <CloseSession /> },
             ],
           },
         ],
       },
+
+      // ====================================================
+      // E. ESPACE RÉCEPTIONNISTE (Partagé avec Admin)
+      // ====================================================
       {
-          element: (
-          <CheckRole roles={["reception","admin"]}>
+        element: (
+          <CheckRole roles={["reception", "admin"]}>
             <Outlet />
           </CheckRole>
         ),
-        
-        children:[
-          {path:"reception/patients",element:<Patients/>}
+        children: [
+          { path: "reception/patients", element: <Patients /> },
+          { path: "reception/rdv", element: <ReceptionistAppointments /> }
         ]
       },
       
-  //interface docteur
-  {
-    path:"doctor",
-    element:(
-      <CheckRole roles={["doctor"]}>
-        <Outlet/>
-      </CheckRole>
-    ),
-    children:[
-      { path:"appointments/calendar",element:<DoctorAppointments/>},
-      {path:"medical_act",element:<MedicalActExplorer/>},
-      {path:"home",element:<DoctorDashboard/>}
-    ]
-  },
+      // ====================================================
+      // F. ESPACE MÉDECIN
+      // ====================================================
+      {
+        path: "doctor", // Préfixe appliqué à tous les enfants : /doctor/...
+        element: (
+          <CheckRole roles={["doctor"]}>
+            <Outlet />
+          </CheckRole>
+        ),
+        children: [
+          { path: "home", element: <DoctorDashboard /> },
+          { path: "appointments/calendar", element: <DoctorAppointments /> },
+          { path: "admissions", element: <DoctorAdmissions /> }, // Vue récapitulative des lits occupés
+          { path: "wards", element: <DoctorWardManager /> }, // <-- NOUVEAU: Explorateur interactif des chambres & lits
+          { path: "medical_act", element: <MedicalActExplorer /> },
+        ]
+      },
     ],
-    
   },
 
-  // ==========================================
-  // 3. PAGE 404 (Introuvable)
-  // ==========================================
+  // --------------------------------------------------------------------------
+  // 3. PAGE 404 (Route Introuvable)
+  // --------------------------------------------------------------------------
   {
     path: "*",
     element: <NotFound />,

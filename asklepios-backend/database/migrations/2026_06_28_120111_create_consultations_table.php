@@ -17,7 +17,9 @@ return new class extends Migration
             $table->foreignId("profile_doctor_id")->constrained("profile_doctors")->onDelete("cascade");
             $table->text("chief_complaint")->nullable();
             $table->json("clinical_data")->nullable();
-            $table->float("consultation_price")->default(0.0);
+            $table->float("consultation_price")->default(0.0);// --- NOUVELLES COLONNES DE FACTURATION ---
+            $table->boolean('is_billed')->default(false);
+            $table->unsignedBigInteger('invoice_id')->nullable();
             $table->timestamps();
         });
     }
