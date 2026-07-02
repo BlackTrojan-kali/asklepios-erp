@@ -27,7 +27,7 @@ class Bed extends Model
     
 
     public function facilityRoom(){
-        return $this->belongsTo(Bed::class);
+        return $this->belongsTo(FacilityRoom::class);
     }
     // Relation avec la chambre
     

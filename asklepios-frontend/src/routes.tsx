@@ -85,6 +85,8 @@ import DoctorDashboard from "./Pages/Doctor/DoctorDashboard";
 import DoctorAppointments from "./Pages/Doctor/DoctorAppointments";
 import DoctorWardManager from "./Pages/Doctor/DoctorWardManager"; // <-- NOUVEAU
 import DoctorAdmissions from "./Pages/Doctor/DoctorAdmissions";
+import Invoices from "./Pages/Reception/Invoices";
+import Payments from "./Pages/Reception/Payments";
 
 
 // ============================================================================
@@ -243,7 +245,9 @@ const routes = createBrowserRouter([
         ),
         children: [
           { path: "reception/patients", element: <Patients /> },
-          { path: "reception/rdv", element: <ReceptionistAppointments /> }
+          { path: "reception/rdv", element: <ReceptionistAppointments /> },
+          {path:"reception/facturation",element:<Invoices/>},
+          {path:"reception/payments",element:<Payments/>},
         ]
       },
       

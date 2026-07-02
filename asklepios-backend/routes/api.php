@@ -31,6 +31,9 @@ use App\Http\Controllers\Doctor\EquipmentController;
 use App\Http\Controllers\Doctor\MedicalActCatalogController;
 use App\Http\Controllers\Doctor\MedicalBackgroundController;
 use App\Http\Controllers\Hospital\AdmissionController;
+use App\Http\Controllers\Hospital\FinancialReportController;
+use App\Http\Controllers\Hospital\InvoiceController;
+use App\Http\Controllers\Hospital\PaymentController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Pharmacien\InventoryController;
 use App\Http\Controllers\Pharmacien\PurchaseOrderController;
@@ -393,7 +396,27 @@ Route::prefix('patients/{patientId}')->group(function () {
     // Utile pour alimenter les listes déroulantes (React-Select)
     // ---------------------------------------------------------
     Route::middleware(["role:admin,doctor,reception"])->prefix('shared')->group(function () {
+        // 👉 NOUVELLES ROUTES : Prévisualisation et Génération par Patient
+        Route::get('/patients/{patientId}/unbilled-preview', [InvoiceController::class, 'previewUnbilledForPatient']);
+        Route::post('/patients/{patientId}/generate-invoice', [InvoiceController::class, 'generateForPatient']);
         
+        Route::get('/visits/{visitId}/unbilled-preview', [InvoiceController::class, 'previewUnbilled']);
+        Route::get('/reports/finance', [FinancialReportController::class, 'generateReport']);
+// --- PAIEMENTS (Caissière & Admin) ---
+    Route::get('/payments', [PaymentController::class, 'index']);
+    Route::post('/payments', [PaymentController::class, 'store']);
+
+    // --- PAIEMENTS (Admin / Superviseur Financier Uniquement) ---
+    Route::put('/payments/{id}', [PaymentController::class, 'update']);
+    Route::get('/invoices', [InvoiceController::class, 'index']);
+    
+    // Prévisualisation détaillée (JSON complet)
+    Route::get('/invoices/{id}', [InvoiceController::class, 'show']);
+    
+    // Génération et impression du PDF (Avec filigrane Asclépios intégré)
+    Route::get('/invoices/{id}/download', [InvoiceController::class, 'downloadPdf']);
+        Route::post('/visits/{visitId}/generate-invoice', [InvoiceController::class, 'generateForVisit']);
+        Route::delete('/invoices/{id}', [InvoiceController::class, 'destroy']);
     Route::get('admissions', [AdmissionController::class, 'index']);
 Route::post('admissions', [AdmissionController::class, 'store']);
 Route::patch('admissions/{id}/discharge', [AdmissionController::class, 'discharge']);
@@ -432,7 +455,9 @@ Route::patch('admissions/{id}/discharge', [AdmissionController::class, 'discharg
     // ACCÈS ADMINISTRATEUR EXCLUSIF
     // ---------------------------------------------------------
     Route::middleware(['role:admin,doctor'])->prefix('admin')->group(function () {
-        
+        Route::put('/payments/{id}', [PaymentController::class, 'update']);
+        Route::delete('/payments/{id}', [PaymentController::class, 'destroy']);
+    
         // Gestion complète (CRUD) des catégories de chambres
         // Note: L'index est aussi disponible ici pour l'admin (via apiResource)
         Route::post('facility-rooms/sync-waiting-rooms', [FacilityRoomController::class, 'syncWaitingRooms']);

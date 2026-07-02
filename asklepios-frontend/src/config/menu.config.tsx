@@ -19,7 +19,8 @@ import {
   Workflow,
   BriefcaseMedical,
   Building2,
-  BedDouble // <-- NOUVEL IMPORT
+  BedDouble, // <-- NOUVEL IMPORT
+  Coins
 } from "lucide-react";
 
 // --- 1. DÉFINITION DES TYPES ---
@@ -248,6 +249,16 @@ export const MENU_CONFIG: MenuItemType[] = [
     subItems: [
       { title: "Dossiers Patients", path: "/reception/patients" },
       { title: "Gestion des RDV", path: "/reception/rdv" }
+    ]
+  },
+  { 
+    title:"Facturation et Paiement",
+    icon: <Coins size={20}/>,
+    roles:["reception","admin"],
+    requiredLicence:"base_hospital",
+    subItems:[
+      {title:"Gestion Factures",path:"/reception/facturation"},
+      {title:"Paiements",path:"/reception/payments"}
     ]
   },
 

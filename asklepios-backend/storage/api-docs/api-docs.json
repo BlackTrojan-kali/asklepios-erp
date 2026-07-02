@@ -4866,6 +4866,254 @@
                 ]
             }
         },
+        "/api/shared/reports/finance": {
+            "get": {
+                "tags": [
+                    "Facturation"
+                ],
+                "summary": "Générer un rapport financier PDF",
+                "description": "Génère un PDF selon le type: INVOICES (Factures), PAYMENTS (Encaissements) ou DEBTS (Créances).",
+                "operationId": "8e61ed550e8823e78c07e9bc63f4bb47",
+                "responses": {
+                    "200": {
+                        "description": "élément généré avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/shared/invoices": {
+            "get": {
+                "tags": [
+                    "Facturation"
+                ],
+                "summary": "Historique des factures (Paginé et filtrable)",
+                "description": "Filtres disponibles selon le rôle : center_id (Réception), patient_id (Docteur), ou global (Admin).",
+                "operationId": "0552347dc39585d3694f03327b206b64",
+                "parameters": [
+                    {
+                        "name": "center_id",
+                        "in": "query",
+                        "description": "Filtrer par centre (Cliniq/Succursale)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "patient_id",
+                        "in": "query",
+                        "description": "Filtrer par patient spécifique",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filtrer par statut (UNPAID, PAID)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/shared/invoices/{id}": {
+            "get": {
+                "tags": [
+                    "Facturation"
+                ],
+                "summary": "Prévisualiser les détails d'une facture",
+                "operationId": "f77cec3506df0ae64003d6dbf6e982a2",
+                "responses": {
+                    "200": {
+                        "description": "element récupéré avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Facturation"
+                ],
+                "summary": "Annuler une facture proforma non payée",
+                "description": "Supprime une facture au statut UNPAID et libère automatiquement les actes.",
+                "operationId": "c79151377d7f2a4854b06ec403a55d6a",
+                "responses": {
+                    "200": {
+                        "description": "élément supprimé avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/shared/invoices/{id}/download": {
+            "get": {
+                "tags": [
+                    "Facturation"
+                ],
+                "summary": "Télécharger ou afficher la facture au format PDF détaillé",
+                "operationId": "0d28cf11e869532ac67361d4ca91ae16",
+                "parameters": [
+                    {
+                        "name": "action",
+                        "in": "query",
+                        "description": "values: 'stream' (aperçu) ou 'download' (télécharger)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "element récupéré avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/shared/visits/{visitId}/unbilled-preview": {
+            "get": {
+                "tags": [
+                    "Facturation"
+                ],
+                "summary": "Prévisualiser les éléments non facturés d'une visite",
+                "operationId": "9f1e6baedae6af0c1c28e85870218b7b",
+                "responses": {
+                    "200": {
+                        "description": "element récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/shared/patients/{patientId}/unbilled-preview": {
+            "get": {
+                "operationId": "d989464ce62f586f41cc40db21669469",
+                "responses": {
+                    "200": {
+                        "description": "element récupérée avec succès"
+                    }
+                }
+            }
+        },
+        "/api/shared/patients/{patientId}/generate-invoice": {
+            "post": {
+                "operationId": "0ee9b7e5edad624514db8b0d2a43c24f",
+                "responses": {
+                    "201": {
+                        "description": "element crée avec succès"
+                    }
+                }
+            }
+        },
+        "/api/shared/payments": {
+            "get": {
+                "tags": [
+                    "Paiements"
+                ],
+                "summary": "Historique des paiements (Paginé et filtrable)",
+                "description": "La réceptionniste ne voit que les paiements de son centre. L'admin voit tout son hôpital.",
+                "operationId": "5686dd26633fc3a3bcd09d3cb416437c",
+                "responses": {
+                    "200": {
+                        "description": "Liste récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Paiements"
+                ],
+                "summary": "Enregistrer un paiement",
+                "operationId": "c82ae63dd0c68622841fe4a6be458b91",
+                "responses": {
+                    "201": {
+                        "description": "élément enregistré avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/payments/{id}": {
+            "put": {
+                "tags": [
+                    "Paiements"
+                ],
+                "summary": "Modifier un paiement (Correction d'erreur)",
+                "operationId": "c9408c183363986b20f6a76fd2fa0d26",
+                "responses": {
+                    "201": {
+                        "description": "élément supprimé avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Paiements"
+                ],
+                "summary": "Supprimer un paiement (Annulation)",
+                "operationId": "b2f05b2073a5bf26abd9f4c0c90f409c",
+                "responses": {
+                    "200": {
+                        "description": "élément supprimé avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/notifications": {
             "get": {
                 "tags": [
@@ -8173,6 +8421,14 @@
         {
             "name": "Hospitalisations",
             "description": "Gestion des admissions, des lits et des sorties des patients"
+        },
+        {
+            "name": "Facturation",
+            "description": "Génération, historique et impression des factures"
+        },
+        {
+            "name": "Paiements",
+            "description": "Gestion des encaissements des factures"
         },
         {
             "name": "Notifications",

@@ -2,6 +2,7 @@
 
 namespace App\Models\Hospital;
 
+use App\Models\Patient;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -34,5 +35,8 @@ class PerformedMedicalAct extends Model
     public function equipment(): BelongsTo
     {
         return $this->belongsTo(\App\Models\Hospital\Equipment::class);
+    }
+    public function visit(){
+        return $this->belongsTo(PatientVisit::class,"patient_visit_id");
     }
 }

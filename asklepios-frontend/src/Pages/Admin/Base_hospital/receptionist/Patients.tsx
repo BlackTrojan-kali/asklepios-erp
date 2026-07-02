@@ -12,7 +12,8 @@ import {
     Calendar,
     Phone,
     Fingerprint,
-    CalendarClock
+    CalendarClock,
+    Receipt // Ajout de l'icône pour la facturation
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
@@ -28,6 +29,7 @@ import type { PatientDto } from '../../../../types/PatientTypes';
 import { CreatePatientModal } from '../../../../components/modals/Base_hopital/Patient/CreatePatientModal';
 import { UpdatePatientModal } from '../../../../components/modals/Base_hopital/Patient/UpdatePatientModal';
 import { PatientAppointmentManagerModal } from '../../../../components/modals/Base_hopital/Appointment/PatientAppointmentManagerModal';
+import { GenerateInvoiceModal } from '../../../../components/modals/Base_hopital/facturation/GenerateInvoiceModal'; // Assure-toi que le chemin est correct
 
 const Patients = () => {
     // --- STORES ---
@@ -36,7 +38,6 @@ const Patients = () => {
         getPatients, deletePatient 
     } = usePatientStore();
     
-    // On récupère la liste des docteurs pour le formulaire de RDV
     const { allDoctors, getAllDoctors } = useDoctorStore();
 
     // --- ÉTATS ---
@@ -45,46 +46,38 @@ const Patients = () => {
 
     // États pour l'ouverture des modales
     const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false); // État pour la facturation
     const [selectedPatient, setSelectedPatient] = useState<PatientDto | null>(null);
-    const [appointmentPatient, setAppointmentPatient] = useState<PatientDto | null>(null); // Pour la modale RDV
+    const [appointmentPatient, setAppointmentPatient] = useState<PatientDto | null>(null);
 
-    // Identifiant du centre actuel (À remplacer par l'ID de l'utilisateur connecté via ton store d'authentification)
     const currentCenterId = 1; 
 
     // --- CHARGEMENT INITIAL ---
-    
-    // 1. Chargement des patients (se déclenche au montage et à chaque changement de page)
     useEffect(() => {
         getPatients(page, { search: searchQuery });
     }, [getPatients, page]);
 
-    // 2. Chargement des médecins (se déclenche une seule fois au montage du composant)
     useEffect(() => {
-        getAllDoctors(); // Charge la liste complète en arrière-plan pour la modale
+        getAllDoctors(); 
     }, [getAllDoctors]);
 
     // --- ACTIONS ---
-
-    // Rafraîchir la liste actuelle
     const handleRefresh = () => {
         getPatients(page, { search: searchQuery });
     };
 
-    // Soumission du formulaire de recherche
     const handleSearchSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setPage(1); 
         getPatients(1, { search: searchQuery });
     };
 
-    // Réinitialisation de la recherche
     const handleResetSearch = () => {
         setSearchQuery('');
         setPage(1);
         getPatients(1, { search: '' });
     };
 
-    // Demander confirmation AVANT d'ouvrir la modification
     const handleEditRequest = async (patient: PatientDto) => {
         const result = await Swal.fire({
             title: 'Vérification d\'identité',
@@ -102,7 +95,6 @@ const Patients = () => {
         }
     };
 
-    // Supprimer (Archiver) un patient
     const handleDelete = async (id: number, name: string) => {
         const result = await Swal.fire({
             title: 'Archiver ce dossier ?',
@@ -120,14 +112,12 @@ const Patients = () => {
         }
     };
 
-    // Formatage local de la date
     const formatDate = (dateString: string) => {
         if (!dateString) return 'N/A';
         const date = new Date(dateString);
         return date.toLocaleDateString('fr-FR');
     };
 
-    // Helper : Traduction du genre pour l'affichage
     const getGenderLabel = (gender: PatientGender) => {
         switch(gender) {
             case PatientGender.MALE: return "Homme";
@@ -141,7 +131,7 @@ const Patients = () => {
         <div className="space-y-6">
             
             {/* EN-TÊTE DE LA PAGE */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 rounded-lg">
                         <Users size={24} />
@@ -159,7 +149,7 @@ const Patients = () => {
                     </div>
                 </div>
                 
-                <div className="flex items-center gap-3 w-full sm:w-auto">
+                <div className="flex flex-wrap items-center gap-3 w-full xl:w-auto">
                     <button 
                         onClick={handleRefresh}
                         disabled={loading}
@@ -167,6 +157,15 @@ const Patients = () => {
                     >
                         <RefreshCw size={18} className={loading ? "animate-spin text-indigo-600" : ""} />
                         <span className="hidden sm:inline">Rafraîchir</span>
+                    </button>
+
+                    {/* BOUTON FACTURATION */}
+                    <button 
+                        onClick={() => setIsInvoiceModalOpen(true)}
+                        className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm flex-1 sm:flex-none"
+                    >
+                        <Receipt size={18} />
+                        Facturer un dossier
                     </button>
 
                     <button 
@@ -283,7 +282,6 @@ const Patients = () => {
 
                                         <td className="p-4 text-right">
                                             <div className="flex justify-end items-center gap-2">
-                                                {/* BOUTON : Gestion des Rendez-vous */}
                                                 <button 
                                                     onClick={() => setAppointmentPatient(item)} 
                                                     title="Gérer les rendez-vous et admissions" 
@@ -362,6 +360,12 @@ const Patients = () => {
                 patient={appointmentPatient}
                 currentCenterId={currentCenterId}
                 doctors={allDoctors}
+            />
+
+            {/* MODALE DE FACTURATION */}
+            <GenerateInvoiceModal
+                isOpen={isInvoiceModalOpen}
+                onClose={() => setIsInvoiceModalOpen(false)}
             />
 
         </div>
