@@ -396,6 +396,10 @@ Route::prefix('patients/{patientId}')->group(function () {
     // Utile pour alimenter les listes déroulantes (React-Select)
     // ---------------------------------------------------------
     Route::middleware(["role:admin,doctor,reception"])->prefix('shared')->group(function () {
+        // 👉 NOUVELLE ROUTE : Rapport PDF des paiements (Point de caisse)
+        Route::get('/reports/payments-pdf', [FinancialReportController::class, 'exportPaymentsReport']);
+        // Rapport PDF global des factures et créances
+        Route::get('/reports/invoices-pdf', [FinancialReportController::class, 'exportInvoicesReport']);
         // 👉 NOUVELLES ROUTES : Prévisualisation et Génération par Patient
         Route::get('/patients/{patientId}/unbilled-preview', [InvoiceController::class, 'previewUnbilledForPatient']);
         Route::post('/patients/{patientId}/generate-invoice', [InvoiceController::class, 'generateForPatient']);

@@ -4,11 +4,12 @@ import toast from "react-hot-toast";
 import api from "../../api/api";
 import type { PaginatedResponse } from "../../types/types";
 
-// 👉 NOUVEAU : Importation des types depuis ton fichier PaymentTypes existant
+// Importation des types depuis ton fichier PaymentTypes existant
 import type { 
     PaymentInvoiceDto, 
     CreatePaymentPayload, 
-    UpdatePaymentPayload 
+    UpdatePaymentPayload,
+    PaymentReportFilters // 👉 Nouvel import
 } from "../../types/PaymentTypes";
 
 export interface PaginationData {
@@ -68,7 +69,6 @@ const usePaymentStore = () => {
             
             toast.success("Paiement enregistré avec succès.");
             
-            // Le backend renvoie { message, invoice_status, data }
             return res.data; 
         } catch (error) {
             if (axios.isAxiosError(error)) {
@@ -126,6 +126,33 @@ const usePaymentStore = () => {
         }
     };
 
+    // 👉 NOUVEAU : EXPORTER LE RAPPORT DES PAIEMENTS (POINT DE CAISSE)
+    // GET /shared/reports/payments-pdf
+    const downloadPaymentsReportPdf = async (filters: PaymentReportFilters) => {
+        try {
+            setActionLoading(true);
+            
+            const res = await api.get("/shared/reports/payments-pdf", {
+                params: filters,
+                responseType: 'blob' // Indispensable pour récupérer un fichier (PDF)
+            });
+
+            // Création d'une URL locale pour ouvrir le PDF
+            const fileUrl = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+            
+            // Ouverture dans un nouvel onglet
+            window.open(fileUrl, '_blank');
+            toast.success("Point de caisse généré avec succès !");
+            
+            return true;
+        } catch (error) {
+            toast.error("Impossible de générer le rapport. Vérifiez vos filtres.");
+            return false;
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
     return {
         // États
         payments,
@@ -137,7 +164,8 @@ const usePaymentStore = () => {
         getPayments,
         createPayment,
         updatePayment,
-        deletePayment
+        deletePayment,
+        downloadPaymentsReportPdf // 👉 Export de la nouvelle fonction
     };
 };
 

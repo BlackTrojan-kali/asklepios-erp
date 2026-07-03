@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { 
     Wallet, Search, Edit3, Trash2, 
-    Loader2, RefreshCw, ChevronLeft, ChevronRight, Building2, CreditCard
+    Loader2, RefreshCw, ChevronLeft, ChevronRight, Building2, CreditCard, FileDown
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
@@ -14,6 +14,8 @@ import { useAuth } from '../../contexts/AuthContext';
 
 // --- MODALES & TYPES ---
 import { UpdatePaymentModal } from '../../components/modals/Base_hopital/Finance/UpdatePaymentModal';
+// 👉 Import de la modale d'exportation
+import { ExportPaymentsModal } from '../../components/modals/Base_hopital/Finance/ExportPaymentsModal';
 import type { PaymentInvoiceDto } from '../../types/PaymentTypes';
 
 interface SelectOption {
@@ -31,7 +33,6 @@ const Payments = () => {
     } = usePaymentStore();
 
     // 👉 DÉFINITION DES DROITS D'ACCÈS
-    // Selon ton api.php, les admin et les docteurs ont accès aux routes PUT/DELETE
     const canManagePayments = ['admin', 'super_admin', 'doctor'].includes(profile?.role || '');
 
     // --- ÉTATS ---
@@ -39,6 +40,9 @@ const Payments = () => {
     const [searchInvoiceId, setSearchInvoiceId] = useState<string>('');
     const [selectedCenter, setSelectedCenter] = useState<SelectOption | null>(null);
     const [selectedPayment, setSelectedPayment] = useState<PaymentInvoiceDto | null>(null);
+    
+    // 👉 NOUVEL ÉTAT pour la modale d'export
+    const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
     // --- CHARGEMENT DES CENTRES ---
     useEffect(() => {
@@ -127,14 +131,25 @@ const Payments = () => {
                     </div>
                 </div>
                 
-                <button 
-                    onClick={fetchPayments}
-                    disabled={loading}
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 px-4 py-2 rounded-lg font-medium shadow-sm transition-colors"
-                >
-                    <RefreshCw size={18} className={loading ? "animate-spin text-blue-600" : ""} />
-                    Rafraîchir
-                </button>
+                {/* 👉 CONTENEUR DES BOUTONS D'ACTION */}
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                    <button 
+                        onClick={fetchPayments}
+                        disabled={loading}
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 px-4 py-2 rounded-lg font-medium shadow-sm transition-colors"
+                    >
+                        <RefreshCw size={18} className={loading ? "animate-spin text-blue-600" : ""} />
+                        Rafraîchir
+                    </button>
+
+                    <button 
+                        onClick={() => setIsExportModalOpen(true)}
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#00a896] hover:bg-[#008f7f] text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors"
+                    >
+                        <FileDown size={18} />
+                        Point de Caisse (PDF)
+                    </button>
+                </div>
             </div>
 
             {/* --- BARRE DE RECHERCHE ET FILTRES --- */}
@@ -216,7 +231,6 @@ const Payments = () => {
                                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Caissier(ère)</th>
                                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Montant</th>
                                 
-                                {/* 👉 Colonne action visible si l'utilisateur a les droits */}
                                 {canManagePayments && (
                                     <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Actions</th>
                                 )}
@@ -282,7 +296,6 @@ const Payments = () => {
                                             + {formatCurrency(payment.amount)}
                                         </td>
 
-                                        {/* 👉 Boutons visibles si l'utilisateur a les droits */}
                                         {canManagePayments && (
                                             <td className="p-4 text-right">
                                                 <div className="flex justify-end items-center gap-2">
@@ -339,14 +352,21 @@ const Payments = () => {
                 )}
             </div>
 
-            {/* MODALE DE CORRECTION D'UN PAIEMENT (Admin) */}
+            {/* MODALES */}
+            
             <UpdatePaymentModal
                 isOpen={!!selectedPayment}
                 onClose={() => {
                     setSelectedPayment(null);
-                    fetchPayments(); // Rafraîchir la liste après modification
+                    fetchPayments(); 
                 }}
                 payment={selectedPayment}
+            />
+
+            {/* 👉 MODALE D'EXPORTATION DU POINT DE CAISSE */}
+            <ExportPaymentsModal
+                isOpen={isExportModalOpen}
+                onClose={() => setIsExportModalOpen(false)}
             />
 
         </div>

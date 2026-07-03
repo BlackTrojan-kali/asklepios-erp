@@ -3,7 +3,11 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import api from "../../api/api";
 import type { PaginatedResponse } from "../../types/types";
-import type { InvoiceDto, GenerateInvoicePayload } from "../../types/InvoiceTypes";
+import type { 
+    InvoiceDto, 
+    GenerateInvoicePayload, 
+    InvoiceReportFilters 
+} from "../../types/InvoiceTypes";
 
 export interface PaginationData {
     currentPage: number;
@@ -60,12 +64,32 @@ const useInvoiceStore = () => {
         }
     }, []);
 
-    // --- POST /shared/visits/{visitId}/generate-invoice ---
+    // --- POST /shared/visits/{visitId}/generate-invoice (Ancienne méthode si encore utilisée) ---
     const generateInvoice = async (visitId: number, payload: GenerateInvoicePayload) => {
         try {
             setActionLoading(true);
             const res = await api.post(`/shared/visits/${visitId}/generate-invoice`, payload);
             toast.success(res.data.message || "Facture générée avec succès !");
+            return res.data.data as InvoiceDto;
+        } catch (error) {
+            if (axios.isAxiosError(error)) {
+                toast.error(error.response?.data?.message || "Impossible de générer la facture.");
+            }
+            return null;
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    // --- POST /shared/patients/{patientId}/generate-invoice ---
+    const generateInvoiceForPatient = async (patientId: number, payload: GenerateInvoicePayload) => {
+        try {
+            setActionLoading(true);
+            const res = await api.post(`/shared/patients/${patientId}/generate-invoice`, payload);
+            toast.success(res.data.message || "Facture générée avec succès !");
+            
+            await getInvoices(1); 
+            
             return res.data.data as InvoiceDto;
         } catch (error) {
             if (axios.isAxiosError(error)) {
@@ -102,7 +126,7 @@ const useInvoiceStore = () => {
             setActionLoading(true);
             const res = await api.get(`/shared/invoices/${id}/download`, {
                 params: { action },
-                responseType: 'blob' // Gère le format PDF binaire
+                responseType: 'blob' 
             });
 
             const fileUrl = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
@@ -125,28 +149,32 @@ const useInvoiceStore = () => {
             setActionLoading(false);
         }
     };
-// (Extrait des méthodes à ajouter/modifier dans ton useInvoiceStore existant)
 
-    // --- POST /shared/patients/{patientId}/generate-invoice ---
-    const generateInvoiceForPatient = async (patientId: number, payload: GenerateInvoicePayload) => {
+    // 👉 NOUVEAU : GET /shared/reports/invoices-pdf ---
+    const downloadInvoicesReportPdf = async (filters: InvoiceReportFilters) => {
         try {
             setActionLoading(true);
-            const res = await api.post(`/shared/patients/${patientId}/generate-invoice`, payload);
-            toast.success(res.data.message || "Facture générée avec succès !");
             
-            // On peut rafraîchir l'historique si on est sur la page Invoices
-            await getInvoices(1); 
+            const res = await api.get("/shared/reports/invoices-pdf", {
+                params: filters,
+                responseType: 'blob' // Indispensable pour lire un PDF en retour
+            });
+
+            const fileUrl = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
             
-            return res.data.data as InvoiceDto;
+            // On ouvre le rapport dans un nouvel onglet
+            window.open(fileUrl, '_blank');
+            toast.success("Rapport généré avec succès !");
+            
+            return true;
         } catch (error) {
-            if (axios.isAxiosError(error)) {
-                toast.error(error.response?.data?.message || "Impossible de générer la facture.");
-            }
-            return null;
+            toast.error("Impossible de générer le rapport. Vérifiez vos filtres.");
+            return false;
         } finally {
             setActionLoading(false);
         }
     };
+
     return {
         invoices,
         currentInvoice,
@@ -158,7 +186,8 @@ const useInvoiceStore = () => {
         generateInvoice,
         cancelInvoice,
         downloadInvoicePdf,
-        generateInvoiceForPatient
+        generateInvoiceForPatient,
+        downloadInvoicesReportPdf // Export de la nouvelle fonction
     };
 };
 

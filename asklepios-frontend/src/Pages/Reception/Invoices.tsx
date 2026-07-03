@@ -1,11 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { 
-    Receipt, Search, Printer, Eye, Trash2, 
-    Loader2, RefreshCw, ChevronLeft, ChevronRight, Filter, Plus, Wallet
+    Receipt, Printer, Eye, Trash2, 
+    Loader2, RefreshCw, ChevronLeft, ChevronRight, Filter, Plus, Wallet, Building2, FileDown
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
+import Select from 'react-select'; 
+
+// --- STORES & CONTEXT ---
 import useInvoiceStore from '../../functions/base_hospital/useInvoiceStore';
+import useCenterStore from '../../functions/center/useCenterStore';
+import { useAuth } from '../../contexts/AuthContext'; 
 
 // --- TYPES ---
 import type { InvoiceDto } from '../../types/InvoiceTypes';
@@ -13,50 +18,71 @@ import type { InvoiceDto } from '../../types/InvoiceTypes';
 // --- MODALES ---
 import { InvoicePreviewModal } from '../../components/modals/Base_hopital/hospital/InvoicePreviewModal'; 
 import { GenerateInvoiceModal } from '../../components/modals/Base_hopital/facturation/GenerateInvoiceModal'; 
-import { CreatePaymentModal } from '../../components/modals/Base_hopital/Finance/CreatePaymentModal'; // 👉 Import de la modale d'encaissement
+import { CreatePaymentModal } from '../../components/modals/Base_hopital/Finance/CreatePaymentModal';
+// 👉 Import de la nouvelle modale d'exportation
+import { ExportInvoicesModal } from '../../components/modals/Base_hopital/Finance/ExportInvoicesModal'; 
+
+interface SelectOption {
+    value: string;
+    label: string;
+}
 
 const Invoices = () => {
-    // --- STORES ---
+    // --- STORES & AUTH ---
+    const { profile } = useAuth();
+    const { getCenters, centers } = useCenterStore();
     const { 
         invoices, loading, pagination, 
         getInvoices, cancelInvoice, downloadInvoicePdf, actionLoading 
     } = useInvoiceStore();
 
-    // --- ÉTATS ---
+    // --- ÉTATS (Filtres & Pagination) ---
     const [page, setPage] = useState(1);
     const [statusFilter, setStatusFilter] = useState<string>(''); // '', 'PAID', 'UNPAID'
+    const [selectedCenter, setSelectedCenter] = useState<SelectOption | null>(null);
     
-    // États des modales
+    // --- ÉTATS DES MODALES ---
     const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null);
     const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false); 
-    
-    // 👉 NOUVEAUX ÉTATS POUR LE PAIEMENT
     const [isPaymentOpen, setIsPaymentOpen] = useState(false);
     const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<InvoiceDto | null>(null);
+    
+    // 👉 NOUVEL ÉTAT pour la modale d'export
+    const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
-    // Chargement des factures
+    // --- CHARGEMENT DES CENTRES (Si Admin) ---
     useEffect(() => {
-        getInvoices(page, { status: statusFilter || undefined });
-    }, [getInvoices, page, statusFilter]);
+        if (profile?.role === 'admin' || profile?.role === 'super_admin') {
+            getCenters(1, {}, 100); 
+        }
+    }, [profile, getCenters]);
 
-    // Rafraîchir
-    const handleRefresh = () => {
-        getInvoices(page, { status: statusFilter || undefined });
+    // --- CHARGEMENT DES FACTURES ---
+    useEffect(() => {
+        fetchInvoices();
+    }, [page, statusFilter, selectedCenter]);
+
+    const fetchInvoices = () => {
+        getInvoices(page, { 
+            status: statusFilter || undefined,
+            center_id: selectedCenter?.value ? Number(selectedCenter.value) : undefined
+        });
     };
 
-    // Changer de filtre de statut
+    const handleRefresh = () => {
+        fetchInvoices();
+    };
+
     const handleFilterChange = (newStatus: string) => {
         setStatusFilter(newStatus);
-        setPage(1); // Retour page 1 au changement de filtre
+        setPage(1); 
     };
 
-    // Ouvrir la modale d'encaissement
     const handleOpenPayment = (invoice: InvoiceDto) => {
         setSelectedInvoiceForPayment(invoice);
         setIsPaymentOpen(true);
     };
 
-    // Annuler une facture
     const handleDelete = async (id: number) => {
         const result = await Swal.fire({
             title: 'Annuler cette facture ?',
@@ -74,6 +100,15 @@ const Invoices = () => {
         }
     };
 
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XAF' }).format(amount).replace('XAF', 'FCFA');
+    };
+
+    const centerOptions: SelectOption[] = centers.map(center => ({
+        value: center.id.toString(),
+        label: center.name
+    }));
+
     return (
         <div className="space-y-6">
             
@@ -88,7 +123,7 @@ const Invoices = () => {
                             <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Historique des Factures</h1>
                         </div>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            Consultez, imprimez ou annulez les factures proforma du système.
+                            Consultez, imprimez ou encaissez les factures du système.
                         </p>
                     </div>
                 </div>
@@ -103,7 +138,15 @@ const Invoices = () => {
                         Rafraîchir
                     </button>
                     
-                    {/* BOUTON NOUVELLE FACTURE */}
+                    {/* 👉 BOUTON EXPORTER LE RAPPORT PDF */}
+                    <button 
+                        onClick={() => setIsExportModalOpen(true)}
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#003366] hover:bg-blue-900 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors"
+                    >
+                        <FileDown size={18} />
+                        Exporter PDF
+                    </button>
+
                     <button 
                         onClick={() => setIsGenerateModalOpen(true)}
                         className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#00a896] hover:bg-[#008f7f] text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors"
@@ -115,30 +158,69 @@ const Invoices = () => {
             </div>
 
             {/* --- BARRE DE FILTRES --- */}
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-2 text-sm font-bold text-gray-500 uppercase">
-                    <Filter size={16} /> Filtre Rapide :
-                </div>
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col lg:flex-row items-center justify-between gap-4">
                 
-                <div className="flex bg-gray-100 dark:bg-gray-900 p-1 rounded-lg w-full sm:w-auto overflow-x-auto">
-                    {[
-                        { label: 'Toutes', value: '' },
-                        { label: 'Payées', value: 'PAID' },
-                        { label: 'Non Payées', value: 'UNPAID' }
-                    ].map(tab => (
-                        <button
-                            key={tab.label}
-                            onClick={() => handleFilterChange(tab.value)}
-                            className={`flex-1 sm:px-6 py-1.5 rounded-md text-sm font-bold transition-all whitespace-nowrap ${
-                                statusFilter === tab.value 
-                                    ? 'bg-white dark:bg-gray-800 text-[#003366] dark:text-[#00a896] shadow-sm' 
-                                    : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-                            }`}
-                        >
-                            {tab.label}
-                        </button>
-                    ))}
+                {/* Filtre Statut */}
+                <div className="flex items-center gap-4 w-full lg:w-auto overflow-x-auto">
+                    <div className="flex items-center gap-2 text-sm font-bold text-gray-500 uppercase whitespace-nowrap">
+                        <Filter size={16} /> Statut :
+                    </div>
+                    <div className="flex bg-gray-100 dark:bg-gray-900 p-1 rounded-lg">
+                        {[
+                            { label: 'Toutes', value: '' },
+                            { label: 'Payées', value: 'PAID' },
+                            { label: 'Non Payées', value: 'UNPAID' }
+                        ].map(tab => (
+                            <button
+                                key={tab.label}
+                                onClick={() => handleFilterChange(tab.value)}
+                                className={`px-4 sm:px-6 py-1.5 rounded-md text-sm font-bold transition-all whitespace-nowrap ${
+                                    statusFilter === tab.value 
+                                        ? 'bg-white dark:bg-gray-800 text-[#003366] dark:text-[#00a896] shadow-sm' 
+                                        : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                                }`}
+                            >
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
+
+                {/* Filtre Centre (Admin uniquement) */}
+                {(profile?.role === 'admin' || profile?.role === 'super_admin') && (
+                    <>
+                        <div className="hidden lg:block w-px h-10 bg-gray-200 dark:bg-gray-700"></div>
+                        <div className="w-full lg:w-1/3 flex items-center gap-2">
+                            <Building2 size={18} className="text-gray-400 shrink-0" />
+                            <div className="flex-1">
+                                <Select
+                                    options={centerOptions}
+                                    value={selectedCenter}
+                                    onChange={(option) => {
+                                        setSelectedCenter(option);
+                                        setPage(1);
+                                    }}
+                                    isClearable 
+                                    placeholder="Tous les centres..."
+                                    className="react-select-container text-sm"
+                                    classNamePrefix="react-select"
+                                    noOptionsMessage={() => "Aucun centre trouvé"}
+                                    styles={{
+                                        control: (base) => ({
+                                            ...base,
+                                            minHeight: '42px',
+                                            borderRadius: '0.5rem',
+                                            borderColor: 'inherit',
+                                            boxShadow: 'none',
+                                            '&:hover': { borderColor: '#00a896' }
+                                        }),
+                                        menu: (base) => ({ ...base, zIndex: 50 })
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    </>
+                )}
             </div>
 
             {/* --- TABLEAU DES FACTURES --- */}
@@ -151,6 +233,7 @@ const Invoices = () => {
                                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date d'émission</th>
                                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Patient</th>
                                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Montant Total</th>
+                                <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Reste à Payer</th>
                                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-center">Statut</th>
                                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Actions</th>
                             </tr>
@@ -158,14 +241,14 @@ const Invoices = () => {
                         <tbody className="divide-y divide-gray-100 dark:divide-gray-700 text-sm">
                             {loading ? (
                                 <tr>
-                                    <td colSpan={6} className="p-12 text-center">
+                                    <td colSpan={7} className="p-12 text-center">
                                         <Loader2 size={32} className="animate-spin text-[#00a896] mx-auto mb-2" />
                                         <p className="text-gray-500">Chargement des données financières...</p>
                                     </td>
                                 </tr>
                             ) : invoices.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="p-12 text-center">
+                                    <td colSpan={7} className="p-12 text-center">
                                         <Receipt size={48} className="mx-auto mb-3 opacity-20 text-gray-500" />
                                         <p className="font-medium text-gray-500">Aucune facture trouvée.</p>
                                     </td>
@@ -179,7 +262,8 @@ const Invoices = () => {
                                         </td>
 
                                         <td className="p-4 text-gray-600 dark:text-gray-300">
-                                            {new Date(inv.created_at).toLocaleDateString('fr-FR')} à {new Date(inv.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                                            {new Date(inv.created_at).toLocaleDateString('fr-FR')} <br/>
+                                            <span className="text-xs text-gray-400">{new Date(inv.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
                                         </td>
 
                                         <td className="p-4">
@@ -191,8 +275,12 @@ const Invoices = () => {
                                             </div>
                                         </td>
 
-                                        <td className="p-4 text-right font-mono font-bold text-slate-800 dark:text-white">
-                                            {Number(inv.total_amount).toLocaleString()} FCFA
+                                        <td className="p-4 text-right font-mono font-bold text-slate-800 dark:text-gray-200">
+                                            {formatCurrency(inv.total_amount)}
+                                        </td>
+
+                                        <td className="p-4 text-right font-mono font-bold text-red-500">
+                                            {formatCurrency((inv as any).remaining_debt || 0)}
                                         </td>
 
                                         <td className="p-4 text-center">
@@ -210,10 +298,9 @@ const Invoices = () => {
                                         <td className="p-4 text-right">
                                             <div className="flex justify-end items-center gap-2">
                                                 
-                                                {/* 👉 BOUTON ENCAISSEMENT (Seulement si la facture n'est pas soldée) */}
                                                 {inv.status === 'UNPAID' && (
                                                     <button 
-                                                        onClick={() => handleOpenPayment(inv as any)} 
+                                                        onClick={() => handleOpenPayment(inv)} 
                                                         title="Encaisser un paiement" 
                                                         className="p-1.5 text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"
                                                     >
@@ -221,7 +308,6 @@ const Invoices = () => {
                                                     </button>
                                                 )}
 
-                                                {/* VOIR (Prévisualisation) */}
                                                 <button 
                                                     onClick={() => setSelectedInvoiceId(inv.id)} 
                                                     title="Voir les détails" 
@@ -230,7 +316,6 @@ const Invoices = () => {
                                                     <Eye size={18} />
                                                 </button>
 
-                                                {/* IMPRIMER */}
                                                 <button 
                                                     onClick={() => downloadInvoicePdf(inv.id, 'stream')} 
                                                     disabled={actionLoading}
@@ -240,7 +325,6 @@ const Invoices = () => {
                                                     <Printer size={18} />
                                                 </button>
                                                 
-                                                {/* SUPPRIMER (Seulement si UNPAID) */}
                                                 {inv.status === 'UNPAID' && (
                                                     <button 
                                                         onClick={() => handleDelete(inv.id)} 
@@ -270,14 +354,14 @@ const Invoices = () => {
                             <button 
                                 onClick={() => setPage(page - 1)}
                                 disabled={pagination.currentPage === 1}
-                                className="p-2 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-600 dark:text-gray-300 disabled:opacity-50 hover:bg-white dark:hover:bg-gray-800"
+                                className="p-2 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-600 dark:text-gray-300 disabled:opacity-50 hover:bg-white dark:hover:bg-gray-800 transition-colors"
                             >
                                 <ChevronLeft size={18} />
                             </button>
                             <button 
                                 onClick={() => setPage(page + 1)}
                                 disabled={pagination.currentPage === pagination.lastPage}
-                                className="p-2 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-600 dark:text-gray-300 disabled:opacity-50 hover:bg-white dark:hover:bg-gray-800"
+                                className="p-2 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-600 dark:text-gray-300 disabled:opacity-50 hover:bg-white dark:hover:bg-gray-800 transition-colors"
                             >
                                 <ChevronRight size={18} />
                             </button>
@@ -286,31 +370,35 @@ const Invoices = () => {
                 )}
             </div>
 
-            {/* MODALE DE PRÉVISUALISATION D'UNE FACTURE EXISTANTE */}
+            {/* MODALES */}
             <InvoicePreviewModal
                 isOpen={!!selectedInvoiceId}
                 onClose={() => setSelectedInvoiceId(null)}
                 invoiceId={selectedInvoiceId}
             />
 
-            {/* MODALE DE GÉNÉRATION DE NOUVELLE FACTURE */}
             <GenerateInvoiceModal
                 isOpen={isGenerateModalOpen}
                 onClose={() => {
                     setIsGenerateModalOpen(false);
-                    handleRefresh(); // Rafraîchir la liste si une facture a été générée
+                    handleRefresh();
                 }}
             />
 
-            {/* 👉 MODALE DE PAIEMENT (ENCAISSEMENT) */}
             <CreatePaymentModal
                 isOpen={isPaymentOpen}
                 onClose={() => {
                     setIsPaymentOpen(false);
                     setSelectedInvoiceForPayment(null);
-                    handleRefresh(); // Rafraîchir pour voir le nouveau statut (ex: passage à PAID)
+                    handleRefresh(); 
                 }}
                 invoice={selectedInvoiceForPayment}
+            />
+
+            {/* 👉 MODALE D'EXPORTATION DU RAPPORT */}
+            <ExportInvoicesModal
+                isOpen={isExportModalOpen}
+                onClose={() => setIsExportModalOpen(false)}
             />
 
         </div>

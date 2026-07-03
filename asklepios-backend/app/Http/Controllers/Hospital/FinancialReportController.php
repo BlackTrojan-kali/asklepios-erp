@@ -57,4 +57,57 @@ class FinancialReportController extends Controller
             $request->report_type
         );
     }
+    #[OA\Get(
+        path: "/api/shared/reports/invoices-pdf",
+        summary: "Générer un rapport PDF des factures avec dettes",
+        security: [["sanctum" => []]],
+        tags: ["Facturation"]
+    )]
+    #[OA\Response(response: 200, description: "élément généré avec succès")]
+    
+    public function exportInvoicesReport(Request $request)
+    {
+        // Validation des filtres
+        $validated = $request->validate([
+            'start_date' => 'nullable|date',
+            'end_date'   => 'nullable|date|after_or_equal:start_date',
+            'patient_id' => 'nullable|exists:patients,id',
+            'center_id'  => 'nullable|exists:centers,id'
+        ]);
+
+        $user = auth()->user();
+
+        // Les médecins n'ont pas vocation à sortir des bilans comptables
+        if ($user->profile_doctor) {
+            abort(403, "Accès refusé. Réservé à l'administration et à la caisse.");
+        }
+
+        return $this->reportService->generateInvoicesReportPdf($user, $validated);
+    }
+    #[OA\Get(
+        path: "/api/shared/reports/payments-pdf",
+        summary: "Générer un rapport PDF des encaissements (Point de caisse)",
+        security: [["sanctum" => []]],
+        tags: ["Facturation"]
+    )]
+    #[OA\Response(response: 200, description: "élément généré avec succès")]
+    public function exportPaymentsReport(Request $request)
+    {
+        // Validation des filtres
+        $validated = $request->validate([
+            'start_date'     => 'nullable|date',
+            'end_date'       => 'nullable|date|after_or_equal:start_date',
+            'patient_id'     => 'nullable|exists:patients,id',
+            'center_id'      => 'nullable|exists:centers,id',
+            'payment_method' => 'nullable|string|in:CASH,MOBILE_MONEY,CARD,INSURANCE,BANK_TRANSFER'
+        ]);
+
+        $user = auth()->user();
+
+        if ($user->profile_doctor) {
+            abort(403, "Accès refusé. Réservé à l'administration et à la caisse.");
+        }
+
+        return $this->reportService->generatePaymentsReportPdf($user, $validated);
+    }
 }

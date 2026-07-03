@@ -66,3 +66,58 @@ export interface InvoiceDto {
 export interface GenerateInvoicePayload {
     consultation_price?: number; // Prix saisi manuellement par le docteur
 }
+// ==========================================
+// DTOs (Data Transfer Objects - Retour de l'API)
+// ==========================================
+
+/**
+ * Représente une facture complète (renvoyée par GET /shared/invoices/{id})
+ */
+export interface InvoiceDto {
+    id: number;
+    patient_id: number;
+    center_id: number;
+    patient_visit_id: number | null;
+    total_amount: number;
+    status: InvoiceStatus;
+    created_at: string;
+    updated_at: string;
+
+    // --- Relations optionnelles (Eager Loading) ---
+    patient?: PatientDto;
+    center?: CenterDto;
+    patientVisit?: PatientVisitDto;
+    
+    // Éléments facturés
+    consultations?: ConsultationDto[];
+    performedMedicalActs?: PerformedMedicalActDto[];
+    admissions?: AdmissionDto[];
+    
+    // Encaissements
+    payments?: PaymentInvoiceDto[];
+
+    // --- Champs virtuels (Accessors Laravel 'total_paid' et 'remaining_debt') ---
+    total_paid?: number;      // Somme déjà versée
+    remaining_debt?: number;  // Reste à payer
+}
+
+// ==========================================
+// PAYLOADS & FILTRES (Données envoyées à l'API)
+// ==========================================
+
+/**
+ * Payload pour la génération d'une facture
+ */
+export interface GenerateInvoicePayload {
+    consultation_price?: number; 
+}
+
+/**
+ * Filtres pour le rapport PDF des factures
+ */
+export interface InvoiceReportFilters {
+    start_date?: string;
+    end_date?: string;
+    patient_id?: number | string;
+    center_id?: number | string;
+}

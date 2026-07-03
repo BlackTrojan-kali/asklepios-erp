@@ -22,51 +22,71 @@ class Invoice extends Model
     ];
 
     /**
-     * Le patient à qui appartient la facture.
+     * 👉 AJOUT TRÈS UTILE : 
+     * Cette ligne force Laravel à toujours inclure ces deux champs virtuels
+     * dans tes réponses JSON (API) envoyées à ton frontend React.
      */
-    public function patient(): BelongsTo
-    {
+    protected $appends = ['total_paid', 'remaining_debt'];
+
+    // ==========================================
+    // RELATIONS
+    // ==========================================
+
+    public function patient(): BelongsTo {
         return $this->belongsTo(Patient::class);
     }
 
-    /**
-     * Le centre (clinique/succursale) qui a émis la facture.
-     */
-    public function center(): BelongsTo
-    {
+    public function center(): BelongsTo {
         return $this->belongsTo(Center::class);
     }
 
-    /**
-     * La visite rattachée à cette facture (optionnel).
-     */
-    public function patientVisit(): BelongsTo
-    {
+    public function patientVisit(): BelongsTo {
         return $this->belongsTo(PatientVisit::class);
     }
 
-    /**
-     * Les lignes de la facture (détails des frais).
-     */
-    public function lines(): HasMany
-    {
+    public function lines(): HasMany {
         return $this->hasMany(InvoiceLine::class);
     }
 
-    /**
-     * Les paiements effectués pour cette facture.
-     */
-    public function payments(): HasMany
-    {
+    public function payments(): HasMany {
         return $this->hasMany(PaymentInvoice::class);
     }
-    public function consultations(){
+
+    public function consultations() {
         return $this->hasMany(Consultation::class);
     }
-    public function performedMedicalActs(){
+
+    public function performedMedicalActs() {
         return $this->hasMany(PerformedMedicalAct::class);
     }
-    public function admissions(){
+
+    public function admissions() {
         return $this->hasMany(Admission::class);
+    }
+
+    // ==========================================
+    // ATTRIBUTS VIRTUELS (ACCESSEURS)
+    // ==========================================
+
+    /**
+     * Calcule la somme totale des paiements déjà effectués pour cette facture.
+     * Accessible en PHP via : $invoice->total_paid
+     */
+    public function getTotalPaidAttribute()
+    {
+        // On appelle $this->payments (sans les parenthèses) pour utiliser la collection. 
+        // Cela évite de refaire une requête SQL (N+1) si la relation 'payments' a déjà été chargée via un `with('payments')`.
+        return $this->payments->sum('amount');
+    }
+
+    /**
+     * Calcule la dette restante (le reste à payer).
+     * Accessible en PHP via : $invoice->remaining_debt
+     */
+    public function getRemainingDebtAttribute()
+    {
+        // On utilise la valeur totale moins la somme des paiements.
+        // Le max(0, ...) permet de s'assurer qu'on n'a pas une dette négative en cas de trop-perçu.
+        return max(0, $this->total_amount - $this->total_paid);
     }
 }

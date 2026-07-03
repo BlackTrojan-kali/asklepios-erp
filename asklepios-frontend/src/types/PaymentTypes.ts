@@ -39,7 +39,7 @@ export interface PaymentInvoiceDto {
 }
 
 // ==========================================
-// PAYLOADS
+// PAYLOADS & FILTRES
 // ==========================================
 
 /**
@@ -59,4 +59,15 @@ export interface CreatePaymentPayload {
 export interface UpdatePaymentPayload {
     amount?: number;
     payment_method?: PaymentMethod;
+}
+
+/**
+ * Filtres pour le rapport PDF des paiements (Point de caisse)
+ */
+export interface PaymentReportFilters {
+    start_date?: string;
+    end_date?: string;
+    patient_id?: number | string;
+    center_id?: number | string;
+    payment_method?: string;
 }

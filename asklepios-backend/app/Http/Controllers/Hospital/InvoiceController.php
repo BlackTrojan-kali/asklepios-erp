@@ -38,7 +38,7 @@ class InvoiceController extends Controller
         abort(403, "Profil non autorisé à accéder aux ressources financières.");
     }
 
-    #[OA\Get(
+   #[OA\Get(
         path: "/api/shared/invoices",
         summary: "Historique des factures (Paginé et filtrable)",
         description: "Filtres disponibles selon le rôle : center_id (Réception), patient_id (Docteur), ou global (Admin).",
@@ -48,7 +48,6 @@ class InvoiceController extends Controller
     #[OA\Parameter(name: "center_id", in: "query", required: false, description: "Filtrer par centre (Cliniq/Succursale)", schema: new OA\Schema(type: "integer"))]
     #[OA\Parameter(name: "patient_id", in: "query", required: false, description: "Filtrer par patient spécifique", schema: new OA\Schema(type: "integer"))]
     #[OA\Parameter(name: "status", in: "query", required: false, description: "Filtrer par statut (UNPAID, PAID)", schema: new OA\Schema(type: "string"))]
-    
     #[OA\Response(response: 200, description: "Liste récupérée avec succès")]
     public function index(Request $request)
     {
@@ -56,9 +55,10 @@ class InvoiceController extends Controller
         $user = auth()->user();
 
         // Sécurité de base : On reste confiné au périmètre de l'hôpital de l'utilisateur connecté
+        // 👉 AJOUT CRITIQUE : 'payments' est ajouté au with() pour optimiser les Accessors (total_paid, remaining_debt)
         $query = Invoice::whereHas('patient', function($q) use ($hospitalId) {
             $q->where('hospital_id', $hospitalId);
-        })->with(['patient', 'center']);
+        })->with(['patient', 'center', 'payments']);
 
         // --- APPLICATION DES RESTRICTIONS DE RÔLES & FILTRES ---
 
@@ -89,7 +89,6 @@ class InvoiceController extends Controller
         $perPage = $request->query('per_page', 15);
         return response()->json($query->paginate($perPage), 200);
     }
-
     #[OA\Get(
         path: "/api/shared/invoices/{id}",
         summary: "Prévisualiser les détails d'une facture",

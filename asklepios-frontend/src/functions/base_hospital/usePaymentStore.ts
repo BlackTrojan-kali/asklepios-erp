@@ -3,16 +3,36 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import api from "../../api/api";
 import type { PaginatedResponse } from "../../types/types";
-import type { PaymentInvoiceDto, CreatePaymentPayload, UpdatePaymentPayload } from "../../types/PaymentTypes";
-import type { PaginationData } from "./useInvoiceStore";
+
+// Importation des types depuis ton fichier PaymentTypes existant
+import type { 
+    PaymentInvoiceDto, 
+    CreatePaymentPayload, 
+    UpdatePaymentPayload,
+    PaymentReportFilters // 👉 Nouvel import
+} from "../../types/PaymentTypes";
+
+export interface PaginationData {
+    currentPage: number;
+    lastPage: number;
+    total: number;
+}
 
 const usePaymentStore = () => {
+    // ======================================================
+    // ÉTATS (STATES)
+    // ======================================================
     const [payments, setPayments] = useState<PaymentInvoiceDto[]>([]);
     const [pagination, setPagination] = useState<PaginationData | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [actionLoading, setActionLoading] = useState<boolean>(false);
 
-    // --- GET /shared/payments ---
+    // ======================================================
+    // ACTIONS API
+    // ======================================================
+
+    // --- LISTER LES PAIEMENTS (Historique de caisse) ---
+    // GET /shared/payments
     const getPayments = useCallback(async (
         page: number = 1,
         filters: { invoice_id?: number; center_id?: number } = {},
@@ -31,19 +51,24 @@ const usePaymentStore = () => {
                 total: res.data.total || 0
             });
         } catch (error) {
-            toast.error("Erreur lors de la récupération des paiements.");
+            if (axios.isAxiosError(error) && !axios.isCancel(error)) {
+                toast.error("Erreur lors de la récupération de l'historique des paiements.");
+            }
             setPayments([]);
         } finally {
             setLoading(false);
         }
     }, []);
 
-    // --- POST /shared/payments ---
+    // --- ENREGISTRER UN PAIEMENT ---
+    // POST /shared/payments
     const createPayment = async (payload: CreatePaymentPayload) => {
         try {
             setActionLoading(true);
             const res = await api.post("/shared/payments", payload);
+            
             toast.success("Paiement enregistré avec succès.");
+            
             return res.data; 
         } catch (error) {
             if (axios.isAxiosError(error)) {
@@ -55,16 +80,22 @@ const usePaymentStore = () => {
         }
     };
 
-    // --- PUT /admin/payments/{id} ---
+    // --- MODIFIER UN PAIEMENT (Admin uniquement) ---
+    // PUT /admin/payments/{id}
     const updatePayment = async (id: number, payload: UpdatePaymentPayload) => {
         try {
             setActionLoading(true);
             const res = await api.put(`/admin/payments/${id}`, payload);
+            
             toast.success("Paiement modifié avec succès.");
+            
+            // Rafraîchir la liste localement
+            await getPayments(pagination?.currentPage || 1);
+            
             return res.data;
         } catch (error) {
             if (axios.isAxiosError(error)) {
-                toast.error(error.response?.data?.message || "Erreur de modification.");
+                toast.error(error.response?.data?.message || "Erreur lors de la modification du paiement.");
             }
             return null;
         } finally {
@@ -72,18 +103,22 @@ const usePaymentStore = () => {
         }
     };
 
-    // --- DELETE /admin/payments/{id} ---
+    // --- SUPPRIMER UN PAIEMENT (Admin uniquement) ---
+    // DELETE /admin/payments/{id}
     const deletePayment = async (id: number) => {
         try {
             setActionLoading(true);
-            await api.delete(`/admin/payments/${id}`);
-            toast.success("Paiement annulé. Facture recalculée.");
+            const res = await api.delete(`/admin/payments/${id}`);
             
+            toast.success(res.data.message || "Paiement annulé. La facture a été recalculée.");
+            
+            // Rafraîchir la liste localement
             await getPayments(pagination?.currentPage || 1);
+            
             return true;
         } catch (error) {
             if (axios.isAxiosError(error)) {
-                toast.error(error.response?.data?.message || "Erreur d'annulation.");
+                toast.error(error.response?.data?.message || "Erreur lors de l'annulation du paiement.");
             }
             return false;
         } finally {
@@ -91,15 +126,46 @@ const usePaymentStore = () => {
         }
     };
 
+    // 👉 NOUVEAU : EXPORTER LE RAPPORT DES PAIEMENTS (POINT DE CAISSE)
+    // GET /shared/reports/payments-pdf
+    const downloadPaymentsReportPdf = async (filters: PaymentReportFilters) => {
+        try {
+            setActionLoading(true);
+            
+            const res = await api.get("/shared/reports/payments-pdf", {
+                params: filters,
+                responseType: 'blob' // Indispensable pour récupérer un fichier (PDF)
+            });
+
+            // Création d'une URL locale pour ouvrir le PDF
+            const fileUrl = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+            
+            // Ouverture dans un nouvel onglet
+            window.open(fileUrl, '_blank');
+            toast.success("Point de caisse généré avec succès !");
+            
+            return true;
+        } catch (error) {
+            toast.error("Impossible de générer le rapport. Vérifiez vos filtres.");
+            return false;
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
     return {
+        // États
         payments,
         pagination,
         loading,
         actionLoading,
+
+        // Actions
         getPayments,
         createPayment,
         updatePayment,
-        deletePayment
+        deletePayment,
+        downloadPaymentsReportPdf // 👉 Export de la nouvelle fonction
     };
 };
 

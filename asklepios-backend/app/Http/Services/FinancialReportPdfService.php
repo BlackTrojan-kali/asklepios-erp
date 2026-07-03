@@ -110,4 +110,148 @@ class FinancialReportPdfService
         
         return $pdf->download("Rapport_{$reportType}_{$startDate->format('Ymd')}.pdf");
     }
+    public function generateInvoicesReportPdf($user, array $filters)
+    {
+        // 1. Initialiser la requête avec les relations et les accesseurs
+        // On charge 'payments' pour que $invoice->total_paid et $invoice->remaining_debt fonctionnent
+        $query = Invoice::with(['patient', 'center', 'payments']);
+
+        // 2. Gestion des droits d'accès
+        if ($user->profile_reception) {
+            // La réceptionniste ne voit QUE son centre
+            $query->where('center_id', $user->profile_reception->center_id);
+        } elseif ($user->profile_admin) {
+            // L'admin peut voir tous les centres de son hôpital, ou filtrer par un centre précis
+            $query->whereHas('center', function($q) use ($user) {
+                $q->where('hospital_id', $user->profile_admin->hospital_id);
+            });
+            if (!empty($filters['center_id'])) {
+                $query->where('center_id', $filters['center_id']);
+            }
+        }
+
+        // 3. Application des filtres de recherche (Dates & Patient)
+        if (!empty($filters['start_date'])) {
+            $query->whereDate('created_at', '>=', $filters['start_date']);
+        }
+        if (!empty($filters['end_date'])) {
+            $query->whereDate('created_at', '<=', $filters['end_date']);
+        }
+        if (!empty($filters['patient_id'])) {
+            $query->where('patient_id', $filters['patient_id']);
+        }
+
+        // Récupération des données triées
+        $invoices = $query->orderBy('created_at', 'desc')->get();
+
+        // 4. Calculs des totaux globaux pour le bas de page
+        $grandTotalAmount = 0;
+        $grandTotalPaid = 0;
+        $grandTotalDebt = 0;
+
+        foreach ($invoices as $invoice) {
+            $grandTotalAmount += $invoice->total_amount;
+            $grandTotalPaid   += $invoice->total_paid; // Utilise l'accesseur que nous avons créé !
+            $grandTotalDebt   += $invoice->remaining_debt; // Utilise l'accesseur
+        }
+
+        // 5. Génération du PDF
+        $pdf = Pdf::loadView('pdf.invoices_report', [
+            'invoices' => $invoices,
+            'filters' => $filters,
+            'user' => $user,
+            'generated_at' => now()->format('d/m/Y H:i'),
+            'grandTotalAmount' => $grandTotalAmount,
+            'grandTotalPaid' => $grandTotalPaid,
+            'grandTotalDebt' => $grandTotalDebt,
+            // Optionnel: Récupérer le logo si tu l'as
+            'logoBase64' => $this->getLogoBase64() 
+        ]);
+
+        // Mode Paysage (Landscape) recommandé pour les tableaux avec beaucoup de colonnes
+        $pdf->setPaper('A4', 'landscape'); 
+
+        return $pdf->stream('Rapport_Factures_Creances.pdf');
+    }
+
+    private function getLogoBase64()
+    {
+        $path = public_path('images/asklepios_logo.png');
+        if (file_exists($path)) {
+            $type = pathinfo($path, PATHINFO_EXTENSION);
+            $data = file_get_contents($path);
+            return 'data:image/' . $type . ';base64,' . base64_encode($data);
+        }
+        return null;
+    }
+    public function generatePaymentsReportPdf($user, array $filters)
+    {
+        // 1. Initialiser la requête avec les relations nécessaires
+        $query = PaymentInvoice::with(['invoice.patient', 'invoice.center', 'reception.user']);
+
+        // 2. Gestion des droits d'accès
+        if ($user->profile_reception) {
+            // La réceptionniste ne voit QUE les paiements de son centre
+            $query->whereHas('invoice', function($q) use ($user) {
+                $q->where('center_id', $user->profile_reception->center_id);
+            });
+        } elseif ($user->profile_admin) {
+            // L'admin voit tout l'hôpital
+            $query->whereHas('invoice.center', function($q) use ($user) {
+                $q->where('hospital_id', $user->profile_admin->hospital_id);
+            });
+            // S'il filtre par centre spécifique
+            if (!empty($filters['center_id'])) {
+                $query->whereHas('invoice', function($q) use ($filters) {
+                    $q->where('center_id', $filters['center_id']);
+                });
+            }
+        }
+
+        // 3. Application des filtres
+        if (!empty($filters['start_date'])) {
+            $query->whereDate('created_at', '>=', $filters['start_date']);
+        }
+        if (!empty($filters['end_date'])) {
+            $query->whereDate('created_at', '<=', $filters['end_date']);
+        }
+        if (!empty($filters['payment_method'])) {
+            $query->where('payment_method', $filters['payment_method']);
+        }
+        if (!empty($filters['patient_id'])) {
+            $query->whereHas('invoice', function($q) use ($filters) {
+                $q->where('patient_id', $filters['patient_id']);
+            });
+        }
+
+        // Récupération des données triées par date (les plus récentes en haut)
+        $payments = $query->orderBy('created_at', 'desc')->get();
+
+        // 4. Calculs des totaux
+        $grandTotal = 0;
+        $totalsByMethod = []; // Pour le récapitulatif (ex: 5000 en CASH, 10000 en MOBILE_MONEY)
+
+        foreach ($payments as $payment) {
+            $grandTotal += $payment->amount;
+            
+            $method = $payment->payment_method;
+            if (!isset($totalsByMethod[$method])) {
+                $totalsByMethod[$method] = 0;
+            }
+            $totalsByMethod[$method] += $payment->amount;
+        }
+
+        // 5. Génération du PDF
+        $pdf = Pdf::loadView('pdf.payments_report', [
+            'payments'       => $payments,
+            'filters'        => $filters,
+            'user'           => $user,
+            'generated_at'   => now()->format('d/m/Y H:i'),
+            'grandTotal'     => $grandTotal,
+            'totalsByMethod' => $totalsByMethod,
+            'logoBase64'     => $this->getLogoBase64()
+        ]);
+
+        return $pdf->stream('Rapport_Encaissements.pdf');
+    }
 }
