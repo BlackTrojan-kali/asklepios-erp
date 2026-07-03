@@ -194,5 +194,108 @@ class CashRegisterController extends Controller
 
         $register->delete();
 
+        return response()->json(null, 204);
+    }
+
+    /**
+     * Historique paginé de toutes les sessions de caisse (Admin)
+     */
+    #[OA\Get(
+        path: "/api/admin/cash-registers/sessions/history",
+        operationId: "getAdminCashRegisterSessionsHistory",
+        summary: "Historique paginé de toutes les sessions de caisse de l'hôpital (Admin)",
+        security: [["bearerAuth" => []]],
+        tags: ["Caisses (Admin)"]
+    )]
+    #[OA\Parameter(name: "pharmacy_branch_id", in: "query", required: false, description: "ID de la succursale", schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "cash_register_id", in: "query", required: false, description: "ID de la caisse", schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "user_id", in: "query", required: false, description: "ID du caissier", schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "status", in: "query", required: false, description: "Statut de la session (open, closed)", schema: new OA\Schema(type: "string"))]
+    #[OA\Parameter(name: "start_date", in: "query", required: false, description: "Date de début (YYYY-MM-DD)", schema: new OA\Schema(type: "string"))]
+    #[OA\Parameter(name: "end_date", in: "query", required: false, description: "Date de fin (YYYY-MM-DD)", schema: new OA\Schema(type: "string"))]
+    #[OA\Parameter(name: "search", in: "query", required: false, description: "Recherche par caissier, caisse...", schema: new OA\Schema(type: "string"))]
+    #[OA\Parameter(name: "page", in: "query", required: false, description: "Numéro de page", schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "per_page", in: "query", required: false, description: "Éléments par page", schema: new OA\Schema(type: "integer"))]
+    #[OA\Response(response: 200, description: "Liste paginée des sessions de caisse récupérée avec succès")]
+    #[OA\Response(response: 403, description: "Accès refusé")]
+    public function sessions(Request $request)
+    {
+        $hospitalId = $this->getHospitalId();
+        
+        $query = CashRegisterSession::whereHas('register.branch', function ($q) use ($hospitalId) {
+            $q->where('hospital_id', $hospitalId);
+        })->with(['register.branch', 'user']);
+
+        // Filtrer par succursale
+        if ($request->filled('pharmacy_branch_id')) {
+            $query->whereHas('register', function ($q) use ($request) {
+                $q->where('pharmacy_branch_id', $request->query('pharmacy_branch_id'));
+            });
+        }
+
+        // Filtrer par caisse
+        if ($request->filled('cash_register_id')) {
+            $query->where('cash_register_id', $request->query('cash_register_id'));
+        }
+
+        // Filtrer par caissier
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->query('user_id'));
+        }
+
+        // Filtrer par statut (open / closed)
+        if ($request->filled('status')) {
+            $status = $request->query('status');
+            if ($status === 'open') {
+                $query->whereNull('closed_at');
+            } elseif ($status === 'closed') {
+                $query->whereNotNull('closed_at');
+            }
+        }
+
+        // Filtrer par date d'ouverture
+        if ($request->filled('start_date')) {
+            $query->whereDate('opened_at', '>=', $request->query('start_date'));
+        }
+        if ($request->filled('end_date')) {
+            $query->whereDate('opened_at', '<=', $request->query('end_date'));
+        }
+
+        // Recherche rapide (caissier first_name, last_name, caisse name, ID)
+        if ($request->filled('search')) {
+            $search = $request->query('search');
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('user', function ($qu) use ($search) {
+                    $qu->where('first_name', 'like', "%{$search}%")
+                       ->orWhere('last_name', 'like', "%{$search}%");
+                })
+                ->orWhereHas('register', function ($qr) use ($search) {
+                    $qr->where('name', 'like', "%{$search}%");
+                })
+                ->orWhere('id', 'like', "%{$search}%");
+            });
+        }
+
+        $perPage = (int)$request->query('per_page', 15);
+        $sessions = $query->latest()->paginate($perPage);
+
+        // Ajouter les totaux calculés pour chaque session
+        foreach ($sessions->items() as $session) {
+            $salesQuery = \App\Models\Pharmacy\PosSale::where('cash_register_session_id', $session->id);
+            
+            $cash = (float)$salesQuery->clone()->where('payment_method', 'CASH')->sum('total_amount');
+            $mobileMoney = (float)$salesQuery->clone()->where('payment_method', 'MOBILE_MONEY')->sum('total_amount');
+            $card = (float)$salesQuery->clone()->where('payment_method', 'CARD')->sum('total_amount');
+
+            $session->sales_totals = [
+                'cash' => $cash,
+                'mobile_money' => $mobileMoney,
+                'card' => $card,
+            ];
+            
+            $session->current_balance = (float)$session->opening_balance + $cash;
+        }
+
+        return response()->json($sessions, 200);
     }
 }

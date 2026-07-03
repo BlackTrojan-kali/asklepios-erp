@@ -44,7 +44,7 @@ class PosSaleController extends Controller
     #[OA\Parameter(name: "per_page", in: "query", required: false, description: "Éléments par page", schema: new OA\Schema(type: "integer"))]
     #[OA\Response(response: 200, description: "Liste paginée des ventes récupérée avec succès")]
     #[OA\Response(response: 403, description: "Accès refusé")]
-    public function index(Request $request)
+    private function buildFilteredQuery(Request $request)
     {
         $hospitalId = $this->getHospitalId();
         
@@ -103,6 +103,12 @@ class PosSaleController extends Controller
             });
         }
 
+        return $query;
+    }
+
+    public function index(Request $request)
+    {
+        $query = $this->buildFilteredQuery($request);
         $totalAmountSum = (float) (clone $query)->sum('total_amount');
 
         $perPage = (int)$request->query('per_page', 15);
@@ -112,6 +118,88 @@ class PosSaleController extends Controller
             'sales' => $sales,
             'total_amount_sum' => $totalAmountSum
         ], 200);
+    }
+
+    /**
+     * Exporter les ventes POS en Excel
+     */
+    #[OA\Get(
+        path: "/api/admin/pharmacy/pos-sales/export/excel",
+        operationId: "exportAdminPosSalesExcel",
+        summary: "Exporter toutes les ventes filtrées en Excel (Admin)",
+        security: [["bearerAuth" => []]],
+        tags: ["Historique des Ventes (Admin)"]
+    )]
+    #[OA\Parameter(name: "pharmacy_branch_id", in: "query", required: false, description: "ID de la succursale", schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "cash_register_id", in: "query", required: false, description: "ID de la caisse", schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "user_id", in: "query", required: false, description: "ID du vendeur", schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "start_date", in: "query", required: false, description: "Date de début", schema: new OA\Schema(type: "string"))]
+    #[OA\Parameter(name: "end_date", in: "query", required: false, description: "Date de fin", schema: new OA\Schema(type: "string"))]
+    #[OA\Parameter(name: "search", in: "query", required: false, description: "Recherche", schema: new OA\Schema(type: "string"))]
+    #[OA\Response(response: 200, description: "Fichier Excel généré")]
+    #[OA\Response(response: 403, description: "Accès refusé")]
+    public function exportExcel(Request $request)
+    {
+        $query = $this->buildFilteredQuery($request);
+        $sales = $query->latest()->get();
+
+        $exportData = $sales->map(function ($s) {
+            $currency = $s->session->register->branch->country->currency ?? 'XAF';
+            return [
+                'Ticket N°' => $s->receipt_number,
+                'Date' => $s->created_at->format('d/m/Y H:i'),
+                'Succursale' => $s->branch->name ?? 'N/A',
+                'Caisse' => $s->session->register->name ?? 'N/A',
+                'Client' => $s->customer_name ?? 'Client Comptoire',
+                'Vendeur' => $s->session->user ? ($s->session->user->first_name . ' ' . $s->session->user->last_name) : 'Caissier',
+                'Mode Règlement' => $s->payment_method,
+                'Total' => $s->total_amount . ' ' . $currency,
+            ];
+        });
+
+        return \Maatwebsite\Excel\Facades\Excel::download(new class($exportData) implements \Maatwebsite\Excel\Concerns\FromCollection, \Maatwebsite\Excel\Concerns\WithHeadings {
+            protected $data;
+            public function __construct($data) { $this->data = collect($data); }
+            public function collection() { return $this->data; }
+            public function headings(): array { 
+                return ['Ticket N°', 'Date', 'Succursale', 'Caisse', 'Client', 'Vendeur', 'Mode Règlement', 'Total']; 
+            }
+        }, "ventes_pos_" . date('Ymd_His') . ".xlsx");
+    }
+
+    /**
+     * Exporter les ventes POS en PDF
+     */
+    #[OA\Get(
+        path: "/api/admin/pharmacy/pos-sales/export/pdf",
+        operationId: "exportAdminPosSalesPdf",
+        summary: "Exporter toutes les ventes filtrées en PDF (Admin)",
+        security: [["bearerAuth" => []]],
+        tags: ["Historique des Ventes (Admin)"]
+    )]
+    #[OA\Parameter(name: "pharmacy_branch_id", in: "query", required: false, description: "ID de la succursale", schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "cash_register_id", in: "query", required: false, description: "ID de la caisse", schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "user_id", in: "query", required: false, description: "ID du vendeur", schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "start_date", in: "query", required: false, description: "Date de début", schema: new OA\Schema(type: "string"))]
+    #[OA\Parameter(name: "end_date", in: "query", required: false, description: "Date de fin", schema: new OA\Schema(type: "string"))]
+    #[OA\Parameter(name: "search", in: "query", required: false, description: "Recherche", schema: new OA\Schema(type: "string"))]
+    #[OA\Response(response: 200, description: "Fichier PDF généré")]
+    #[OA\Response(response: 403, description: "Accès refusé")]
+    public function exportPdf(Request $request)
+    {
+        $query = $this->buildFilteredQuery($request);
+        $sales = $query->latest()->get();
+        
+        if ($sales->isEmpty()) {
+            return response()->json(['message' => 'Aucune vente correspondante.'], 404);
+        }
+
+        $totalAmountSum = $sales->sum('total_amount');
+        
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.pdf.sales_list', compact('sales', 'totalAmountSum'))
+                  ->setPaper('a4', 'landscape');
+
+        return $pdf->download("rapport_ventes_pos_" . date('Ymd_His') . ".pdf");
     }
 
     /**

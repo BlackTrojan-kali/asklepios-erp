@@ -1,13 +1,28 @@
 import api from "../../api/api";
 import type { CashRegisterSessionDto } from "./cashRegisterService";
+import type { PaginatedResponse } from "./posSaleService";
 
 export interface OpenSessionPayload {
   opening_balance: number;
+  opening_notes?: string;
 }
 
 export interface CloseSessionPayload {
   closing_balance: number;
   password?: string;
+  closing_notes?: string;
+}
+
+export interface AdminSessionsFilterParams {
+  pharmacy_branch_id?: number;
+  cash_register_id?: number;
+  user_id?: number;
+  status?: "open" | "closed";
+  start_date?: string;
+  end_date?: string;
+  search?: string;
+  page?: number;
+  per_page?: number;
 }
 
 const openSession = async (
@@ -46,9 +61,20 @@ const getMySessionsHistory = async (): Promise<CashRegisterSessionDto[]> => {
   return response.data;
 };
 
+const getAdminSessionsHistory = async (
+  params?: AdminSessionsFilterParams
+): Promise<PaginatedResponse<CashRegisterSessionDto>> => {
+  const response = await api.get<PaginatedResponse<CashRegisterSessionDto>>(
+    "/admin/cash-registers/sessions/history",
+    { params }
+  );
+  return response.data;
+};
+
 export const cashRegisterSessionService = {
   openSession,
   closeSession,
   getMyActiveSession,
   getMySessionsHistory,
+  getAdminSessionsHistory,
 };

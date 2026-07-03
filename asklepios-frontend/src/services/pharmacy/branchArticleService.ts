@@ -93,10 +93,19 @@ const exportExcel = async (branchId?: number | null) => {
   return response.data;
 };
 
+const exportPdf = async (branchId?: number | null) => {
+  const response = await api.get("/admin/branch/articles/export/pdf", {
+    params: branchId ? { branch_id: branchId } : {},
+    responseType: "blob",
+  });
+  return response.data;
+};
+
 // --- Exportation du Service ---
 export const branchArticleService = {
   get,
   getAll,
   updatePrice,
   exportExcel,
+  exportPdf,
 };

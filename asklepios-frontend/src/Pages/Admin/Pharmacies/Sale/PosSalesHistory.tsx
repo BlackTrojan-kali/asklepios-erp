@@ -5,6 +5,7 @@ import {
   Calendar,
   CreditCard,
   FileText,
+  FileSpreadsheet,
   Printer,
   RefreshCw,
   Eye,
@@ -89,6 +90,7 @@ export default function PosSalesHistory() {
   const [previewPdfSaleId, setPreviewPdfSaleId] = useState<number | null>(null);
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
   const [loadingPdf, setLoadingPdf] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   // --- DONNÉES DE CONFIGURATION DES SÉLECTEURS ---
   const { data: branches = [] } = useBranches();
@@ -188,6 +190,57 @@ export default function PosSalesHistory() {
       showConfirmButton: false,
       timer: 1500,
     });
+  };
+
+  // --- EXPORTATION ---
+  const handleExport = async (format: "pdf" | "excel") => {
+    try {
+      setExporting(true);
+      const params = {
+        pharmacy_branch_id: selectedBranchId,
+        cash_register_id: selectedRegisterId,
+        user_id: selectedSellerId,
+        start_date: startDate || undefined,
+        end_date: endDate || undefined,
+        search: search || undefined,
+      };
+
+      const endpoint = `/admin/pharmacy/pos-sales/export/${format}`;
+      const filename = `ventes_pos_${Date.now()}.${format === "excel" ? "xlsx" : "pdf"}`;
+
+      const response = await api.get(endpoint, {
+        params,
+        responseType: "blob",
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        icon: "success",
+        title: `Export ${format.toUpperCase()} réussi`,
+        showConfirmButton: false,
+        timer: 1500,
+      });
+    } catch (err) {
+      console.error(err);
+      Swal.fire({
+        icon: "error",
+        title: "Erreur d'exportation",
+        text: `Impossible de générer le fichier ${format.toUpperCase()}.`,
+        confirmButtonColor: "#ef4444",
+      });
+    } finally {
+      setExporting(false);
+    }
   };
 
   const handlePrevPage = () => {
@@ -351,7 +404,7 @@ export default function PosSalesHistory() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
             {/* Du Date */}
             <div className="relative">
               <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-gray-455 mb-1.5">
@@ -391,7 +444,27 @@ export default function PosSalesHistory() {
                 onClick={handleResetFilters}
                 className="w-full bg-slate-100 hover:bg-slate-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-slate-750 dark:text-gray-250 font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-colors text-xs cursor-pointer h-[38px]"
               >
-                <RefreshCw className="w-4 h-4" /> Réinitialiser les filtres
+                <RefreshCw className="w-4 h-4" /> Réinitialiser
+              </button>
+            </div>
+
+            {/* Actions d'exportation */}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => handleExport("excel")}
+                disabled={exporting}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-colors text-xs cursor-pointer h-[38px] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <FileSpreadsheet className="w-4 h-4" /> Excel
+              </button>
+              <button
+                type="button"
+                onClick={() => handleExport("pdf")}
+                disabled={exporting}
+                className="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-colors text-xs cursor-pointer h-[38px] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <FileText className="w-4 h-4" /> PDF
               </button>
             </div>
           </div>

@@ -29,6 +29,7 @@ export default function OpenSession({ onSessionOpened }: SessionOpeningProps) {
   const [selectedRegisterId, setSelectedRegisterId] = useState<number | "">("");
   const [openingBalance, setOpeningBalance] = useState<number>(0);
   const [notes, setNotes] = useState<string>("");
+  const [showNotes, setShowNotes] = useState<boolean>(false);
 
   const cashierName = profile
     ? `${profile.first_name} ${profile.last_name || ""}`
@@ -84,6 +85,7 @@ export default function OpenSession({ onSessionOpened }: SessionOpeningProps) {
             registerId: Number(selectedRegisterId),
             payload: {
               opening_balance: openingBalance,
+              opening_notes: notes,
             },
           },
           {
@@ -240,16 +242,40 @@ export default function OpenSession({ onSessionOpened }: SessionOpeningProps) {
 
           {/* Notes / Observations */}
           <div>
-            <label className="block text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
-              Note ou Observation de début de garde (Optionnel)
-            </label>
-            <textarea
-              placeholder="Ex: Sac de monnaie de 250 XAF fourni par le magasinier..."
-              rows={2}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="w-full border border-slate-300 dark:border-gray-700 rounded-xl p-3 text-sm focus:outline-hidden focus:ring-2 focus:ring-emerald-500 bg-slate-50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-900 text-slate-800 dark:text-white transition-colors resize-none"
-            />
+            {!showNotes ? (
+              <button
+                type="button"
+                onClick={() => setShowNotes(true)}
+                className="text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                + Ajouter une note ou observation de début de garde (optionnel)
+              </button>
+            ) : (
+              <div className="space-y-1.5 animate-in slide-in-from-top-2 duration-200">
+                <div className="flex justify-between items-center">
+                  <label className="block text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
+                    Note ou Observation de début de garde (Optionnel)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowNotes(false);
+                      setNotes("");
+                    }}
+                    className="text-xs text-red-500 hover:text-red-700 transition-colors font-medium cursor-pointer"
+                  >
+                    Masquer
+                  </button>
+                </div>
+                <textarea
+                  placeholder="Ex: Sac de monnaie de 250 XAF fourni par le magasinier..."
+                  rows={2}
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  className="w-full border border-slate-300 dark:border-gray-700 rounded-xl p-3 text-sm focus:outline-hidden focus:ring-2 focus:ring-emerald-500 bg-slate-50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-900 text-slate-800 dark:text-white transition-colors resize-none"
+                />
+              </div>
+            )}
           </div>
 
           {/* Bouton de Validation */}

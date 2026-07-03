@@ -3,7 +3,15 @@ import {
   cashRegisterSessionService,
   type OpenSessionPayload,
   type CloseSessionPayload,
+  type AdminSessionsFilterParams,
 } from "../../services/pharmacy/cashRegisterSessionService";
+
+export const useAdminSessionsHistory = (params?: AdminSessionsFilterParams) => {
+  return useQuery({
+    queryKey: ["adminSessionsHistory", params],
+    queryFn: () => cashRegisterSessionService.getAdminSessionsHistory(params),
+  });
+};
 
 export const useOpenCashRegisterSession = () => {
   const queryClient = useQueryClient();

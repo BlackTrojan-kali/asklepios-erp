@@ -7,11 +7,10 @@ import {
   Search,
   Layers,
   AlertCircle,
-  Loader2,
 } from "lucide-react";
-import SaleModal from "../../components/modals/Pharmacy/Pharmacien/CreateSaleModal";
 import { useMyActiveSession } from "../../hooks/pharmacy/useCashRegisterSession";
 import { useBranchArticlesAll } from "../../hooks/pharmacy/useBrancheArticle";
+import CreateSaleModal from "../../components/modals/Pharmacy/Pharmacien/CreateSaleModal";
 
 export default function CashHome() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -474,7 +473,7 @@ export default function CashHome() {
       </div>
 
       {/* Injection de la Modale de Vente */}
-      <SaleModal
+      <CreateSaleModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSaleSuccess={() => refetch()}

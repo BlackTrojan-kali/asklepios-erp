@@ -1100,6 +1100,112 @@
                 ]
             }
         },
+        "/api/admin/cash-registers/sessions/history": {
+            "get": {
+                "tags": [
+                    "Caisses (Admin)"
+                ],
+                "summary": "Historique paginé de toutes les sessions de caisse de l'hôpital (Admin)",
+                "description": "Historique paginé de toutes les sessions de caisse (Admin)",
+                "operationId": "getAdminCashRegisterSessionsHistory",
+                "parameters": [
+                    {
+                        "name": "pharmacy_branch_id",
+                        "in": "query",
+                        "description": "ID de la succursale",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "cash_register_id",
+                        "in": "query",
+                        "description": "ID de la caisse",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "user_id",
+                        "in": "query",
+                        "description": "ID du caissier",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Statut de la session (open, closed)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "Date de début (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "Date de fin (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Recherche par caissier, caisse...",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Numéro de page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Éléments par page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste paginée des sessions de caisse récupérée avec succès"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/admin/centers": {
             "get": {
                 "tags": [
@@ -2543,6 +2649,36 @@
                 ]
             }
         },
+        "/api/admin/branch/articles/export/pdf": {
+            "get": {
+                "tags": [
+                    "Tarification Branches (Admin)"
+                ],
+                "summary": "Exporter la tarification des articles en PDF",
+                "operationId": "exportBranchArticlesPdf",
+                "parameters": [
+                    {
+                        "name": "branch_id",
+                        "in": "query",
+                        "description": "ID de la succursale (optionnel, si non fourni exporte toutes les succursales)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Fichier PDF généré et téléchargé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/admin/pharmacy-branches": {
             "get": {
                 "tags": [
@@ -2802,6 +2938,164 @@
                 "responses": {
                     "200": {
                         "description": "Liste paginée des ventes récupérée avec succès"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/pharmacy/pos-sales/export/excel": {
+            "get": {
+                "tags": [
+                    "Historique des Ventes (Admin)"
+                ],
+                "summary": "Exporter toutes les ventes filtrées en Excel (Admin)",
+                "description": "Exporter les ventes POS en Excel",
+                "operationId": "exportAdminPosSalesExcel",
+                "parameters": [
+                    {
+                        "name": "pharmacy_branch_id",
+                        "in": "query",
+                        "description": "ID de la succursale",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "cash_register_id",
+                        "in": "query",
+                        "description": "ID de la caisse",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "user_id",
+                        "in": "query",
+                        "description": "ID du vendeur",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "Date de début",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "Date de fin",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Recherche",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Fichier Excel généré"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/pharmacy/pos-sales/export/pdf": {
+            "get": {
+                "tags": [
+                    "Historique des Ventes (Admin)"
+                ],
+                "summary": "Exporter toutes les ventes filtrées en PDF (Admin)",
+                "description": "Exporter les ventes POS en PDF",
+                "operationId": "exportAdminPosSalesPdf",
+                "parameters": [
+                    {
+                        "name": "pharmacy_branch_id",
+                        "in": "query",
+                        "description": "ID de la succursale",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "cash_register_id",
+                        "in": "query",
+                        "description": "ID de la caisse",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "user_id",
+                        "in": "query",
+                        "description": "ID du vendeur",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "Date de début",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "Date de fin",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Recherche",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Fichier PDF généré"
                     },
                     "403": {
                         "description": "Accès refusé"

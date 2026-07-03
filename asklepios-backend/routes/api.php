@@ -225,6 +225,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
                 // Articles d'une branche de pharmacie (Accès partagé Admin + Pharmacy)
                 Route::get('/branch/articles/export/excel', [PharmacyBranchArticleController::class, 'exportExcel']);
+                Route::get('/branch/articles/export/pdf', [PharmacyBranchArticleController::class, 'exportPdf']);
                 Route::get('/branch/articles', [PharmacyBranchArticleController::class, 'index']);
                 Route::get('/branch/{id}/articles/all', [PharmacyBranchArticleController::class, 'all']);
                 Route::get('/branch/{id}/articles/', [PharmacyBranchArticleController::class, 'show']); 
@@ -233,8 +234,11 @@ Route::middleware('auth:sanctum')->group(function () {
                 // Caisses (Accès partagé)
                 Route::get('/cash-registers', [CashRegisterController::class, 'index']);
                 Route::get('/cash-registers/{id}', [CashRegisterController::class, 'show']);
+                Route::get('/cash-registers/sessions/history', [CashRegisterController::class, 'sessions']);
 
                 // Historique des Ventes (Admin)
+                Route::get('/pharmacy/pos-sales/export/pdf', [AdminPosSaleController::class, 'exportPdf']);
+                Route::get('/pharmacy/pos-sales/export/excel', [AdminPosSaleController::class, 'exportExcel']);
                 Route::get('/pharmacy/pos-sales', [AdminPosSaleController::class, 'index']);
                 Route::get('/pharmacy/pos-sales/sellers', [AdminPosSaleController::class, 'sellers']);
              
@@ -279,9 +283,13 @@ Route::middleware('auth:sanctum')->group(function () {
             });
 
             // Point de Vente (Ventes POS)
-            Route::apiResource('pos-sales', PosSaleController::class)->only(['index', 'show', 'store']);
+            Route::apiResource('pos-sales', PosSaleController::class)->only(['index', 'show']);
             Route::apiResource('pos-sale-items', PosSaleItemController::class)->only(['index']);
             Route::get('cashier/articles', [CashierController::class, 'getAllArticles']);
+
+            Route::middleware('active.session')->group(function () {
+                Route::post('pos-sales', [PosSaleController::class, 'store']);
+            });
            
         });
 

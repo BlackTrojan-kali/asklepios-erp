@@ -15,13 +15,13 @@ import {
   CheckCircle,
   ShoppingCart,
   X,
-  Loader2,
 } from "lucide-react";
 import { useAuth } from "../../../../contexts/AuthContext";
 import { useBranchArticlesAll } from "../../../../hooks/pharmacy/useBrancheArticle";
 import { useCreatePosSale } from "../../../../hooks/pharmacy/usePosSale";
 import { useMyActiveSession } from "../../../../hooks/pharmacy/useCashRegisterSession";
 import api from "../../../../api/api";
+import SaleReceiptPreviewModal from "./SaleReceiptPreviewModal";
 
 // --- TYPES ---
 interface Product {
@@ -52,14 +52,14 @@ interface SaleModalProps {
 
 // --- DONNÉES STATIQUES DE TEST SUPPRIMÉES ---
 
-export default function SaleModal({
+export default function CreateSaleModal({
   isOpen,
   onClose,
   onSaleSuccess,
 }: SaleModalProps) {
   // 1. TOUS LES HOOKS DOIVENT ÊTRE DÉCLARÉS TOUT EN HAUT
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [customerName, setCustomerName] = useState<string>("Client Passage");
+  const [customerName, setCustomerName] = useState<string>("");
   const [hasPrescription, setHasPrescription] = useState<boolean>(false);
   const [prescriptionRef, setPrescriptionRef] = useState<string>(""); // Correction de la variable indéfinie
   const [paymentMethod, setPaymentMethod] = useState<
@@ -79,61 +79,22 @@ export default function SaleModal({
   const { data: myActiveSession } = useMyActiveSession();
   const createSaleMutation = useCreatePosSale();
   const [completedSaleId, setCompletedSaleId] = useState<number | null>(null);
-  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
-  const [loadingPdf, setLoadingPdf] = useState<boolean>(false);
 
-  const cashierName = myActiveSession?.user 
-    ? `${myActiveSession.user.first_name} ${myActiveSession.user.last_name || ""}` 
+  const cashierName = myActiveSession?.user
+    ? `${myActiveSession.user.first_name} ${myActiveSession.user.last_name || ""}`
     : "Caissier";
   const registerName = myActiveSession?.register?.name || "N/A";
 
   const handleCloseReceiptPreview = () => {
-    if (pdfBlobUrl) {
-      window.URL.revokeObjectURL(pdfBlobUrl);
-      setPdfBlobUrl(null);
-    }
     setCompletedSaleId(null);
     setCart([]);
     setAmountReceived(0);
-    setCustomerName("Client Passage");
+    setCustomerName("Patient Comptoir");
     setHasPrescription(false);
     setPrescriptionRef("");
     if (onSaleSuccess) onSaleSuccess();
     onClose();
   };
-
-  useEffect(() => {
-    if (completedSaleId !== null) {
-      const fetchPdf = async () => {
-        try {
-          setLoadingPdf(true);
-          const response = await api.get(`/pharmacy/pos-sales/${completedSaleId}/pdf`, {
-            responseType: "blob",
-          });
-          const blob = new Blob([response.data], { type: "application/pdf" });
-          const url = window.URL.createObjectURL(blob);
-          setPdfBlobUrl(url);
-        } catch (err) {
-          console.error("Erreur de chargement du PDF:", err);
-          Swal.fire({
-            icon: "error",
-            title: "Erreur PDF",
-            text: "Impossible de charger la facture PDF.",
-            confirmButtonColor: "#ef4444",
-          });
-        } finally {
-          setLoadingPdf(false);
-        }
-      };
-
-      fetchPdf();
-    } else {
-      if (pdfBlobUrl) {
-        window.URL.revokeObjectURL(pdfBlobUrl);
-        setPdfBlobUrl(null);
-      }
-    }
-  }, [completedSaleId]);
   console.log(branchArticles);
 
   // Conversion des articles de la succursale au format Product attendu par le panier, avec gestion et tri des lots (FEFO)
@@ -344,7 +305,8 @@ export default function SaleModal({
             has_prescription: hasPrescription,
             prescription_ref: prescriptionRef,
             payment_method: paymentMethod,
-            amount_received: paymentMethod === "CASH" ? amountReceived : totals.total,
+            amount_received:
+              paymentMethod === "CASH" ? amountReceived : totals.total,
             items: itemsPayload,
           },
           {
@@ -358,7 +320,9 @@ export default function SaleModal({
               setCompletedSaleId(data.id);
             },
             onError: (err: any) => {
-              const msg = err.response?.data?.message || "Impossible d'enregistrer la vente.";
+              const msg =
+                err.response?.data?.message ||
+                "Impossible d'enregistrer la vente.";
               Swal.fire({
                 title: "Erreur de validation",
                 text: msg,
@@ -366,7 +330,7 @@ export default function SaleModal({
                 confirmButtonColor: "#ef4444",
               });
             },
-          }
+          },
         );
       }
     });
@@ -389,8 +353,8 @@ export default function SaleModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 font-sans text-slate-800 dark:text-gray-200 backdrop-blur-xs p-4">
-      <div className="flex w-full max-w-7xl h-[90vh] bg-slate-100 dark:bg-gray-900 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 font-sans text-slate-800 dark:text-gray-200 backdrop-blur-xs">
+      <div className="flex w-screen h-screen bg-slate-100 dark:bg-gray-900 shadow-2xl overflow-hidden animate-in fade-in duration-200">
         {/* ================= ZONE DE GAUCHE : PANIER & RECHERCHE ================= */}
         <div className="flex-1 flex flex-col p-5 overflow-hidden h-full">
           {/* En-tête de la modale */}
@@ -429,29 +393,47 @@ export default function SaleModal({
                     control: (base) => ({
                       ...base,
                       borderRadius: "0.5rem",
-                      borderColor: document.documentElement.classList.contains("dark") ? "#4b5563" : "#cbd5e1",
-                      backgroundColor: document.documentElement.classList.contains("dark") ? "#1f2937" : "#ffffff",
-                      color: document.documentElement.classList.contains("dark") ? "#ffffff" : "#1e293b",
+                      borderColor: document.documentElement.classList.contains(
+                        "dark",
+                      )
+                        ? "#4b5563"
+                        : "#cbd5e1",
+                      backgroundColor:
+                        document.documentElement.classList.contains("dark")
+                          ? "#1f2937"
+                          : "#ffffff",
+                      color: document.documentElement.classList.contains("dark")
+                        ? "#ffffff"
+                        : "#1e293b",
                     }),
                     singleValue: (base) => ({
                       ...base,
-                      color: document.documentElement.classList.contains("dark") ? "#ffffff" : "#1e293b",
+                      color: document.documentElement.classList.contains("dark")
+                        ? "#ffffff"
+                        : "#1e293b",
                     }),
                     menu: (base) => ({
                       ...base,
-                      backgroundColor: document.documentElement.classList.contains("dark") ? "#1f2937" : "#ffffff",
+                      backgroundColor:
+                        document.documentElement.classList.contains("dark")
+                          ? "#1f2937"
+                          : "#ffffff",
                     }),
                     option: (base, state) => ({
                       ...base,
-                      backgroundColor: state.isSelected 
-                        ? "#059669" 
-                        : state.isFocused 
-                          ? (document.documentElement.classList.contains("dark") ? "#374151" : "#f1f5f9") 
+                      backgroundColor: state.isSelected
+                        ? "#059669"
+                        : state.isFocused
+                          ? document.documentElement.classList.contains("dark")
+                            ? "#374151"
+                            : "#f1f5f9"
                           : "transparent",
-                      color: state.isSelected 
-                        ? "#ffffff" 
-                        : (document.documentElement.classList.contains("dark") ? "#ffffff" : "#1e293b"),
-                    })
+                      color: state.isSelected
+                        ? "#ffffff"
+                        : document.documentElement.classList.contains("dark")
+                          ? "#ffffff"
+                          : "#1e293b",
+                    }),
                   }}
                 />
               </div>
@@ -459,7 +441,7 @@ export default function SaleModal({
 
             <div className="col-span-3">
               <label className="block text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-                Client
+                Patient
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
@@ -552,7 +534,9 @@ export default function SaleModal({
                             <Package className="w-3.5 h-3.5" /> Stock:
                             <strong
                               className={
-                                isLowStock ? "text-amber-600 dark:text-amber-400 font-bold" : "text-slate-700 dark:text-gray-300"
+                                isLowStock
+                                  ? "text-amber-600 dark:text-amber-400 font-bold"
+                                  : "text-slate-700 dark:text-gray-300"
                               }
                             >
                               {item.product.stock}
@@ -638,7 +622,9 @@ export default function SaleModal({
           <div className="p-4 border-b border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900/60">
             <div className="flex justify-between items-center">
               <div>
-                <h2 className="font-bold text-slate-800 dark:text-white">Session de Caisse</h2>
+                <h2 className="font-bold text-slate-800 dark:text-white">
+                  Session de Caisse
+                </h2>
                 <p className="text-xs text-slate-500 dark:text-gray-400">
                   Caissier:{" "}
                   <span className="font-semibold text-slate-700 dark:text-gray-250">
@@ -782,7 +768,7 @@ export default function SaleModal({
               <button
                 type="button"
                 onClick={handleCancelSale}
-                className="w-full mt-2 text-xs text-slate-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-rose-450 font-medium transition-colors py-1 text-center cursor-pointer"
+                className="w-full mt-2 text-xs text-red-500 dark:text-rose-450 font-medium transition-colors py-1 text-center cursor-pointer"
               >
                 Vider le panier actuel
               </button>
@@ -792,77 +778,11 @@ export default function SaleModal({
 
         {/* MODAL DE PREVISUALISATION DE LA FACTURE */}
         {completedSaleId !== null && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-2xl max-w-4xl w-full overflow-hidden animate-in zoom-in-95 duration-200">
-              <div className="p-5 border-b border-slate-100 dark:border-gray-700 flex justify-between items-center bg-slate-50 dark:bg-gray-900/60">
-                <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">Facture de Vente Générée</h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Vente N° #{completedSaleId}</p>
-                </div>
-                <button
-                  onClick={() => handleCloseReceiptPreview()}
-                  className="p-1.5 hover:bg-slate-200 dark:hover:bg-gray-700 rounded-lg text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="p-5 bg-slate-100 dark:bg-gray-900">
-                {loadingPdf ? (
-                  <div className="w-full h-[60vh] flex flex-col justify-center items-center bg-white border border-slate-200 dark:border-gray-700 rounded-xl">
-                    <Loader2 className="w-10 h-10 animate-spin text-emerald-600 mb-2" />
-                    <span className="text-sm text-slate-500 font-medium">Génération de la facture PDF...</span>
-                  </div>
-                ) : pdfBlobUrl ? (
-                  <iframe
-                    src={pdfBlobUrl}
-                    className="w-full h-[60vh] border border-slate-200 dark:border-gray-700 rounded-xl bg-white"
-                    title="Aperçu Facture"
-                  />
-                ) : (
-                  <div className="w-full h-[60vh] flex justify-center items-center bg-white border border-slate-200 dark:border-gray-700 rounded-xl text-slate-400">
-                    Impossible de générer l'aperçu de la facture.
-                  </div>
-                )}
-              </div>
-
-              <div className="p-4 bg-slate-50 dark:bg-gray-900/60 border-t border-slate-100 dark:border-gray-700 flex justify-end gap-3">
-                <button
-                  onClick={() => {
-                    if (pdfBlobUrl) {
-                      const link = document.createElement("a");
-                      link.href = pdfBlobUrl;
-                      link.setAttribute("download", `Facture_Vente_${completedSaleId}.pdf`);
-                      document.body.appendChild(link);
-                      link.click();
-                      link.remove();
-                    }
-                  }}
-                  disabled={!pdfBlobUrl}
-                  className="px-4 py-2 border border-slate-300 dark:border-gray-600 hover:bg-slate-100 dark:hover:bg-gray-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  Télécharger la facture
-                </button>
-                <button
-                  onClick={() => {
-                    if (pdfBlobUrl) {
-                      window.open(pdfBlobUrl, "_blank");
-                    }
-                  }}
-                  disabled={!pdfBlobUrl}
-                  className="px-4 py-2 border border-slate-300 dark:border-gray-600 hover:bg-slate-100 dark:hover:bg-gray-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  Ouvrir dans un nouvel onglet
-                </button>
-                <button
-                  onClick={() => handleCloseReceiptPreview()}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
-                >
-                  Fermer
-                </button>
-              </div>
-            </div>
-          </div>
+          <SaleReceiptPreviewModal
+            isOpen={completedSaleId !== null}
+            saleId={completedSaleId}
+            onClose={handleCloseReceiptPreview}
+          />
         )}
       </div>
     </div>

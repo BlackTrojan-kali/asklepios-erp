@@ -83,6 +83,7 @@ class CashRegisterSessionController extends Controller
 
         $validated = $request->validate([
             'opening_balance' => 'required|numeric|min:0',
+            'opening_notes' => 'nullable|string',
         ]);
 
         $session = CashRegisterSession::create([
@@ -90,6 +91,7 @@ class CashRegisterSessionController extends Controller
             'user_id' => $userId,
             'opened_at' => now(),
             'opening_balance' => $validated['opening_balance'],
+            'opening_notes' => $validated['opening_notes'] ?? null,
         ]);
 
         return response()->json($session->load('user'), 201);
@@ -144,6 +146,7 @@ class CashRegisterSessionController extends Controller
         $validated = $request->validate([
             'closing_balance' => 'required|numeric|min:0',
             'password' => 'required|string',
+            'closing_notes' => 'nullable|string',
         ]);
 
         // Vérifier le mot de passe de l'utilisateur
@@ -154,6 +157,7 @@ class CashRegisterSessionController extends Controller
         $session->update([
             'closed_at' => now(),
             'closing_balance' => $validated['closing_balance'],
+            'closing_notes' => $validated['closing_notes'] ?? null,
         ]);
 
         return response()->json($session->load('user'), 200);
