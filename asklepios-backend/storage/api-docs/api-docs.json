@@ -2188,6 +2188,451 @@
                 ]
             }
         },
+        "/api/admin/payment-accounts": {
+            "get": {
+                "tags": [
+                    "Comptes de Trésorerie (Admin)"
+                ],
+                "summary": "Lister les comptes de trésorerie de l'hôpital",
+                "description": "Lister les comptes de trésorerie de l'hôpital",
+                "operationId": "getAdminPaymentAccounts",
+                "parameters": [
+                    {
+                        "name": "pharmacy_branch_id",
+                        "in": "query",
+                        "description": "ID de la succursale",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "description": "Type de compte",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste des comptes récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Comptes de Trésorerie (Admin)"
+                ],
+                "summary": "Créer un nouveau compte de trésorerie (Admin uniquement)",
+                "description": "Créer un nouveau compte de trésorerie (Admin uniquement)",
+                "operationId": "storeAdminPaymentAccount",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "type",
+                                    "pharmacy_branch_id"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Afriland Bank"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "bank",
+                                        "enum": [
+                                            "bank",
+                                            "mobile_money",
+                                            "safe",
+                                            "cash_register",
+                                            "owner"
+                                        ]
+                                    },
+                                    "pharmacy_branch_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "account_number": {
+                                        "type": "string",
+                                        "example": "1234567890",
+                                        "nullable": true
+                                    },
+                                    "balance": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 0
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "example": "active",
+                                        "enum": [
+                                            "active",
+                                            "inactive"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Compte créé avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/payment-accounts/{id}": {
+            "get": {
+                "tags": [
+                    "Comptes de Trésorerie (Admin)"
+                ],
+                "summary": "Détails d'un compte de trésorerie",
+                "description": "Détails d'un compte de trésorerie",
+                "operationId": "getAdminPaymentAccountDetails",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID du compte",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Détails du compte récupérés avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Comptes de Trésorerie (Admin)"
+                ],
+                "summary": "Mettre à jour un compte de trésorerie (Admin uniquement)",
+                "description": "Mettre à jour un compte de trésorerie (Admin uniquement)",
+                "operationId": "updateAdminPaymentAccount",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID du compte",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Afriland Bank Bis"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "bank",
+                                        "enum": [
+                                            "bank",
+                                            "mobile_money",
+                                            "safe",
+                                            "cash_register",
+                                            "owner"
+                                        ]
+                                    },
+                                    "account_number": {
+                                        "type": "string",
+                                        "example": "0987654321",
+                                        "nullable": true
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "example": "active",
+                                        "enum": [
+                                            "active",
+                                            "inactive"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Compte mis à jour avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Comptes de Trésorerie (Admin)"
+                ],
+                "summary": "Supprimer un compte de trésorerie (Admin uniquement)",
+                "description": "Supprimer un compte de trésorerie (Admin uniquement)",
+                "operationId": "deleteAdminPaymentAccount",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID du compte",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Compte supprimé avec succès"
+                    },
+                    "400": {
+                        "description": "Impossible de supprimer un compte ayant des transactions liées"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/payment-transactions": {
+            "get": {
+                "tags": [
+                    "Transactions de Trésorerie (Admin)"
+                ],
+                "summary": "Lister toutes les transactions de trésorerie",
+                "description": "Lister toutes les transactions de trésorerie",
+                "operationId": "getAdminPaymentTransactions",
+                "parameters": [
+                    {
+                        "name": "pharmacy_branch_id",
+                        "in": "query",
+                        "description": "Filtre par succursale",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "description": "Filtre par type (cash_in, cash_out, transfer)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filtre par statut (pending, completed, cancelled)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "payment_method",
+                        "in": "query",
+                        "description": "Méthode de paiement",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "paginated",
+                        "in": "query",
+                        "description": "true pour paginer",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste des transactions récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Transactions de Trésorerie (Admin)"
+                ],
+                "summary": "Créer une transaction de trésorerie manuelle",
+                "description": "Créer une transaction de trésorerie manuelle (Admin / Caissier)",
+                "operationId": "storeAdminPaymentTransaction",
+                "responses": {
+                    "201": {
+                        "description": "Transaction créée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/payment-transactions/{id}": {
+            "get": {
+                "tags": [
+                    "Transactions de Trésorerie (Admin)"
+                ],
+                "summary": "Détails d'une transaction",
+                "description": "Détails d'une transaction de trésorerie",
+                "operationId": "getAdminPaymentTransactionDetails",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la transaction",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Détails de la transaction récupérés avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/payment-transactions/{id}/confirm": {
+            "post": {
+                "tags": [
+                    "Transactions de Trésorerie (Admin)"
+                ],
+                "summary": "Confirmer un versement en attente",
+                "description": "Confirmer un versement en attente (Admin uniquement)",
+                "operationId": "confirmAdminPaymentTransaction",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la transaction",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "reference"
+                                ],
+                                "properties": {
+                                    "reference": {
+                                        "type": "string",
+                                        "example": "BORD-9081"
+                                    },
+                                    "receipt": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Transaction confirmée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/payment-transactions/{id}/cancel": {
+            "post": {
+                "tags": [
+                    "Transactions de Trésorerie (Admin)"
+                ],
+                "summary": "Annuler un versement en attente",
+                "description": "Annuler un versement en attente (Admin uniquement)",
+                "operationId": "cancelAdminPaymentTransaction",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la transaction",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Transaction annulée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/admin/pharmaciens": {
             "get": {
                 "tags": [
@@ -3832,7 +4277,7 @@
                     "Stocks"
                 ],
                 "summary": "Voir les stocks globaux paginés (Toutes succursales)",
-                "description": "1. VUE GLOBALE PAGINÉE (Pour les Administrateurs ou Superviseurs)\nListe tous les stocks de l'hôpital, avec possibilité de filtrer par succursale.",
+                "description": "1. VUE GLOBALE PAGINÉE (Pour les Administrateurs ou Superviseurs)\r\nListe tous les stocks de l'hôpital, avec possibilité de filtrer par succursale.",
                 "operationId": "getGlobalStocks",
                 "parameters": [
                     {
@@ -3901,7 +4346,7 @@
                     "Stocks"
                 ],
                 "summary": "Voir les stocks paginés de ma succursale",
-                "description": "2. VUE LOCALE PAGINÉE (Pour les Pharmaciens / Vendeurs)\nListe uniquement les stocks de la succursale du pharmacien connecté.",
+                "description": "2. VUE LOCALE PAGINÉE (Pour les Pharmaciens / Vendeurs)\r\nListe uniquement les stocks de la succursale du pharmacien connecté.",
                 "operationId": "getMyBranchStocks",
                 "parameters": [
                     {
@@ -8809,6 +9254,14 @@
         {
             "name": "Salles et Installations",
             "description": "Gestion des salles, bureaux et chambres d'hospitalisation"
+        },
+        {
+            "name": "Comptes de Trésorerie (Admin)",
+            "description": "Gestion des comptes de paiement, banques et caisses de la pharmacie"
+        },
+        {
+            "name": "Transactions de Trésorerie (Admin)",
+            "description": "Gestion des flux de trésorerie (versements, décaissements, transferts)"
         },
         {
             "name": "Pharmaciens (Admin)",
