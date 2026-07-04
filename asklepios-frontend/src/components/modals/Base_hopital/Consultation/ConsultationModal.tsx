@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
-    X, User, Activity, FileText, Pill, Stethoscope, 
-    Download, Save, Loader2, Plus, TestTube, AlertTriangle, Edit, Syringe
+    X, User, Activity, Pill, Stethoscope, Download, Save, 
+    Loader2, Plus, TestTube, AlertTriangle, Edit, Syringe,
+    Scissors, HeartPulse, History, Coffee // Nouvelles icônes
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -13,28 +14,31 @@ import type { CreateConsultationPayload, PrescriptionLinePayload, PerformedMedic
 import { useAuth } from '../../../../contexts/AuthContext';
 import useConsultationStore from '../../../../functions/base_hospital/useConsultationStore';
 import useMedicalBgStore from '../../../../functions/base_hospital/useMedicalBgStore';
-import useArticleStore from '../../../../functions/pharmacy/useArticleStore'; // Ajuste le chemin
-import useMedicalActStore from '../../../../functions/base_hospital/useMedicalActStore'; // Ajuste le chemin
-import useEquipmentStore from '../../../../functions/base_hospital/useEquipmentStore'; // Ajuste le chemin
+import useArticleStore from '../../../../functions/pharmacy/useArticleStore'; 
+import useMedicalActStore from '../../../../functions/base_hospital/useMedicalActStore'; 
+import useEquipmentStore from '../../../../functions/base_hospital/useEquipmentStore'; 
+
+// --- Api pour rafraîchissement local ---
+import api from '../../../../api/api';
 
 // --- Modales Enfants ---
 import { AddMedicationModal } from './AddMedicationModal'; 
 import { AddExamModal } from './AddExamModal'; 
-import { AddMedicalActModal } from './AddMedicalActModal'; // NOUVEAU
+import { AddMedicalActModal } from './AddMedicalActModal';
 import { MedicalBackgroundModal } from './MedicalBackgroundModal'; 
 
 interface ConsultationModalProps {
     isOpen: boolean;
-    onClose: () => void;
+    onClose: (hasChanged?: boolean) => void; 
     visit: PatientVisitDto | null;
-    isHospitalization?: boolean; // <-- AJOUTER ICI
+    isHospitalization?: boolean;
 }
 
 export const ConsultationModal: React.FC<ConsultationModalProps> = ({
     isOpen,
     onClose,
     visit,
-    isHospitalization = false // <-- AJOUTER ICI
+    isHospitalization = false
 }) => {
     const { profile } = useAuth();
     const departmentId = profile?.profile_doctor?.department_id || 0;
@@ -48,32 +52,34 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
     const { getSharedMedicalActs, sharedMedicalActs } = useMedicalActStore();
     const { getSharedEquipment, sharedEquipment } = useEquipmentStore();
 
-    // --- ÉTATS DU FORMULAIRE DE CONSULTATION ---
+    // --- ÉTATS DU FORMULAIRE ---
     const [chiefComplaint, setChiefComplaint] = useState('');
     const [clinicalNotes, setClinicalNotes] = useState(''); 
     
-    // Paniers (Prescriptions, Examens, Actes)
     const [prescriptions, setPrescriptions] = useState<PrescriptionLinePayload[]>([]);
     const [exams, setExams] = useState<{exam_name: string}[]>([]);
-    const [performedActs, setPerformedActs] = useState<PerformedMedicalActPayload[]>([]); // NOUVEAU
+    const [performedActs, setPerformedActs] = useState<PerformedMedicalActPayload[]>([]);
+
+    // État local du dossier médical
+    const [localMedicalBg, setLocalMedicalBg] = useState<any>(null);
 
     // --- ÉTATS DES MODALES ENFANTS ---
     const [isAddMedModalOpen, setIsAddMedModalOpen] = useState(false);
     const [isAddExamModalOpen, setIsAddExamModalOpen] = useState(false);
-    const [isAddActModalOpen, setIsAddActModalOpen] = useState(false); // NOUVEAU
+    const [isAddActModalOpen, setIsAddActModalOpen] = useState(false);
     const [isMedicalBgModalOpen, setIsMedicalBgModalOpen] = useState(false);
 
     // --- INITIALISATION ---
     useEffect(() => {
-        if (isOpen && visit) {
-            // Reset du formulaire
+        if (isOpen && visit && visit.patient) {
             setChiefComplaint('');
             setClinicalNotes('');
             setPrescriptions([]);
             setExams([]);
             setPerformedActs([]);
+            
+            setLocalMedicalBg(visit.patient.medical_background || null);
 
-            // Chargement de tous les catalogues nécessaires via les stores existants
             getAllArticles();
             if (departmentId) {
                 getSharedMedicalActs(departmentId);
@@ -85,8 +91,16 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
     if (!isOpen || !visit || !visit.patient) return null;
 
     const patient = visit.patient;
-    const medicalBg = patient.medical_background;
-    // --- ACTIONS ---
+
+    const fetchLocalMedicalBg = async () => {
+        try {
+            const response = await api.get(`/shared/patients/${patient.id}/medical-background`);
+            setLocalMedicalBg(response.data.data || response.data);
+        } catch (error) {
+            console.error("Impossible de rafraîchir le dossier médical", error);
+        }
+    };
+
     const handleDownloadRecord = async () => {
         toast.promise(
             downloadMedicalRecord(patient.id, 'download'),
@@ -110,12 +124,12 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
             clinical_data: { notes: clinicalNotes },
             prescriptions: prescriptions,
             exams: exams,
-            medical_acts: performedActs // Envoi des actes réalisés pour facturation
+            medical_acts: performedActs 
         };
 
         const success = await createConsultation(payload);
         if (success) {
-            onClose();
+            onClose(true);
         }
     };
 
@@ -128,97 +142,153 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
             
             <div className="bg-[#faf8f1] dark:bg-gray-900 w-full max-w-[95vw] h-[95vh] rounded-2xl shadow-2xl flex flex-col border border-gray-200 dark:border-gray-800 overflow-hidden">
                 
-{/* --- HEADER GLOBAL --- */}
-<div className="flex items-center justify-between p-4 bg-[#003366] text-white shrink-0">
-    <div className="flex items-center gap-3">
-        <Stethoscope size={24} className="text-[#00a896]" />
-        <div>
-            <h2 className="text-xl font-bold font-brand leading-tight">
-                {isHospitalization ? "Visite d'hospitalisation" : "Consultation en cours"}
-            </h2>
-            <div className="flex items-center gap-2 mt-0.5">
-                <p className="text-sm text-blue-100 font-medium">{patient.first_name} {patient.last_name}</p>
-                <span className="text-[10px] bg-blue-900/50 text-blue-200 px-1.5 py-0.5 rounded font-mono border border-blue-800">
-                    {patient.patient_code} {/* CORRECTION ICI */}
-                </span>
-            </div>
-        </div>
-    </div>
-    <div className="flex items-center gap-3">
-        <button 
-            onClick={handleDownloadRecord}
-            className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm font-medium transition-colors"
-        >
-            <Download size={16} /> Carnet Médical
-        </button>
-        <button onClick={onClose} className="p-2 text-gray-300 hover:text-white hover:bg-red-500/20 rounded-full transition-colors">
-            <X size={24} />
-        </button>
-    </div>
-</div>
+                {/* --- HEADER GLOBAL --- */}
+                <div className="flex items-center justify-between p-4 bg-[#003366] text-white shrink-0">
+                    <div className="flex items-center gap-3">
+                        <Stethoscope size={24} className="text-[#00a896]" />
+                        <div>
+                            <h2 className="text-xl font-bold font-brand leading-tight">
+                                {isHospitalization ? "Visite d'hospitalisation" : "Consultation en cours"}
+                            </h2>
+                            <div className="flex items-center gap-2 mt-0.5">
+                                <p className="text-sm text-blue-100 font-medium">{patient.first_name} {patient.last_name}</p>
+                                <span className="text-[10px] bg-blue-900/50 text-blue-200 px-1.5 py-0.5 rounded font-mono border border-blue-800">
+                                    {patient.patient_code}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <button onClick={handleDownloadRecord} className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm font-medium transition-colors">
+                            <Download size={16} /> Carnet
+                        </button>
+                        <button onClick={() => onClose(false)} className="p-2 text-gray-300 hover:text-white hover:bg-red-500/20 rounded-full transition-colors">
+                            <X size={24} />
+                        </button>
+                    </div>
+                </div>
+
                 {/* --- CORPS DE LA MODALE --- */}
                 <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
                     
-                    {/* COLONNE GAUCHE : DOSSIER PATIENT */}
-                    <div className="w-full lg:w-1/3 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800/50 flex flex-col overflow-y-auto custom-scrollbar">
+                    {/* COLONNE GAUCHE : DOSSIER PATIENT COMPLET */}
+                    <div className="w-full lg:w-[400px] border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800/50 flex flex-col overflow-y-auto custom-scrollbar">
                         
                         {/* Info Basique */}
-                        <div className="p-5 border-b border-gray-100 dark:border-gray-700">
-                            <div className="flex items-center gap-4 mb-4">
-                                <div className="h-16 w-16 rounded-full bg-[#00a896]/10 flex items-center justify-center text-[#00a896]">
-                                    <User size={32} />
+                        <div className="p-5 border-b border-gray-100 dark:border-gray-700 bg-slate-50 dark:bg-gray-800">
+                            <div className="flex items-center gap-4">
+                                <div className="h-14 w-14 rounded-full bg-[#00a896]/10 flex items-center justify-center text-[#00a896]">
+                                    <User size={28} />
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-lg text-gray-800 dark:text-white font-brand">
                                         {patient.first_name} {patient.last_name}
                                     </h3>
-                                    <p className="text-sm text-gray-500">{patient.gender === 'M' ? 'Homme' : 'Femme'} • {patient.bith_date || 'N/A'}</p>
+                                    <p className="text-sm text-gray-500">{patient.gender === 'M' ? 'Homme' : 'Femme'} • Né(e) le {patient.bith_date || 'N/A'}</p>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Antécédents Médicaux */}
+                        {/* Antécédents Médicaux (Exhaustifs) */}
                         <div className="p-5 flex-1">
                             <div className="flex items-center justify-between mb-4 border-b border-gray-100 dark:border-gray-700 pb-2">
                                 <h4 className="flex items-center gap-2 font-bold text-gray-700 dark:text-gray-300 font-brand uppercase tracking-wider text-xs">
-                                    <Activity size={14} className="text-[#00a896]" /> Synthèse des Antécédents
+                                    <Activity size={14} className="text-[#00a896]" /> Dossier Médical
                                 </h4>
-                                <button 
-                                    onClick={() => setIsMedicalBgModalOpen(true)}
-                                    className="flex items-center gap-1.5 text-xs font-bold text-[#003366] dark:text-blue-400 hover:underline"
-                                >
-                                    <Edit size={12} /> {medicalBg ? "Modifier" : "Créer le dossier"}
+                                <button onClick={() => setIsMedicalBgModalOpen(true)} className="flex items-center gap-1 text-xs font-bold text-[#003366] dark:text-blue-400 hover:underline bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded">
+                                    <Edit size={12} /> {localMedicalBg ? "Mettre à jour" : "Créer"}
                                 </button>
                             </div>
                             
-                            {!medicalBg ? (
-                                <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4 text-center">
+                            {!localMedicalBg ? (
+                                <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4 text-center mt-4">
                                     <AlertTriangle size={24} className="text-orange-500 mx-auto mb-2" />
-                                    <p className="text-sm text-orange-700 dark:text-orange-400 font-medium">Aucun dossier médical renseigné.</p>
-                                    <button onClick={() => setIsMedicalBgModalOpen(true)} className="mt-2 text-xs font-bold bg-orange-100 text-orange-700 px-3 py-1.5 rounded-lg hover:bg-orange-200">
-                                        Initialiser maintenant
-                                    </button>
+                                    <p className="text-sm text-orange-700 dark:text-orange-400 font-medium">Le carnet médical est vide.</p>
                                 </div>
                             ) : (
-                                <div className="space-y-4 text-sm">
-                                    <div className="flex justify-between items-center bg-gray-50 dark:bg-gray-700/50 p-2 rounded border border-gray-100 dark:border-gray-600">
-                                        <span className="text-gray-500 font-medium">Groupe Sanguin</span>
-                                        <span className="font-bold text-red-500">{medicalBg.blood_type || 'Inconnu'}</span>
-                                    </div>
-                                    <div>
-                                        <span className="block text-gray-500 font-medium mb-1">Allergies</span>
-                                        <div className="flex flex-wrap gap-1">
-                                            {medicalBg.allergies?.length ? medicalBg.allergies.map((al, i) => (
-                                                <span key={i} className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 px-2 py-0.5 rounded text-xs font-bold">{al}</span>
-                                            )) : <span className="text-gray-400 italic">Aucune</span>}
+                                <div className="space-y-5 text-sm">
+                                    {/* Groupe sanguin & Allergies */}
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="bg-red-50 dark:bg-red-900/10 p-3 rounded-lg border border-red-100 dark:border-red-900/50">
+                                            <span className="block text-xs text-red-400 uppercase tracking-wide font-bold mb-1">Groupe Sanguin</span>
+                                            <span className="font-black text-red-600 dark:text-red-400 text-lg">{localMedicalBg.blood_type || 'Inconnu'}</span>
+                                        </div>
+                                        <div className="bg-orange-50 dark:bg-orange-900/10 p-3 rounded-lg border border-orange-100 dark:border-orange-900/50">
+                                            <span className="block text-xs text-orange-500 uppercase tracking-wide font-bold mb-1">Allergies</span>
+                                            <span className="font-bold text-orange-700 dark:text-orange-400 leading-tight block">
+                                                {localMedicalBg.allergies?.length ? localMedicalBg.allergies.join(', ') : 'Aucune'}
+                                            </span>
                                         </div>
                                     </div>
+
+                                    {/* Maladies chroniques */}
                                     <div>
-                                        <span className="block text-gray-500 font-medium mb-1">Maladies chroniques</span>
-                                        <p className="text-gray-800 dark:text-gray-200 font-medium bg-gray-50 dark:bg-gray-700/50 p-2 rounded border border-gray-100 dark:border-gray-600">
-                                            {medicalBg.chronic_conditions?.join(', ') || 'Néant'}
-                                        </p>
+                                        <span className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-bold text-xs uppercase tracking-wide mb-1.5"><HeartPulse size={14} /> Pathologies Chroniques</span>
+                                        <div className="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg border border-gray-100 dark:border-gray-600 text-gray-800 dark:text-gray-200 font-medium">
+                                            {localMedicalBg.chronic_conditions?.length ? (
+                                                <ul className="list-disc pl-4 space-y-1">
+                                                    {localMedicalBg.chronic_conditions.map((cond: string, i: number) => <li key={i}>{cond}</li>)}
+                                                </ul>
+                                            ) : 'Néant'}
+                                        </div>
                                     </div>
+
+                                    {/* Médicaments en cours */}
+                                    <div>
+                                        <span className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-bold text-xs uppercase tracking-wide mb-1.5"><Pill size={14} /> Traitements en cours</span>
+                                        <div className="bg-blue-50 dark:bg-blue-900/10 p-3 rounded-lg border border-blue-100 dark:border-blue-900/30 text-blue-900 dark:text-blue-200 font-medium">
+                                            {localMedicalBg.current_medications?.length ? (
+                                                <ul className="list-disc pl-4 space-y-1">
+                                                    {localMedicalBg.current_medications.map((med: string, i: number) => <li key={i}>{med}</li>)}
+                                                </ul>
+                                            ) : 'Aucun traitement signalé'}
+                                        </div>
+                                    </div>
+
+                                    {/* Chirurgies */}
+                                    <div>
+                                        <span className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-bold text-xs uppercase tracking-wide mb-1.5"><Scissors size={14} /> Antécédents Chirurgicaux</span>
+                                        <div className="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg border border-gray-100 dark:border-gray-600">
+                                            {localMedicalBg.past_surgeries?.length ? (
+                                                <ul className="space-y-2">
+                                                    {localMedicalBg.past_surgeries.map((surg: any, i: number) => (
+                                                        <li key={i} className="text-gray-800 dark:text-gray-200">
+                                                            <span className="font-bold">{surg.name}</span>
+                                                            {surg.year && <span className="text-gray-500 ml-2">({surg.year})</span>}
+                                                            {surg.notes && <p className="text-xs text-gray-500 mt-0.5">{surg.notes}</p>}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            ) : <span className="text-gray-500 font-medium">Aucune intervention signalée</span>}
+                                        </div>
+                                    </div>
+
+                                    {/* Mode de vie et Histoire familiale */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                            <span className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-bold text-[10px] uppercase tracking-wide mb-1"><Coffee size={12} /> Mode de vie</span>
+                                            <p className="text-xs text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 p-2 rounded border border-gray-100 dark:border-gray-700">
+                                                {localMedicalBg.lifestyle_habits || 'Non renseigné'}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <span className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-bold text-[10px] uppercase tracking-wide mb-1"><History size={12} /> Familial</span>
+                                            <p className="text-xs text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 p-2 rounded border border-gray-100 dark:border-gray-700">
+                                                {localMedicalBg.family_history || 'Non renseigné'}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Vaccins */}
+                                    {localMedicalBg.immunizations?.length > 0 && (
+                                        <div>
+                                            <span className="flex items-center gap-2 text-gray-500 dark:text-gray-400 font-bold text-xs uppercase tracking-wide mb-1.5"><Syringe size={14} /> Vaccinations (Infos)</span>
+                                            <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                                                {localMedicalBg.immunizations.join(' • ')}
+                                            </p>
+                                        </div>
+                                    )}
+
                                 </div>
                             )}
                         </div>
@@ -253,7 +323,7 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
                                 </div>
                             </div>
 
-                            {/* Bloc 2 : Actes Médicaux (Facturables) */}
+                            {/* Bloc 2 : Actes Médicaux */}
                             <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
                                 <div className="flex items-center justify-between mb-4 border-b border-gray-100 dark:border-gray-700 pb-2">
                                     <h3 className="font-bold text-[#003366] dark:text-blue-400 font-brand">2. Actes Médicaux Réalisés</h3>
@@ -339,7 +409,7 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
 
                         {/* --- FOOTER --- */}
                         <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800 flex justify-end gap-3 shrink-0">
-                            <button onClick={onClose} disabled={isConsultingLoading} className="px-6 py-3 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg font-medium transition-colors">
+                            <button onClick={() => onClose(false)} disabled={isConsultingLoading} className="px-6 py-3 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg font-medium transition-colors">
                                 Suspendre / Annuler
                             </button>
                             <button onClick={handleSubmitConsultation} disabled={isConsultingLoading || !chiefComplaint.trim()} className="px-8 py-3 bg-[#003366] hover:bg-[#002244] text-white rounded-lg font-bold flex items-center gap-2 transition-colors shadow-lg disabled:opacity-50">
@@ -352,35 +422,21 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
             </div>
 
             {/* ================================================================= */}
-            {/* MODALES ENFANTS (z-[60])                                          */}
+            {/* MODALES ENFANTS */}
             {/* ================================================================= */}
             
-            <AddMedicationModal 
-                isOpen={isAddMedModalOpen} 
-                onClose={() => setIsAddMedModalOpen(false)} 
-                onAdd={(med) => setPrescriptions(prev => [...prev, med])} 
-                availableArticles={allArticles} // Alimenté par useArticleStore
-            />
-
-            <AddExamModal 
-                isOpen={isAddExamModalOpen} 
-                onClose={() => setIsAddExamModalOpen(false)} 
-                onAdd={(exam) => setExams(prev => [...prev, exam])} 
-            />
-
-            <AddMedicalActModal 
-                isOpen={isAddActModalOpen}
-                onClose={() => setIsAddActModalOpen(false)}
-                onAdd={(act) => setPerformedActs(prev => [...prev, act])}
-                medicalActs={sharedMedicalActs} // Alimenté par useMedicalActStore
-                equipments={sharedEquipment} // Alimenté par useEquipmentStore
-            />
+            <AddMedicationModal isOpen={isAddMedModalOpen} onClose={() => setIsAddMedModalOpen(false)} onAdd={(med) => setPrescriptions(prev => [...prev, med])} availableArticles={allArticles} />
+            <AddExamModal isOpen={isAddExamModalOpen} onClose={() => setIsAddExamModalOpen(false)} onAdd={(exam) => setExams(prev => [...prev, exam])} />
+            <AddMedicalActModal isOpen={isAddActModalOpen} onClose={() => setIsAddActModalOpen(false)} onAdd={(act) => setPerformedActs(prev => [...prev, act])} medicalActs={sharedMedicalActs} equipments={sharedEquipment} />
 
             <MedicalBackgroundModal
                 isOpen={isMedicalBgModalOpen}
-                onClose={() => setIsMedicalBgModalOpen(false)}
+                onClose={(hasChanged?: boolean) => {
+                    setIsMedicalBgModalOpen(false);
+                    if (hasChanged) fetchLocalMedicalBg();
+                }}
                 patientId={patient.id}
-                existingData={medicalBg}
+                existingData={localMedicalBg}
             />
             
         </div>

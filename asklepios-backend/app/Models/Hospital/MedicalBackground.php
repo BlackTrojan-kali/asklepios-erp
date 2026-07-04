@@ -16,7 +16,7 @@ class MedicalBackground extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = [
+ protected $fillable = [
         'patient_id',
         'blood_type',
         'allergies',
@@ -35,10 +35,10 @@ class MedicalBackground extends Model
      *
      * @var array<string, string>
      */
-    protected $casts = [
+   protected $casts = [
         'allergies'           => 'array',
         'chronic_conditions'  => 'array',
-        'past_surgeries'      => 'array',
+        'past_surgeries'      => 'array', // Contient un tableau de structures ['name' => ..., 'year' => ...]
         'current_medications' => 'array',
         'immunizations'       => 'array',
     ];

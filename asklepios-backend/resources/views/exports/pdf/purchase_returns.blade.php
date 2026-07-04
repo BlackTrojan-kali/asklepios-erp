@@ -11,28 +11,32 @@
             margin: 0;
             padding: 0;
         }
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            border-bottom: 2px solid #e11d48; /* Rouge pour les retours */
+        /* --- Structure Header --- */
+        .header-table {
+            width: 100%;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e11d48;
             padding-bottom: 10px;
         }
-        .header h1 {
+        .header-table h1 {
             color: #e11d48;
             margin: 0 0 5px 0;
-            font-size: 24px;
+            font-size: 20px;
+            text-transform: uppercase;
         }
-        .header p {
+        .header-table p {
             color: #777;
             margin: 0;
-            font-size: 12px;
+            font-size: 10px;
         }
+
+        /* --- Blocs de Commandes --- */
         .order-block {
-            margin-bottom: 40px;
+            margin-bottom: 30px;
             page-break-inside: avoid;
         }
         .order-info {
-            background-color: #fff1f2; /* Fond légèrement rouge */
+            background-color: #fff1f2;
             border: 1px solid #fecdd3;
             padding: 10px 15px;
             border-radius: 5px;
@@ -49,6 +53,8 @@
         .order-info strong {
             color: #1e293b;
         }
+        
+        /* --- Badges --- */
         .badge {
             padding: 3px 8px;
             border-radius: 12px;
@@ -61,6 +67,7 @@
         .bg-shipped { background-color: #10b981; }
         .bg-cancelled { background-color: #ef4444; }
 
+        /* --- Tableau des lignes --- */
         table.items-table {
             width: 100%;
             border-collapse: collapse;
@@ -78,6 +85,7 @@
             text-transform: uppercase;
             font-size: 10px;
         }
+        
         .text-center { text-align: center !important; }
         .text-right { text-align: right !important; }
         .text-red { color: #ef4444; font-weight: bold; }
@@ -97,10 +105,30 @@
 </head>
 <body>
 
-    <div class="header">
-        <h1>Historique Détaillé des Retours</h1>
-        <p>Généré le {{ now()->format('d/m/Y à H:i') }}</p>
-    </div>
+    <table class="header-table">
+        <tr>
+            <td style="width: 50%; vertical-align: top;">
+                <h1>Historique des Retours</h1>
+                <p>Généré par : {{ $user->first_name }} {{ $user->last_name }} le {{ now()->format('d/m/Y à H:i') }}</p>
+            </td>
+            <td style="width: 50%; vertical-align: top; text-align: right;">
+                <p style="margin: 0 0 5px 0; color: #1e293b;"><strong>Critères de recherche :</strong></p>
+                <p style="margin: 0; color: #777; font-size: 10px; line-height: 1.4;">
+                    Période : 
+                    @if(!empty($filters['start_date']) || !empty($filters['end_date']))
+                        Du {{ !empty($filters['start_date']) ? \Carbon\Carbon::parse($filters['start_date'])->format('d/m/Y') : 'Début' }} 
+                        au {{ !empty($filters['end_date']) ? \Carbon\Carbon::parse($filters['end_date'])->format('d/m/Y') : 'Aujourd\'hui' }}
+                    @else
+                        Toutes les dates
+                    @endif
+                    <br>
+                    Succursale : {{ !empty($filters['pharmacy_branch_id']) ? 'Succursale #'.$filters['pharmacy_branch_id'] : ($user->profile_admin ? 'Toutes les succursales' : 'Votre succursale') }}
+                    <br>
+                    Statut : {{ !empty($filters['status']) ? $filters['status'] : 'Tous' }}
+                </p>
+            </td>
+        </tr>
+    </table>
 
     @forelse($returns as $r)
         <div class="order-block">
@@ -122,6 +150,11 @@
                         <td colspan="2">
                             <strong>Commande d'origine :</strong> 
                             {{ $r->purchase_order_id ? '#' . $r->purchase_order_id : 'Non liée' }}
+                            @if($user->profile_admin)
+                                <span style="margin-left: 15px; color: #64748b; font-size: 10px;">
+                                    <strong>Source :</strong> {{ $r->sourcePharmacy->name ?? 'N/A' }}
+                                </span>
+                            @endif
                         </td>
                     </tr>
                 </table>
@@ -149,11 +182,13 @@
             </table>
         </div>
     @empty
-        <p style="text-align: center; color: #777; margin-top: 50px;">Aucun retour trouvé pour les critères sélectionnés.</p>
+        <p style="text-align: center; color: #777; margin-top: 50px; padding: 30px; border: 1px dashed #cbd5e1;">
+            Aucun retour trouvé pour les critères sélectionnés.
+        </p>
     @endforelse
 
     <div class="footer">
-        ERP Asklepios - Page <span class="page-number"></span>
+        ERP Asclépios - Page <span class="page-number"></span>
     </div>
 
 </body>

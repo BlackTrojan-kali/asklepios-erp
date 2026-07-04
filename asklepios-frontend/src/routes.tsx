@@ -207,6 +207,8 @@ const routes = createBrowserRouter([
         children: [
           { path: "pharmacy/orders", element: <PurchaseOrders /> },
           { path: "pharmacy/returns", element: <PurchaseReturns /> },
+          { path: "admin/orders", element: <PurchaseOrders /> },
+          { path: "admin/returns", element: <PurchaseReturns /> },
           { path: "admin/inventory", element: <AdminInventories /> },
           { path: "admin/movements", element: <AdminStockMovements /> },
         ],

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css'; 
 import { 
@@ -10,12 +10,15 @@ import {
     Plus,
     XCircle,
     UserCheck,
-    Stethoscope
+    Stethoscope,
+    Building2
 } from 'lucide-react';
+import Select from 'react-select'; // 👉 Pour le filtre des centres (Admin)
 
 // --- STORES & CONTEXTS ---
 import useAppointmentStore from '../../functions/base_hospital/useAppointmentStore';
-import useDoctorStore from '../../functions/base_hospital/useDoctorStore'; // <-- NOUVEL IMPORT
+import useDoctorStore from '../../functions/base_hospital/useDoctorStore'; 
+import useCenterStore from '../../functions/center/useCenterStore'; // 👉 NOUVEAU
 import { useAuth } from '../../contexts/AuthContext';
 
 // --- TYPES ---
@@ -26,23 +29,28 @@ import { DoctorRescheduleModal } from '../../components/modals/Base_hopital/Appo
 import { AdmitToWaitingRoomModal } from '../../components/modals/Base_hopital/Appointment/AdmitToWaitingRoomModal';
 import { MultiPatientSchedulingModal } from '../../components/modals/Base_hopital/Appointment/MultiPatientSchedulingModal';
 
+interface SelectOption {
+    value: string;
+    label: string;
+}
+
 const ReceptionistAppointments = () => {
-    // --- STORES ---
-    const { 
-        appointments, 
-        getAppointments, 
-        cancelAppointment, 
-        loading: appointmentsLoading,
-        actionLoading
-    } = useAppointmentStore();
-    
-    // NOUVEAU : Store des médecins
-    const { allDoctors, getAllDoctors } = useDoctorStore(); 
-    
     const { profile } = useAuth();
 
+    // 👉 Identification des Rôles
+    const isAdmin = ['admin', 'super_admin'].includes(profile?.role || '');
+    const isReceptionist = profile?.role === 'reception';
+
+    // --- STORES ---
+    const { appointments, getAppointments, cancelAppointment, loading: appointmentsLoading, actionLoading } = useAppointmentStore();
+    const { allDoctors, getAllDoctors } = useDoctorStore(); 
+    const { centers, getCenters } = useCenterStore(); // 👉 Store des centres
+    
     // --- ÉTATS ---
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+    
+    // Filtre Centre (Pour l'Admin)
+    const [selectedCenter, setSelectedCenter] = useState<SelectOption | null>(null);
     
     // États d'ouverture des modales
     const [isMultiScheduleOpen, setIsMultiScheduleOpen] = useState(false);
@@ -50,9 +58,8 @@ const ReceptionistAppointments = () => {
     const [apptToAdmit, setApptToAdmit] = useState<AppointmentDto | null>(null);
     const [apptToCancel, setApptToCancel] = useState<AppointmentDto | null>(null); 
 
-    // Identifiants récupérés depuis le réceptionniste connecté
-    const currentCenterId = profile?.profile_reception?.center_id || 0;
-    const receptionName = profile?.first_name || "Accueil";
+    // Identifiants récupérés depuis le profil
+    const currentCenterId = isReceptionist ? profile?.profile_reception?.center_id : (selectedCenter ? Number(selectedCenter.value) : 0);
 
     // --- HELPERS DE DATES ---
     const getLocalYYYYMMDD = (date: Date) => {
@@ -68,21 +75,31 @@ const ReceptionistAppointments = () => {
         return getLocalYYYYMMDD(d);
     };
 
-    // --- CHARGEMENT INITIAL (Tout le centre) ---
-    const fetchAppointments = () => {
-        if (!currentCenterId) return;
-        // Le réceptionniste voit tous les RDV de son centre
-        getAppointments(1, { center_id: currentCenterId }, 1000); 
-    };
+    // --- CHARGEMENT INITIAL ---
+    const fetchAppointments = useCallback(() => {
+        // L'admin peut voir tout l'hôpital si `currentCenterId` est 0, sinon on filtre
+        const filterParams = currentCenterId ? { center_id: currentCenterId } : {};
+        getAppointments(1, filterParams, 1000); 
+    }, [currentCenterId, getAppointments]);
 
     useEffect(() => {
-        if (currentCenterId) {
-            fetchAppointments();
-            // NOUVEAU : On charge la liste des docteurs du centre pour les menus déroulants
-            getAllDoctors({ center_id: currentCenterId });
+        // L'Admin charge d'abord la liste des centres
+        if (isAdmin) {
+            getCenters(1, {}, 100);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentCenterId]);
+    }, [isAdmin, getCenters]);
+
+    useEffect(() => {
+        fetchAppointments();
+        
+        // On charge les médecins pour la modale de création (Si le centre est défini)
+        if (currentCenterId) {
+            getAllDoctors({ center_id: currentCenterId });
+        } else if (isAdmin) {
+            getAllDoctors({}); // Charge tous les docteurs pour l'admin
+        }
+    }, [currentCenterId, fetchAppointments, getAllDoctors, isAdmin]);
+
 
     // --- DÉRIVATION DES DONNÉES ---
     const appointmentDatesSet = useMemo(() => {
@@ -94,6 +111,7 @@ const ReceptionistAppointments = () => {
         });
         return dates;
     }, [appointments]);
+
     const selectedDateAppointments = useMemo(() => {
         const targetDateString = getLocalYYYYMMDD(selectedDate);
         return appointments.filter(app => {
@@ -102,7 +120,6 @@ const ReceptionistAppointments = () => {
         })
         .sort((a, b) => new Date(a.scheduled_datetime.replace(' ', 'T')).getTime() - new Date(b.scheduled_datetime.replace(' ', 'T')).getTime());
     }, [appointments, selectedDate]);
-
 
     // --- HANDLERS D'ACTIONS ---
     const handleOpenRescheduleModal = (app: AppointmentDto) => setApptToReschedule(app);
@@ -113,8 +130,14 @@ const ReceptionistAppointments = () => {
         const success = await cancelAppointment(apptToCancel.id);
         if (success) {
             setApptToCancel(null);
+            fetchAppointments(); // 👉 AUTO-REFRESH local
         }
     };
+
+    const centerOptions: SelectOption[] = centers.map(c => ({
+        value: c.id.toString(),
+        label: c.name
+    }));
 
     return (
         <div className="h-[calc(100vh-100px)] flex flex-col space-y-6 relative">
@@ -126,19 +149,44 @@ const ReceptionistAppointments = () => {
                         <CalendarDays size={26} />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-800 dark:text-white font-brand">Accueil & Admissions</h1>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-lato">Gérez le flux des patients pour tout le centre médical.</p>
+                        <h1 className="text-2xl font-bold text-slate-800 dark:text-white font-brand">
+                            {isAdmin ? 'Supervision des Agendas' : 'Accueil & Admissions'}
+                        </h1>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-lato">
+                            {isAdmin ? 'Vue globale des rendez-vous et plannings des cliniques.' : 'Gérez le flux des patients pour le centre médical.'}
+                        </p>
                     </div>
                 </div>
                 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                    {/* 👉 FILTRE CENTRE POUR L'ADMIN */}
+                    {isAdmin && (
+                        <div className="w-full sm:w-64">
+                            <Select
+                                options={centerOptions}
+                                value={selectedCenter}
+                                onChange={(option) => setSelectedCenter(option)}
+                                isClearable 
+                                placeholder="Filtrer par centre..."
+                                className="react-select-container text-sm"
+                                classNamePrefix="react-select"
+                                styles={{
+                                    control: (base) => ({
+                                        ...base, minHeight: '42px', borderRadius: '0.5rem', borderColor: '#e2e8f0', boxShadow: 'none'
+                                    }),
+                                    menu: (base) => ({ ...base, zIndex: 50 })
+                                }}
+                            />
+                        </div>
+                    )}
+
                     <button 
                         onClick={fetchAppointments}
                         disabled={appointmentsLoading}
-                        className="flex items-center gap-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 px-4 py-2 rounded-lg font-medium transition-colors shadow-sm disabled:opacity-50"
+                        className="flex items-center gap-2 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 px-4 py-2 min-h-[42px] rounded-lg font-medium transition-colors shadow-sm disabled:opacity-50 shrink-0"
                     >
                         <RefreshCw size={18} className={appointmentsLoading ? "animate-spin text-orange-600" : ""} />
-                        Actualiser
+                        <span className="hidden sm:inline">Actualiser</span>
                     </button>
                 </div>
             </div>
@@ -243,8 +291,8 @@ const ReceptionistAppointments = () => {
                         onChange={(v) => setSelectedDate(v as Date)}
                         onClickDay={(value) => {
                             const dateStr = getLocalYYYYMMDD(value);
-                            // On ouvre la modale de création si on clique sur un jour vide
-                            if (!appointmentDatesSet.has(dateStr)) {
+                            // On ouvre la modale de création si on clique sur un jour vide ET si c'est la réception
+                            if (!appointmentDatesSet.has(dateStr) && isReceptionist) {
                                 setIsMultiScheduleOpen(true);
                             }
                         }}
@@ -273,20 +321,23 @@ const ReceptionistAppointments = () => {
                         <div>
                             <h2 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2 font-brand">
                                 <Clock className="text-orange-500" size={20} />
-                                File Globale
+                                {isAdmin ? 'Agenda du Jour' : 'File Globale'}
                             </h2>
                             <p className="text-sm font-medium text-orange-600 dark:text-orange-400 mt-1 capitalize font-lato">
                                 {selectedDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
                             </p>
                         </div>
                         
-                        <button 
-                            onClick={() => setIsMultiScheduleOpen(true)}
-                            className="p-2.5 bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/30 dark:hover:bg-orange-900/60 text-orange-600 dark:text-orange-400 rounded-lg transition-colors shadow-sm"
-                            title="Planifier un rendez-vous"
-                        >
-                            <Plus size={20} strokeWidth={3} />
-                        </button>
+                        {/* Seule la réception peut créer de nouveaux RDV d'ici */}
+                        {isReceptionist && (
+                            <button 
+                                onClick={() => setIsMultiScheduleOpen(true)}
+                                className="p-2.5 bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/30 dark:hover:bg-orange-900/60 text-orange-600 dark:text-orange-400 rounded-lg transition-colors shadow-sm"
+                                title="Planifier un rendez-vous"
+                            >
+                                <Plus size={20} strokeWidth={3} />
+                            </button>
+                        )}
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-5 custom-scrollbar space-y-4">
@@ -298,7 +349,7 @@ const ReceptionistAppointments = () => {
                         ) : selectedDateAppointments.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-40 text-gray-400 dark:text-gray-500 bg-white dark:bg-gray-800/50 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 p-6 text-center">
                                 <AlertCircle size={32} className="mb-3 opacity-50" />
-                                <p className="text-sm font-medium text-slate-600 dark:text-gray-400">Aucun patient prévu ce jour</p>
+                                <p className="text-sm font-medium text-slate-600 dark:text-gray-400">Aucun rendez-vous ce jour.</p>
                             </div>
                         ) : (
                             selectedDateAppointments.map(app => {
@@ -316,7 +367,6 @@ const ReceptionistAppointments = () => {
                                                 <span className="bg-orange-50 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300 font-bold px-2 py-1 rounded text-sm font-mono">
                                                     {new Date(app.scheduled_datetime.replace(' ', 'T')).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                                                 </span>
-                                                {/* BADGE STATUT */}
                                                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider ${
                                                     isComplete ? 'bg-emerald-100 text-emerald-700' :
                                                     isConsulting ? 'bg-blue-100 text-blue-700' :
@@ -327,8 +377,8 @@ const ReceptionistAppointments = () => {
                                                 </span>
                                             </div>
                                             
-                                            {/* Bouton Annuler (Uniquement si prévu) */}
-                                            {isScheduled && (
+                                            {/* Bouton Annuler (Uniquement pour Réception et Admin) */}
+                                            {isScheduled && !isCancelled && (
                                                 <button 
                                                     onClick={() => setApptToCancel(app)}
                                                     className="text-gray-300 hover:text-red-500 dark:text-gray-600 dark:hover:text-red-400 transition-colors p-1"
@@ -356,8 +406,8 @@ const ReceptionistAppointments = () => {
                                             <Stethoscope size={14} className="text-blue-500"/> Dr. {app.doctor?.user?.first_name || 'Non assigné'}
                                         </div>
 
-                                        {/* ACTIONS CONDITIONNELLES (Réceptionniste) */}
-                                        {isScheduled && (
+                                        {/* ACTIONS CONDITIONNELLES (Uniquement Réceptionniste) */}
+                                        {isScheduled && isReceptionist && (
                                             <div className="mt-4 flex gap-2">
                                                 <button 
                                                     onClick={() => handleOpenAdmitModal(app)}
@@ -373,11 +423,18 @@ const ReceptionistAppointments = () => {
                                                 </button>
                                             </div>
                                         )}
+                                        
+                                        {/* Feedback pour l'admin si l'action est possible mais pas par lui */}
+                                        {isScheduled && isAdmin && (
+                                            <div className="mt-3 text-[10px] text-center font-bold text-gray-400 border-t border-dashed border-gray-100 dark:border-gray-700 pt-2 uppercase tracking-wide">
+                                                En attente d'admission
+                                            </div>
+                                        )}
 
                                         {/* Feedback Visuel si le patient est déjà dans le flux */}
                                         {(isWaiting || isConsulting || isComplete) && (
                                             <div className="mt-3 text-xs text-center font-medium text-gray-400 border-t border-dashed border-gray-200 dark:border-gray-700 pt-2">
-                                                Dossier transféré à la clinique
+                                                {isComplete ? 'Dossier classé' : 'Dossier transféré à la clinique'}
                                             </div>
                                         )}
                                     </div>
@@ -391,14 +448,14 @@ const ReceptionistAppointments = () => {
 
             {/* --- MODALE DE CONFIRMATION D'ANNULATION --- */}
             {apptToCancel && (
-                <div className="fixed inset-0 bg-black/60 dark:bg-black/80 z-50 flex items-center justify-center p-4 animate-fadeIn">
+                <div className="fixed inset-0 bg-black/60 dark:bg-black/80 z-[80] flex items-center justify-center p-4 animate-fadeIn">
                     <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-gray-100 dark:border-gray-800">
                         <div className="flex items-center gap-3 mb-4 text-red-600 dark:text-red-500">
                             <AlertCircle size={28} />
                             <h3 className="text-lg font-bold text-slate-800 dark:text-white">Annuler le rendez-vous ?</h3>
                         </div>
                         <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 font-lato">
-                            Êtes-vous sûr de vouloir annuler la consultation de <strong>{apptToCancel.patient?.first_name} {apptToCancel.patient?.last_name}</strong> avec le Dr. {apptToCancel.doctor?.user?.name} ?
+                            Êtes-vous sûr de vouloir annuler la consultation de <strong>{apptToCancel.patient?.first_name} {apptToCancel.patient?.last_name}</strong> avec le Dr. {apptToCancel.doctor?.user?.first_name} ?
                         </p>
                         <div className="flex justify-end gap-3">
                             <button 
@@ -420,38 +477,43 @@ const ReceptionistAppointments = () => {
                 </div>
             )}
 
-            {/* --- INTÉGRATION DES AUTRES MODALES --- */}
+            {/* --- INTÉGRATION DES AUTRES MODALES (Uniquement pour le réceptionniste) --- */}
             
-            <MultiPatientSchedulingModal
-                isOpen={isMultiScheduleOpen}
-                onClose={() => setIsMultiScheduleOpen(false)}
-                currentCenterId={currentCenterId}
-                doctors={allDoctors} // <-- CORRECTION ICI : La liste des médecins est bien passée à la modale
-                prefilledDate={selectedDate}
-                isDateLocked={false} 
-            />
+            {isReceptionist && (
+                <>
+                    <MultiPatientSchedulingModal
+                        isOpen={isMultiScheduleOpen}
+                        onClose={(hasChanged?: boolean) => {
+                            setIsMultiScheduleOpen(false);
+                            if (hasChanged) fetchAppointments();
+                        }}
+                        currentCenterId={currentCenterId || 0}
+                        doctors={allDoctors} 
+                        prefilledDate={selectedDate}
+                        isDateLocked={false} 
+                    />
 
-            <DoctorRescheduleModal
-                isOpen={!!apptToReschedule}
-                onClose={() => {
-                    setApptToReschedule(null);
-                    fetchAppointments();
-                }}
-                appointment={apptToReschedule}
-            />
+                    <DoctorRescheduleModal
+                        isOpen={!!apptToReschedule}
+                        onClose={(hasChanged?: boolean) => {
+                            setApptToReschedule(null);
+                            if (hasChanged) fetchAppointments();
+                        }}
+                        appointment={apptToReschedule}
+                    />
 
-            {/* La modale vitale pour l'accueil */}
-            {apptToAdmit && (
-                <AdmitToWaitingRoomModal
-                    isOpen={!!apptToAdmit}
-                    onClose={() => {
-                        setApptToAdmit(null);
-                        fetchAppointments();
-                    }}
-                    appointment={apptToAdmit}
-                    // IMPORTANT : On passe l'ID du département du médecin concerné pour charger ses salles d'attente
-                    currentDepartmentId={apptToAdmit.doctor?.department_id || 0}
-                />
+                    {apptToAdmit && (
+                        <AdmitToWaitingRoomModal
+                            isOpen={!!apptToAdmit}
+                            onClose={(hasChanged?: boolean) => {
+                                setApptToAdmit(null);
+                                if (hasChanged) fetchAppointments();
+                            }}
+                            appointment={apptToAdmit}
+                            currentDepartmentId={apptToAdmit.doctor?.department_id || 0}
+                        />
+                    )}
+                </>
             )}
             
         </div>

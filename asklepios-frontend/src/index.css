@@ -41,3 +41,77 @@ html {
 .custom-quill-container .ql-editor {
   @apply min-h-[200px] bg-white dark:bg-gray-900;
 }
+
+/* ==========================================================
+   CORRECTION REACT-SELECT (Mode Sombre)
+   Force le texte en noir et le fond en blanc pour la lisibilité
+   ========================================================== */
+
+/* 1. Forcer le fond blanc pour le contrôle et le menu déroulant */
+.react-select-container .react-select__control,
+.react-select-container .react-select__menu {
+  background-color: #ffffff !important;
+}
+
+/* 2. Forcer le texte en noir (slate-800) pour la valeur sélectionnée, le placeholder et les options */
+.react-select-container .react-select__single-value,
+.react-select-container .react-select__input-container,
+.react-select-container .react-select__placeholder,
+.react-select-container .react-select__option,
+.react-select-container .react-select__menu-notice {
+  color: #1e293b !important; 
+}
+
+/* 3. Ajuster le fond au survol des options pour que ça reste visible */
+.react-select-container .react-select__option--is-focused {
+  background-color: #f1f5f9 !important; /* Gris très clair (slate-100) */
+  color: #0f172a !important;
+}
+
+/* 4. Garder le texte en blanc UNIQUEMENT quand l'option est cliquée/sélectionnée 
+      (car le fond devient généralement bleu ou vert foncé) */
+.react-select-container .react-select__option--is-selected {
+  background-color: var(--color-brand-teal) !important; 
+  color: #ffffff !important; 
+}
+/* ==========================================================
+   FIX REACT-SELECT : FORCER LE THÈME CLAIR (Fond blanc, texte noir)
+   Même quand le mode sombre de Tailwind est activé.
+   ========================================================== */
+
+/* 1. Le conteneur principal (le champ de saisie) */
+div[class*="react-select__control"] {
+    background-color: #ffffff !important;
+}
+
+/* 2. Le texte sélectionné, le placeholder, et le texte en cours de frappe */
+div[class*="react-select__single-value"],
+div[class*="react-select__placeholder"],
+div[class*="react-select__input"] {
+    color: #1e293b !important; /* Texte noir (slate-800) */
+}
+
+/* 3. Le menu déroulant complet (s'assure que le fond reste blanc) */
+div[class*="react-select__menu"] {
+    background-color: #ffffff !important;
+    border: 1px solid #cbd5e1 !important; /* Petite bordure pour délimiter en dark mode */
+}
+
+/* 4. Les options de la liste */
+div[class*="react-select__option"] {
+    background-color: #ffffff !important;
+    color: #1e293b !important; /* Force le texte en noir */
+    cursor: pointer !important;
+}
+
+/* 5. Option survolée (Hover / Focus) */
+div[class*="react-select__option--is-focused"] {
+    background-color: #e2e8f0 !important; /* Fond gris clair (slate-200) */
+    color: #0f172a !important; /* Texte noir très foncé */
+}
+
+/* 6. Option actuellement sélectionnée */
+div[class*="react-select__option--is-selected"] {
+    background-color: var(--color-brand-teal, #00a896) !important; /* Vert Asclépios */
+    color: #ffffff !important; /* Texte blanc sur fond vert */
+}

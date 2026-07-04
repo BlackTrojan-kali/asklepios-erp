@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { 
     Users, Clock, ChevronRight, User, Activity, FileText, ClipboardCopy,
     Loader2, RefreshCw, CalendarDays, ArrowRightCircle, CheckCircle2,
-    Trash2, AlertCircle // <-- Nouveaux icônes ajoutés
+    Trash2, AlertCircle, Droplet, ShieldAlert, Edit // <-- Icônes ajoutées
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import useAppointmentStore from '../../functions/base_hospital/useAppointmentStore';
@@ -13,6 +13,7 @@ import { AdmitToWaitingRoomModal } from '../../components/modals/Base_hopital/Ap
 import { AdmitToConsultationModal } from '../../components/modals/Base_hopital/Appointment/AdmitToConsultationModal';
 import { ConsultationModal } from '../../components/modals/Base_hopital/Consultation/ConsultationModal';
 import { PastConsultationPreviewModal } from '../../components/modals/Base_hopital/Consultation/PastConsultationPreviewModal';
+import { MedicalBackgroundModal } from '../../components/modals/Base_hopital/Consultation/MedicalBackgroundModal'; // 👉 NOUVEAU
 
 const DoctorDashboard = () => {
     const { profile } = useAuth();
@@ -23,7 +24,6 @@ const DoctorDashboard = () => {
     // --- STORES ---
     const { appointments, loading: appointmentsLoading, getAppointments } = useAppointmentStore();
     
-    // Ajout de deleteConsultation et historyActionLoading
     const { 
         consultations, 
         loading: historyLoading, 
@@ -40,9 +40,9 @@ const DoctorDashboard = () => {
     const [isAdmitWaitingModalOpen, setIsAdmitWaitingModalOpen] = useState(false);
     const [isAdmitModalOpen, setIsAdmitModalOpen] = useState(false);
     const [isConsultModalOpen, setIsConsultModalOpen] = useState(false);
-    const [previewConsultationId, setPreviewConsultationId] = useState<number | null>(null);
+    const [isMedicalBgModalOpen, setIsMedicalBgModalOpen] = useState(false); // 👉 NOUVEAU
     
-    // NOUVEAU : État pour la confirmation de suppression
+    const [previewConsultationId, setPreviewConsultationId] = useState<number | null>(null);
     const [consultationToDelete, setConsultationToDelete] = useState<number | null>(null);
 
     const todayStr = new Date().toISOString().split('T')[0];
@@ -61,20 +61,27 @@ const DoctorDashboard = () => {
     }, [selectedAppointment?.patient?.id, historyPage, getConsultations]);
 
     useEffect(() => { refreshQueue(); }, [refreshQueue]);
-    
     useEffect(() => { setHistoryPage(1); }, [selectedAppointment?.patient?.id]);
-    
     useEffect(() => { refreshHistory(); }, [refreshHistory]);
+
+    // 👉 MÉTHODOLOGIE AUTO-REFRESH : Synchroniser le rdv sélectionné avec les nouvelles données
+    useEffect(() => {
+        if (selectedAppointment) {
+            const freshAppt = appointments.find(a => a.id === selectedAppointment.id);
+            if (freshAppt && JSON.stringify(freshAppt) !== JSON.stringify(selectedAppointment)) {
+                setSelectedAppointment(freshAppt);
+            }
+        }
+    }, [appointments]);
 
     // --- ACTION DE SUPPRESSION ---
     const handleDeleteConsultation = async () => {
         if (!consultationToDelete) return;
         
         const success = await deleteConsultation(consultationToDelete);
-        setConsultationToDelete(null); // On ferme la modale dans tous les cas
+        setConsultationToDelete(null); 
         
         if (success) {
-            // Si supprimée, on met à jour l'historique et la file (car le patient repasse "En Examen")
             refreshQueue();
             refreshHistory();
         }
@@ -124,7 +131,7 @@ const DoctorDashboard = () => {
                     onClick={() => setIsAdmitWaitingModalOpen(true)}
                     className="w-full sm:w-auto flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-xl font-bold transition-colors shadow-md text-sm"
                 >
-                    <ArrowRightCircle size={18} /> Admettre en Salle d'Attente
+                    <ArrowRightCircle size={18} /> Admettre en Salle
                 </button>
             );
         }
@@ -135,7 +142,7 @@ const DoctorDashboard = () => {
                     onClick={() => setIsAdmitModalOpen(true)}
                     className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#00a896] hover:bg-[#008f7f] text-white px-5 py-2.5 rounded-xl font-bold transition-colors shadow-md text-sm"
                 >
-                    Faire Entrer en Cabinet <ArrowRightCircle size={18} />
+                    Faire Entrer <ArrowRightCircle size={18} />
                 </button>
             );
         }
@@ -146,7 +153,7 @@ const DoctorDashboard = () => {
                     onClick={() => setIsConsultModalOpen(true)}
                     className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#003366] hover:bg-[#002244] text-white px-5 py-2.5 rounded-xl font-bold transition-colors shadow-md text-sm animate-pulse"
                 >
-                    Démarrer l'Examen Clinique <Activity size={18} />
+                    Démarrer l'Examen <Activity size={18} />
                 </button>
             );
         }
@@ -154,13 +161,15 @@ const DoctorDashboard = () => {
         if (visitStatus === "COMPLETE") {
             return (
                 <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-sm bg-emerald-50 dark:bg-emerald-900/30 px-4 py-2 rounded-xl border border-emerald-200 dark:border-emerald-800">
-                    <CheckCircle2 size={18} /> Consultation Terminée
+                    <CheckCircle2 size={18} /> Terminée
                 </div>
             );
         }
 
         return null;
     };
+
+    const medicalBg = selectedAppointment?.patient?.medical_background;
 
     return (
         <div className="space-y-6 min-h-[85vh] flex flex-col relative">
@@ -226,20 +235,64 @@ const DoctorDashboard = () => {
                 <div className="flex-1 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col overflow-hidden">
                     {selectedAppointment ? (
                         <div className="flex-1 flex flex-col overflow-hidden">
+                            {/* Header Patient */}
                             <div className="p-6 border-b border-gray-100 dark:border-gray-700 bg-[#faf8f1]/50 dark:bg-gray-900/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
                                 <div className="flex items-center gap-4">
                                     <div className="h-14 w-14 rounded-full bg-[#00a896]/10 text-[#00a896] flex items-center justify-center shrink-0"><User size={28} /></div>
                                     <div>
                                         <h2 className="text-xl font-bold text-slate-800 dark:text-white font-brand leading-tight">{selectedAppointment.patient?.first_name} {selectedAppointment.patient?.last_name}</h2>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-0.5">Code Patient : {selectedAppointment.patient?.patient_code || `ID_${selectedAppointment.patient?.id}`}</p>
+                                        <p className="text-xs text-gray-500 dark:text-gray-400 font-mono mt-0.5">Code Patient : {selectedAppointment.patient?.patient_code}</p>
                                     </div>
                                 </div>
                                 {renderActionButtons(selectedAppointment)}
                             </div>
 
                             <div className="flex-1 overflow-y-auto p-6 space-y-6 flex flex-col custom-scrollbar">
+                                
+                                {/* 👉 NOUVEAU : ENCART ANTÉCÉDENTS MÉDICAUX DIRECTEMENT DANS LE DASHBOARD */}
+                                <div className="bg-white dark:bg-gray-800 border border-red-100 dark:border-red-900/50 rounded-xl overflow-hidden shadow-sm">
+                                    <div className="flex items-center justify-between bg-red-50 dark:bg-red-900/20 px-4 py-3 border-b border-red-100 dark:border-red-900/50">
+                                        <h3 className="text-sm font-bold text-red-700 dark:text-red-400 flex items-center gap-2 font-brand">
+                                            <Activity size={16} /> Synthèse Médicale
+                                        </h3>
+                                        <button 
+                                            onClick={() => setIsMedicalBgModalOpen(true)}
+                                            className="text-xs font-bold text-red-600 dark:text-red-400 hover:underline flex items-center gap-1"
+                                        >
+                                            <Edit size={12} /> Mettre à jour
+                                        </button>
+                                    </div>
+                                    <div className="p-4 flex flex-wrap gap-4">
+                                        {medicalBg ? (
+                                            <>
+                                                <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700/50 px-3 py-1.5 rounded-lg border border-gray-100 dark:border-gray-600">
+                                                    <Droplet size={16} className="text-red-500" />
+                                                    <span className="text-xs text-gray-500">Groupe :</span>
+                                                    <span className="font-bold text-red-600 text-sm">{medicalBg.blood_type || 'Inconnu'}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-700/50 px-3 py-1.5 rounded-lg border border-gray-100 dark:border-gray-600">
+                                                    <ShieldAlert size={16} className="text-orange-500" />
+                                                    <span className="text-xs text-gray-500">Allergies :</span>
+                                                    <span className="font-bold text-slate-700 dark:text-gray-300 text-sm">
+                                                        {medicalBg.allergies?.length ? medicalBg.allergies.join(', ') : 'Aucune'}
+                                                    </span>
+                                                </div>
+                                                <div className="w-full text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                                    <strong>Maladies chroniques : </strong>
+                                                    {medicalBg.chronic_conditions?.length ? medicalBg.chronic_conditions.join(', ') : 'Néant'}
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <p className="text-sm text-gray-500 italic w-full">Aucun dossier médical initialisé pour ce patient.</p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* HISTORIQUE CLINIQUE (Les anciennes consultations) */}
                                 <div>
-                                    <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2 font-brand"><ClipboardCopy size={14} /> Historique clinique</h3>
+                                    <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2 font-brand">
+                                        <ClipboardCopy size={14} /> Historique des Consultations
+                                    </h3>
                                     
                                     {historyLoading ? (
                                         <div className="flex justify-center py-10"><Loader2 size={20} className="animate-spin text-[#003366] dark:text-blue-400" /></div>
@@ -251,7 +304,6 @@ const DoctorDashboard = () => {
                                                 <div 
                                                     key={consult.id}
                                                     onClick={() => setPreviewConsultationId(consult.id)}
-                                                    // "relative" et padding-right ajusté pour laisser la place au bouton poubelle
                                                     className="relative p-4 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-sm space-y-2 cursor-pointer hover:border-[#00a896] dark:hover:border-[#00a896] hover:shadow-md transition-all group pr-14"
                                                 >
                                                     <div className="flex justify-between items-center text-xs font-mono border-b border-gray-50 dark:border-gray-700 pb-1.5 text-gray-400 dark:text-gray-500">
@@ -260,10 +312,9 @@ const DoctorDashboard = () => {
                                                     </div>
                                                     <p className="text-sm font-bold text-slate-800 dark:text-gray-200">Motif : <span className="font-medium text-gray-600 dark:text-gray-400">{consult.chief_complaint}</span></p>
 
-                                                    {/* BOUTON SUPPRIMER AU SURVOL */}
                                                     <button
                                                         onClick={(e) => {
-                                                            e.stopPropagation(); // Évite d'ouvrir la modale de preview !
+                                                            e.stopPropagation(); 
                                                             setConsultationToDelete(consult.id);
                                                         }}
                                                         className="absolute top-1/2 -translate-y-1/2 right-4 p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
@@ -274,7 +325,7 @@ const DoctorDashboard = () => {
                                                 </div>
                                             ))}
                                             
-                                            {/* PAGINATION DE L'HISTORIQUE DU PATIENT SÉLECTIONNÉ */}
+                                            {/* PAGINATION DE L'HISTORIQUE */}
                                             {historyPagination && historyPagination.lastPage > 1 && (
                                                 <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
                                                     <button 
@@ -310,16 +361,33 @@ const DoctorDashboard = () => {
             {/* --- MODALES PROTOCOLAIRES --- */}
             {selectedAppointment && (
                 <>
+                    {/* 👉 Modale du Dossier Médical */}
+                    <MedicalBackgroundModal
+                        isOpen={isMedicalBgModalOpen}
+                        onClose={(hasChanged?: boolean) => { 
+                            setIsMedicalBgModalOpen(false); 
+                            if(hasChanged) refreshQueue(); 
+                        }}
+                        patientId={selectedAppointment.patient?.id}
+                        existingData={medicalBg}
+                    />
+
                     <AdmitToWaitingRoomModal 
                         isOpen={isAdmitWaitingModalOpen}
-                        onClose={() => { setIsAdmitWaitingModalOpen(false); refreshQueue(); }}
+                        onClose={(hasChanged?: boolean) => { 
+                            setIsAdmitWaitingModalOpen(false); 
+                            if(hasChanged) refreshQueue(); 
+                        }}
                         appointment={selectedAppointment}
                         currentDepartmentId={departmentId}
                     />
 
                     <AdmitToConsultationModal 
                         isOpen={isAdmitModalOpen}
-                        onClose={() => { setIsAdmitModalOpen(false); refreshQueue(); }}
+                        onClose={(hasChanged?: boolean) => { 
+                            setIsAdmitModalOpen(false); 
+                            if(hasChanged) refreshQueue(); 
+                        }}
                         appointment={selectedAppointment} 
                         currentDepartmentId={departmentId}
                     />
@@ -327,7 +395,13 @@ const DoctorDashboard = () => {
                     {selectedAppointment.visit && (
                         <ConsultationModal 
                             isOpen={isConsultModalOpen}
-                            onClose={() => { setIsConsultModalOpen(false); setSelectedAppointment(null); refreshQueue(); }}
+                            onClose={(hasChanged?: boolean) => { 
+                                setIsConsultModalOpen(false); 
+                                if(hasChanged) {
+                                    refreshQueue();
+                                    refreshHistory();
+                                }
+                            }}
                             visit={{ ...selectedAppointment.visit, patient: selectedAppointment.patient }} 
                         />
                     )}
