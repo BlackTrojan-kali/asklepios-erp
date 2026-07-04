@@ -248,7 +248,8 @@ export const MENU_CONFIG: MenuItemType[] = [
     requiredLicence: "base_hospital",
     subItems: [
       { title: "Dossiers Patients", path: "/reception/patients" },
-      { title: "Gestion des RDV", path: "/reception/rdv" }
+      { title: "Gestion des RDV", path: "/reception/rdv" },
+      {title:"Historique des RDv", path:"/historique_rdv"}
     ]
   },
   { 
@@ -258,7 +259,8 @@ export const MENU_CONFIG: MenuItemType[] = [
     requiredLicence:"base_hospital",
     subItems:[
       {title:"Gestion Factures",path:"/reception/facturation"},
-      {title:"Paiements",path:"/reception/payments"}
+      {title:"Paiements",path:"/reception/payments"},
+      
     ]
   },
 
@@ -279,6 +281,7 @@ export const MENU_CONFIG: MenuItemType[] = [
     requiredLicence: "base_hospital",
     subItems: [
       { title: "Agenda des RDV", path: "/doctor/appointments/calendar" },
+      { title: "Historique des RDV", path: "/historique_rdv" },
     ]
   },
   {

@@ -87,6 +87,7 @@ import DoctorWardManager from "./Pages/Doctor/DoctorWardManager"; // <-- NOUVEAU
 import DoctorAdmissions from "./Pages/Doctor/DoctorAdmissions";
 import Invoices from "./Pages/Reception/Invoices";
 import Payments from "./Pages/Reception/Payments";
+import Appointments from "./Pages/Hospital/Appointment_history";
 
 
 // ============================================================================
@@ -248,6 +249,17 @@ const routes = createBrowserRouter([
           { path: "reception/rdv", element: <ReceptionistAppointments /> },
           {path:"reception/facturation",element:<Invoices/>},
           {path:"reception/payments",element:<Payments/>},
+        ]
+      },
+      {
+        element:(
+          <CheckRole roles={["admin","reception","doctor"]}>
+            <Outlet/>
+          </CheckRole>
+        ),
+        children:[
+          
+          {path:"/historique_rdv",element:<Appointments/>}
         ]
       },
       

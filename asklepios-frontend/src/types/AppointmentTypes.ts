@@ -87,12 +87,9 @@ export interface PatientVisitDto {
 
 
 // ------------------------------------------
-// 3. PAYLOADS (Modèles d'écriture - POST/PUT)
+// 3. PAYLOADS ET FILTRES (Modèles d'écriture - POST/PUT/GET)
 // ------------------------------------------
 
-/**
- * Payload pour la création et modification générale d'un rendez-vous
- */
 export interface AppointmentPayload {
     patient_id: number | '';
     profile_doctor_id: number | '';
@@ -101,24 +98,24 @@ export interface AppointmentPayload {
     reason?: string | null;
 }
 
-/**
- * Payload spécifique pour reprogrammer (Changement de date/heure uniquement)
- */
 export interface ReschedulePayload {
     scheduled_datetime: string;
 }
 
-/**
- * Payload pour l'admission à l'accueil (Passage en IN_WAITING_ROOM)
- */
 export interface AdmitToWaitingRoomPayload {
     waiting_room_id: number | '';
     visit_type: VisitType | '';
 }
 
-/**
- * Payload pour l'admission par le docteur (Passage en IN_CONSULTATION)
- */
 export interface AdmitToConsultationPayload {
     consulting_room_id: number | '';
+}
+
+// 👉 NOUVEAU : Filtres pour l'historique PDF
+export interface AppointmentHistoryFilters {
+    start_date?: string;
+    end_date?: string;
+    status?: string;
+    center_id?: number | string;
+    patient_id?: number | string;
 }

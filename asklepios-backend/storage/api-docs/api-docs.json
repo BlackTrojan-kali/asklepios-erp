@@ -4886,6 +4886,44 @@
                 ]
             }
         },
+        "/api/shared/reports/invoices-pdf": {
+            "get": {
+                "tags": [
+                    "Facturation"
+                ],
+                "summary": "Générer un rapport PDF des factures avec dettes",
+                "operationId": "d4f18ebf7624d1af25ec24d235172564",
+                "responses": {
+                    "200": {
+                        "description": "élément généré avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/shared/reports/payments-pdf": {
+            "get": {
+                "tags": [
+                    "Facturation"
+                ],
+                "summary": "Générer un rapport PDF des encaissements (Point de caisse)",
+                "operationId": "b642f656c11c53307ed67648a4fccf11",
+                "responses": {
+                    "200": {
+                        "description": "élément généré avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/shared/invoices": {
             "get": {
                 "tags": [
@@ -6446,13 +6484,33 @@
                     "Gestion des Rendez-vous"
                 ],
                 "summary": "Lister les rendez-vous",
-                "description": "Récupère la liste paginée des rendez-vous. Filtrage automatique par centre selon le rôle de l'utilisateur connecté.",
+                "description": "Récupère la liste paginée des rendez-vous. Filtrage automatique par centre et/ou médecin selon le rôle de l'utilisateur connecté.",
                 "operationId": "getAppointments",
                 "parameters": [
                     {
                         "name": "date",
                         "in": "query",
                         "description": "Filtrer par date précise (ex: 2026-06-25)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "Date de début",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "Date de fin",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -6490,6 +6548,15 @@
                         "schema": {
                             "type": "integer"
                         }
+                    },
+                    {
+                        "name": "patient_id",
+                        "in": "query",
+                        "description": "Filtrer par patient spécifique",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
                     }
                 ],
                 "responses": {
@@ -6499,7 +6566,7 @@
                 },
                 "security": [
                     {
-                        "bearerAuth": []
+                        "sanctum": []
                     }
                 ]
             },
@@ -6554,12 +6621,86 @@
                         "description": "Rendez-vous programmé avec succès"
                     },
                     "422": {
-                        "description": "Erreur de validation (ex: date dans le passé)"
+                        "description": "Erreur de validation"
                     }
                 },
                 "security": [
                     {
-                        "bearerAuth": []
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/appointments/export-history-pdf": {
+            "get": {
+                "tags": [
+                    "Gestion des Rendez-vous"
+                ],
+                "summary": "Exporter l'historique des rendez-vous en PDF",
+                "description": "Génère un rapport PDF des rendez-vous selon les filtres (statut, patient, centre, période).",
+                "operationId": "exportAppointmentsHistoryPdf",
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "Date de début",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "Date de fin",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filtrer par statut",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "SCHEDULED",
+                                "CANCELLED",
+                                "ARRIVED"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "center_id",
+                        "in": "query",
+                        "description": "Filtrer par centre (Admin)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "patient_id",
+                        "in": "query",
+                        "description": "Filtrer par patient",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Fichier PDF généré pour le téléchargement"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
                     }
                 ]
             }
@@ -6570,7 +6711,7 @@
                     "Gestion des Rendez-vous"
                 ],
                 "summary": "Modifier les détails d'un rendez-vous",
-                "description": "Permet de modifier le motif, le médecin ou le centre d'un rendez-vous existant. Ne modifie pas la date/heure.",
+                "description": "Permet de modifier le motif, le médecin ou le centre d'un rendez-vous existant.",
                 "operationId": "updateAppointment",
                 "parameters": [
                     {
@@ -6614,7 +6755,7 @@
                 },
                 "security": [
                     {
-                        "bearerAuth": []
+                        "sanctum": []
                     }
                 ]
             }
@@ -6665,7 +6806,7 @@
                 },
                 "security": [
                     {
-                        "bearerAuth": []
+                        "sanctum": []
                     }
                 ]
             }
@@ -6699,7 +6840,7 @@
                 },
                 "security": [
                     {
-                        "bearerAuth": []
+                        "sanctum": []
                     }
                 ]
             }
@@ -6710,7 +6851,7 @@
                     "Gestion des Rendez-vous"
                 ],
                 "summary": "Admettre un patient en salle d'attente",
-                "description": "Marque le rendez-vous comme 'ARRIVED', assigne le patient à une salle d'attente, calcule son numéro de file et notifie le médecin.",
+                "description": "Marque le rendez-vous comme 'ARRIVED', assigne le patient à une salle d'attente, calcule son numéro de file.",
                 "operationId": "admitToWaitingRoom",
                 "parameters": [
                     {
@@ -6734,7 +6875,7 @@
                                 ],
                                 "properties": {
                                     "waiting_room_id": {
-                                        "description": "ID de la salle d'attente (facility_room)",
+                                        "description": "ID de la salle d'attente",
                                         "type": "integer",
                                         "example": 1
                                     },
@@ -6760,7 +6901,7 @@
                 },
                 "security": [
                     {
-                        "bearerAuth": []
+                        "sanctum": []
                     }
                 ]
             }
@@ -6794,7 +6935,7 @@
                                 ],
                                 "properties": {
                                     "consulting_room_id": {
-                                        "description": "ID du bureau de consultation (facility_room)",
+                                        "description": "ID du bureau de consultation",
                                         "type": "integer",
                                         "example": 2
                                     }
@@ -6811,7 +6952,7 @@
                 },
                 "security": [
                     {
-                        "bearerAuth": []
+                        "sanctum": []
                     }
                 ]
             }
@@ -6852,7 +6993,7 @@
                 },
                 "security": [
                     {
-                        "bearerAuth": []
+                        "sanctum": []
                     }
                 ]
             }
@@ -6883,7 +7024,7 @@
                 },
                 "security": [
                     {
-                        "bearerAuth": []
+                        "sanctum": []
                     }
                 ]
             }

@@ -1,18 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import useDoctorStore from '../../../../functions/base_hospital/useDoctorStore'; // Ajuste le chemin
+import useDepartmentStore from '../../../../functions/departments/useDepartmentStore'; // 👉 Import du store des départements
 import { DoctorForm } from './DoctorForm';
 import type { DoctorPayload } from '../../../../types/DoctorTypes';
-import type { CenterDto, DepartmentDto } from '../../../../types/types';
+import type { CenterDto } from '../../../../types/types';
 
 interface Props {
     isOpen: boolean;
     onClose: () => void;
     centers: CenterDto[];
-    departments: DepartmentDto[];
+    // 👉 departments n'est plus passé en props, on le gère en local !
 }
 
-export const CreateDoctorModal: React.FC<Props> = ({ isOpen, onClose, centers, departments }) => {
+export const CreateDoctorModal: React.FC<Props> = ({ isOpen, onClose, centers }) => {
     const { createDoctor, actionLoading } = useDoctorStore();
+    
+    // 👉 Utilisation du store des départements
+    const { departments, getDepartments } = useDepartmentStore();
     
     const [payload, setPayload] = useState<DoctorPayload>({
         first_name: '',
@@ -26,6 +30,13 @@ export const CreateDoctorModal: React.FC<Props> = ({ isOpen, onClose, centers, d
         department_id: null
     });
 
+    // 👉 NOUVEAU : Récupération dynamique des départements selon le centre sélectionné
+    useEffect(() => {
+        if (payload.center_id) {
+            getDepartments(Number(payload.center_id));
+        }
+    }, [payload.center_id, getDepartments]);
+
     const isFormValid = payload.first_name && payload.phone && payload.email && payload.password && payload.speciality && payload.center_id !== '';
 
     const handleSubmit = async () => {
@@ -33,7 +44,10 @@ export const CreateDoctorModal: React.FC<Props> = ({ isOpen, onClose, centers, d
         
         const success = await createDoctor(payload);
         if (success) {
-            setPayload({ first_name: '', last_name: '', phone: '', email: '', password: '', speciality: '', specifications: '', center_id: '', department_id: null });
+            setPayload({ 
+                first_name: '', last_name: '', phone: '', email: '', password: '', 
+                speciality: '', specifications: '', center_id: '', department_id: null 
+            });
             onClose();
         }
     };
@@ -47,9 +61,26 @@ export const CreateDoctorModal: React.FC<Props> = ({ isOpen, onClose, centers, d
                 
                 <DoctorForm 
                     payload={payload} 
-                    setPayload={setPayload} 
+                    setPayload={(newPayload) => {
+                        // 👉 SÉCURITÉ : Si on change de centre, on vide le département précédent
+                        if (typeof newPayload === 'function') {
+                            setPayload(prev => {
+                                const next = newPayload(prev);
+                                if (prev.center_id !== next.center_id) {
+                                    return { ...next, department_id: null };
+                                }
+                                return next;
+                            });
+                        } else {
+                            if (payload.center_id !== newPayload.center_id) {
+                                setPayload({ ...newPayload, department_id: null });
+                            } else {
+                                setPayload(newPayload);
+                            }
+                        }
+                    }} 
                     centers={centers}
-                    departments={departments}
+                    departments={departments} // 👉 On passe les départements récupérés dynamiquement
                     isUpdate={false}
                 />
                 

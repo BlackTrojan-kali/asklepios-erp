@@ -35,6 +35,7 @@ class User extends Authenticatable
         ];
     }
     
+    protected $with = ['profile_doctor.department'];
     public function role(){
         return $this->belongsTo(Role::class);
     }

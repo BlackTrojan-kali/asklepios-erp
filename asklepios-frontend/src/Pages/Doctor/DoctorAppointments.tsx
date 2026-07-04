@@ -51,14 +51,13 @@ const DoctorAppointments = () => {
     const currentDoctorId = profile?.profile_doctor?.id || 0; 
     const currentCenterId = profile?.profile_doctor?.center_id || 0;
     const currentDepartmentId = profile?.profile_doctor?.department_id || 0;
-
     // Simulation d'un tableau de docteurs pour la modale multiple
     const currentDoctorOption = currentDoctorId ? [{
         id: currentDoctorId,
-        user: profile?.user,
+        user: profile,
         department: profile?.profile_doctor?.department
     }] : [];
-
+console.log(currentDoctorOption);
     // --- HELPERS DE DATES ---
     const getLocalYYYYMMDD = (date: Date) => {
         const year = date.getFullYear();
