@@ -49,4 +49,10 @@ export const useExportBranchArticlesExcel = () => {
   });
 };
 
+export const useExportBranchArticlesPdf = () => {
+  return useMutation({
+    mutationFn: (branchId?: number | null) => branchArticleService.exportPdf(branchId),
+  });
+};
+
 

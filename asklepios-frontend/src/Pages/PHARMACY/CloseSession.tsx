@@ -9,14 +9,16 @@ import {
   User,
   Clock,
   AlertTriangle,
-  CheckCircle2,
   FileSpreadsheet,
   Calculator,
   Loader2,
   Eye,
-  EyeOff
+  EyeOff,
 } from "lucide-react";
-import { useMyActiveSession, useCloseCashRegisterSession } from "../../hooks/pharmacy/useCashRegisterSession";
+import {
+  useMyActiveSession,
+  useCloseCashRegisterSession,
+} from "../../hooks/pharmacy/useCashRegisterSession";
 
 export default function CloseSession() {
   const navigate = useNavigate();
@@ -29,6 +31,8 @@ export default function CloseSession() {
   const [countedCard, setCountedCard] = useState<number>(0);
   const [password, setPassword] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [closingNotes, setClosingNotes] = useState<string>("");
+  const [showClosingNotes, setShowClosingNotes] = useState<boolean>(false);
 
   // Données de la session dynamique
   const cashierName = myActiveSession?.user
@@ -39,7 +43,8 @@ export default function CloseSession() {
     ? new Date(myActiveSession.opened_at).toLocaleString()
     : "";
   const initialBalance = myActiveSession?.opening_balance || 0;
-  const currency = myActiveSession?.register?.branch?.country?.currency || "FCFA";
+  const currency =
+    myActiveSession?.register?.branch?.country?.currency || "FCFA";
 
   // Données théoriques en temps réel du backend
   const theoreticalSales = {
@@ -50,10 +55,14 @@ export default function CloseSession() {
 
   // --- CALCULS DU NET ATTENDU EN CAISSE ---
   const totals = useMemo(() => {
-    // Le cash attendu = Fond de caisse initial + Ventes cash du système
-    const expectedCash = initialBalance + theoreticalSales.cash;
-    const expectedMomo = theoreticalSales.mobileMoney;
-    const expectedCard = theoreticalSales.card;
+    const cashNet = myActiveSession?.treasury_totals?.cash?.net || 0;
+    const momoNet = myActiveSession?.treasury_totals?.mobile_money?.net || 0;
+    const cardNet = myActiveSession?.treasury_totals?.card?.net || 0;
+
+    // Le cash attendu = Fond de caisse initial + Ventes cash + Mouvements nets de trésorerie (apports - retraits - transferts)
+    const expectedCash = initialBalance + theoreticalSales.cash + cashNet;
+    const expectedMomo = theoreticalSales.mobileMoney + momoNet;
+    const expectedCard = theoreticalSales.card + cardNet;
 
     // Calcul des écarts (Compté - Attendu)
     const gapCash = countedCash - expectedCash;
@@ -70,7 +79,16 @@ export default function CloseSession() {
       gapCard,
       globalGap,
     };
-  }, [initialBalance, theoreticalSales.cash, theoreticalSales.mobileMoney, theoreticalSales.card, countedCash, countedMomo, countedCard]);
+  }, [
+    myActiveSession,
+    initialBalance,
+    theoreticalSales.cash,
+    theoreticalSales.mobileMoney,
+    theoreticalSales.card,
+    countedCash,
+    countedMomo,
+    countedCard,
+  ]);
 
   // --- ACTIONS : CLÔTURE DE LA CAISSE ---
   const handleCloseRegister = (e: React.FormEvent) => {
@@ -88,7 +106,8 @@ export default function CloseSession() {
       return;
     }
 
-    let textAlert = "Voulez-vous valider l'arrêt de caisse et verrouiller la session ?";
+    let textAlert =
+      "Voulez-vous valider l'arrêt de caisse et verrouiller la session ?";
     if (totals.globalGap !== 0) {
       textAlert = `Attention : Un écart global de caisse de ${totals.globalGap.toLocaleString()} ${currency} a été détecté. Confirmer la clôture ?`;
     }
@@ -110,6 +129,7 @@ export default function CloseSession() {
             payload: {
               closing_balance: countedCash,
               password,
+              closing_notes: closingNotes,
             },
           },
           {
@@ -120,12 +140,15 @@ export default function CloseSession() {
                 icon: "success",
                 confirmButtonColor: "#10b981",
               });
-              // Vider le mot de passe
+              // Vider le mot de passe et les notes
               setPassword("");
+              setClosingNotes("");
               navigate("/pharmacy/cash/session/open");
             },
             onError: (err: any) => {
-              const msg = err.response?.data?.message || "Le mot de passe de validation est incorrect.";
+              const msg =
+                err.response?.data?.message ||
+                "Le mot de passe de validation est incorrect.";
               Swal.fire({
                 title: "Échec de clôture",
                 text: msg,
@@ -133,7 +156,7 @@ export default function CloseSession() {
                 confirmButtonColor: "#ef4444",
               });
             },
-          }
+          },
         );
       }
     });
@@ -152,9 +175,12 @@ export default function CloseSession() {
       <div className="p-6 bg-slate-50 dark:bg-gray-900 min-h-screen flex flex-col justify-center items-center">
         <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md border border-slate-200 dark:border-gray-700 text-center max-w-sm">
           <AlertTriangle className="h-10 w-10 text-red-500 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-slate-800 dark:text-white">Aucune session active</h3>
+          <h3 className="text-base font-bold text-slate-800 dark:text-white">
+            Aucune session active
+          </h3>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-            Il semble que vous n'ayez aucune session de caisse en cours pour le moment.
+            Il semble que vous n'ayez aucune session de caisse en cours pour le
+            moment.
           </p>
           <button
             onClick={() => navigate("/pharmacy/cash/session/open")}
@@ -197,15 +223,20 @@ export default function CloseSession() {
           </div>
         </div>
 
-        <form onSubmit={handleCloseRegister} className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <form
+          onSubmit={handleCloseRegister}
+          className="grid grid-cols-1 lg:grid-cols-12 gap-6"
+        >
           {/* Saisie du pointage (Gauche) */}
           <div className="lg:col-span-7 bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-gray-700 space-y-6">
             <div>
               <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 dark:text-gray-400 mb-1 flex items-center gap-1.5">
-                <Calculator className="w-4 h-4 text-slate-500" /> Comptage Physique des Fonds
+                <Calculator className="w-4 h-4 text-slate-500" /> Comptage
+                Physique des Fonds
               </h2>
               <p className="text-xs text-slate-500 dark:text-gray-400">
-                Comptez l'argent physique présent dans votre tiroir et validez les montants ci-dessous.
+                Comptez l'argent physique présent dans votre tiroir et validez
+                les montants ci-dessous.
               </p>
             </div>
 
@@ -213,7 +244,8 @@ export default function CloseSession() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center p-4 bg-slate-50 dark:bg-gray-900/40 rounded-xl border border-slate-200/60 dark:border-gray-750">
               <div>
                 <label className="text-sm font-bold text-slate-800 dark:text-gray-300 flex items-center gap-1.5">
-                  <DollarSign className="w-4 h-4 text-emerald-600" /> Espèces Physiques (Cash)
+                  <DollarSign className="w-4 h-4 text-emerald-600" /> Espèces
+                  Physiques (Cash)
                 </label>
                 <p className="text-xs text-slate-400 dark:text-gray-500">
                   Total billets + pièces du tiroir
@@ -233,7 +265,8 @@ export default function CloseSession() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center p-4 bg-slate-50 dark:bg-gray-900/40 rounded-xl border border-slate-200/60 dark:border-gray-750">
               <div>
                 <label className="text-sm font-bold text-slate-800 dark:text-gray-300 flex items-center gap-1.5">
-                  <Smartphone className="w-4 h-4 text-blue-500" /> Reçus Mobile Money
+                  <Smartphone className="w-4 h-4 text-blue-500" /> Reçus Mobile
+                  Money
                 </label>
                 <p className="text-xs text-slate-400 dark:text-gray-500">
                   Cumul des transactions Orange / MTN
@@ -253,7 +286,8 @@ export default function CloseSession() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center p-4 bg-slate-50 dark:bg-gray-900/40 rounded-xl border border-slate-200/60 dark:border-gray-750">
               <div>
                 <label className="text-sm font-bold text-slate-800 dark:text-gray-300 flex items-center gap-1.5">
-                  <CreditCard className="w-4 h-4 text-purple-500" /> Tickets Carte Bancaire
+                  <CreditCard className="w-4 h-4 text-purple-500" /> Tickets
+                  Carte Bancaire
                 </label>
                 <p className="text-xs text-slate-400 dark:text-gray-500">
                   Cumul des reçus du terminal TPE
@@ -276,19 +310,25 @@ export default function CloseSession() {
             <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-gray-700 flex-1 flex flex-col justify-between">
               <div>
                 <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 dark:text-gray-400 mb-4 flex items-center gap-1.5">
-                  <FileSpreadsheet className="w-4 h-4 text-slate-500" /> Analyse des Écarts de Caisse
+                  <FileSpreadsheet className="w-4 h-4 text-slate-500" /> Analyse
+                  des Écarts de Caisse
                 </h2>
 
                 <div className="space-y-4">
                   {/* Ligne Espèces */}
                   <div className="flex justify-between items-center text-sm pb-2 border-b border-slate-100 dark:border-gray-700">
                     <div>
-                      <span className="font-semibold text-slate-700 dark:text-gray-300">Espèces (avec Fond)</span>
+                      <span className="font-semibold text-slate-700 dark:text-gray-300">
+                        Espèces (avec Fond)
+                      </span>
                       <p className="text-[11px] text-slate-400 dark:text-gray-500">
-                        Attendu : {totals.expectedCash.toLocaleString()} {currency}
+                        Attendu : {totals.expectedCash.toLocaleString()}{" "}
+                        {currency}
                       </p>
                     </div>
-                    <span className={`font-mono font-bold ${totals.gapCash === 0 ? "text-slate-600 dark:text-gray-400" : totals.gapCash > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                    <span
+                      className={`font-mono font-bold ${totals.gapCash === 0 ? "text-slate-600 dark:text-gray-400" : totals.gapCash > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}
+                    >
                       {totals.gapCash >= 0 ? "+" : ""}
                       {totals.gapCash.toLocaleString()} {currency}
                     </span>
@@ -297,12 +337,17 @@ export default function CloseSession() {
                   {/* Ligne MoMo */}
                   <div className="flex justify-between items-center text-sm pb-2 border-b border-slate-100 dark:border-gray-700">
                     <div>
-                      <span className="font-semibold text-slate-700 dark:text-gray-300">Mobile Money</span>
+                      <span className="font-semibold text-slate-700 dark:text-gray-300">
+                        Mobile Money
+                      </span>
                       <p className="text-[11px] text-slate-400 dark:text-gray-500">
-                        Attendu : {totals.expectedMomo.toLocaleString()} {currency}
+                        Attendu : {totals.expectedMomo.toLocaleString()}{" "}
+                        {currency}
                       </p>
                     </div>
-                    <span className={`font-mono font-bold ${totals.gapMomo === 0 ? "text-slate-600 dark:text-gray-400" : totals.gapMomo > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                    <span
+                      className={`font-mono font-bold ${totals.gapMomo === 0 ? "text-slate-600 dark:text-gray-400" : totals.gapMomo > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}
+                    >
                       {totals.gapMomo >= 0 ? "+" : ""}
                       {totals.gapMomo.toLocaleString()} {currency}
                     </span>
@@ -311,12 +356,17 @@ export default function CloseSession() {
                   {/* Ligne Carte */}
                   <div className="flex justify-between items-center text-sm pb-2 border-b border-slate-100 dark:border-gray-700">
                     <div>
-                      <span className="font-semibold text-slate-700 dark:text-gray-300">Carte Bancaire</span>
+                      <span className="font-semibold text-slate-700 dark:text-gray-300">
+                        Carte Bancaire
+                      </span>
                       <p className="text-[11px] text-slate-400 dark:text-gray-500">
-                        Attendu : {totals.expectedCard.toLocaleString()} {currency}
+                        Attendu : {totals.expectedCard.toLocaleString()}{" "}
+                        {currency}
                       </p>
                     </div>
-                    <span className={`font-mono font-bold ${totals.gapCard === 0 ? "text-slate-600 dark:text-gray-400" : totals.gapCard > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                    <span
+                      className={`font-mono font-bold ${totals.gapCard === 0 ? "text-slate-600 dark:text-gray-400" : totals.gapCard > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}
+                    >
                       {totals.gapCard >= 0 ? "+" : ""}
                       {totals.gapCard.toLocaleString()} {currency}
                     </span>
@@ -324,13 +374,15 @@ export default function CloseSession() {
                 </div>
 
                 {/* Bloc Écart Global */}
-                <div className={`mt-6 p-4 rounded-xl border flex justify-between items-center transition-colors
+                <div
+                  className={`mt-6 p-4 rounded-xl border flex justify-between items-center transition-colors
                   ${totals.globalGap === 0 ? "bg-slate-50 border-slate-200 dark:bg-gray-900/30 dark:border-gray-700" : totals.globalGap > 0 ? "bg-emerald-50 border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30" : "bg-rose-50 border-rose-100 dark:bg-rose-950/20 dark:border-rose-900/30"}`}
                 >
                   <span className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-gray-400">
                     Bilan / Écart Global
                   </span>
-                  <span className={`text-xl font-black font-mono
+                  <span
+                    className={`text-xl font-black font-mono
                     ${totals.globalGap === 0 ? "text-slate-700 dark:text-white" : totals.globalGap > 0 ? "text-emerald-700 dark:text-emerald-400" : "text-rose-700 dark:text-rose-400"}`}
                   >
                     {totals.globalGap >= 0 ? "+" : ""}
@@ -343,7 +395,11 @@ export default function CloseSession() {
                   <div className="bg-amber-50 border border-amber-200 dark:bg-amber-950/10 dark:border-amber-900/30 rounded-xl p-3 text-amber-850 dark:text-amber-300 text-xs flex items-start gap-2 mt-4 animate-pulse">
                     <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                     <div>
-                      <strong className="font-bold">Alerte Trou de Caisse :</strong> Le montant compté est inférieur aux ventes système. L'écart sera consigné sur le rapport d'audit.
+                      <strong className="font-bold">
+                        Alerte Trou de Caisse :
+                      </strong>{" "}
+                      Le montant compté est inférieur aux ventes système.
+                      L'écart sera consigné sur le rapport d'audit.
                     </div>
                   </div>
                 )}
@@ -351,6 +407,45 @@ export default function CloseSession() {
 
               {/* Confirmation par mot de passe & Action Clôture */}
               <div className="mt-6 space-y-4">
+                {/* Notes / Observations */}
+                <div>
+                  {!showClosingNotes ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowClosingNotes(true)}
+                      className="text-xs text-teal-600 dark:text-teal-400 hover:text-teal-750 dark:hover:text-teal-300 font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      + Ajouter une note ou observation de fin de garde
+                      (optionnel)
+                    </button>
+                  ) : (
+                    <div className="space-y-1.5 animate-in slide-in-from-top-2 duration-205">
+                      <div className="flex justify-between items-center">
+                        <label className="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wide">
+                          Note ou Observation de fin de garde (Optionnel)
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowClosingNotes(false);
+                            setClosingNotes("");
+                          }}
+                          className="text-xs text-red-500 hover:text-red-700 transition-colors font-medium cursor-pointer"
+                        >
+                          Masquer
+                        </button>
+                      </div>
+                      <textarea
+                        placeholder="Ex: Écart dû à un remboursement client non saisi..."
+                        rows={2}
+                        value={closingNotes}
+                        onChange={(e) => setClosingNotes(e.target.value)}
+                        className="w-full border border-slate-300 dark:border-gray-700 rounded-lg p-3 text-sm focus:outline-hidden focus:ring-2 focus:ring-slate-900 bg-white dark:bg-gray-900 text-slate-850 dark:text-white transition-colors resize-none"
+                      />
+                    </div>
+                  )}
+                </div>
+
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wide">
                     Confirmer avec votre mot de passe
@@ -369,7 +464,11 @@ export default function CloseSession() {
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
                     >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -381,11 +480,13 @@ export default function CloseSession() {
                 >
                   {closeSessionMutation.isPending ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin" /> Clôture en cours...
+                      <Loader2 className="h-4 w-4 animate-spin" /> Clôture en
+                      cours...
                     </>
                   ) : (
                     <>
-                      <Lock className="w-4 h-4" /> CLÔTURER & IMPRIMER LE RAPPORT (Z)
+                      <Lock className="w-4 h-4" /> CLÔTURER & IMPRIMER LE
+                      RAPPORT (Z)
                     </>
                   )}
                 </button>

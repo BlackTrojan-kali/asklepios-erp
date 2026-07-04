@@ -15,8 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
         //
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
-
             'licence' => \App\Http\Middleware\CheckLicence::class,
+            'active.session' => \App\Http\Middleware\RequireActiveCashSession::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

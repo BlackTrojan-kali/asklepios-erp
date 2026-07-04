@@ -9,6 +9,8 @@ export interface CashRegisterSessionDto {
   closed_at: string | null;
   opening_balance: number;
   closing_balance: number | null;
+  opening_notes?: string | null;
+  closing_notes?: string | null;
   sales_totals?: {
     cash: number;
     mobile_money: number;

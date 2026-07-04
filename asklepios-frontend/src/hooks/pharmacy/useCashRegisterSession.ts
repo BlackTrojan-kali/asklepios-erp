@@ -3,7 +3,15 @@ import {
   cashRegisterSessionService,
   type OpenSessionPayload,
   type CloseSessionPayload,
+  type AdminSessionsFilterParams,
 } from "../../services/pharmacy/cashRegisterSessionService";
+
+export const useAdminSessionsHistory = (params?: AdminSessionsFilterParams) => {
+  return useQuery({
+    queryKey: ["adminSessionsHistory", params],
+    queryFn: () => cashRegisterSessionService.getAdminSessionsHistory(params),
+  });
+};
 
 export const useOpenCashRegisterSession = () => {
   const queryClient = useQueryClient();
@@ -33,5 +41,12 @@ export const useMyActiveSession = () => {
   return useQuery({
     queryKey: ["myActiveSession"],
     queryFn: cashRegisterSessionService.getMyActiveSession,
+  });
+};
+
+export const useMySessionsHistory = () => {
+  return useQuery({
+    queryKey: ["mySessionsHistory"],
+    queryFn: cashRegisterSessionService.getMySessionsHistory,
   });
 };

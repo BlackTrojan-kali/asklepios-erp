@@ -403,4 +403,106 @@ class PharmacyBranchArticleController extends Controller
             $filename
         );
     }
+
+    #[OA\Get(
+        path: "/api/admin/branch/articles/export/pdf",
+        operationId: "exportBranchArticlesPdf",
+        summary: "Exporter la tarification des articles en PDF",
+        security: [["bearerAuth" => []]],
+        tags: ["Tarification Branches (Admin)"]
+    )]
+    #[OA\Parameter(name: "branch_id", in: "query", required: false, description: "ID de la succursale (optionnel, si non fourni exporte toutes les succursales)", schema: new OA\Schema(type: "integer"))]
+    #[OA\Response(response: 200, description: "Fichier PDF généré et téléchargé")]
+    public function exportPdf(Request $request)
+    {
+        $hospitalId = $this->getHospitalId();
+        $branchId = $request->query('branch_id');
+
+        $exportData = collect();
+        $hasMultipleBranches = true;
+        $branch = null;
+
+        if ($branchId) {
+            $hasMultipleBranches = false;
+            $branch = \App\Models\Pharmacy\PharmacyBranch::where('hospital_id', $hospitalId)
+                ->with('country')
+                ->findOrFail($branchId);
+
+            $currency = $branch->country->currency ?? 'FCFA';
+
+            $articles = Article::where('hospital_id', $hospitalId)
+                ->with([
+                    'branchArticles' => function ($q) use ($branchId) {
+                        $q->where('pharmacy_branch_id', $branchId);
+                    }
+                ])
+                ->get();
+
+            foreach ($articles as $article) {
+                $branchConfig = $article->branchArticles->first();
+                $isActive = $branchConfig ? (bool) $branchConfig->is_active : true;
+
+                if (!$isActive) {
+                    continue;
+                }
+
+                $sellingPrice = ($branchConfig && $branchConfig->special_selling_price !== null)
+                    ? $branchConfig->special_selling_price
+                    : $article->default_selling_price;
+
+                $exportData->push([
+                    'Article' => $article->name,
+                    'Prix de Vente' => number_format($sellingPrice, 0, ',', ' ') . ' ' . $currency
+                ]);
+            }
+
+            $filename = "tarifs_" . \Illuminate\Support\Str::slug($branch->name, '_') . "_" . date('Ymd_His') . ".pdf";
+        } else {
+            // Export all branches
+            $branches = \App\Models\Pharmacy\PharmacyBranch::where('hospital_id', $hospitalId)
+                ->with('country')
+                ->get();
+
+            foreach ($branches as $branchVal) {
+                $currency = $branchVal->country->currency ?? 'FCFA';
+                $branchIdVal = $branchVal->id;
+
+                $articles = Article::where('hospital_id', $hospitalId)
+                    ->with([
+                        'branchArticles' => function ($q) use ($branchIdVal) {
+                            $q->where('pharmacy_branch_id', $branchIdVal);
+                        }
+                    ])
+                    ->get();
+
+                foreach ($articles as $article) {
+                    $branchConfig = $article->branchArticles->first();
+                    $isActive = $branchConfig ? (bool) $branchConfig->is_active : true;
+
+                    if (!$isActive) {
+                        continue;
+                    }
+
+                    $sellingPrice = ($branchConfig && $branchConfig->special_selling_price !== null)
+                        ? $branchConfig->special_selling_price
+                        : $article->default_selling_price;
+
+                    $exportData->push([
+                        'Pharmacie' => $branchVal->name,
+                        'Article' => $article->name,
+                        'Prix de Vente' => number_format($sellingPrice, 0, ',', ' ') . ' ' . $currency
+                    ]);
+                }
+            }
+
+            $filename = "tarifs_toutes_succursales_" . date('Ymd_His') . ".pdf";
+        }
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView(
+            'exports.pdf.article_pricing',
+            compact('exportData', 'hasMultipleBranches', 'branch')
+        );
+
+        return $pdf->download($filename);
+    }
 }

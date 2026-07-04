@@ -2,12 +2,28 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   posSaleService,
   type PosSalePayload,
+  type SalesFilterParams,
+  type AdminSalesFilterParams,
 } from "../../services/pharmacy/posSaleService";
 
-export const usePosSales = () => {
+export const useAdminPosSales = (params?: AdminSalesFilterParams) => {
   return useQuery({
-    queryKey: ["posSales"],
-    queryFn: posSaleService.getSales,
+    queryKey: ["adminPosSales", params],
+    queryFn: () => posSaleService.getAdminSales(params),
+  });
+};
+
+export const useAdminSellers = () => {
+  return useQuery({
+    queryKey: ["adminSellers"],
+    queryFn: () => posSaleService.getAdminSellers(),
+  });
+};
+
+export const usePosSales = (params?: SalesFilterParams) => {
+  return useQuery({
+    queryKey: ["posSales", params],
+    queryFn: () => posSaleService.getSales(params),
   });
 };
 

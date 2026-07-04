@@ -19,6 +19,8 @@ return new class extends Migration
             $table->dateTime("closed_at")->nullable();
             $table->decimal("opening_balance", 15, 2);
             $table->decimal("closing_balance", 15, 2)->nullable();
+            $table->text("opening_notes")->nullable();
+            $table->text("closing_notes")->nullable();
             $table->timestamps();
         });
     }

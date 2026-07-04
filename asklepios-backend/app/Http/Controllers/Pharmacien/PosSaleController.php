@@ -30,17 +30,43 @@ class PosSaleController extends Controller
     )]
     #[OA\Response(response: 200, description: "Liste des ventes récupérée avec succès")]
     #[OA\Response(response: 403, description: "Accès refusé")]
-    public function index()
+    public function index(Request $request)
     {
         $profile = Auth::user()->profile_pharm;
         if (!$profile || !$profile->branch_id) {
             return response()->json(['message' => 'Accès refusé. Vous n\'êtes affecté à aucune succursale.'], 403);
         }
 
-        $sales = PosSale::where('pharmacy_branch_id', $profile->branch_id)
-            ->with(['session.user', 'items.article'])
-            ->latest()
-            ->get();
+        $query = PosSale::where('pharmacy_branch_id', $profile->branch_id)
+            ->with(['session.user', 'items.article']);
+
+        // Filtrer par session active de l'utilisateur connecté par défaut si scope est 'my-active-session'
+        $scope = $request->query('scope', 'my-active-session');
+        
+        if ($scope === 'my-active-session') {
+            // Trouver la session active de l'utilisateur connecté
+            $activeSession = CashRegisterSession::where('user_id', Auth::id())
+                ->whereNull('closed_at')
+                ->first();
+            
+            if ($activeSession) {
+                $query->where('cash_register_session_id', $activeSession->id);
+            } else {
+                // Si aucune session active n'est ouverte pour ce vendeur, on ne retourne rien
+                return response()->json([], 200);
+            }
+        } elseif ($scope === 'me') {
+            $query->whereHas('session', function ($q) {
+                $q->where('user_id', Auth::id());
+            });
+        }
+
+        // Filtre par moyen de paiement
+        if ($request->filled('payment_method')) {
+            $query->where('payment_method', $request->query('payment_method'));
+        }
+
+        $sales = $query->latest()->get();
 
         return response()->json($sales, 200);
     }
@@ -76,42 +102,6 @@ class PosSaleController extends Controller
     /**
      * Créer une vente et enregistrer la sortie de stock (FEFO)
      */
-    #[OA\Post(
-        path: "/api/pharmacy/pos-sales",
-        operationId: "storePosSale",
-        summary: "Créer une vente et enregistrer la sortie de stock (FEFO)",
-        security: [["bearerAuth" => []]],
-        tags: ["Ventes POS (Pharmacy)"]
-    )]
-    #[OA\RequestBody(
-        required: true,
-        content: new OA\JsonContent(
-            required: ["payment_method", "items"],
-            properties: [
-                new OA\Property(property: "customer_name", type: "string", example: "Jean Dupont"),
-                new OA\Property(property: "has_prescription", type: "boolean", example: true),
-                new OA\Property(property: "prescription_ref", type: "string", example: "ORD-9988"),
-                new OA\Property(property: "payment_method", type: "string", enum: ["CASH", "MOBILE_MONEY", "CARD"], example: "CASH"),
-                new OA\Property(property: "amount_received", type: "number", format: "float", example: 5000.0),
-                new OA\Property(
-                    property: "items",
-                    type: "array",
-                    items: new OA\Items(
-                        properties: [
-                            new OA\Property(property: "article_id", type: "integer", example: 1),
-                            new OA\Property(property: "batch_id", type: "integer", nullable: true, example: 5),
-                            new OA\Property(property: "qty", type: "number", format: "float", example: 2.0),
-                            new OA\Property(property: "unit_price", type: "number", format: "float", example: 1500.0),
-                            new OA\Property(property: "discount", type: "number", format: "float", example: 0.0)
-                        ]
-                    )
-                )
-            ]
-        )
-    )]
-    #[OA\Response(response: 201, description: "Vente enregistrée avec succès")]
-    #[OA\Response(response: 400, description: "Données incorrectes ou stock insuffisant")]
-    #[OA\Response(response: 403, description: "Accès refusé")]
     public function store(Request $request)
     {
         $profile = Auth::user()->profile_pharm;
@@ -247,25 +237,16 @@ class PosSaleController extends Controller
     /**
      * Générer le PDF de la facture de vente
      */
-    #[OA\Get(
-        path: "/api/pharmacy/pos-sales/{id}/pdf",
-        operationId: "exportPosSalePdf",
-        summary: "Générer le PDF de la facture de vente",
-        security: [["bearerAuth" => []]],
-        tags: ["Ventes POS (Pharmacy)"]
-    )]
-    #[OA\Parameter(name: "id", in: "path", required: true, description: "ID de la vente", schema: new OA\Schema(type: "integer"))]
-    #[OA\Response(response: 200, description: "Flux binaire du PDF de la facture")]
-    #[OA\Response(response: 403, description: "Accès refusé")]
-    #[OA\Response(response: 404, description: "Vente non trouvée")]
     public function exportPdf($id)
     {
-        $profile = Auth::user()->profile_pharm;
-        if (!$profile || !$profile->branch_id) {
-            abort(403, "Accès refusé.");
-        }
+        $user = Auth::user();
+        $sale = null;
 
-        $sale = PosSale::where('pharmacy_branch_id', $profile->branch_id)
+        if ($user->profile_admin) {
+            $hospitalId = $user->profile_admin->hospital_id;
+            $sale = PosSale::whereHas('branch', function ($q) use ($hospitalId) {
+                $q->where('hospital_id', $hospitalId);
+            })
             ->with([
                 'session.user',
                 'session.register',
@@ -275,6 +256,24 @@ class PosSaleController extends Controller
                 'items.batch'
             ])
             ->findOrFail($id);
+        } elseif ($user->profile_pharm) {
+            $branchId = $user->profile_pharm->branch_id;
+            if (!$branchId) {
+                abort(403, "Accès refusé.");
+            }
+            $sale = PosSale::where('pharmacy_branch_id', $branchId)
+            ->with([
+                'session.user',
+                'session.register',
+                'branch.hospital',
+                'branch.country',
+                'items.article',
+                'items.batch'
+            ])
+            ->findOrFail($id);
+        } else {
+            abort(403, "Accès refusé.");
+        }
 
         $pdf = Pdf::loadView('exports.pdf.sale_invoice', compact('sale'));
         

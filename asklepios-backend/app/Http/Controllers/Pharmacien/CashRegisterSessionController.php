@@ -83,6 +83,7 @@ class CashRegisterSessionController extends Controller
 
         $validated = $request->validate([
             'opening_balance' => 'required|numeric|min:0',
+            'opening_notes' => 'nullable|string',
         ]);
 
         $session = CashRegisterSession::create([
@@ -90,6 +91,7 @@ class CashRegisterSessionController extends Controller
             'user_id' => $userId,
             'opened_at' => now(),
             'opening_balance' => $validated['opening_balance'],
+            'opening_notes' => $validated['opening_notes'] ?? null,
         ]);
 
         return response()->json($session->load('user'), 201);
@@ -144,6 +146,7 @@ class CashRegisterSessionController extends Controller
         $validated = $request->validate([
             'closing_balance' => 'required|numeric|min:0',
             'password' => 'required|string',
+            'closing_notes' => 'nullable|string',
         ]);
 
         // Vérifier le mot de passe de l'utilisateur
@@ -154,6 +157,7 @@ class CashRegisterSessionController extends Controller
         $session->update([
             'closed_at' => now(),
             'closing_balance' => $validated['closing_balance'],
+            'closing_notes' => $validated['closing_notes'] ?? null,
         ]);
 
         return response()->json($session->load('user'), 200);
@@ -199,5 +203,49 @@ class CashRegisterSessionController extends Controller
         }
 
         return response()->json($session, 200);
+    }
+
+    /**
+     * Récupérer l'historique des sessions de caisse de l'utilisateur connecté sur une semaine
+     */
+    #[OA\Get(
+        path: "/api/pharmacy/cash-registers/sessions/history",
+        operationId: "getMyCashRegisterSessionsHistory",
+        summary: "Historique des sessions de caisse de l'utilisateur connecté (7 derniers jours)",
+        security: [["bearerAuth" => []]],
+        tags: ["Sessions Caisses (Pharmacy)"]
+    )]
+    #[OA\Response(response: 200, description: "Liste de l'historique des sessions de caisse récupérée avec succès")]
+    #[OA\Response(response: 403, description: "Accès refusé")]
+    public function sessionHistory()
+    {
+        if (Auth::user()->role->name !== 'pharmacy') {
+            return response()->json(['message' => 'Accès refusé.'], 403);
+        }
+
+        $userId = Auth::id();
+        $sessions = CashRegisterSession::where('user_id', $userId)
+            ->where('opened_at', '>=', now()->subDays(7))
+            ->with(['register.branch', 'user'])
+            ->latest()
+            ->get();
+
+        foreach ($sessions as $session) {
+            $salesQuery = \App\Models\Pharmacy\PosSale::where('cash_register_session_id', $session->id);
+            
+            $cash = (float)$salesQuery->clone()->where('payment_method', 'CASH')->sum('total_amount');
+            $mobileMoney = (float)$salesQuery->clone()->where('payment_method', 'MOBILE_MONEY')->sum('total_amount');
+            $card = (float)$salesQuery->clone()->where('payment_method', 'CARD')->sum('total_amount');
+
+            $session->sales_totals = [
+                'cash' => $cash,
+                'mobile_money' => $mobileMoney,
+                'card' => $card,
+            ];
+            
+            $session->current_balance = (float)$session->opening_balance + $cash;
+        }
+
+        return response()->json($sessions, 200);
     }
 }

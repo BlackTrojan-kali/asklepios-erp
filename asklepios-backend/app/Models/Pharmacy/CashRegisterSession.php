@@ -16,7 +16,7 @@ class CashRegisterSession extends Model
         'closing_balance' => 'float',
     ];
 
-    protected $appends = ['sales_totals'];
+    protected $appends = ['sales_totals', 'treasury_totals'];
 
     public function getSalesTotalsAttribute()
     {
@@ -24,6 +24,44 @@ class CashRegisterSession extends Model
             'cash' => (float) $this->sales()->where('payment_method', 'CASH')->sum('total_amount'),
             'mobile_money' => (float) $this->sales()->where('payment_method', 'MOBILE_MONEY')->sum('total_amount'),
             'card' => (float) $this->sales()->where('payment_method', 'CARD')->sum('total_amount'),
+        ];
+    }
+
+    public function getTreasuryTotalsAttribute()
+    {
+        $txs = $this->paymentTransactions()->where('status', '!=', 'cancelled');
+        
+        $cashIn = (float) (clone $txs)->where('type', 'cash_in')->where('payment_method', 'CASH')->sum('amount');
+        $cashOut = (float) (clone $txs)->where('type', 'cash_out')->where('payment_method', 'CASH')->sum('amount');
+        $cashTransfer = (float) (clone $txs)->where('type', 'transfer')->where('payment_method', 'CASH')->sum('amount');
+
+        $momoIn = (float) (clone $txs)->where('type', 'cash_in')->where('payment_method', 'MOBILE_MONEY')->sum('amount');
+        $momoOut = (float) (clone $txs)->where('type', 'cash_out')->where('payment_method', 'MOBILE_MONEY')->sum('amount');
+        $momoTransfer = (float) (clone $txs)->where('type', 'transfer')->where('payment_method', 'MOBILE_MONEY')->sum('amount');
+
+        $cardIn = (float) (clone $txs)->where('type', 'cash_in')->where('payment_method', 'CARD')->sum('amount');
+        $cardOut = (float) (clone $txs)->where('type', 'cash_out')->where('payment_method', 'CARD')->sum('amount');
+        $cardTransfer = (float) (clone $txs)->where('type', 'transfer')->where('payment_method', 'CARD')->sum('amount');
+
+        return [
+            'cash' => [
+                'in' => $cashIn,
+                'out' => $cashOut,
+                'transfer' => $cashTransfer,
+                'net' => $cashIn - $cashOut - $cashTransfer
+            ],
+            'mobile_money' => [
+                'in' => $momoIn,
+                'out' => $momoOut,
+                'transfer' => $momoTransfer,
+                'net' => $momoIn - $momoOut - $momoTransfer
+            ],
+            'card' => [
+                'in' => $cardIn,
+                'out' => $cardOut,
+                'transfer' => $cardTransfer,
+                'net' => $cardIn - $cardOut - $cardTransfer
+            ]
         ];
     }
 
@@ -40,5 +78,10 @@ class CashRegisterSession extends Model
     public function sales()
     {
         return $this->hasMany(PosSale::class, 'cash_register_session_id');
+    }
+
+    public function paymentTransactions()
+    {
+        return $this->hasMany(PaymentTransaction::class, 'cash_register_session_id');
     }
 }

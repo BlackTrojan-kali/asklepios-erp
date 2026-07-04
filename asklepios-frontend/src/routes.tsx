@@ -55,6 +55,13 @@ import StockTransfersAdmin from "./Pages/Admin/Pharmacies/Logistics/StockTransfe
 import ArticlePricing from "./Pages/Admin/Pharmacies/Sale/ArticlePricing";
 import CashRegister from "./Pages/Admin/Pharmacies/Sale/CashRegister";
 
+// Historique et Trésorerie (Admin)
+import PosSalesHistory from "./Pages/Admin/Pharmacies/Sale/PosSalesHistory";
+import PosSessionsHistory from "./Pages/Admin/Pharmacies/Sale/PosSessionsHistory";
+import AdminAccounts from "./Pages/Admin/Pharmacies/Sale/AdminAccounts";
+import AdminPendingDeposits from "./Pages/Admin/Pharmacies/Sale/AdminPendingDeposits";
+import AdminTreasuryTransactions from "./Pages/Admin/Pharmacies/Sale/AdminTreasuryTransactions";
+
 // ============================================================================
 // IMPORTS : PHARMACIE (Magasinier & Caissier)
 // ============================================================================
@@ -65,12 +72,14 @@ import PurchaseReturns from "./Pages/PHARMACY/PurchaseReturns";
 import StockMovements from "./Pages/Admin/Pharmacies/Stock/StockMovements";
 import Inventories from "./Pages/Admin/Pharmacies/Stock/Inventories";
 import StockTransfers from "./Pages/PHARMACY/StockTransfers";
+
 import CashHome from "./Pages/PHARMACY/CashHome";
-import SalesHistory from "./Pages/PHARMACY/SaleHistory";
+import SalesHistory from "./Pages/PHARMACY/SalesHistory";
 import DepositsHistory from "./Pages/PHARMACY/DepositsHistory";
 import MovementsHistory from "./Pages/PHARMACY/MovementsHistory";
 import CloseSession from "./Pages/PHARMACY/CloseSession";
 import OpenSession from "./Pages/PHARMACY/OpenSession";
+import CashSessionHistory from "./Pages/PHARMACY/CashSessionHistory";
 
 // ============================================================================
 // IMPORTS : RÉCEPTIONNISTE
@@ -79,16 +88,15 @@ import Patients from "./Pages/Admin/Base_hospital/receptionist/Patients";
 import ReceptionistAppointments from "./Pages/Reception/ReceptionistAppointments";
 
 // ============================================================================
-// IMPORTS : MÉDECIN
+// IMPORTS : MÉDECIN & AUTRES
 // ============================================================================
 import DoctorDashboard from "./Pages/Doctor/DoctorDashboard";
 import DoctorAppointments from "./Pages/Doctor/DoctorAppointments";
-import DoctorWardManager from "./Pages/Doctor/DoctorWardManager"; // <-- NOUVEAU
+import DoctorWardManager from "./Pages/Doctor/DoctorWardManager";
 import DoctorAdmissions from "./Pages/Doctor/DoctorAdmissions";
 import Invoices from "./Pages/Reception/Invoices";
 import Payments from "./Pages/Reception/Payments";
 import Appointments from "./Pages/Hospital/Appointment_history";
-
 
 // ============================================================================
 // CONFIGURATION DES ROUTES
@@ -168,11 +176,18 @@ const routes = createBrowserRouter([
           { path: "pharmacy/batch", element: <Batches /> },
           { path: "pharmacy/providers", element: <Providers /> },
           { path: "pharmacy/stocks", element: <Stocks /> },
-          { path: "pharmacy/inventory", element: <AdminInventories /> }, // Attention au doublon de nommage possible avec le magasinier
+          { path: "pharmacy/inventory", element: <AdminInventories /> },
           { path: "pharmacy/movements", element: <AdminStockMovements /> },
           { path: "pharmacy/orders", element: <AdminPurchaseOrders /> },
           { path: "pharmacy/returns", element: <AdminPurchaseReturns /> },
-          { path: "pharmacy/cash-register", element: <CashRegister /> }, // <-- CORRECTION: Retrait du "/" initial
+          { path: "pharmacy/cash-register", element: <CashRegister /> },
+          
+          // Nouveautés de Brice : Trésorerie et Historiques
+          { path: "pharmacy/pos-sales-history", element: <PosSalesHistory /> },
+          { path: "pharmacy/pos-sessions-history", element: <PosSessionsHistory /> },
+          { path: "pharmacy/accounts", element: <AdminAccounts /> },
+          { path: "pharmacy/versements", element: <AdminPendingDeposits /> },
+          { path: "pharmacy/treasury-transactions", element: <AdminTreasuryTransactions /> },
 
           // -- Logistique --
           { path: "vehicules", element: <Vehicules /> },
@@ -193,8 +208,7 @@ const routes = createBrowserRouter([
         children: [
           { path: "pharmacy/orders", element: <PurchaseOrders /> },
           { path: "pharmacy/returns", element: <PurchaseReturns /> },
-          
-          { path: "admin/inventory", element: <AdminInventories /> }, // Attention au doublon de nommage possible avec le magasinier
+          { path: "admin/inventory", element: <AdminInventories /> },
           { path: "admin/movements", element: <AdminStockMovements /> },
         ],
       },
@@ -230,6 +244,7 @@ const routes = createBrowserRouter([
               { path: "pharmacy/cash/movements-history", element: <MovementsHistory /> },
               { path: "pharmacy/cash/session/open", element: <OpenSession /> },
               { path: "pharmacy/cash/session/close", element: <CloseSession /> },
+              { path: "pharmacy/cash/session/history", element: <CashSessionHistory /> },
             ],
           },
         ],
@@ -247,19 +262,18 @@ const routes = createBrowserRouter([
         children: [
           { path: "reception/patients", element: <Patients /> },
           { path: "reception/rdv", element: <ReceptionistAppointments /> },
-          {path:"reception/facturation",element:<Invoices/>},
-          {path:"reception/payments",element:<Payments/>},
+          { path: "reception/facturation", element: <Invoices /> },
+          { path: "reception/payments", element: <Payments /> },
         ]
       },
       {
-        element:(
-          <CheckRole roles={["admin","reception","doctor"]}>
-            <Outlet/>
+        element: (
+          <CheckRole roles={["admin", "reception", "doctor"]}>
+            <Outlet />
           </CheckRole>
         ),
-        children:[
-          
-          {path:"/historique_rdv",element:<Appointments/>}
+        children: [
+          { path: "historique_rdv", element: <Appointments /> }
         ]
       },
       
@@ -276,8 +290,8 @@ const routes = createBrowserRouter([
         children: [
           { path: "home", element: <DoctorDashboard /> },
           { path: "appointments/calendar", element: <DoctorAppointments /> },
-          { path: "admissions", element: <DoctorAdmissions /> }, // Vue récapitulative des lits occupés
-          { path: "wards", element: <DoctorWardManager /> }, // <-- NOUVEAU: Explorateur interactif des chambres & lits
+          { path: "admissions", element: <DoctorAdmissions /> },
+          { path: "wards", element: <DoctorWardManager /> },
           { path: "medical_act", element: <MedicalActExplorer /> },
         ]
       },

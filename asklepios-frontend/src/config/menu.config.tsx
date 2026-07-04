@@ -19,7 +19,7 @@ import {
   Workflow,
   BriefcaseMedical,
   Building2,
-  BedDouble, // <-- NOUVEL IMPORT
+  BedDouble,
   Coins
 } from "lucide-react";
 
@@ -162,8 +162,20 @@ export const MENU_CONFIG: MenuItemType[] = [
     roles: ["admin"],
     requiredLicence: "pharmacy",
     subItems: [
+      { title: "Comptes de Trésorerie", path: "/admin/pharmacy/accounts" },
       { title: "Caisses Enregistreuses", path: "/admin/pharmacy/cash-register" },
-      { title: "Versements", path: "/admin/pharmacy/versements" },
+      { title: "Mouvements Trésorerie", path: "/admin/pharmacy/treasury-transactions" },
+      { title: "Versements en attente", path: "/admin/pharmacy/versements" },
+    ],
+  },
+  {
+    title: "Rapports Ventes",
+    icon: <Activity size={20} />,
+    roles: ["admin"],
+    requiredLicence: "pharmacy",
+    subItems: [
+      { title: "Historiques des ventes", path: "/admin/pharmacy/pos-sales-history" },
+      { title: "Historique des sessions", path: "/admin/pharmacy/pos-sessions-history" },
     ],
   },
 
@@ -226,15 +238,16 @@ export const MENU_CONFIG: MenuItemType[] = [
     ],
   },
   {
-    title: "Rapports & Historiques",
+    title: "Suivi & Historiques",
     icon: <Activity size={20} />,
     roles: ["pharmacy"],
     positions: ["vente"],
     requiredLicence: "pharmacy",
     subItems: [
-      { title: "Historique des Ventes", path: "/pharmacy/cash/sales-history" }, // Corrigé
-      { title: "Mes Versements", path: "/pharmacy/cash/deposits-history" }, // Corrigé
-      { title: "Mouvements de Caisse", path: "/pharmacy/cash/movements-history" }, // Corrigé
+      { title: "Historique des Ventes", path: "/pharmacy/cash/sales-history" }, 
+      { title: "Historique des Sessions", path: "/pharmacy/cash/session/history" },
+      { title: "Mes Versements", path: "/pharmacy/cash/deposits-history" }, 
+      { title: "Mouvements de Caisse", path: "/pharmacy/cash/movements-history" }, 
     ],
   },
 
@@ -249,18 +262,17 @@ export const MENU_CONFIG: MenuItemType[] = [
     subItems: [
       { title: "Dossiers Patients", path: "/reception/patients" },
       { title: "Gestion des RDV", path: "/reception/rdv" },
-      {title:"Historique des RDv", path:"/historique_rdv"}
+      { title: "Historique des RDV", path: "/historique_rdv" }
     ]
   },
   { 
-    title:"Facturation et Paiement",
+    title: "Facturation et Paiement",
     icon: <Coins size={20}/>,
-    roles:["reception","admin"],
-    requiredLicence:"base_hospital",
-    subItems:[
-      {title:"Gestion Factures",path:"/reception/facturation"},
-      {title:"Paiements",path:"/reception/payments"},
-      
+    roles: ["reception", "admin"],
+    requiredLicence: "base_hospital",
+    subItems: [
+      { title: "Gestion Factures", path: "/reception/facturation" },
+      { title: "Paiements", path: "/reception/payments" },
     ]
   },
 
@@ -286,11 +298,11 @@ export const MENU_CONFIG: MenuItemType[] = [
   },
   {
     title: "Mon Service",
-    icon: <BedDouble size={20} />, // Icône plus adaptée à l'hospitalisation
+    icon: <BedDouble size={20} />, 
     roles: ["doctor"],
     requiredLicence: "base_hospital",
     subItems: [
-      { title: "Chambres & Lits", path: "/doctor/wards" }, // <-- NOUVEAU LIEN (Explorateur)
+      { title: "Chambres & Lits", path: "/doctor/wards" }, 
       { title: "Actes Médicaux", path: "/doctor/medical_act" },
     ]
   }
