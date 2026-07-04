@@ -76,7 +76,6 @@ import StockTransfers from "./Pages/PHARMACY/StockTransfers";
 import CashHome from "./Pages/PHARMACY/CashHome";
 import SalesHistory from "./Pages/PHARMACY/SalesHistory";
 import DepositsHistory from "./Pages/PHARMACY/DepositsHistory";
-import MovementsHistory from "./Pages/PHARMACY/MovementsHistory";
 import CloseSession from "./Pages/PHARMACY/CloseSession";
 import OpenSession from "./Pages/PHARMACY/OpenSession";
 import CashSessionHistory from "./Pages/PHARMACY/CashSessionHistory";
@@ -241,7 +240,6 @@ const routes = createBrowserRouter([
               { path: "pharmacy/cash", element: <CashHome /> },
               { path: "pharmacy/cash/sales-history", element: <SalesHistory /> },
               { path: "pharmacy/cash/deposits-history", element: <DepositsHistory /> },
-              { path: "pharmacy/cash/movements-history", element: <MovementsHistory /> },
               { path: "pharmacy/cash/session/open", element: <OpenSession /> },
               { path: "pharmacy/cash/session/close", element: <CloseSession /> },
               { path: "pharmacy/cash/session/history", element: <CashSessionHistory /> },
