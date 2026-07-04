@@ -96,6 +96,7 @@ import DoctorAdmissions from "./Pages/Doctor/DoctorAdmissions";
 import Invoices from "./Pages/Reception/Invoices";
 import Payments from "./Pages/Reception/Payments";
 import Appointments from "./Pages/Hospital/Appointment_history";
+import { SearchResults } from "./Pages/SearchResults";
 
 // ============================================================================
 // CONFIGURATION DES ROUTES
@@ -122,7 +123,8 @@ const routes = createBrowserRouter([
       </AuthMiddleware>
     ),
     children: [
-      
+      // 👉 NOUVELLE ROUTE GLOBALE (Accessible à tous les connectés)
+      { path: "search", element: <SearchResults /> },
       // ====================================================
       // A. ESPACE SUPER ADMIN
       // ====================================================

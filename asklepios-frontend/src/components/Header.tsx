@@ -4,9 +4,10 @@ import { logout } from "../functions/auth/AuthMethods";
 import { useTheme } from "../hooks/useTheme";
 import { useAuth } from "../contexts/AuthContext";
 
-// Imports Notifications
+// Imports Notifications & Search
 import useNotificationStore from "../functions/notifications/useNotificationStore";
 import { NotificationPanel } from "../components/modals/Notifications/NotificationPanel";
+import { GlobalSearch } from "./GlobalSearch";
 
 // Imports Souscriptions
 import useSubscriptionStore from "../functions/subscriptions/useSubscriptionStore";
@@ -15,26 +16,20 @@ const Header = () => {
   const { theme, switchTheme } = useTheme();
   const { profile } = useAuth();
 
-  // Store Notifications
   const { unreadCount, getUnreadCount } = useNotificationStore();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
 
-  // Store Souscriptions
   const { mySubscriptionStatus, getMyRemainingDays } = useSubscriptionStore();
-
   const isDark = theme === "dark";
 
-  // Polling pour actualiser le compteur de notifications régulièrement
   useEffect(() => {
-    getUnreadCount(); // Chargement initial
+    getUnreadCount();
     const interval = setInterval(() => {
       getUnreadCount();
-    }, 60000); // Actualise la cloche toutes les minutes (60000 ms)
-
+    }, 60000);
     return () => clearInterval(interval);
   }, [getUnreadCount]);
 
-  // Récupération de l'état de l'abonnement au montage du Header
   useEffect(() => {
     if (profile?.role && profile.role !== "super_admin") {
       getMyRemainingDays();
@@ -50,9 +45,8 @@ const Header = () => {
     ? profile.role.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase())
     : "Utilisateur";
 
-  // --- RENDU DU BADGE D'ABONNEMENT ---
   const renderSubscriptionBadge = () => {
-    if (profile?.role === "super_admin") return null; // Pas de badge pour le SUPA
+    if (profile?.role === "super_admin") return null;
     if (!mySubscriptionStatus) return null;
 
     const { days_remaining, is_expired } = mySubscriptionStatus;
@@ -85,11 +79,14 @@ const Header = () => {
 
   return (
     <>
-      <div className="w-full py-2 px-6 shadow-sm border-b transition-colors duration-300 flex justify-between items-center bg-[#faf8f1] border-gray-200 dark:bg-gray-900 dark:border-gray-800">
-        {/* Côté Gauche : Logo et Nom */}
-        <div className="flex items-center gap-2">
-          <img src="/logo.png" alt="Asclépios Logo" className="h-8 w-auto" />
-          <div className="flex flex-col leading-tight">
+      {/* 👉 flex-wrap permet aux éléments de passer à la ligne sur mobile. gap-y-3 gère l'espace vertical si ça saute à la ligne. */}
+      <div className="w-full py-2 px-4 sm:px-6 shadow-sm border-b transition-colors duration-300 flex flex-wrap md:flex-nowrap justify-between items-center gap-x-4 gap-y-3 bg-[#faf8f1] border-gray-200 dark:bg-gray-900 dark:border-gray-800 z-40 relative">
+        
+        {/* --- Côté Gauche : Logo et Nom --- */}
+        <div className="flex items-center gap-2 shrink-0 order-1">
+          <img src="/logo.png" alt="Asclépios Logo" className="h-7 sm:h-8 w-auto" />
+          {/* On masque le texte sur petits écrans pour gagner de la place */}
+          <div className="hidden lg:flex flex-col leading-tight">
             <span className="text-lg font-bold tracking-tight text-[#003366] dark:text-white">
               Asclépios
             </span>
@@ -99,27 +96,32 @@ const Header = () => {
           </div>
         </div>
 
-        {/* Centre : Titre Dynamique (Nom + Rôle) ET Abonnement */}
-        <div className="hidden md:flex items-center gap-4">
-          <span className="text-xs font-medium px-3 py-1.5 rounded-full border shadow-sm flex items-center gap-2 bg-white text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700">
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-            <span className="font-semibold">
-              {profile?.first_name} {profile?.last_name}
-            </span>
-            <span className="text-gray-400 dark:text-gray-500">|</span>
-            <span className="italic">{formattedRole}</span>
-          </span>
-
-          {/* Affichage des jours restants ici */}
-          {renderSubscriptionBadge()}
+        {/* --- Centre : Recherche Globale --- */}
+        {/* order-last sur mobile (passe en bas), order-none sur desktop (reste au milieu). max-w-xl pour limiter la largeur sur PC */}
+        <div className="w-full md:w-auto md:flex-1 max-w-xl order-3 md:order-2 shrink-0 md:shrink">
+          <GlobalSearch />
         </div>
 
-        {/* Côté Droit : Contrôles */}
-        <div className="flex items-center gap-2">
-          {/* BOUTON NOTIFICATIONS */}
+        {/* --- Côté Droit : Infos & Contrôles --- */}
+        <div className="flex items-center gap-2 sm:gap-4 shrink-0 order-2 md:order-3">
+            
+          {/* Titre Dynamique (Nom + Rôle) ET Abonnement : Caché sur petits écrans */}
+          <div className="hidden xl:flex items-center gap-4 mr-2">
+            <span className="text-xs font-medium px-3 py-1.5 rounded-full border shadow-sm flex items-center gap-2 bg-white text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700">
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+              <span className="font-semibold">
+                {profile?.first_name} {profile?.last_name}
+              </span>
+              <span className="text-gray-400 dark:text-gray-500">|</span>
+              <span className="italic">{formattedRole}</span>
+            </span>
+            {renderSubscriptionBadge()}
+          </div>
+
+          {/* Bouton Notifications */}
           <button
             onClick={() => setIsNotifOpen(true)}
-            className="relative cursor-pointer p-1.5 rounded-full transition-colors text-slate-600 hover:bg-slate-200 dark:text-gray-300 dark:hover:bg-gray-800 mr-1"
+            className="relative cursor-pointer p-1.5 rounded-full transition-colors text-slate-600 hover:bg-slate-200 dark:text-gray-300 dark:hover:bg-gray-800"
             title="Notifications"
           >
             <Bell size={18} />
@@ -139,8 +141,7 @@ const Header = () => {
             {isDark ? <Sun size={18} /> : <Moon size={18} />}
           </button>
 
-          {/* Séparateur vertical */}
-          <div className="w-px h-5 mx-1 bg-gray-300 dark:bg-gray-700"></div>
+          <div className="w-px h-5 mx-1 bg-gray-300 dark:bg-gray-700 hidden sm:block"></div>
 
           {/* Bouton Déconnexion */}
           <button
@@ -149,12 +150,12 @@ const Header = () => {
             title="Se déconnecter"
           >
             <Power size={18} />
+            {/* Texte masqué sur mobile */}
             <span className="text-xs font-medium hidden sm:block">Quitter</span>
           </button>
         </div>
       </div>
 
-      {/* Rendu du Panneau de Notifications */}
       <NotificationPanel
         isOpen={isNotifOpen}
         onClose={() => setIsNotifOpen(false)}

@@ -381,7 +381,7 @@ class SubscriptionController extends Controller
         ];
 
         // Génération du PDF via la vue Blade
-        $pdf = Pdf::loadView('pdf.invoice', $data);
+        $pdf = Pdf::loadView('pdf.subs_invoice', $data);
 
         // Configuration du format (A4)
         $pdf->setPaper('A4', 'portrait');
