@@ -7,14 +7,23 @@ import {
   Search,
   Layers,
   AlertCircle,
+  ArrowRightLeft,
+  TrendingDown,
+  TrendingUp,
 } from "lucide-react";
 import { useMyActiveSession } from "../../hooks/pharmacy/useCashRegisterSession";
 import { useBranchArticlesAll } from "../../hooks/pharmacy/useBrancheArticle";
+import { usePaymentAccounts } from "../../hooks/pharmacy/usePaymentAccount";
 import CreateSaleModal from "../../components/modals/Pharmacy/Pharmacien/CreateSaleModal";
+import CreateTreasuryTransactionModal from "../../components/modals/Pharmacy/Pharmacien/CreateTreasuryTransactionModal";
 
 export default function CashHome() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Modale trésorerie
+  const [showTxModal, setShowTxModal] = useState(false);
+  const [txType, setTxType] = useState<"cash_in" | "cash_out" | "transfer">("transfer");
 
   // Récupérer la session de caisse active du pharmacien
   const {
@@ -24,12 +33,27 @@ export default function CashHome() {
   } = useMyActiveSession();
 
   // Récupérer les articles configurés pour cette succursale
-  const currentBranchId = myActiveSession?.register?.branch_id;
+  const currentBranchId = myActiveSession?.register?.pharmacy_branch_id;
+  
   const { data: branchArticles, isLoading: isLoadingArticles } =
     useBranchArticlesAll(currentBranchId || null);
 
+  // Comptes disponibles pour les versements
+  const { data: accounts = [] } = usePaymentAccounts(
+    { pharmacy_branch_id: currentBranchId || undefined },
+    false
+  );
+
   const currency =
     myActiveSession?.register?.branch?.country?.currency || "XAF";
+
+  // Calcul du cash attendu en caisse en temps réel
+  const expectedCashInDrawer = useMemo(() => {
+    const opening = myActiveSession?.opening_balance || 0;
+    const salesCash = myActiveSession?.sales_totals?.cash || 0;
+    const treasuryNet = myActiveSession?.treasury_totals?.cash?.net || 0;
+    return opening + salesCash + treasuryNet;
+  }, [myActiveSession]);
 
   // Formater les articles configurés au format produit simple pour la recherche
   const products = useMemo(() => {
@@ -107,7 +131,7 @@ export default function CashHome() {
 
   return (
     <div className="p-6 bg-slate-50 dark:bg-gray-900 min-h-screen text-slate-900 dark:text-white transition-colors duration-200 animate-in fade-in duration-300">
-      {/* Header du Dashboard (Statique - Chargé Immédiatement) */}
+      {/* Header du Dashboard */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-black text-slate-900 dark:text-white">
@@ -147,22 +171,21 @@ export default function CashHome() {
       ) : (
         <>
           {/* Grille des KPIs */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {/* KPI Solde de Caisse */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            {/* KPI Solde de Caisse Réel */}
             <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-gray-700 flex items-center gap-4 hover:border-slate-300 dark:hover:border-gray-600 transition-colors">
               <div className="p-4 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl text-emerald-600 dark:text-emerald-400">
                 <DollarSign className="w-6 h-6" />
               </div>
               <div className="flex-1">
                 <p className="text-xs font-bold text-slate-400 dark:text-gray-400 uppercase tracking-wider">
-                  Solde Actuel en Caisse
+                  Solde Actuel en Caisse (Cash)
                 </p>
                 {isLoadingSession ? (
                   <div className="h-7 w-28 bg-slate-200 dark:bg-gray-700 animate-pulse rounded-md mt-1" />
                 ) : (
                   <h3 className="text-2xl font-black text-slate-900 dark:text-white font-mono mt-0.5">
-                    {(myActiveSession?.current_balance || 0).toLocaleString()}{" "}
-                    {currency}
+                    {expectedCashInDrawer.toLocaleString()} {currency}
                   </h3>
                 )}
               </div>
@@ -221,6 +244,42 @@ export default function CashHome() {
                   </>
                 )}
               </div>
+            </div>
+          </div>
+
+          {/* Actions de Trésorerie Rapides */}
+          <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-xs mb-8">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-gray-500 mb-3 flex items-center gap-1.5">
+              <DollarSign className="w-4 h-4 text-emerald-600 dark:text-emerald-500" /> Actions rapides de Trésorerie
+            </h2>
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() => {
+                  setTxType("transfer");
+                  setShowTxModal(true);
+                }}
+                className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+              >
+                <ArrowRightLeft className="w-4 h-4" /> Faire un versement (Dépôt)
+              </button>
+              <button
+                onClick={() => {
+                  setTxType("cash_out");
+                  setShowTxModal(true);
+                }}
+                className="px-4 py-2.5 border border-slate-300 dark:border-gray-700 hover:bg-slate-100 dark:hover:bg-gray-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <TrendingDown className="w-4 h-4 text-rose-500" /> Déclarer une dépense (Retrait)
+              </button>
+              <button
+                onClick={() => {
+                  setTxType("cash_in");
+                  setShowTxModal(true);
+                }}
+                className="px-4 py-2.5 border border-slate-300 dark:border-gray-700 hover:bg-slate-100 dark:hover:bg-gray-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <TrendingUp className="w-4 h-4 text-emerald-550" /> Apport de caisse (Alimentation)
+              </button>
             </div>
           </div>
 
@@ -343,7 +402,7 @@ export default function CashHome() {
         </>
       )}
 
-      {/* Moteur de Recherche Rapide (Prix / Stock) - Toujours affiché immédiatement */}
+      {/* Moteur de Recherche Rapide */}
       <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-gray-700">
         <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 dark:text-gray-400 mb-4 flex items-center gap-1.5">
           <Layers className="w-4 h-4 text-slate-500 dark:text-gray-400" />{" "}
@@ -394,10 +453,10 @@ export default function CashHome() {
                     "text-emerald-600 bg-emerald-50 border-emerald-100 dark:text-emerald-400 dark:bg-emerald-950/20 dark:border-emerald-900/30";
                   if (p.stock === 0)
                     stockColor =
-                      "text-rose-600 bg-rose-50 border-rose-100 dark:text-rose-400 dark:bg-rose-950/20 dark:border-rose-900/30";
+                      "text-rose-600 bg-rose-50 border-rose-100 dark:text-rose-400 dark:bg-rose-955/20 dark:border-rose-900/30";
                   else if (p.stock < 10)
                     stockColor =
-                      "text-amber-600 bg-amber-50 border-amber-100 dark:text-amber-400 dark:bg-amber-950/20 dark:border-amber-900/30";
+                      "text-amber-600 bg-amber-50 border-amber-100 dark:text-amber-400 dark:bg-amber-955/20 dark:border-amber-900/30";
 
                   return (
                     <div
@@ -441,7 +500,7 @@ export default function CashHome() {
                       </div>
                       <div className="flex items-center justify-between sm:justify-end gap-6 border-t sm:border-t-0 border-slate-100 dark:border-gray-700 pt-2 sm:pt-0">
                         <div className="text-left sm:text-right">
-                          <span className="text-[9px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-wider block">
+                           <span className="text-[9px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-wider block">
                             Prix Unitaire
                           </span>
                           <span className="font-bold text-slate-800 dark:text-white text-sm">
@@ -472,11 +531,22 @@ export default function CashHome() {
         )}
       </div>
 
-      {/* Injection de la Modale de Vente */}
+      {/* Modale de Vente */}
       <CreateSaleModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSaleSuccess={() => refetch()}
+      />
+
+      {/* Modale Trésorerie Caissier réutilisable */}
+      <CreateTreasuryTransactionModal
+        isOpen={showTxModal}
+        onClose={() => setShowTxModal(false)}
+        txType={txType}
+        activeSession={myActiveSession}
+        expectedCashInDrawer={expectedCashInDrawer}
+        accounts={accounts}
+        onSuccess={() => refetch()}
       />
     </div>
   );

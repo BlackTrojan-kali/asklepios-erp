@@ -1,422 +1,426 @@
-import { useState, useMemo } from "react";
-import Swal from "sweetalert2";
+import React, { useState, useMemo } from "react";
 import {
   Search,
-  Calendar,
-  Filter,
-  RefreshCw,
-  Eye,
-  ArrowUpRight,
+  TrendingDown,
   TrendingUp,
+  ArrowRightLeft,
+  Loader2,
+  Inbox,
+  AlertCircle,
+  Eye,
+  CheckCircle2,
+  Clock,
   XCircle,
-  Building,
-  User,
 } from "lucide-react";
-
-// --- TYPES ---
-interface DepositRecord {
-  id: string;
-  reference: string;
-  date: string;
-  amount: number;
-  type: "BANK_DEPOSIT" | "CASH_COUNT" | "PARTNER_PAYMENT";
-  destinationAccount: string;
-  operatorName: string;
-  status: "VALIDATED" | "PENDING" | "REJECTED";
-  notes?: string;
-}
-
-// --- DONNÉES STATIQUES DE TEST ---
-const MOCK_DEPOSITS: DepositRecord[] = [
-  {
-    id: "VERS-2026-001",
-    reference: "VRM-Afriland-901",
-    date: "2026-06-23 09:00",
-    amount: 450000,
-    type: "BANK_DEPOSIT",
-    destinationAccount: "Afriland First Bank - Compte Principal",
-    operatorName: "M. Amadou",
-    status: "VALIDATED",
-    notes: "Versement des espèces de la veille",
-  },
-  {
-    id: "VERS-2026-002",
-    reference: "VERS-MOMO-234",
-    date: "2026-06-22 18:30",
-    amount: 125000,
-    type: "CASH_COUNT",
-    destinationAccount: "Coffre Fort Fort",
-    operatorName: "Mme. Bella",
-    status: "VALIDATED",
-    notes: "Clôture de caisse du soir",
-  },
-  {
-    id: "VERS-2026-003",
-    reference: "VRM-UBA-551",
-    date: "2026-06-21 11:15",
-    amount: 800000,
-    type: "BANK_DEPOSIT",
-    destinationAccount: "UBA Cameroon - Compte Dev",
-    operatorName: "Fotié Martial",
-    status: "PENDING",
-    notes: "Transfert pour provisionnement fournisseurs",
-  },
-  {
-    id: "VERS-2026-004",
-    reference: "VRM-BICEC-012",
-    date: "2026-06-20 14:00",
-    amount: 300000,
-    type: "PARTNER_PAYMENT",
-    destinationAccount: "BICEC - Épargne Gérant",
-    operatorName: "M. Amadou",
-    status: "REJECTED",
-    notes: "Erreur de libellé sur le bordereau",
-  },
-];
+import { useMyActiveSession } from "../../hooks/pharmacy/useCashRegisterSession";
+import { usePaymentAccounts } from "../../hooks/pharmacy/usePaymentAccount";
+import { usePaymentTransactions } from "../../hooks/pharmacy/usePaymentTransaction";
+import api from "../../api/api";
+import { type PaymentTransactionDto } from "../../services/pharmacy/paymentTransactionService";
+import CreateTreasuryTransactionModal from "../../components/modals/Pharmacy/Pharmacien/CreateTreasuryTransactionModal";
 
 export default function DepositsHistory() {
-  // --- ÉTATS DES FILTRES ---
+  // --- ÉTATS ---
+  const [filterType, setFilterType] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
   const [search, setSearch] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
 
-  // --- RÉINITIALISATION DES FILTRES ---
-  const handleResetFilters = () => {
-    setSearch("");
-    setStartDate("");
-    setEndDate("");
-    setTypeFilter("");
-    setStatusFilter("");
-    Swal.fire({
-      toast: true,
-      position: "top-end",
-      icon: "success",
-      title: "Filtres réinitialisés",
-      showConfirmButton: false,
-      timer: 1500,
-    });
-  };
+  // Modales
+  const [showTxModal, setShowTxModal] = useState(false);
+  const [txType, setTxType] = useState<"cash_in" | "cash_out" | "transfer">(
+    "transfer",
+  );
 
-  // --- ACTIONS ---
-  const handleViewNotes = (record: DepositRecord) => {
-    Swal.fire({
-      title: `Détails du Versement`,
-      html: `
-        <div class="text-left text-sm space-y-2">
-          <p><strong>Référence :</strong> ${record.reference}</p>
-          <p><strong>Opérateur :</strong> ${record.operatorName}</p>
-          <p><strong>Destination :</strong> ${record.destinationAccount}</p>
-          <p><strong>Note/Observation :</strong> ${record.notes || "Aucune note"}</p>
-        </div>
-      `,
-      icon: "info",
-      confirmButtonColor: "#0f172a",
-    });
-  };
+  // --- HOOKS ---
+  // Session active du caissier
+  const {
+    data: activeSession,
+    isLoading: loadingSession,
+    refetch: refetchSession,
+  } = useMyActiveSession();
+  const currentBranchId = activeSession?.register?.pharmacy_branch_id;
 
-  const handleCancelDeposit = (reference: string) => {
-    Swal.fire({
-      title: "Annuler ce versement ?",
-      text: `Voulez-vous vraiment rejeter ou annuler la référence ${reference} ? Cette action impactera les soldes attendus.`,
-      icon: "error",
-      showCancelButton: true,
-      confirmButtonColor: "#ef4444",
-      cancelButtonColor: "#64748b",
-      confirmButtonText: "Oui, rejeter",
-      cancelButtonText: "Retour",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        Swal.fire({
-          title: "Mis à jour !",
-          text: "Le versement a été marqué comme rejeté/annulé.",
-          icon: "success",
-          confirmButtonColor: "#10b981",
-        });
-      }
-    });
-  };
+  // Comptes disponibles pour transferts/dépenses (isAdmin = false)
+  const { data: accounts = [] } = usePaymentAccounts(
+    { pharmacy_branch_id: currentBranchId || undefined },
+    false,
+  );
 
-  // --- LOGIQUE DE FILTRAGE ---
-  const filteredDeposits = useMemo(() => {
-    return MOCK_DEPOSITS.filter((deposit) => {
+  // Transactions de trésorerie du caissier (isAdmin = false)
+  const {
+    data: transactionsResponse = [],
+    isLoading: loadingTx,
+    refetch: refetchTransactions,
+  } = usePaymentTransactions({ paginated: false }, false);
+
+  const transactions = (transactionsResponse as PaymentTransactionDto[]) || [];
+
+  // Filtrer la liste des transactions du caissier pour affichage local
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter((tx) => {
+      const matchesType = !filterType || tx.type === filterType;
+      const matchesStatus = !filterStatus || tx.status === filterStatus;
+
+      const searchLower = search.toLowerCase();
       const matchesSearch =
-        deposit.reference.toLowerCase().includes(search.toLowerCase()) ||
-        deposit.destinationAccount
-          .toLowerCase()
-          .includes(search.toLowerCase()) ||
-        deposit.operatorName.toLowerCase().includes(search.toLowerCase());
+        !search.trim() ||
+        tx.description?.toLowerCase().includes(searchLower) ||
+        tx.reference?.toLowerCase().includes(searchLower) ||
+        tx.destination_account?.name?.toLowerCase().includes(searchLower);
 
-      const matchesType = typeFilter ? deposit.type === typeFilter : true;
-      const matchesStatus = statusFilter
-        ? deposit.status === statusFilter
-        : true;
-
-      const depositDateOnly = deposit.date.split(" ")[0];
-      const matchesStartDate = startDate ? depositDateOnly >= startDate : true;
-      const matchesEndDate = endDate ? depositDateOnly <= endDate : true;
-
-      return (
-        matchesSearch &&
-        matchesType &&
-        matchesStatus &&
-        matchesStartDate &&
-        matchesEndDate
-      );
+      return matchesType && matchesStatus && matchesSearch;
     });
-  }, [search, startDate, endDate, typeFilter, statusFilter]);
+  }, [transactions, filterType, filterStatus, search]);
 
-  // --- CUMUL DES VERSEMENTS VALIDÉS ---
-  const totalValidated = useMemo(() => {
-    return filteredDeposits
-      .filter((d) => d.status === "VALIDATED")
-      .reduce((sum, d) => sum + d.amount, 0);
-  }, [filteredDeposits]);
+  // Totaux de session
+  const currency = activeSession?.register?.branch?.country?.currency || "XAF";
+  const openingBalance = activeSession?.opening_balance || 0;
+  const cashSales = activeSession?.sales_totals?.cash || 0;
+
+  const treasuryCash = useMemo(() => {
+    if (!activeSession?.treasury_totals?.cash) {
+      return { in: 0, out: 0, transfer: 0, net: 0 };
+    }
+    return activeSession.treasury_totals.cash;
+  }, [activeSession]);
+
+  const expectedCashInDrawer = openingBalance + cashSales + treasuryCash.net;
+
+  // Ouvrir la modale
+  const handleOpenTxModal = (type: "cash_in" | "cash_out" | "transfer") => {
+    setTxType(type);
+    setShowTxModal(true);
+  };
+
+  // Callback après soumission réussie
+  const handleTxSuccess = () => {
+    refetchSession();
+    refetchTransactions();
+  };
 
   return (
-    <div className="p-6 bg-slate-50 min-h-screen font-sans text-slate-800">
-      {/* En-tête de page */}
-      <div className="flex justify-between items-center mb-6">
+    <div className="p-6 bg-slate-50 dark:bg-gray-950 min-h-screen text-slate-800 dark:text-gray-200 transition-colors duration-250">
+      {/* En-tête */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-black text-slate-900">
-            Historique des Versements
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+            <ArrowRightLeft className="w-8 h-8 text-emerald-600 dark:text-emerald-500" />{" "}
+            Versements & Mouvements
           </h1>
-          <p className="text-sm text-slate-500">
-            Suivi et pointage des dépôts bancaires et mouvements de coffre
+          <p className="text-sm text-slate-500 dark:text-gray-400">
+            Saisissez vos versements (banque/coffre), décaissements ou apports
+            sur votre session de caisse
           </p>
         </div>
+      </div>
 
-        {/* Totalisateur */}
-        <div className="bg-indigo-600 text-white px-5 py-3 rounded-xl shadow-md flex items-center gap-3">
-          <div className="p-2 bg-indigo-700 rounded-lg">
-            <TrendingUp className="w-5 h-5" />
-          </div>
+      {loadingSession ? (
+        <div className="flex items-center justify-center p-12">
+          <Loader2 className="w-10 h-10 animate-spin text-emerald-600 dark:text-emerald-500" />
+        </div>
+      ) : !activeSession ? (
+        <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 rounded-2xl p-6 flex items-start gap-4 shadow-xs">
+          <AlertCircle className="w-6 h-6 text-amber-600 dark:text-amber-500 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-200">
-              Total Validé Sélection
-            </p>
-            <h3 className="text-lg font-black font-mono">
-              {totalValidated.toLocaleString()} XAF
+            <h3 className="font-bold text-amber-900 dark:text-amber-400">
+              Aucune session active
             </h3>
+            <p className="text-sm text-amber-755 dark:text-amber-500 mt-1">
+              Vous devez ouvrir une session de caisse physique pour pouvoir
+              enregistrer des mouvements de trésorerie ou des versements.
+            </p>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="space-y-6">
+          {/* Section d'état de caisse actuel */}
+          <div className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-2xl p-5 shadow-xs">
+            <h2 className="text-sm font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider mb-4">
+              État de caisse actuel (Espèces / Cash)
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5">
+              <div className="bg-slate-50 dark:bg-gray-950 p-4 rounded-xl border border-slate-100 dark:border-gray-850">
+                <span className="text-xs text-slate-400 dark:text-gray-500 block mb-1">
+                  Fond de caisse initial
+                </span>
+                <span className="text-lg font-bold font-mono text-slate-900 dark:text-white">
+                  {openingBalance.toLocaleString()}{" "}
+                  <span className="text-xs text-slate-400 dark:text-gray-500">
+                    {currency}
+                  </span>
+                </span>
+              </div>
+              <div className="bg-slate-50 dark:bg-gray-950 p-4 rounded-xl border border-slate-100 dark:border-gray-850">
+                <span className="text-xs text-slate-400 dark:text-gray-500 block mb-1">
+                  Ventes (Espèces)
+                </span>
+                <span className="text-lg font-bold font-mono text-slate-900 dark:text-white">
+                  {cashSales.toLocaleString()}{" "}
+                  <span className="text-xs text-slate-400 dark:text-gray-500">
+                    {currency}
+                  </span>
+                </span>
+              </div>
+              <div className="bg-slate-50 dark:bg-gray-950 p-4 rounded-xl border border-slate-100 dark:border-gray-850">
+                <span className="text-xs text-slate-400 dark:text-gray-500 block mb-1">
+                  Mouvements (Net)
+                </span>
+                <span
+                  className={`text-lg font-bold font-mono ${treasuryCash.net >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500"}`}
+                >
+                  {treasuryCash.net >= 0 ? "+" : ""}
+                  {treasuryCash.net.toLocaleString()}{" "}
+                  <span className="text-xs text-slate-450 dark:text-gray-500">
+                    {currency}
+                  </span>
+                </span>
+              </div>
+              <div className="bg-emerald-50 dark:bg-emerald-950/20 p-4 rounded-xl border border-emerald-100 dark:border-emerald-900/30">
+                <span className="text-xs text-emerald-805 dark:text-emerald-450 block mb-1">
+                  Solde théorique attendu
+                </span>
+                <span className="text-xl font-black font-mono text-emerald-900 dark:text-emerald-400">
+                  {expectedCashInDrawer.toLocaleString()}{" "}
+                  <span className="text-sm font-bold">{currency}</span>
+                </span>
+              </div>
+            </div>
 
-      {/* ================= BLOC DES FILTRES ================= */}
-      <div className="bg-white p-5 rounded-2xl shadow-xs border border-slate-200 mb-6">
-        <div className="flex items-center gap-2 mb-4 text-slate-700 font-bold text-sm uppercase tracking-wide">
-          <Filter className="w-4 h-4 text-indigo-600" /> Options de filtrage
+            {/* Actions rapides */}
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() => handleOpenTxModal("transfer")}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <ArrowRightLeft className="w-4 h-4" /> Faire un versement
+                (Dépôt)
+              </button>
+              <button
+                onClick={() => handleOpenTxModal("cash_out")}
+                className="px-4 py-2 border border-slate-300 dark:border-gray-700 hover:bg-slate-100 dark:hover:bg-gray-800 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <TrendingDown className="w-4 h-4 text-rose-500" /> Déclarer une
+                dépense (Retrait)
+              </button>
+              <button
+                onClick={() => handleOpenTxModal("cash_in")}
+                className="px-4 py-2 border border-slate-300 dark:border-gray-700 hover:bg-slate-100 dark:hover:bg-gray-800 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <TrendingUp className="w-4 h-4 text-emerald-500" /> Apport de
+                caisse (Alimentation)
+              </button>
+            </div>
+          </div>
+
+          {/* Section Historique des mouvements */}
+          <div>
+            <h2 className="text-base font-bold text-slate-900 dark:text-white mb-4">
+              Historique de vos mouvements de caisse
+            </h2>
+
+            {/* Filtres */}
+            <div className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-2xl p-4 mb-4 grid grid-cols-12 gap-4 items-end shadow-xs">
+              <div className="col-span-12 md:col-span-4">
+                <label className="block text-xs font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">
+                  Rechercher
+                </label>
+                <div className="relative">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    placeholder="Recherche motif, réf, banque..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-gray-950 border border-slate-300 dark:border-gray-800 rounded-xl pl-9 pr-3 py-2 text-sm focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-800 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="col-span-12 md:col-span-3">
+                <label className="block text-xs font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">
+                  Type
+                </label>
+                <select
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-gray-950 border border-slate-300 dark:border-gray-800 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-800 dark:text-white font-semibold"
+                >
+                  <option value="">Tous les types</option>
+                  <option value="cash_in">Apport (Alimentation)</option>
+                  <option value="cash_out">Décaissement (Dépense)</option>
+                  <option value="transfer">Versement (Dépôt)</option>
+                </select>
+              </div>
+
+              <div className="col-span-12 md:col-span-3">
+                <label className="block text-xs font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">
+                  Statut
+                </label>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="w-full bg-slate-50 dark:bg-gray-950 border border-slate-300 dark:border-gray-800 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-800 dark:text-white font-semibold"
+                >
+                  <option value="">Tous les statuts</option>
+                  <option value="pending">En attente (Pending)</option>
+                  <option value="completed">Validé (Completed)</option>
+                  <option value="cancelled">Annulé (Cancelled)</option>
+                </select>
+              </div>
+
+              <div className="col-span-12 md:col-span-2">
+                <button
+                  onClick={() => {
+                    setFilterType("");
+                    setFilterStatus("");
+                    setSearch("");
+                  }}
+                  className="w-full px-4 py-2 border border-slate-300 dark:border-gray-700 hover:bg-slate-100 dark:hover:bg-gray-850 text-slate-700 dark:text-slate-300 text-sm font-semibold rounded-xl flex items-center gap-1.5 justify-center transition-colors cursor-pointer"
+                >
+                  Effacer
+                </button>
+              </div>
+            </div>
+
+            {loadingTx ? (
+              <div className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-2xl p-12 text-center">
+                <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mx-auto" />
+              </div>
+            ) : filteredTransactions.length === 0 ? (
+              <div className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-2xl p-12 text-center">
+                <Inbox className="w-12 h-12 stroke-1 mx-auto mb-2 text-slate-400" />
+                <p className="text-sm font-semibold text-slate-500">
+                  Aucun mouvement ne correspond aux filtres.
+                </p>
+              </div>
+            ) : (
+              <div className="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-2xl overflow-hidden shadow-xs">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-sm border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 dark:bg-gray-900/60 border-b border-slate-200 dark:border-gray-800 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400">
+                        <th className="p-4">Date</th>
+                        <th className="p-4">Type</th>
+                        <th className="p-4">Destination / Détail</th>
+                        <th className="p-4 text-right">Montant</th>
+                        <th className="p-4">Mode</th>
+                        <th className="p-4">Statut</th>
+                        <th className="p-4">Commentaire / Justificatif</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-gray-800">
+                      {filteredTransactions.map((tx) => {
+                        const isCashIn = tx.type === "cash_in";
+                        const isCashOut = tx.type === "cash_out";
+                        const isTransfer = tx.type === "transfer";
+
+                        return (
+                          <tr
+                            key={tx.id}
+                            className="hover:bg-slate-50/50 dark:hover:bg-gray-855/20 transition-colors"
+                          >
+                            <td className="p-4 text-xs font-mono">
+                              {new Date(tx.created_at).toLocaleDateString()}{" "}
+                              {new Date(tx.created_at).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </td>
+                            <td className="p-4 font-semibold">
+                              {isCashIn && (
+                                <span className="text-emerald-750 dark:text-emerald-400 flex items-center gap-1">
+                                  <TrendingUp className="w-4 h-4" /> Apport
+                                  (Float)
+                                </span>
+                              )}
+                              {isCashOut && (
+                                <span className="text-rose-650 dark:text-rose-450 flex items-center gap-1">
+                                  <TrendingDown className="w-4 h-4" /> Dépense
+                                </span>
+                              )}
+                              {isTransfer && (
+                                <span className="text-blue-650 dark:text-blue-400 flex items-center gap-1">
+                                  <ArrowRightLeft className="w-4 h-4" />{" "}
+                                  Versement
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-4 font-semibold text-slate-700 dark:text-slate-250">
+                              {isTransfer
+                                ? tx.destination_account?.name || "Transit"
+                                : "Caisse locale"}
+                            </td>
+                            <td className="p-4 text-right font-black font-mono text-slate-900 dark:text-white text-base">
+                              {tx.amount.toLocaleString()}{" "}
+                              <span className="text-xs text-slate-500">
+                                {currency}
+                              </span>
+                            </td>
+                            <td className="p-4 text-xs font-semibold">
+                              {tx.payment_method}
+                            </td>
+                            <td className="p-4">
+                              {tx.status === "completed" && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/20 dark:text-emerald-400 rounded-full">
+                                  <CheckCircle2 className="w-3 h-3" /> Validé
+                                </span>
+                              )}
+                              {tx.status === "pending" && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-955/20 dark:text-amber-400 rounded-full">
+                                  <Clock className="w-3 h-3" /> En transit
+                                </span>
+                              )}
+                              {tx.status === "cancelled" && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-bold bg-rose-100 text-rose-800 dark:bg-rose-955/20 dark:text-rose-450 rounded-full">
+                                  <XCircle className="w-3 h-3" /> Annulé
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-4 text-xs">
+                              <div className="flex flex-col">
+                                <span className="text-slate-500 italic">
+                                  {tx.description || "-"}
+                                </span>
+                                {tx.reference && (
+                                  <span className="text-[10px] font-mono text-slate-400">
+                                    Réf: {tx.reference}
+                                  </span>
+                                )}
+                                {tx.receipt_path && (
+                                  <a
+                                    href={`${api.defaults.baseURL?.replace("/api", "")}/storage/${tx.receipt_path}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline flex items-center gap-1 mt-1 cursor-pointer"
+                                  >
+                                    <Eye className="w-3.5 h-3.5" /> Voir
+                                    justificatif
+                                  </a>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Modale déplacée */}
+          <CreateTreasuryTransactionModal
+            isOpen={showTxModal}
+            onClose={() => setShowTxModal(false)}
+            txType={txType}
+            activeSession={activeSession}
+            expectedCashInDrawer={expectedCashInDrawer}
+            accounts={accounts}
+            onSuccess={handleTxSuccess}
+          />
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-          {/* Recherche */}
-          <div className="md:col-span-3 relative">
-            <label className="block text-xs font-semibold text-slate-500 mb-1">
-              Recherche globale
-            </label>
-            <Search className="absolute left-3 top-8 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Réf., banque, opérateur..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-slate-50 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500 transition-colors"
-            />
-          </div>
-
-          {/* Date début */}
-          <div className="md:col-span-2 relative">
-            <label className="block text-xs font-semibold text-slate-500 mb-1">
-              Du
-            </label>
-            <Calendar className="absolute left-3 top-8 w-4 h-4 text-slate-400 pointer-events-none" />
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-slate-50 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500 transition-colors"
-            />
-          </div>
-
-          {/* Date fin */}
-          <div className="md:col-span-2 relative">
-            <label className="block text-xs font-semibold text-slate-500 mb-1">
-              Au
-            </label>
-            <Calendar className="absolute left-3 top-8 w-4 h-4 text-slate-400 pointer-events-none" />
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-slate-50 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500 transition-colors"
-            />
-          </div>
-
-          {/* Type de versement */}
-          <div className="md:col-span-2">
-            <label className="block text-xs font-semibold text-slate-500 mb-1">
-              Nature/Type
-            </label>
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-slate-50 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-            >
-              <option value="">Tous</option>
-              <option value="BANK_DEPOSIT">Dépôt Bancaire</option>
-              <option value="CASH_COUNT">Mouvement Coffre</option>
-              <option value="PARTNER_PAYMENT">Règlement Partenaire</option>
-            </select>
-          </div>
-
-          {/* Statut */}
-          <div className="md:col-span-2">
-            <label className="block text-xs font-semibold text-slate-500 mb-1">
-              Statut de validation
-            </label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-slate-50 focus:bg-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500 cursor-pointer"
-            >
-              <option value="">Tous</option>
-              <option value="VALIDATED">Validé</option>
-              <option value="PENDING">En attente</option>
-              <option value="REJECTED">Rejeté</option>
-            </select>
-          </div>
-
-          {/* Bouton Reset */}
-          <div className="md:col-span-1 flex justify-end">
-            <button
-              type="button"
-              onClick={handleResetFilters}
-              className="w-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors text-xs cursor-pointer shadow-xs"
-              title="Vider les filtres"
-            >
-              <RefreshCw className="w-3.5 h-3.5" /> Reset
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* ================= TABLEAU DES VERSEMENTS ================= */}
-      <div className="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden flex flex-col">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50 p-3 font-semibold text-xs uppercase tracking-wider text-slate-500 border-b border-slate-200">
-                <th className="p-4">Réf. Versement</th>
-                <th className="p-4">Date & Heure</th>
-                <th className="p-4">Type</th>
-                <th className="p-4">Compte Destination</th>
-                <th className="p-4">Auteur</th>
-                <th className="p-4 text-right">Montant (XAF)</th>
-                <th className="p-4 text-center">Statut</th>
-                <th className="p-4 text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 text-sm">
-              {filteredDeposits.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="p-8 text-center text-slate-400">
-                    Aucun versement ne correspond aux critères sélectionnés.
-                  </td>
-                </tr>
-              ) : (
-                filteredDeposits.map((deposit) => (
-                  <tr
-                    key={deposit.id}
-                    className="hover:bg-slate-50/50 transition-colors"
-                  >
-                    <td className="p-4 font-mono font-bold text-slate-900 flex items-center gap-1.5">
-                      <ArrowUpRight className="w-3.5 h-3.5 text-indigo-500" />
-                      {deposit.reference}
-                    </td>
-                    <td className="p-4 text-slate-600">{deposit.date}</td>
-
-                    {/* Badge Type */}
-                    <td className="p-4">
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded-md font-medium
-                        ${deposit.type === "BANK_DEPOSIT" ? "bg-amber-50 text-amber-800 border border-amber-200" : ""}
-                        ${deposit.type === "CASH_COUNT" ? "bg-slate-100 text-slate-800" : ""}
-                        ${deposit.type === "PARTNER_PAYMENT" ? "bg-purple-50 text-purple-800" : ""}
-                      `}
-                      >
-                        {deposit.type === "BANK_DEPOSIT"
-                          ? "Banque"
-                          : deposit.type === "CASH_COUNT"
-                            ? "Coffre"
-                            : "Partenaire"}
-                      </span>
-                    </td>
-
-                    <td className="p-4 font-medium text-slate-700">
-                      <div className="flex items-center gap-1.5">
-                        <Building className="w-3.5 h-3.5 text-slate-400" />
-                        {deposit.destinationAccount}
-                      </div>
-                    </td>
-
-                    <td className="p-4 text-slate-500">
-                      <div className="flex items-center gap-1.5">
-                        <User className="w-3.5 h-3.5 text-slate-400" />
-                        {deposit.operatorName}
-                      </div>
-                    </td>
-
-                    <td className="p-4 text-right font-mono font-bold text-slate-900">
-                      {deposit.amount.toLocaleString()}
-                    </td>
-
-                    {/* Badge Statut */}
-                    <td className="p-4 text-center">
-                      {deposit.status === "VALIDATED" && (
-                        <span className="inline-flex items-center bg-emerald-50 text-emerald-700 text-xs px-2.5 py-0.5 rounded-md font-bold">
-                          Validé
-                        </span>
-                      )}
-                      {deposit.status === "PENDING" && (
-                        <span className="inline-flex items-center bg-amber-50 text-amber-700 text-xs px-2.5 py-0.5 rounded-md font-bold animate-pulse">
-                          En attente
-                        </span>
-                      )}
-                      {deposit.status === "REJECTED" && (
-                        <span className="inline-flex items-center bg-rose-50 text-rose-700 text-xs px-2.5 py-0.5 rounded-md font-bold">
-                          Rejeté
-                        </span>
-                      )}
-                    </td>
-
-                    {/* Actions */}
-                    <td className="p-4 text-center">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <button
-                          onClick={() => handleViewNotes(deposit)}
-                          className="p-1 text-slate-400 hover:text-indigo-600 rounded-md hover:bg-slate-100 transition-colors cursor-pointer"
-                          title="Détails & Notes"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleCancelDeposit(deposit.reference)}
-                          disabled={deposit.status === "REJECTED"}
-                          className="p-1 text-slate-400 hover:text-rose-600 rounded-md hover:bg-slate-100 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
-                          title="Rejeter / Annuler"
-                        >
-                          <XCircle className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

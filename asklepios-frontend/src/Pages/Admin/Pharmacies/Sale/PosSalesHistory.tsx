@@ -11,8 +11,6 @@ import {
   Eye,
   Filter,
   DollarSign,
-  X,
-  Loader2,
   Inbox,
   User,
   Building2,
@@ -29,10 +27,12 @@ import { useBranches } from "../../../../hooks/pharmacy/useBranche";
 import { useCashRegisters } from "../../../../hooks/pharmacy/useCashRegister";
 import api from "../../../../api/api";
 import { type PosSaleDto } from "../../../../services/pharmacy/posSaleService";
+import SaleDetailModal from "../../../../components/modals/Pharmacy/Admin/SaleDetailModal";
+import AdminSaleInvoicePreviewModal from "../../../../components/modals/Pharmacy/Admin/AdminSaleInvoicePreviewModal";
 
 function TableSkeleton() {
   return (
-    <div className="divide-y divide-slate-100 dark:divide-gray-700 animate-pulse">
+    <tbody className="divide-y divide-slate-100 dark:divide-gray-700 animate-pulse">
       {[1, 2, 3, 4, 5, 6].map((i) => (
         <tr key={i} className="bg-white dark:bg-gray-800">
           <td className="p-4">
@@ -64,7 +64,7 @@ function TableSkeleton() {
           </td>
         </tr>
       ))}
-    </div>
+    </tbody>
   );
 }
 
@@ -88,8 +88,6 @@ export default function PosSalesHistory() {
   // --- ÉTATS DES MODALES ---
   const [selectedSale, setSelectedSale] = useState<PosSaleDto | null>(null);
   const [previewPdfSaleId, setPreviewPdfSaleId] = useState<number | null>(null);
-  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
-  const [loadingPdf, setLoadingPdf] = useState(false);
   const [exporting, setExporting] = useState(false);
 
   // --- DONNÉES DE CONFIGURATION DES SÉLECTEURS ---
@@ -102,7 +100,6 @@ export default function PosSalesHistory() {
     data: paginatedData,
     isLoading,
     error,
-    refetch,
   } = useAdminPosSales({
     pharmacy_branch_id: selectedBranchId,
     cash_register_id: selectedRegisterId,
@@ -136,43 +133,6 @@ export default function PosSalesHistory() {
     setSelectedBranchId(val);
     setSelectedRegisterId(undefined); // Clear register when branch changes
   };
-
-  // --- CHARGEMENT DU PDF POUR IMPRESSION ---
-  useEffect(() => {
-    if (previewPdfSaleId !== null) {
-      const fetchPdf = async () => {
-        try {
-          setLoadingPdf(true);
-          const response = await api.get(
-            `/pharmacy/pos-sales/${previewPdfSaleId}/pdf`,
-            {
-              responseType: "blob",
-            },
-          );
-          const blob = new Blob([response.data], { type: "application/pdf" });
-          const url = window.URL.createObjectURL(blob);
-          setPdfBlobUrl(url);
-        } catch (err) {
-          console.error("Erreur de chargement du PDF:", err);
-          Swal.fire({
-            icon: "error",
-            title: "Erreur PDF",
-            text: "Impossible de charger la facture PDF.",
-            confirmButtonColor: "#ef4444",
-          });
-          setPreviewPdfSaleId(null);
-        } finally {
-          setLoadingPdf(false);
-        }
-      };
-      fetchPdf();
-    } else {
-      if (pdfBlobUrl) {
-        window.URL.revokeObjectURL(pdfBlobUrl);
-        setPdfBlobUrl(null);
-      }
-    }
-  }, [previewPdfSaleId]);
 
   // --- RÉINITIALISATION DES FILTRES ---
   const handleResetFilters = () => {
@@ -294,7 +254,7 @@ export default function PosSalesHistory() {
         </div>
 
         <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-xs flex items-center gap-4">
-          <div className="p-3 bg-teal-100 dark:bg-teal-950/30 text-teal-650 dark:text-teal-400 rounded-xl">
+          <div className="p-3 bg-teal-100 dark:bg-teal-955 text-teal-650 dark:text-teal-400 rounded-xl">
             <DollarSign className="w-6 h-6" />
           </div>
           <div>
@@ -340,7 +300,7 @@ export default function PosSalesHistory() {
 
             {/* Caisse */}
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-gray-450 mb-1.5">
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-gray-455 mb-1.5">
                 Caisse
               </label>
               <select
@@ -476,7 +436,7 @@ export default function PosSalesHistory() {
         {isLoading ? (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm border-collapse">
-              <thead className="bg-slate-50 dark:bg-gray-850 text-slate-400 dark:text-gray-450 uppercase font-bold tracking-wider border-b border-slate-150 dark:border-gray-700">
+              <thead className="bg-slate-50 dark:bg-gray-850 text-slate-400 dark:text-gray-455 uppercase font-bold tracking-wider border-b border-slate-150 dark:border-gray-700">
                 <tr>
                   <th className="p-4 text-xs">Ticket</th>
                   <th className="p-4 text-xs">Date</th>
@@ -538,7 +498,7 @@ export default function PosSalesHistory() {
                       <td className="p-4 font-mono font-bold text-slate-900 dark:text-white">
                         {sale.receipt_number}
                       </td>
-                      <td className="p-4 text-slate-650 dark:text-gray-400 text-xs">
+                      <td className="p-4 text-slate-655 dark:text-gray-400 text-xs">
                         {saleDate.toLocaleDateString("fr-FR")} à{" "}
                         {saleDate.toLocaleTimeString("fr-FR", {
                           hour: "2-digit",
@@ -613,10 +573,10 @@ export default function PosSalesHistory() {
 
         {/* Pagination controls */}
         {paginationData && paginationData.last_page > 1 && (
-          <div className="px-6 py-4 border-t border-slate-100 dark:border-gray-750 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/50 dark:bg-gray-850/30">
+          <div className="px-6 py-4 border-t border-slate-100 dark:border-gray-755 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/50 dark:bg-gray-850/30">
             <span className="text-xs text-slate-500 dark:text-gray-400">
               Affichage de {paginationData.from || 0} à {paginationData.to || 0}{" "}
-              sur {paginationData.total} ventes
+               sur {paginationData.total} ventes
             </span>
             <div className="flex items-center gap-2">
               <button
@@ -641,204 +601,21 @@ export default function PosSalesHistory() {
         )}
       </div>
 
-      {/* ================= MODALE DÉTAILS VENTE ================= */}
-      {selectedSale && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
-            <div className="p-5 border-b border-slate-100 dark:border-gray-750 flex justify-between items-center bg-slate-50/50 dark:bg-gray-900/10">
-              <div>
-                <h3 className="text-lg font-black text-slate-900 dark:text-white">
-                  Détails Vente - {selectedSale.receipt_number}
-                </h3>
-                <p className="text-xs text-slate-400 dark:text-gray-400 mt-0.5">
-                  Effectuée le{" "}
-                  {selectedSale.created_at
-                    ? new Date(selectedSale.created_at).toLocaleString("fr-FR")
-                    : ""}
-                </p>
-              </div>
-              <button
-                onClick={() => setSelectedSale(null)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-gray-250 p-1.5 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-full transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      {/* Modale Détails Vente Isolée */}
+      <SaleDetailModal
+        isOpen={selectedSale !== null}
+        onClose={() => setSelectedSale(null)}
+        sale={selectedSale}
+        currency={currency}
+        onReprint={(saleId) => setPreviewPdfSaleId(saleId)}
+      />
 
-            <div className="p-6 overflow-y-auto space-y-6">
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-6 text-sm">
-                <div>
-                  <span className="text-[10px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-wider block">
-                    Client
-                  </span>
-                  <span className="font-bold text-slate-800 dark:text-white mt-1 block">
-                    {selectedSale.customer_name || "Client Passage"}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-wider block">
-                    Méthode Paiement
-                  </span>
-                  <span className="font-bold text-slate-800 dark:text-white mt-1 block">
-                    {selectedSale.payment_method === "CASH"
-                      ? "Espèces"
-                      : selectedSale.payment_method === "MOBILE_MONEY"
-                        ? "Momo/OM"
-                        : "Carte"}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-wider block">
-                    Réf Ordonnance
-                  </span>
-                  <span className="font-bold text-slate-800 dark:text-white mt-1 block">
-                    {selectedSale.prescription_ref || "Aucune"}
-                  </span>
-                </div>
-              </div>
-
-              <div>
-                <span className="text-[10px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-wider block mb-2">
-                  Produits vendus
-                </span>
-                <div className="border border-slate-150 dark:border-gray-700 rounded-xl overflow-hidden">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead className="bg-slate-50 dark:bg-gray-850 text-slate-400 dark:text-gray-450 uppercase font-bold tracking-wider border-b border-slate-150 dark:border-gray-700">
-                      <tr>
-                        <th className="p-3">Article</th>
-                        <th className="p-3 text-center">Qté</th>
-                        <th className="p-3 text-right">Prix Unit.</th>
-                        <th className="p-3 text-right">Remise</th>
-                        <th className="p-3 text-right">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-gray-700 text-slate-700 dark:text-gray-300">
-                      {selectedSale.items?.map((item) => (
-                        <tr key={item.id}>
-                          <td className="p-3 font-semibold text-slate-900 dark:text-white">
-                            {item.article?.name}
-                            {item.batch?.batch_number && (
-                              <span className="block text-[9px] text-slate-400 dark:text-gray-550 font-normal mt-0.5">
-                                Lot : {item.batch.batch_number}{" "}
-                                {item.batch.expire_date
-                                  ? `(Exp: ${new Date(item.batch.expire_date).toLocaleDateString("fr-FR")})`
-                                  : ""}
-                              </span>
-                            )}
-                          </td>
-                          <td className="p-3 text-center font-bold">
-                            {item.qty}
-                          </td>
-                          <td className="p-3 text-right font-mono">
-                            {item.unit_price.toLocaleString()}
-                          </td>
-                          <td className="p-3 text-right font-mono text-rose-500">
-                            {item.discount > 0 ? `-${item.discount}%` : "0%"}
-                          </td>
-                          <td className="p-3 text-right font-bold font-mono text-slate-900 dark:text-white">
-                            {item.sub_total.toLocaleString()}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-5 bg-slate-50 dark:bg-gray-850 border-t border-slate-150 dark:border-gray-700 flex justify-between items-center">
-              <div>
-                <span className="text-[10px] text-slate-450 dark:text-gray-450 font-bold uppercase tracking-wider block">
-                  Montant total
-                </span>
-                <strong className="text-xl font-mono text-emerald-600 dark:text-emerald-450 font-black">
-                  {selectedSale.total_amount.toLocaleString()} {currency}
-                </strong>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setSelectedSale(null)}
-                  className="px-4 py-2 border border-slate-200 dark:border-gray-700 hover:bg-slate-100 dark:hover:bg-gray-700 text-slate-700 dark:text-gray-300 text-xs font-bold rounded-xl transition-all cursor-pointer"
-                >
-                  Fermer
-                </button>
-                <button
-                  onClick={() => {
-                    setPreviewPdfSaleId(selectedSale.id);
-                    setSelectedSale(null);
-                  }}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-xs"
-                >
-                  <Printer className="w-3.5 h-3.5" /> Réimprimer Facture
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ================= MODALE PREVIEW PDF ================= */}
-      {previewPdfSaleId !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-xl max-w-3xl w-full overflow-hidden flex flex-col h-[85vh] animate-in zoom-in-95 duration-200">
-            <div className="p-5 border-b border-slate-100 dark:border-gray-750 flex justify-between items-center bg-slate-50/50 dark:bg-gray-900/10">
-              <div>
-                <h3 className="text-lg font-black text-slate-900 dark:text-white">
-                  Réimpression de la Facture
-                </h3>
-              </div>
-              <button
-                onClick={() => setPreviewPdfSaleId(null)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-gray-250 p-1.5 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-full transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="flex-1 bg-slate-100 dark:bg-gray-900 relative">
-              {loadingPdf ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-                  <Loader2 className="w-10 h-10 animate-spin text-emerald-600" />
-                  <p className="text-sm font-semibold text-slate-500 dark:text-gray-400">
-                    Génération du PDF...
-                  </p>
-                </div>
-              ) : pdfBlobUrl ? (
-                <iframe
-                  src={`${pdfBlobUrl}#toolbar=1`}
-                  className="w-full h-full border-0"
-                  title="Facture PDF"
-                />
-              ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-rose-500">
-                  <X className="w-10 h-10" />
-                  <p className="text-sm font-semibold">
-                    Impossible de charger le document.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <div className="p-4 bg-slate-50 dark:bg-gray-855 border-t border-slate-150 dark:border-gray-700 flex justify-end gap-2">
-              <button
-                onClick={() => setPreviewPdfSaleId(null)}
-                className="px-5 py-2.5 bg-slate-200 hover:bg-slate-350 dark:bg-gray-700 dark:hover:bg-gray-650 text-slate-700 dark:text-gray-300 text-xs font-bold rounded-xl transition-all cursor-pointer"
-              >
-                Fermer
-              </button>
-              {pdfBlobUrl && (
-                <a
-                  href={pdfBlobUrl}
-                  download={`facture_vte_${previewPdfSaleId}.pdf`}
-                  className="flex items-center gap-1.5 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-xs"
-                >
-                  Télécharger le PDF
-                </a>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Modale Preview PDF Facture Isolée */}
+      <AdminSaleInvoicePreviewModal
+        isOpen={previewPdfSaleId !== null}
+        onClose={() => setPreviewPdfSaleId(null)}
+        saleId={previewPdfSaleId}
+      />
     </div>
   );
 }

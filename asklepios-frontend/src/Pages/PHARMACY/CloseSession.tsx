@@ -55,10 +55,14 @@ export default function CloseSession() {
 
   // --- CALCULS DU NET ATTENDU EN CAISSE ---
   const totals = useMemo(() => {
-    // Le cash attendu = Fond de caisse initial + Ventes cash du système
-    const expectedCash = initialBalance + theoreticalSales.cash;
-    const expectedMomo = theoreticalSales.mobileMoney;
-    const expectedCard = theoreticalSales.card;
+    const cashNet = myActiveSession?.treasury_totals?.cash?.net || 0;
+    const momoNet = myActiveSession?.treasury_totals?.mobile_money?.net || 0;
+    const cardNet = myActiveSession?.treasury_totals?.card?.net || 0;
+
+    // Le cash attendu = Fond de caisse initial + Ventes cash + Mouvements nets de trésorerie (apports - retraits - transferts)
+    const expectedCash = initialBalance + theoreticalSales.cash + cashNet;
+    const expectedMomo = theoreticalSales.mobileMoney + momoNet;
+    const expectedCard = theoreticalSales.card + cardNet;
 
     // Calcul des écarts (Compté - Attendu)
     const gapCash = countedCash - expectedCash;
@@ -76,6 +80,7 @@ export default function CloseSession() {
       globalGap,
     };
   }, [
+    myActiveSession,
     initialBalance,
     theoreticalSales.cash,
     theoreticalSales.mobileMoney,

@@ -57,6 +57,9 @@ import OpenSession from "./Pages/PHARMACY/OpenSession";
 import CashSessionHistory from "./Pages/PHARMACY/CashSessionHistory";
 import PosSalesHistory from "./Pages/Admin/Pharmacies/Sale/PosSalesHistory";
 import PosSessionsHistory from "./Pages/Admin/Pharmacies/Sale/PosSessionsHistory";
+import AdminAccounts from "./Pages/Admin/Pharmacies/Sale/AdminAccounts";
+import AdminPendingDeposits from "./Pages/Admin/Pharmacies/Sale/AdminPendingDeposits";
+import AdminTreasuryTransactions from "./Pages/Admin/Pharmacies/Sale/AdminTreasuryTransactions";
 
 const routes = createBrowserRouter([
   // ==========================================
@@ -150,6 +153,18 @@ const routes = createBrowserRouter([
           {
             path: "/admin/pharmacy/pos-sessions-history",
             element: <PosSessionsHistory />,
+          },
+          {
+            path: "/admin/pharmacy/accounts",
+            element: <AdminAccounts />,
+          },
+          {
+            path: "/admin/pharmacy/versements",
+            element: <AdminPendingDeposits />,
+          },
+          {
+            path: "/admin/pharmacy/treasury-transactions",
+            element: <AdminTreasuryTransactions />,
           },
 
           //logistique

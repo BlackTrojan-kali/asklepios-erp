@@ -15,6 +15,8 @@ use App\Http\Controllers\Admin\DoctorController;
 use App\Http\Controllers\Admin\DriverController;
 use App\Http\Controllers\Admin\FacilityRoomController;
 use App\Http\Controllers\Admin\CashRegisterController;
+use App\Http\Controllers\Admin\PaymentAccountController;
+use App\Http\Controllers\Admin\PaymentTransactionController;
 use App\Http\Controllers\Admin\PosSaleController as AdminPosSaleController;
 use App\Http\Controllers\Pharmacien\CashRegisterSessionController;
 use App\Http\Controllers\Pharmacien\PosSaleController;
@@ -129,6 +131,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
             // Caisses (CRUD Admin)
             Route::apiResource('cash-registers', CashRegisterController::class)->only(['store', 'update', 'destroy']);
+
+            // Gestion de la trésorerie (Payment Accounts et Transactions)
+            Route::apiResource('payment-accounts', PaymentAccountController::class);
+            Route::prefix('payment-transactions')->group(function () {
+                Route::post('/{id}/confirm', [PaymentTransactionController::class, 'confirm']);
+                Route::post('/{id}/cancel', [PaymentTransactionController::class, 'cancel']);
+            });
+            Route::apiResource('payment-transactions', PaymentTransactionController::class);
 
             // Catalogue
             Route::get('/article-categories/all', [ArticleCategoryController::class, 'all']);
@@ -287,8 +297,13 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::apiResource('pos-sale-items', PosSaleItemController::class)->only(['index']);
             Route::get('cashier/articles', [CashierController::class, 'getAllArticles']);
 
+            // Trésorerie Caissier (Lecture seule des comptes et de l'historique personnel)
+            Route::get('payment-accounts', [PaymentAccountController::class, 'index']);
+            Route::get('payment-transactions', [PaymentTransactionController::class, 'index']);
+
             Route::middleware('active.session')->group(function () {
                 Route::post('pos-sales', [PosSaleController::class, 'store']);
+                Route::post('payment-transactions', [PaymentTransactionController::class, 'store']);
             });
            
         });

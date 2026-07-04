@@ -118,7 +118,17 @@ export const MENU_CONFIG: MenuItemType[] = [
         ],
       },
       { title: "Pharmaciens", path: "/admin/pharmaciens" },
-      { title: "Versements", path: "/admin/pharmacy/versements" },
+      {
+        title: "Gestion de la Trésorerie",
+        subItems: [
+          { title: "Comptes", path: "/admin/pharmacy/accounts" },
+          { title: "Versements", path: "/admin/pharmacy/versements" },
+          {
+            title: "Mouvements",
+            path: "/admin/pharmacy/treasury-transactions",
+          },
+        ],
+      },
       { title: "Mouvements", path: "/admin/movements" },
       {
         title: "Stocks",
@@ -204,14 +214,17 @@ export const MENU_CONFIG: MenuItemType[] = [
     path: "/pharmacy/cash",
   },
   {
-    title: "Historiques",
+    title: "Suivi & Trésorerie",
     icon: <List size={20} />,
     roles: ["pharmacy"],
     positions: ["vente"],
     requiredLicence: "pharmacy",
     subItems: [
-      { title: "Ventes", path: "pharmacy/cash/sales/history" },
-      { title: "Versements", path: "/pharmacy/deposits-history" },
+      { title: "Historique de Ventes", path: "pharmacy/cash/sales/history" },
+      {
+        title: "Versements & Dépenses",
+        path: "/pharmacy/cash/deposits-history",
+      },
     ],
   },
   {
