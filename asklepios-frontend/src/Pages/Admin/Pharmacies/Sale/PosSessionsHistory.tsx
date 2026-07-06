@@ -405,46 +405,141 @@ export default function PosSessionsHistory() {
                 {session.sales_totals && (
                   <div className="px-6 pb-6 pt-2 border-t border-slate-100 dark:border-gray-700/60 bg-slate-50/20 dark:bg-gray-900/5">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                      <div>
-                        <span className="text-[10px] text-slate-400 dark:text-gray-450 font-bold uppercase tracking-wider">Répartition des Ventes ({totalSessionSales.toLocaleString()} {currency})</span>
-                        <div className="flex flex-wrap gap-4 mt-2">
-                          <div className="flex items-center gap-1.5 text-xs text-slate-650 dark:text-gray-300 font-medium">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                            Espèces : <strong className="font-mono">{session.sales_totals.cash.toLocaleString()} {currency}</strong>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-xs text-slate-650 dark:text-gray-300 font-medium">
-                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                            Momo/OM : <strong className="font-mono">{session.sales_totals.mobile_money.toLocaleString()} {currency}</strong>
-                          </div>
-                          <div className="flex items-center gap-1.5 text-xs text-slate-650 dark:text-gray-300 font-medium">
-                            <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
-                            Carte : <strong className="font-mono">{session.sales_totals.card.toLocaleString()} {currency}</strong>
+                      <div className="space-y-4">
+                        <div>
+                          <span className="text-[10px] text-slate-400 dark:text-gray-450 font-bold uppercase tracking-wider">Répartition des Ventes ({totalSessionSales.toLocaleString()} {currency})</span>
+                          <div className="flex flex-wrap gap-4 mt-2">
+                            <div className="flex items-center gap-1.5 text-xs text-slate-650 dark:text-gray-300 font-medium">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                              Espèces : <strong className="font-mono">{session.sales_totals.cash.toLocaleString()} {currency}</strong>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-xs text-slate-650 dark:text-gray-300 font-medium">
+                              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                              Momo/OM : <strong className="font-mono">{session.sales_totals.mobile_money.toLocaleString()} {currency}</strong>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-xs text-slate-650 dark:text-gray-300 font-medium">
+                              <span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                              Carte : <strong className="font-mono">{session.sales_totals.card.toLocaleString()} {currency}</strong>
+                            </div>
                           </div>
                         </div>
+
+                        {session.treasury_totals && (
+                          <div>
+                            <span className="text-[10px] text-slate-400 dark:text-gray-450 font-bold uppercase tracking-wider">
+                              Mouvements de Trésorerie (Cash Net : {session.treasury_totals.cash.net >= 0 ? "+" : ""}{session.treasury_totals.cash.net.toLocaleString()} {currency})
+                            </span>
+                            <div className="flex flex-wrap gap-4 mt-2">
+                              <div className="flex items-center gap-1.5 text-xs text-slate-650 dark:text-gray-300 font-medium">
+                                <span className="w-1.5 h-1.5 rounded-full bg-teal-500"></span>
+                                Apports : <strong className="font-mono text-teal-600 dark:text-teal-400">+{session.treasury_totals.cash.in.toLocaleString()} {currency}</strong>
+                              </div>
+                              <div className="flex items-center gap-1.5 text-xs text-slate-650 dark:text-gray-300 font-medium">
+                                <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                                Dépenses : <strong className="font-mono text-rose-600 dark:text-rose-400">-{session.treasury_totals.cash.out.toLocaleString()} {currency}</strong>
+                              </div>
+                              <div className="flex items-center gap-1.5 text-xs text-slate-650 dark:text-gray-300 font-medium">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                Versements : <strong className="font-mono text-amber-600 dark:text-amber-400">-{session.treasury_totals.cash.transfer.toLocaleString()} {currency}</strong>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
-                      <div className="flex gap-8">
-                        <div>
-                          <span className="text-[10px] text-slate-400 dark:text-gray-450 font-bold uppercase tracking-wider block">Solde Clôture théorique</span>
-                          <strong className="text-sm font-mono text-slate-800 dark:text-white">{(session.current_balance || 0).toLocaleString()} {currency}</strong>
-                        </div>
-                        
-                        {!isOpen && (
-                          <div className="text-left sm:text-right">
-                            <span className="text-[10px] text-slate-400 dark:text-gray-450 font-bold uppercase tracking-wider block">Solde Clôture réel / Écart</span>
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-mono font-bold text-slate-850 dark:text-white">{(session.closing_balance || 0).toLocaleString()} {currency}</span>
+                      <div className="flex gap-8 w-full sm:w-auto">
+                        {isOpen ? (
+                          <div>
+                            <span className="text-[10px] text-slate-400 dark:text-gray-450 font-bold uppercase tracking-wider block">Solde Clôture théorique (Cash)</span>
+                            <strong className="text-sm font-mono text-slate-800 dark:text-white">{(session.current_balance || 0).toLocaleString()} {currency}</strong>
+                          </div>
+                        ) : (
+                          <div className="bg-slate-100/50 dark:bg-gray-900/30 p-4 rounded-xl border border-slate-200 dark:border-gray-700/80 w-full sm:w-[350px]">
+                            <span className="text-[10px] text-slate-400 dark:text-gray-450 font-bold uppercase tracking-wider block mb-3 text-center">Rapport de clôture & Écarts</span>
+                            <div className="space-y-2 text-xs">
+                              {/* Headers */}
+                              <div className="grid grid-cols-4 font-bold text-[10px] text-slate-400 dark:text-gray-500 pb-1 border-b border-slate-200 dark:border-gray-750">
+                                <span>Mode</span>
+                                <span className="text-right">Attendu</span>
+                                <span className="text-right">Déclaré</span>
+                                <span className="text-right">Écart</span>
+                              </div>
+                              {/* Row Cash */}
                               {(() => {
-                                const expected = (session.current_balance || 0);
-                                const actual = (session.closing_balance || 0);
-                                const diff = actual - expected;
-                                if (diff === 0) {
-                                  return <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold">(Équilibré)</span>;
-                                } else if (diff > 0) {
-                                  return <span className="text-xs text-amber-600 dark:text-amber-400 font-bold">(Excédent +{diff.toLocaleString()} {currency})</span>;
-                                } else {
-                                  return <span className="text-xs text-rose-600 dark:text-rose-400 font-bold">(Déficit {diff.toLocaleString()} {currency})</span>;
-                                }
+                                const expected = session.current_balance || 0;
+                                const declared = session.closing_balance || 0;
+                                const diff = declared - expected;
+                                return (
+                                  <div className="grid grid-cols-4 font-medium items-center py-1">
+                                    <span className="text-slate-600 dark:text-gray-300 font-bold">Espèces</span>
+                                    <span className="text-right font-mono">{expected.toLocaleString()}</span>
+                                    <span className="text-right font-mono">{declared.toLocaleString()}</span>
+                                    <span className={`text-right font-mono font-bold ${diff === 0 ? "text-emerald-600 dark:text-emerald-400" : diff > 0 ? "text-amber-500 dark:text-amber-400" : "text-rose-500 dark:text-rose-455"}`}>
+                                      {diff > 0 ? "+" : ""}{diff.toLocaleString()}
+                                    </span>
+                                  </div>
+                                );
+                              })()}
+                              {/* Row Momo */}
+                              {(() => {
+                                const expected = (session.sales_totals?.mobile_money || 0) + (session.treasury_totals?.mobile_money?.net || 0);
+                                const declared = session.closing_mobile_money || 0;
+                                const diff = declared - expected;
+                                return (
+                                  <div className="grid grid-cols-4 font-medium items-center py-1">
+                                    <span className="text-slate-600 dark:text-gray-300 font-bold">Momo/OM</span>
+                                    <span className="text-right font-mono">{expected.toLocaleString()}</span>
+                                    <span className="text-right font-mono">{declared.toLocaleString()}</span>
+                                    <span className={`text-right font-mono font-bold ${diff === 0 ? "text-emerald-600 dark:text-emerald-400" : diff > 0 ? "text-amber-500 dark:text-amber-400" : "text-rose-500 dark:text-rose-455"}`}>
+                                      {diff > 0 ? "+" : ""}{diff.toLocaleString()}
+                                    </span>
+                                  </div>
+                                );
+                              })()}
+                              {/* Row Card */}
+                              {(() => {
+                                const expected = (session.sales_totals?.card || 0) + (session.treasury_totals?.card?.net || 0);
+                                const declared = session.closing_card || 0;
+                                const diff = declared - expected;
+                                return (
+                                  <div className="grid grid-cols-4 font-medium items-center py-1">
+                                    <span className="text-slate-600 dark:text-gray-300 font-bold">Carte BC</span>
+                                    <span className="text-right font-mono">{expected.toLocaleString()}</span>
+                                    <span className="text-right font-mono">{declared.toLocaleString()}</span>
+                                    <span className={`text-right font-mono font-bold ${diff === 0 ? "text-emerald-600 dark:text-emerald-400" : diff > 0 ? "text-amber-500 dark:text-amber-400" : "text-rose-500 dark:text-rose-455"}`}>
+                                      {diff > 0 ? "+" : ""}{diff.toLocaleString()}
+                                    </span>
+                                  </div>
+                                );
+                              })()}
+                              {/* Total Discrepancy */}
+                              {(() => {
+                                const expCash = session.current_balance || 0;
+                                const expMomo = (session.sales_totals?.mobile_money || 0) + (session.treasury_totals?.mobile_money?.net || 0);
+                                const expCard = (session.sales_totals?.card || 0) + (session.treasury_totals?.card?.net || 0);
+
+                                const decCash = session.closing_balance || 0;
+                                const decMomo = session.closing_mobile_money || 0;
+                                const decCard = session.closing_card || 0;
+
+                                const globalDiff = (decCash - expCash) + (decMomo - expMomo) + (decCard - expCard);
+
+                                return (
+                                  <div className="grid grid-cols-4 font-bold items-center pt-2 border-t border-slate-200 dark:border-gray-750 mt-1">
+                                    <span className="text-slate-700 dark:text-gray-250">Écart Global</span>
+                                    <span className="col-span-3 text-right font-mono font-black">
+                                      <span className={`px-2.5 py-0.5 rounded-full text-xs ${
+                                        globalDiff === 0
+                                          ? "bg-emerald-100 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-400"
+                                          : globalDiff > 0
+                                          ? "bg-amber-100 dark:bg-amber-950/20 text-amber-800 dark:text-amber-400"
+                                          : "bg-rose-100 dark:bg-rose-950/20 text-rose-800 dark:text-rose-400"
+                                      }`}>
+                                        {globalDiff === 0 ? "" : globalDiff > 0 ? "+" : ""}{globalDiff.toLocaleString()} {currency}
+                                      </span>
+                                    </span>
+                                  </div>
+                                );
                               })()}
                             </div>
                           </div>

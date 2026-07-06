@@ -124,6 +124,7 @@ function BranchRegistersList({
   );
   const [openingBalance, setOpeningBalance] = useState<number>(0);
   const [closingBalance, setClosingBalance] = useState<number>(0);
+  const [merchantCode, setMerchantCode] = useState("");
 
   const handleCreateRegister = () => {
     if (!registerName.trim()) {
@@ -135,11 +136,13 @@ function BranchRegistersList({
         name: registerName,
         pharmacy_branch_id: branchId,
         status: "active",
+        merchant_code: merchantCode,
       },
       {
         onSuccess: () => {
           toast.success("Caisse créée avec succès.");
           setRegisterName("");
+          setMerchantCode("");
           setIsCreateOpen(false);
         },
         onError: (err: any) => {
@@ -162,12 +165,14 @@ function BranchRegistersList({
         payload: {
           name: registerName,
           status: registerStatus,
+          merchant_code: merchantCode,
         },
       },
       {
         onSuccess: () => {
           toast.success("Caisse mise à jour avec succès.");
           setSelectedRegister(null);
+          setMerchantCode("");
           setIsEditOpen(false);
         },
         onError: (err: any) => {
@@ -267,6 +272,7 @@ function BranchRegistersList({
           <button
             onClick={() => {
               setRegisterName("");
+              setMerchantCode("");
               setIsCreateOpen(true);
             }}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-semibold transition-colors shadow-xs"
@@ -306,9 +312,14 @@ function BranchRegistersList({
                       <h4 className="font-bold text-slate-800 dark:text-white text-base">
                         {register.name}
                       </h4>
-                      <span className="text-[10px] text-gray-400 dark:text-gray-500">
-                        ID: #{register.id}
-                      </span>
+                      <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] text-gray-400 dark:text-gray-500">
+                        <span>ID: #{register.id}</span>
+                        {register.merchant_code && (
+                          <span className="font-semibold text-teal-600 dark:text-teal-400">
+                            • Code : {register.merchant_code}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       {isMySession && (
@@ -416,6 +427,7 @@ function BranchRegistersList({
                         onClick={() => {
                           setSelectedRegister(register);
                           setRegisterName(register.name);
+                          setMerchantCode(register.merchant_code || "");
                           setRegisterStatus(register.status);
                           setIsEditOpen(true);
                         }}
@@ -464,6 +476,18 @@ function BranchRegistersList({
                     className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg outline-hidden focus:ring-2 focus:ring-teal-500 bg-slate-50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-900 text-sm text-slate-800 dark:text-white transition-all"
                   />
                 </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                    Code Marchand / Caisse
+                  </label>
+                  <input
+                    type="text"
+                    value={merchantCode}
+                    onChange={(e) => setMerchantCode(e.target.value)}
+                    placeholder="ex: CODE-CAISSE-1..."
+                    className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg outline-hidden focus:ring-2 focus:ring-teal-500 bg-slate-50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-900 text-sm text-slate-800 dark:text-white transition-all"
+                  />
+                </div>
               </div>
             </div>
             <div className="bg-slate-50 dark:bg-gray-900/60 p-4 flex justify-end gap-3 border-t border-gray-100 dark:border-gray-750">
@@ -502,6 +526,18 @@ function BranchRegistersList({
                     type="text"
                     value={registerName}
                     onChange={(e) => setRegisterName(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg outline-hidden focus:ring-2 focus:ring-teal-500 bg-slate-50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-900 text-sm text-slate-800 dark:text-white transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
+                    Code Marchand / Caisse
+                  </label>
+                  <input
+                    type="text"
+                    value={merchantCode}
+                    onChange={(e) => setMerchantCode(e.target.value)}
+                    placeholder="ex: CODE-CAISSE-1..."
                     className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg outline-hidden focus:ring-2 focus:ring-teal-500 bg-slate-50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-900 text-sm text-slate-800 dark:text-white transition-all"
                   />
                 </div>

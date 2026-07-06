@@ -13,6 +13,7 @@ class PosSale extends Model
         'total_amount' => 'float',
         'amount_received' => 'float',
         'change_due' => 'float',
+        'payment_account_id' => 'integer',
     ];
 
     protected $appends = ['receipt_number'];
@@ -30,6 +31,11 @@ class PosSale extends Model
     public function session()
     {
         return $this->belongsTo(CashRegisterSession::class, 'cash_register_session_id');
+    }
+
+    public function paymentAccount()
+    {
+        return $this->belongsTo(PaymentAccount::class, 'payment_account_id');
     }
 
     public function items()

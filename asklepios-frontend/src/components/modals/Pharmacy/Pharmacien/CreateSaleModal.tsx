@@ -20,6 +20,7 @@ import { useAuth } from "../../../../contexts/AuthContext";
 import { useBranchArticlesAll } from "../../../../hooks/pharmacy/useBrancheArticle";
 import { useCreatePosSale } from "../../../../hooks/pharmacy/usePosSale";
 import { useMyActiveSession } from "../../../../hooks/pharmacy/useCashRegisterSession";
+import { usePaymentAccounts } from "../../../../hooks/pharmacy/usePaymentAccount";
 import api from "../../../../api/api";
 import SaleReceiptPreviewModal from "./SaleReceiptPreviewModal";
 
@@ -66,6 +67,7 @@ export default function CreateSaleModal({
     "CASH" | "MOBILE_MONEY" | "CARD"
   >("CASH");
   const [amountReceived, setAmountReceived] = useState<number>(0);
+  const [selectedAccountId, setSelectedAccountId] = useState<number | undefined>(undefined);
 
   const searchSelectRef = useRef<any>(null);
 
@@ -77,6 +79,25 @@ export default function CreateSaleModal({
   );
 
   const { data: myActiveSession } = useMyActiveSession();
+  
+  // Charger les comptes de trésorerie de la succursale (non-admin)
+  const { data: paymentAccounts } = usePaymentAccounts(
+    { pharmacy_branch_id: currentBranchId || undefined },
+    false
+  );
+
+  const activePaymentAccounts = useMemo(() => {
+    return paymentAccounts?.filter((acc) => acc.status === "active") || [];
+  }, [paymentAccounts]);
+
+  const momoAccounts = useMemo(() => {
+    return activePaymentAccounts.filter((acc) => acc.type === "mobile_money");
+  }, [activePaymentAccounts]);
+
+  const bankAccounts = useMemo(() => {
+    return activePaymentAccounts.filter((acc) => acc.type === "bank");
+  }, [activePaymentAccounts]);
+
   const createSaleMutation = useCreatePosSale();
   const [completedSaleId, setCompletedSaleId] = useState<number | null>(null);
 
@@ -89,6 +110,7 @@ export default function CreateSaleModal({
     setCompletedSaleId(null);
     setCart([]);
     setAmountReceived(0);
+    setSelectedAccountId(undefined);
     setCustomerName("Patient Comptoir");
     setHasPrescription(false);
     setPrescriptionRef("");
@@ -305,6 +327,7 @@ export default function CreateSaleModal({
             has_prescription: hasPrescription,
             prescription_ref: prescriptionRef,
             payment_method: paymentMethod,
+            payment_account_id: selectedAccountId,
             amount_received:
               paymentMethod === "CASH" ? amountReceived : totals.total,
             items: itemsPayload,
@@ -698,7 +721,10 @@ export default function CreateSaleModal({
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
-                    onClick={() => setPaymentMethod("CASH")}
+                    onClick={() => {
+                      setPaymentMethod("CASH");
+                      setSelectedAccountId(undefined);
+                    }}
                     className={`p-3 rounded-xl border text-center flex flex-col items-center justify-center gap-1 cursor-pointer transition-all ${paymentMethod === "CASH" ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 font-bold shadow-xs" : "border-slate-200 dark:border-gray-700 hover:bg-slate-50 dark:hover:bg-gray-750 text-slate-600 dark:text-gray-300"}`}
                   >
                     <DollarSign className="w-5 h-5" />
@@ -706,7 +732,10 @@ export default function CreateSaleModal({
                   </button>
                   <button
                     type="button"
-                    onClick={() => setPaymentMethod("MOBILE_MONEY")}
+                    onClick={() => {
+                      setPaymentMethod("MOBILE_MONEY");
+                      setSelectedAccountId(momoAccounts[0]?.id);
+                    }}
                     className={`p-3 rounded-xl border text-center flex flex-col items-center justify-center gap-1 cursor-pointer transition-all ${paymentMethod === "MOBILE_MONEY" ? "border-blue-600 bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400 font-bold shadow-xs" : "border-slate-200 dark:border-gray-700 hover:bg-slate-50 dark:hover:bg-gray-750 text-slate-600 dark:text-gray-300"}`}
                   >
                     <CreditCard className="w-5 h-5 text-blue-500" />
@@ -714,7 +743,10 @@ export default function CreateSaleModal({
                   </button>
                   <button
                     type="button"
-                    onClick={() => setPaymentMethod("CARD")}
+                    onClick={() => {
+                      setPaymentMethod("CARD");
+                      setSelectedAccountId(bankAccounts[0]?.id);
+                    }}
                     className={`p-3 rounded-xl border text-center flex flex-col items-center justify-center gap-1 cursor-pointer transition-all ${paymentMethod === "CARD" ? "border-purple-600 bg-purple-50 dark:bg-purple-950/20 text-purple-700 dark:text-purple-400 font-bold shadow-xs" : "border-slate-200 dark:border-gray-700 hover:bg-slate-50 dark:hover:bg-gray-750 text-slate-600 dark:text-gray-300"}`}
                   >
                     <CreditCard className="w-5 h-5 text-purple-500" />
@@ -722,6 +754,93 @@ export default function CreateSaleModal({
                   </button>
                 </div>
               </div>
+
+              {/* Sélection du compte de trésorerie si dématérialisé */}
+              {paymentMethod === "MOBILE_MONEY" && (
+                <div className="mb-4">
+                  {momoAccounts.length === 0 ? (
+                    <div className="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/30 rounded-xl p-3.5 text-rose-850 dark:text-rose-350 text-xs flex items-start gap-2">
+                      <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                      <div>
+                        Aucun compte Mobile Money actif n'est configuré pour cette succursale. Le règlement Momo est impossible.
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
+                        Compte de Règlement Momo
+                      </label>
+                      <div className="flex flex-col gap-1.5">
+                        {momoAccounts.map((acc) => (
+                          <button
+                            key={acc.id}
+                            type="button"
+                            onClick={() => setSelectedAccountId(acc.id)}
+                            className={`w-full p-2.5 rounded-lg border text-left flex items-center justify-between text-xs transition-all ${
+                              selectedAccountId === acc.id
+                                ? "border-blue-600 bg-blue-50/50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400 font-bold"
+                                : "border-slate-200 dark:border-gray-700 hover:bg-slate-50 dark:hover:bg-gray-750 text-slate-700 dark:text-gray-300"
+                            }`}
+                          >
+                            <span>{acc.name}</span>
+                            <span className="font-mono text-[10px] bg-slate-100 dark:bg-gray-900 px-1.5 py-0.5 rounded text-slate-500">
+                              {acc.account_number || "Sans numéro"}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {paymentMethod === "CARD" && (
+                <div className="mb-4">
+                  {bankAccounts.length === 0 ? (
+                    <div className="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/30 rounded-xl p-3.5 text-rose-850 dark:text-rose-350 text-xs flex items-start gap-2">
+                      <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                      <div>
+                        Aucun compte bancaire actif n'est configuré pour cette succursale. Le règlement par carte est impossible.
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
+                        Compte Bancaire de Réception
+                      </label>
+                      <div className="flex flex-col gap-1.5">
+                        {bankAccounts.map((acc) => (
+                          <button
+                            key={acc.id}
+                            type="button"
+                            onClick={() => setSelectedAccountId(acc.id)}
+                            className={`w-full p-2.5 rounded-lg border text-left flex items-center justify-between text-xs transition-all ${
+                              selectedAccountId === acc.id
+                                ? "border-purple-600 bg-purple-50/50 dark:bg-purple-950/20 text-purple-700 dark:text-purple-400 font-bold"
+                                : "border-slate-200 dark:border-gray-700 hover:bg-slate-50 dark:hover:bg-gray-750 text-slate-700 dark:text-gray-300"
+                            }`}
+                          >
+                            <span>{acc.name}</span>
+                            <span className="font-mono text-[10px] bg-slate-100 dark:bg-gray-900 px-1.5 py-0.5 rounded text-slate-500">
+                              {acc.account_number || "Sans numéro"}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Code marchand caisse si Momo ou Carte */}
+              {paymentMethod !== "CASH" && myActiveSession?.register?.merchant_code && (
+                <div className="mb-4 p-3 bg-teal-50 dark:bg-teal-950/20 border border-teal-200 dark:border-teal-900/30 rounded-xl flex items-center justify-between text-teal-800 dark:text-teal-400 text-xs">
+                  <span className="font-medium">Code marchand de cette caisse :</span>
+                  <strong className="font-mono text-sm bg-teal-100 dark:bg-teal-950 px-2 py-0.5 rounded">
+                    {myActiveSession.register.merchant_code}
+                  </strong>
+                </div>
+              )}
 
               {/* Calcul du reliquat */}
               {paymentMethod === "CASH" && (
@@ -758,7 +877,8 @@ export default function CreateSaleModal({
                 disabled={
                   cart.length === 0 ||
                   (!hasPrescription &&
-                    cart.some((i) => i.product.requiresPrescription))
+                    cart.some((i) => i.product.requiresPrescription)) ||
+                  (paymentMethod !== "CASH" && !selectedAccountId)
                 }
                 onClick={handleValidateSale}
                 className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 dark:disabled:bg-gray-700 disabled:text-slate-400 dark:disabled:text-gray-500 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 tracking-wide cursor-pointer disabled:cursor-not-allowed"

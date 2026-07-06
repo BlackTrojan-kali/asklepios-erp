@@ -13,6 +13,7 @@ export interface PosSalePayload {
   has_prescription?: boolean;
   prescription_ref?: string;
   payment_method: "CASH" | "MOBILE_MONEY" | "CARD";
+  payment_account_id?: number;
   amount_received?: number;
   items: PosSaleItemPayload[];
 }
@@ -46,6 +47,7 @@ export interface PosSaleDto {
   prescription_ref?: string;
   total_amount: number;
   payment_method: "CASH" | "MOBILE_MONEY" | "CARD";
+  payment_account_id?: number | null;
   amount_received?: number;
   change_due?: number;
   created_at?: string;

@@ -145,6 +145,8 @@ class CashRegisterSessionController extends Controller
 
         $validated = $request->validate([
             'closing_balance' => 'required|numeric|min:0',
+            'closing_mobile_money' => 'nullable|numeric|min:0',
+            'closing_card' => 'nullable|numeric|min:0',
             'password' => 'required|string',
             'closing_notes' => 'nullable|string',
         ]);
@@ -157,6 +159,8 @@ class CashRegisterSessionController extends Controller
         $session->update([
             'closed_at' => now(),
             'closing_balance' => $validated['closing_balance'],
+            'closing_mobile_money' => $validated['closing_mobile_money'] ?? 0.0,
+            'closing_card' => $validated['closing_card'] ?? 0.0,
             'closing_notes' => $validated['closing_notes'] ?? null,
         ]);
 
@@ -199,7 +203,8 @@ class CashRegisterSessionController extends Controller
                 'card' => $card,
             ];
             
-            $session->current_balance = (float)$session->opening_balance + $cash;
+            $treasury = $session->treasury_totals;
+            $session->current_balance = (float)$session->opening_balance + $cash + (float)($treasury['cash']['net'] ?? 0);
         }
 
         return response()->json($session, 200);
@@ -243,7 +248,8 @@ class CashRegisterSessionController extends Controller
                 'card' => $card,
             ];
             
-            $session->current_balance = (float)$session->opening_balance + $cash;
+            $treasury = $session->treasury_totals;
+            $session->current_balance = (float)$session->opening_balance + $cash + (float)($treasury['cash']['net'] ?? 0);
         }
 
         return response()->json($sessions, 200);
