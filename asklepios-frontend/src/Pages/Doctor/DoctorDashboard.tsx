@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { 
     Users, Clock, ChevronRight, User, Activity, FileText, ClipboardCopy,
     Loader2, RefreshCw, CalendarDays, ArrowRightCircle, CheckCircle2,
-    Trash2, AlertCircle, Droplet, ShieldAlert, Edit // <-- Icônes ajoutées
+    Trash2, AlertCircle, Droplet, ShieldAlert, Edit, Ticket // 👉 Icône Ticket ajoutée
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import useAppointmentStore from '../../functions/base_hospital/useAppointmentStore';
@@ -13,7 +13,7 @@ import { AdmitToWaitingRoomModal } from '../../components/modals/Base_hopital/Ap
 import { AdmitToConsultationModal } from '../../components/modals/Base_hopital/Appointment/AdmitToConsultationModal';
 import { ConsultationModal } from '../../components/modals/Base_hopital/Consultation/ConsultationModal';
 import { PastConsultationPreviewModal } from '../../components/modals/Base_hopital/Consultation/PastConsultationPreviewModal';
-import { MedicalBackgroundModal } from '../../components/modals/Base_hopital/Consultation/MedicalBackgroundModal'; // 👉 NOUVEAU
+import { MedicalBackgroundModal } from '../../components/modals/Base_hopital/Consultation/MedicalBackgroundModal';
 
 const DoctorDashboard = () => {
     const { profile } = useAuth();
@@ -40,7 +40,7 @@ const DoctorDashboard = () => {
     const [isAdmitWaitingModalOpen, setIsAdmitWaitingModalOpen] = useState(false);
     const [isAdmitModalOpen, setIsAdmitModalOpen] = useState(false);
     const [isConsultModalOpen, setIsConsultModalOpen] = useState(false);
-    const [isMedicalBgModalOpen, setIsMedicalBgModalOpen] = useState(false); // 👉 NOUVEAU
+    const [isMedicalBgModalOpen, setIsMedicalBgModalOpen] = useState(false);
     
     const [previewConsultationId, setPreviewConsultationId] = useState<number | null>(null);
     const [consultationToDelete, setConsultationToDelete] = useState<number | null>(null);
@@ -64,7 +64,7 @@ const DoctorDashboard = () => {
     useEffect(() => { setHistoryPage(1); }, [selectedAppointment?.patient?.id]);
     useEffect(() => { refreshHistory(); }, [refreshHistory]);
 
-    // 👉 MÉTHODOLOGIE AUTO-REFRESH : Synchroniser le rdv sélectionné avec les nouvelles données
+    // MÉTHODOLOGIE AUTO-REFRESH
     useEffect(() => {
         if (selectedAppointment) {
             const freshAppt = appointments.find(a => a.id === selectedAppointment.id);
@@ -106,7 +106,7 @@ const DoctorDashboard = () => {
 
             if (priorityA !== priorityB) return priorityA - priorityB;
 
-            if (priorityA === 2) {
+            if (priorityA === 1 || priorityA === 2) {
                 const queueA = a.visit?.queue_number || 999999;
                 const queueB = b.visit?.queue_number || 999999;
                 return queueA - queueB;
@@ -213,14 +213,23 @@ const DoctorDashboard = () => {
                                     <div key={appt.id} onClick={() => setSelectedAppointment(appt)} className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between group ${isSelected ? 'bg-[#faf8f1] dark:bg-gray-700 border-[#00a896] shadow-sm' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'}`}>
                                         <div className="flex items-center gap-4 min-w-0">
                                             <div className={`shrink-0 flex items-center justify-center font-black text-lg min-w-[3rem] h-12 rounded-xl ${isConsulting ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' : isWaiting ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' : isComplete ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'}`}>
-                                                {appt.visit?.queue_number && (isWaiting || isConsulting) ? `#${appt.visit.queue_number}` : <User size={20} />}
+                                                <User size={20} />
                                             </div>
                                             <div className="min-w-0 space-y-0.5">
                                                 <h3 className="font-bold text-sm text-slate-800 dark:text-white truncate font-brand">{appt.patient?.first_name} {appt.patient?.last_name}</h3>
                                                 <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 font-mono"><Clock size={12} /> {isScheduled ? `RDV: ${new Date(appt.scheduled_datetime).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})}` : `Arrivée: ${appt.visit?.arrival_time ? new Date(appt.visit.arrival_time).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}) : "..."}`}</p>
-                                                <span className={`inline-block text-[10px] px-2 py-0.5 rounded font-black uppercase mt-1 ${isConsulting ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' : isWaiting ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300' : isComplete ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'}`}>
-                                                    {isComplete ? 'Terminé' : isConsulting ? 'En examen' : isWaiting ? 'En attente' : 'Prévu (Non arrivé)'}
-                                                </span>
+                                                
+                                                {/* 👉 AFFICHAGE DES BADGES (Ticket + Statut) */}
+                                                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                                    {appt.visit?.queue_number && (isWaiting || isConsulting) && (
+                                                        <span className="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 font-bold px-2 py-0.5 rounded text-[10px] font-mono flex items-center gap-1 border border-indigo-200 dark:border-indigo-800/50 shadow-sm">
+                                                            <Ticket size={12} /> N° {appt.visit.queue_number}
+                                                        </span>
+                                                    )}
+                                                    <span className={`inline-block text-[10px] px-2 py-0.5 rounded font-black uppercase ${isConsulting ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' : isWaiting ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300' : isComplete ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'}`}>
+                                                        {isComplete ? 'Terminé' : isConsulting ? 'En examen' : isWaiting ? 'En attente' : 'Prévu (Non arrivé)'}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                         <ChevronRight size={16} className="text-gray-400 dark:text-gray-500 group-hover:translate-x-1 transition-transform" />
@@ -249,7 +258,7 @@ const DoctorDashboard = () => {
 
                             <div className="flex-1 overflow-y-auto p-6 space-y-6 flex flex-col custom-scrollbar">
                                 
-                                {/* 👉 NOUVEAU : ENCART ANTÉCÉDENTS MÉDICAUX DIRECTEMENT DANS LE DASHBOARD */}
+                                {/* ENCART ANTÉCÉDENTS MÉDICAUX DIRECTEMENT DANS LE DASHBOARD */}
                                 <div className="bg-white dark:bg-gray-800 border border-red-100 dark:border-red-900/50 rounded-xl overflow-hidden shadow-sm">
                                     <div className="flex items-center justify-between bg-red-50 dark:bg-red-900/20 px-4 py-3 border-b border-red-100 dark:border-red-900/50">
                                         <h3 className="text-sm font-bold text-red-700 dark:text-red-400 flex items-center gap-2 font-brand">
@@ -361,7 +370,6 @@ const DoctorDashboard = () => {
             {/* --- MODALES PROTOCOLAIRES --- */}
             {selectedAppointment && (
                 <>
-                    {/* 👉 Modale du Dossier Médical */}
                     <MedicalBackgroundModal
                         isOpen={isMedicalBgModalOpen}
                         onClose={(hasChanged?: boolean) => { 

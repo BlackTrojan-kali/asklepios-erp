@@ -9,9 +9,10 @@ interface Props {
     onClose: () => void;
     category: RoomCategoryDto | null;
     centers: CenterDto[];
+    AutoRefreshPage: () => void;
 }
 
-export const UpdateRoomCategoryModal: React.FC<Props> = ({ isOpen, onClose, category, centers }) => {
+export const UpdateRoomCategoryModal: React.FC<Props> = ({ isOpen, onClose, category, centers,AutoRefreshPage }) => {
     const { updateRoomCategory, actionLoading } = useRoomCategoryStore();
 
     const [payload, setPayload] = useState<RoomCategoryPayload>({
@@ -37,7 +38,9 @@ export const UpdateRoomCategoryModal: React.FC<Props> = ({ isOpen, onClose, cate
         if (!category || !isFormValid) return;
 
         const success = await updateRoomCategory(category.id, payload);
-        if (success) onClose();
+        if (success) {
+            AutoRefreshPage();
+            onClose();}
     };
 
     if (!isOpen || !category) return null;

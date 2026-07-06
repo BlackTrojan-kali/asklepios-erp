@@ -45,12 +45,13 @@ const Receptionists = () => {
     // États pour l'ouverture des modales
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [selectedReceptionist, setSelectedReceptionist] = useState<ReceptionistDto | null>(null);
+    const [autoRefreshPage,setAutoRefreshPage] = useState<boolean>(false);
 
     // --- CHARGEMENT INITIAL ---
     useEffect(() => {
         getReceptionists(page, filters);
         getCenters(1, {}, 100); // Récupère une liste large de centres pour le filtre
-    }, [getReceptionists, getCenters, page]);
+    }, [getReceptionists, getCenters, page,autoRefreshPage]);
 
     // Action : Rafraîchir la liste actuelle
     const handleRefresh = () => {
@@ -71,7 +72,10 @@ const Receptionists = () => {
         getReceptionists(1, { search: '', center_id: '' });
     };
 
-    // Action : Supprimer un réceptionniste
+    const handleAutoRefresh = ()=>{
+        setAutoRefreshPage(!autoRefreshPage)
+    }
+    // Action : Supprimer un réceptionniste 
     const handleDelete = async (id: number, name: string) => {
         const result = await Swal.fire({
             title: 'Supprimer ce réceptionniste ?',
@@ -323,7 +327,8 @@ const Receptionists = () => {
             <CreateReceptionistModal 
                 isOpen={isCreateOpen} 
                 onClose={() => setIsCreateOpen(false)} 
-                centers={centers} 
+                centers={centers}
+                AutoRefreshPage={handleAutoRefresh} 
             />
 
             <UpdateReceptionistModal 
@@ -331,6 +336,7 @@ const Receptionists = () => {
                 onClose={() => setSelectedReceptionist(null)} 
                 receptionist={selectedReceptionist}
                 centers={centers} 
+                AutoRefreshPage={handleAutoRefresh}
             />
 
         </div>

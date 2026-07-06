@@ -11,12 +11,14 @@ const Countries = () => {
     const [searchInput, setSearchInput] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedCountry, setSelectedCountry] = useState<CountryDto | null>(null);
-
+    const [isRefreshed,setIsRefreshed] = useState<boolean>(false);
     // Chargement initial
     useEffect(() => {
         getCountries(1, '');
-    }, [getCountries]);
-
+    }, [getCountries,isRefreshed]);
+    const handleIsRefresh= ()=>{
+        setIsRefreshed(!isRefreshed);
+    }
     // Gérer la recherche (déclenchée par le bouton ou la touche Entrée)
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -187,6 +189,7 @@ const Countries = () => {
                 isOpen={isModalOpen} 
                 onClose={() => setIsModalOpen(false)} 
                 countryToEdit={selectedCountry} 
+                isRefreshed = {handleIsRefresh}
             />
 
         </div>

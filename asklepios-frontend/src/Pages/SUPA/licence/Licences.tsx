@@ -11,13 +11,17 @@ const Licences = () => {
     // États locaux
     const [searchInput, setSearchInput] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [autoRefreshPage, SetAutoRefreshPage]= useState<boolean>(false);
     const [selectedLicence, setSelectedLicence] = useState<LicenceDto | null>(null);
 
     // Chargement initial
     useEffect(() => {
         getLicences(1, '');
-    }, [getLicences]);
+    }, [getLicences,autoRefreshPage]);
 
+    const handleAutoRefresh = ()=>{
+        SetAutoRefreshPage(!autoRefreshPage);
+    }
     // Gérer la recherche
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -233,7 +237,8 @@ const Licences = () => {
             <LicenceModal 
                 isOpen={isModalOpen} 
                 onClose={() => setIsModalOpen(false)} 
-                licenceToEdit={selectedLicence} 
+                licenceToEdit={selectedLicence}
+                AutoRefreshPage = {handleAutoRefresh} 
             />
 
         </div>

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Pharmacy\PharmacyBranch;
 use Illuminate\Database\Eloquent\Model;
 
 class Hospital extends Model
@@ -11,5 +12,8 @@ class Hospital extends Model
     
     public function centers(){
         return $this->hasMany(Center::class);
+    }
+    public function pharmacies(){
+        return $this->hasMany(PharmacyBranch::class);
     }
 }

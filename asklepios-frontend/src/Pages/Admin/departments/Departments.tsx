@@ -38,22 +38,25 @@ const Departments = () => {
     // États pour la sélection et la recherche
     const [selectedCenterOption, setSelectedCenterOption] = useState<any>(null);
     const [searchTerm, setSearchTerm] = useState("");
+    const [autoRefreshPage,setAutorRefreshPage] = useState<boolean>(false);
 
     // États pour les modales
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [selectedDept, setSelectedDept] = useState<DepartmentDto | null>(null);
-
+    const handleAutoRefresh = ()=>{
+        setAutorRefreshPage(!autoRefreshPage)
+    }
     // 1. Chargement initial des centres de l'hôpital
     useEffect(() => {
         getCenters(1, {}, 100);
-    }, [getCenters]);
+    }, [getCenters,autoRefreshPage]);
 
     // 2. Chargement des départements quand le centre sélectionné change
     useEffect(() => {
         if (selectedCenterOption) {
             getDepartments(selectedCenterOption.value, searchTerm);
         }
-    }, [selectedCenterOption, searchTerm, getDepartments]);
+    }, [selectedCenterOption, searchTerm, getDepartments,autoRefreshPage]);
 
     // Formatage des centres pour le composant Select
     const centerOptions = useMemo(() => 
@@ -276,7 +279,8 @@ const Departments = () => {
                 <CreateDepartmentModal 
                     isOpen={isCreateOpen} 
                     onClose={() => setIsCreateOpen(false)} 
-                    centerId={selectedCenterOption.value} 
+                    centerId={selectedCenterOption.value}
+                    AutoRefreshPage={handleAutoRefresh} 
                 />
             )}
 
@@ -284,6 +288,7 @@ const Departments = () => {
                 isOpen={!!selectedDept} 
                 onClose={() => setSelectedDept(null)} 
                 department={selectedDept}
+                AutoRefreshPage={handleAutoRefresh}
             />
 
         </div>

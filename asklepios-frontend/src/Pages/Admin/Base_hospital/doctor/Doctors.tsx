@@ -43,18 +43,21 @@ const Doctors = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCenterFilter, setSelectedCenterFilter] = useState('');
     const [selectedDeptFilter, setSelectedDeptFilter] = useState('');
+    const [autoRefreshPage,setAutoRefreshPage] = useState<boolean>();
 
     // États pour l'ouverture des modales
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [selectedDoctor, setSelectedDoctor] = useState<DoctorDto | null>(null);
-
+    const handleAutoRefresh = ()=>{
+        setAutoRefreshPage(!autoRefreshPage)
+    }
     // --- CHARGEMENT INITIAL ---
     useEffect(() => {
         // Chargement des données de référence (Centres & Départements) pour les dropdowns
         // On demande 100 éléments par page pour s'assurer de récupérer la liste complète
         getCenters(1, {}, 100);
         getDepartments(1, {}, 100);
-    }, [getCenters, getDepartments]);
+    }, [getCenters, getDepartments,autoRefreshPage]);
 
     
     const fetchDoctors = (targetPage: number = 1) => {
@@ -69,7 +72,7 @@ const Doctors = () => {
         // Chargement des médecins avec les filtres actuels
         fetchDoctors(page);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [page]);
+    }, [page,autoRefreshPage]);
 // Action : Rafraîchir la liste actuelle
     const handleRefresh = () => {
         fetchDoctors(page);
@@ -343,6 +346,7 @@ const Doctors = () => {
                 onClose={() => setIsCreateOpen(false)} 
                 centers={centers}
                 departments={departments}
+                AutoRefreshPage={handleAutoRefresh}
             />
 
             <UpdateDoctorModal 
@@ -351,6 +355,7 @@ const Doctors = () => {
                 doctor={selectedDoctor}
                 centers={centers}
                 departments={departments}
+                AutoRefreshPage={handleAutoRefresh}
             />
 
         </div>

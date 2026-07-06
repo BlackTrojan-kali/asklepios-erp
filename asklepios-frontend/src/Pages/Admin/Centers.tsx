@@ -34,12 +34,17 @@ const Centers = () => {
     // États pour les modales
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [selectedCenter, setSelectedCenter] = useState<CenterDto | null>(null);
+    const [autoRefreshPage, SetAutoRefreshPage] = useState<boolean>(false);
+
+    const handleAutoRefresh = ()=>{
+        SetAutoRefreshPage(!autoRefreshPage)
+    }
 
     // Chargement initial des données
     useEffect(() => {
         getCenters(1, {});
         getCountries(1, "", 100); // Récupère les pays pour le filtre et les modales
-    }, [getCenters, getCountries]);
+    }, [getCenters, getCountries,autoRefreshPage]);
 
     // Soumission du formulaire de filtre
     const handleFilterSubmit = (e: React.FormEvent) => {
@@ -343,13 +348,15 @@ const Centers = () => {
                 isOpen={isCreateOpen} 
                 onClose={() => setIsCreateOpen(false)} 
                 countries={countries} 
+                AutoRefreshPage={handleAutoRefresh}
             />
 
             <UpdateCenterModal 
                 isOpen={!!selectedCenter} 
                 onClose={() => setSelectedCenter(null)} 
                 center={selectedCenter}
-                countries={countries} 
+                countries={countries}
+                AutoRefreshPage={handleAutoRefresh} 
             />
 
         </div>

@@ -51,19 +51,22 @@ const Pharmacies = () => {
     // États pour les modales
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [selectedBranch, setSelectedBranch] = useState<PharmacyBranchDto | null>(null);
+    const [autoRefreshPage,setAutoRefreshPage] = useState<boolean>(false);
 
     // Chargement initial des données (Pharmacies + Centres + Pays)
     useEffect(() => {
         getPharmacyBranches(1, {}); 
         getCenters(1, {}, 100); 
         getAllCountries(); // <-- AJOUT: Chargement de la liste complète des pays
-    }, [getPharmacyBranches, getCenters, getAllCountries]);
+    }, [getPharmacyBranches, getCenters, getAllCountries,autoRefreshPage]);
 
     // Rafraîchir la liste en conservant la page et les filtres actuels
     const handleRefresh = () => {
         getPharmacyBranches(pagination?.currentPage || 1, filters);
     };
-
+    const handleAutoRefresh = () =>{
+        setAutoRefreshPage(!autoRefreshPage)
+    }
     // Soumission du formulaire de filtre
     const handleFilterSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -357,6 +360,7 @@ const Pharmacies = () => {
                 onClose={() => setIsCreateOpen(false)} 
                 centers={centers} 
                 countries={allCountries} // <-- PASSAGE DES PAYS
+                AutoRefreshPage={handleAutoRefresh}
             />
 
             <UpdatePharmacyBranchModal 
@@ -365,6 +369,7 @@ const Pharmacies = () => {
                 branch={selectedBranch}
                 centers={centers} 
                 countries={allCountries} // <-- PASSAGE DES PAYS
+                AutoRefreshPage={handleAutoRefresh}
             />
 
         </div>

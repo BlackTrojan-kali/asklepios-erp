@@ -11,14 +11,15 @@ import {
     XCircle,
     UserCheck,
     Stethoscope,
-    Building2
+    Building2,
+    Ticket // Nouvel icône pour le numéro de file
 } from 'lucide-react';
-import Select from 'react-select'; // 👉 Pour le filtre des centres (Admin)
+import Select from 'react-select'; 
 
 // --- STORES & CONTEXTS ---
 import useAppointmentStore from '../../functions/base_hospital/useAppointmentStore';
 import useDoctorStore from '../../functions/base_hospital/useDoctorStore'; 
-import useCenterStore from '../../functions/center/useCenterStore'; // 👉 NOUVEAU
+import useCenterStore from '../../functions/center/useCenterStore'; 
 import { useAuth } from '../../contexts/AuthContext';
 
 // --- TYPES ---
@@ -37,28 +38,24 @@ interface SelectOption {
 const ReceptionistAppointments = () => {
     const { profile } = useAuth();
 
-    // 👉 Identification des Rôles
     const isAdmin = ['admin', 'super_admin'].includes(profile?.role || '');
     const isReceptionist = profile?.role === 'reception';
 
     // --- STORES ---
     const { appointments, getAppointments, cancelAppointment, loading: appointmentsLoading, actionLoading } = useAppointmentStore();
     const { allDoctors, getAllDoctors } = useDoctorStore(); 
-    const { centers, getCenters } = useCenterStore(); // 👉 Store des centres
+    const { centers, getCenters } = useCenterStore(); 
     
     // --- ÉTATS ---
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
     
-    // Filtre Centre (Pour l'Admin)
     const [selectedCenter, setSelectedCenter] = useState<SelectOption | null>(null);
     
-    // États d'ouverture des modales
     const [isMultiScheduleOpen, setIsMultiScheduleOpen] = useState(false);
     const [apptToReschedule, setApptToReschedule] = useState<AppointmentDto | null>(null);
     const [apptToAdmit, setApptToAdmit] = useState<AppointmentDto | null>(null);
     const [apptToCancel, setApptToCancel] = useState<AppointmentDto | null>(null); 
 
-    // Identifiants récupérés depuis le profil
     const currentCenterId = isReceptionist ? profile?.profile_reception?.center_id : (selectedCenter ? Number(selectedCenter.value) : 0);
 
     // --- HELPERS DE DATES ---
@@ -77,13 +74,11 @@ const ReceptionistAppointments = () => {
 
     // --- CHARGEMENT INITIAL ---
     const fetchAppointments = useCallback(() => {
-        // L'admin peut voir tout l'hôpital si `currentCenterId` est 0, sinon on filtre
         const filterParams = currentCenterId ? { center_id: currentCenterId } : {};
         getAppointments(1, filterParams, 1000); 
     }, [currentCenterId, getAppointments]);
 
     useEffect(() => {
-        // L'Admin charge d'abord la liste des centres
         if (isAdmin) {
             getCenters(1, {}, 100);
         }
@@ -92,11 +87,10 @@ const ReceptionistAppointments = () => {
     useEffect(() => {
         fetchAppointments();
         
-        // On charge les médecins pour la modale de création (Si le centre est défini)
         if (currentCenterId) {
             getAllDoctors({ center_id: currentCenterId });
         } else if (isAdmin) {
-            getAllDoctors({}); // Charge tous les docteurs pour l'admin
+            getAllDoctors({}); 
         }
     }, [currentCenterId, fetchAppointments, getAllDoctors, isAdmin]);
 
@@ -112,13 +106,42 @@ const ReceptionistAppointments = () => {
         return dates;
     }, [appointments]);
 
+    // 👉 MOTEUR DE TRI (Logique de la file d'attente globale)
     const selectedDateAppointments = useMemo(() => {
         const targetDateString = getLocalYYYYMMDD(selectedDate);
-        return appointments.filter(app => {
+        
+        const filtered = appointments.filter(app => {
             if (!app.scheduled_datetime) return false;
             return getLocalYYYYMMDDFromAPI(app.scheduled_datetime) === targetDateString;
-        })
-        .sort((a, b) => new Date(a.scheduled_datetime.replace(' ', 'T')).getTime() - new Date(b.scheduled_datetime.replace(' ', 'T')).getTime());
+        });
+
+        // Tri intelligent basé sur le statut et le numéro de passage
+        return filtered.sort((a, b) => {
+            const getPriority = (appt: AppointmentDto) => {
+                if (appt.status === 'CANCELLED') return 5;
+                if (appt.status === 'SCHEDULED') return 3; 
+                if (appt.visit?.status === 'IN_CONSULTATION') return 1; // Priorité absolue en cours
+                if (appt.visit?.status === 'IN_WAITING_ROOM') return 2; // En attente
+                if (appt.visit?.status === 'COMPLETE') return 4; 
+                return 6; 
+            };
+
+            const priorityA = getPriority(a);
+            const priorityB = getPriority(b);
+
+            // Si les statuts sont différents, on classe par ordre de priorité
+            if (priorityA !== priorityB) return priorityA - priorityB;
+
+            // Si les deux sont en salle d'attente (ou en consultation), on classe par NUMÉRO DE PASSAGE (queue_number)
+            if (priorityA === 1 || priorityA === 2) {
+                const queueA = a.visit?.queue_number || 999999;
+                const queueB = b.visit?.queue_number || 999999;
+                return queueA - queueB;
+            }
+
+            // Pour le reste (ex: Prévu), on classe par heure de rendez-vous
+            return new Date(a.scheduled_datetime.replace(' ', 'T')).getTime() - new Date(b.scheduled_datetime.replace(' ', 'T')).getTime();
+        });
     }, [appointments, selectedDate]);
 
     // --- HANDLERS D'ACTIONS ---
@@ -130,7 +153,7 @@ const ReceptionistAppointments = () => {
         const success = await cancelAppointment(apptToCancel.id);
         if (success) {
             setApptToCancel(null);
-            fetchAppointments(); // 👉 AUTO-REFRESH local
+            fetchAppointments(); 
         }
     };
 
@@ -142,7 +165,6 @@ const ReceptionistAppointments = () => {
     return (
         <div className="h-[calc(100vh-100px)] flex flex-col space-y-6 relative">
             
-            {/* EN-TÊTE DE LA PAGE */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shrink-0">
                 <div className="flex items-center gap-3">
                     <div className="p-2.5 bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400 rounded-lg">
@@ -159,7 +181,6 @@ const ReceptionistAppointments = () => {
                 </div>
                 
                 <div className="flex items-center gap-3 w-full sm:w-auto">
-                    {/* 👉 FILTRE CENTRE POUR L'ADMIN */}
                     {isAdmin && (
                         <div className="w-full sm:w-64">
                             <Select
@@ -191,10 +212,8 @@ const ReceptionistAppointments = () => {
                 </div>
             </div>
 
-            {/* CONTENU PRINCIPAL : SPLIT VIEW */}
             <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0">
                 
-                {/* STYLES DU GRAND CALENDRIER */}
                 <style>{`
                     .big-hospital-calendar {
                         width: 100% !important;
@@ -284,14 +303,12 @@ const ReceptionistAppointments = () => {
                     .appt-dot { width: 8px; height: 8px; border-radius: 50%; background-color: #10b981; margin-top: auto; align-self: center; }
                 `}</style>
 
-                {/* ZONE CALENDRIER */}
                 <div className="w-full lg:w-2/3 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 flex flex-col h-full overflow-y-auto custom-scrollbar">
                     <Calendar 
                         className="big-hospital-calendar"
                         onChange={(v) => setSelectedDate(v as Date)}
                         onClickDay={(value) => {
                             const dateStr = getLocalYYYYMMDD(value);
-                            // On ouvre la modale de création si on clique sur un jour vide ET si c'est la réception
                             if (!appointmentDatesSet.has(dateStr) && isReceptionist) {
                                 setIsMultiScheduleOpen(true);
                             }
@@ -314,7 +331,6 @@ const ReceptionistAppointments = () => {
                     />
                 </div>
 
-                {/* ZONE AGENDA DU JOUR */}
                 <div className="w-full lg:w-1/3 bg-slate-50 dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden h-full">
                     
                     <div className="p-5 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shrink-0 flex justify-between items-center">
@@ -328,7 +344,6 @@ const ReceptionistAppointments = () => {
                             </p>
                         </div>
                         
-                        {/* Seule la réception peut créer de nouveaux RDV d'ici */}
                         {isReceptionist && (
                             <button 
                                 onClick={() => setIsMultiScheduleOpen(true)}
@@ -363,10 +378,18 @@ const ReceptionistAppointments = () => {
                                     <div key={app.id} className={`group bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border ${isCancelled ? 'border-red-200 dark:border-red-900/50 opacity-60' : 'border-gray-100 dark:border-gray-700 hover:border-orange-300 dark:hover:border-orange-700'} transition-all`}>
                                         
                                         <div className="flex justify-between items-start mb-3">
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-2 flex-wrap">
                                                 <span className="bg-orange-50 dark:bg-orange-900/50 text-orange-700 dark:text-orange-300 font-bold px-2 py-1 rounded text-sm font-mono">
                                                     {new Date(app.scheduled_datetime.replace(' ', 'T')).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                                                 </span>
+
+                                                {/* 👉 AFFICHAGE DU NUMÉRO DE PASSAGE */}
+                                                {app.visit?.queue_number && (isWaiting || isConsulting) && (
+                                                    <span className="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 font-bold px-2 py-1 rounded text-sm font-mono flex items-center gap-1.5 border border-indigo-200 dark:border-indigo-800/50 shadow-sm">
+                                                        <Ticket size={14} /> N° {app.visit.queue_number}
+                                                    </span>
+                                                )}
+
                                                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider ${
                                                     isComplete ? 'bg-emerald-100 text-emerald-700' :
                                                     isConsulting ? 'bg-blue-100 text-blue-700' :
@@ -377,7 +400,6 @@ const ReceptionistAppointments = () => {
                                                 </span>
                                             </div>
                                             
-                                            {/* Bouton Annuler (Uniquement pour Réception et Admin) */}
                                             {isScheduled && !isCancelled && (
                                                 <button 
                                                     onClick={() => setApptToCancel(app)}
@@ -401,12 +423,10 @@ const ReceptionistAppointments = () => {
                                             </div>
                                         </div>
 
-                                        {/* INFO MÉDECIN */}
                                         <div className="mt-2 text-xs font-medium text-gray-600 dark:text-gray-400 flex items-center gap-1.5 bg-gray-50 dark:bg-gray-900/50 p-1.5 rounded">
                                             <Stethoscope size={14} className="text-blue-500"/> Dr. {app.doctor?.user?.first_name || 'Non assigné'}
                                         </div>
 
-                                        {/* ACTIONS CONDITIONNELLES (Uniquement Réceptionniste) */}
                                         {isScheduled && isReceptionist && (
                                             <div className="mt-4 flex gap-2">
                                                 <button 
@@ -424,14 +444,12 @@ const ReceptionistAppointments = () => {
                                             </div>
                                         )}
                                         
-                                        {/* Feedback pour l'admin si l'action est possible mais pas par lui */}
                                         {isScheduled && isAdmin && (
                                             <div className="mt-3 text-[10px] text-center font-bold text-gray-400 border-t border-dashed border-gray-100 dark:border-gray-700 pt-2 uppercase tracking-wide">
                                                 En attente d'admission
                                             </div>
                                         )}
 
-                                        {/* Feedback Visuel si le patient est déjà dans le flux */}
                                         {(isWaiting || isConsulting || isComplete) && (
                                             <div className="mt-3 text-xs text-center font-medium text-gray-400 border-t border-dashed border-gray-200 dark:border-gray-700 pt-2">
                                                 {isComplete ? 'Dossier classé' : 'Dossier transféré à la clinique'}
@@ -446,7 +464,6 @@ const ReceptionistAppointments = () => {
 
             </div>
 
-            {/* --- MODALE DE CONFIRMATION D'ANNULATION --- */}
             {apptToCancel && (
                 <div className="fixed inset-0 bg-black/60 dark:bg-black/80 z-[80] flex items-center justify-center p-4 animate-fadeIn">
                     <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-gray-100 dark:border-gray-800">
@@ -477,8 +494,6 @@ const ReceptionistAppointments = () => {
                 </div>
             )}
 
-            {/* --- INTÉGRATION DES AUTRES MODALES (Uniquement pour le réceptionniste) --- */}
-            
             {isReceptionist && (
                 <>
                     <MultiPatientSchedulingModal

@@ -8,7 +8,7 @@ import type { AdminDto } from '../../../types/types';
 
 const Admins = () => {
     const { admins, loading, pagination, getAdmins, deleteAdmin } = useAdminStore();
-    
+    const [autoRefreshPage,SetAutoRefreshPage] = useState<boolean>(false);
     // États locaux pour la recherche
     const [searchInput, setSearchInput] = useState('');
     
@@ -23,8 +23,10 @@ const Admins = () => {
     // Chargement initial
     useEffect(() => {
         getAdmins(1, '');
-    }, [getAdmins]);
-
+    }, [getAdmins,autoRefreshPage]);
+    const handleAutoRefreshPage = ()=>{
+        SetAutoRefreshPage(!autoRefreshPage)
+    }
     // Gérer la recherche
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -260,7 +262,8 @@ const Admins = () => {
             <AdminModal 
                 isOpen={isAdminModalOpen} 
                 onClose={() => setIsAdminModalOpen(false)} 
-                adminToEdit={selectedAdmin} 
+                adminToEdit={selectedAdmin}
+                AutoRefreshPage={handleAutoRefreshPage} 
             />
 
             {/* MODALE DE MOT DE PASSE */}

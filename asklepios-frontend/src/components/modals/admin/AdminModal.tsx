@@ -10,10 +10,11 @@ import toast from 'react-hot-toast';
 interface AdminModalProps {
     isOpen: boolean;
     onClose: () => void;
-    adminToEdit?: AdminDto | null; 
+    adminToEdit?: AdminDto | null;
+    AutoRefreshPage: ()=>void; 
 }
 
-const AdminModal = ({ isOpen, onClose, adminToEdit }: AdminModalProps) => {
+const AdminModal = ({ isOpen, onClose, adminToEdit,AutoRefreshPage }: AdminModalProps) => {
     const { createAdmin, updateAdmin } = useAdminStore();
     const { hospitals, getHospitals } = useHospitalStore();
 
@@ -100,7 +101,7 @@ const AdminModal = ({ isOpen, onClose, adminToEdit }: AdminModalProps) => {
         }
 
         setLoading(false);
-
+        AutoRefreshPage();
         if (success) {
             onClose();
         }

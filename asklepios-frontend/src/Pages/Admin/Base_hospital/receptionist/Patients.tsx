@@ -13,13 +13,16 @@ import {
     Phone,
     Fingerprint,
     CalendarClock,
-    Receipt // Ajout de l'icône pour la facturation
+    Receipt,
+    FileDown // 👉 Nouvel icône pour le téléchargement
 } from 'lucide-react';
 import Swal from 'sweetalert2';
+import toast from 'react-hot-toast'; // 👉 Import de toast pour le feedback visuel
 
 // --- STORES ---
 import usePatientStore from '../../../../functions/base_hospital/usePatientStore';
 import useDoctorStore from '../../../../functions/base_hospital/useDoctorStore'; 
+import useMedicalBgStore from '../../../../functions/base_hospital/useMedicalBgStore'; // 👉 Import du store du dossier médical
 
 // --- TYPES ---
 import { PatientGender } from '../../../../types/PatientTypes';
@@ -29,7 +32,7 @@ import type { PatientDto } from '../../../../types/PatientTypes';
 import { CreatePatientModal } from '../../../../components/modals/Base_hopital/Patient/CreatePatientModal';
 import { UpdatePatientModal } from '../../../../components/modals/Base_hopital/Patient/UpdatePatientModal';
 import { PatientAppointmentManagerModal } from '../../../../components/modals/Base_hopital/Appointment/PatientAppointmentManagerModal';
-import { GenerateInvoiceModal } from '../../../../components/modals/Base_hopital/facturation/GenerateInvoiceModal'; // Assure-toi que le chemin est correct
+import { GenerateInvoiceModal } from '../../../../components/modals/Base_hopital/facturation/GenerateInvoiceModal';
 
 const Patients = () => {
     // --- STORES ---
@@ -39,6 +42,7 @@ const Patients = () => {
     } = usePatientStore();
     
     const { allDoctors, getAllDoctors } = useDoctorStore();
+    const { downloadMedicalRecord } = useMedicalBgStore(); // 👉 Récupération de la fonction de téléchargement
 
     // --- ÉTATS ---
     const [page, setPage] = useState(1);
@@ -46,7 +50,7 @@ const Patients = () => {
 
     // États pour l'ouverture des modales
     const [isCreateOpen, setIsCreateOpen] = useState(false);
-    const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false); // État pour la facturation
+    const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
     const [selectedPatient, setSelectedPatient] = useState<PatientDto | null>(null);
     const [appointmentPatient, setAppointmentPatient] = useState<PatientDto | null>(null);
 
@@ -112,6 +116,18 @@ const Patients = () => {
         }
     };
 
+    // 👉 NOUVEAU : Fonction pour gérer le téléchargement du carnet
+    const handleDownloadRecord = async (patientId: number) => {
+        toast.promise(
+            downloadMedicalRecord(patientId, 'download'),
+            {
+                loading: 'Génération du carnet médical...',
+                success: 'Téléchargement démarré !',
+                error: 'Erreur lors du téléchargement.',
+            }
+        );
+    };
+
     const formatDate = (dateString: string) => {
         if (!dateString) return 'N/A';
         const date = new Date(dateString);
@@ -159,7 +175,6 @@ const Patients = () => {
                         <span className="hidden sm:inline">Rafraîchir</span>
                     </button>
 
-                    {/* BOUTON FACTURATION */}
                     <button 
                         onClick={() => setIsInvoiceModalOpen(true)}
                         className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm flex-1 sm:flex-none"
@@ -282,6 +297,16 @@ const Patients = () => {
 
                                         <td className="p-4 text-right">
                                             <div className="flex justify-end items-center gap-2">
+                                                
+                                                {/* 👉 BOUTON TÉLÉCHARGER LE CARNET MÉDICAL */}
+                                                <button 
+                                                    onClick={() => handleDownloadRecord(item.id)} 
+                                                    title="Télécharger le carnet médical" 
+                                                    className="p-2 text-teal-600 hover:bg-teal-50 dark:text-teal-400 dark:hover:bg-teal-900/30 rounded-lg transition-colors"
+                                                >
+                                                    <FileDown size={16} />
+                                                </button>
+
                                                 <button 
                                                     onClick={() => setAppointmentPatient(item)} 
                                                     title="Gérer les rendez-vous et admissions" 

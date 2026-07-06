@@ -9,10 +9,11 @@ import toast from 'react-hot-toast';
 interface HospitalModalProps {
     isOpen: boolean;
     onClose: () => void;
+    AutoRefreshedPage:()=>void;//refraichir page apres soumission du formulaire
     hospitalToEdit?: HospitalDto | null; 
 }
 
-const HospitalModal = ({ isOpen, onClose, hospitalToEdit }: HospitalModalProps) => {
+const HospitalModal = ({ isOpen, onClose, hospitalToEdit,AutoRefreshedPage }: HospitalModalProps) => {
     const { createHospital, updateHospital } = useHospitalStore();
 
     // États du formulaire
@@ -110,7 +111,7 @@ const HospitalModal = ({ isOpen, onClose, hospitalToEdit }: HospitalModalProps) 
         }
 
         setLoading(false);
-
+        AutoRefreshedPage();
         if (success) {
             // Nettoyage de l'URL objet pour éviter les fuites de mémoire
             if (previewUrl && previewUrl.startsWith('blob:')) {
