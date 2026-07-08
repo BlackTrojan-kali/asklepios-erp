@@ -14,11 +14,17 @@ import {
   Activity,
   Play,
   Power,
-  Loader2,
+  Eye,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useBranches } from "../../../../hooks/pharmacy/useBranche";
 import { useAuth } from "../../../../contexts/AuthContext";
+import CreateCashRegisterModal from "../../../../components/modals/Pharmacy/Admin/CreateCashRegisterModal";
+import EditCashRegisterModal from "../../../../components/modals/Pharmacy/Admin/EditCashRegisterModal";
+import DeleteCashRegisterModal from "../../../../components/modals/Pharmacy/Admin/DeleteCashRegisterModal";
+import OpenCashRegisterSessionModal from "../../../../components/modals/Pharmacy/Admin/OpenCashRegisterSessionModal";
+import CloseCashRegisterSessionModal from "../../../../components/modals/Pharmacy/Admin/CloseCashRegisterSessionModal";
+import CashRegisterDetailsModal from "../../../../components/modals/Pharmacy/Admin/CashRegisterDetailsModal";
 import {
   useCashRegisters,
   useCreateCashRegister,
@@ -107,33 +113,20 @@ function BranchRegistersList({
   const openSessionMutation = useOpenCashRegisterSession();
   const closeSessionMutation = useCloseCashRegisterSession();
 
-  // Modals state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isOpenSessionOpen, setIsOpenSessionOpen] = useState(false);
   const [isCloseSessionOpen, setIsCloseSessionOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
   const [selectedRegister, setSelectedRegister] =
     useState<CashRegisterDto | null>(null);
 
-  // Form states
-  const [registerName, setRegisterName] = useState("");
-  const [registerStatus, setRegisterStatus] = useState<"active" | "inactive">(
-    "active",
-  );
-  const [openingBalance, setOpeningBalance] = useState<number>(0);
-  const [closingBalance, setClosingBalance] = useState<number>(0);
-  const [merchantCode, setMerchantCode] = useState("");
-
-  const handleCreateRegister = () => {
-    if (!registerName.trim()) {
-      toast.error("Le nom de la caisse est requis.");
-      return;
-    }
+  const handleCreateRegister = (name: string, merchantCode: string) => {
     createMutation.mutate(
       {
-        name: registerName,
+        name,
         pharmacy_branch_id: branchId,
         status: "active",
         merchant_code: merchantCode,
@@ -141,8 +134,6 @@ function BranchRegistersList({
       {
         onSuccess: () => {
           toast.success("Caisse créée avec succès.");
-          setRegisterName("");
-          setMerchantCode("");
           setIsCreateOpen(false);
         },
         onError: (err: any) => {
@@ -153,18 +144,18 @@ function BranchRegistersList({
     );
   };
 
-  const handleUpdateRegister = () => {
+  const handleUpdateRegister = (
+    name: string,
+    merchantCode: string,
+    status: "active" | "inactive",
+  ) => {
     if (!selectedRegister) return;
-    if (!registerName.trim()) {
-      toast.error("Le nom de la caisse est requis.");
-      return;
-    }
     updateMutation.mutate(
       {
         id: selectedRegister.id,
         payload: {
-          name: registerName,
-          status: registerStatus,
+          name,
+          status,
           merchant_code: merchantCode,
         },
       },
@@ -172,7 +163,6 @@ function BranchRegistersList({
         onSuccess: () => {
           toast.success("Caisse mise à jour avec succès.");
           setSelectedRegister(null);
-          setMerchantCode("");
           setIsEditOpen(false);
         },
         onError: (err: any) => {
@@ -198,7 +188,7 @@ function BranchRegistersList({
     });
   };
 
-  const handleOpenSession = () => {
+  const handleOpenSession = (openingBalance: number) => {
     if (!selectedRegister) return;
     openSessionMutation.mutate(
       {
@@ -211,7 +201,6 @@ function BranchRegistersList({
         onSuccess: () => {
           toast.success("Session de caisse ouverte.");
           setSelectedRegister(null);
-          setOpeningBalance(0);
           setIsOpenSessionOpen(false);
         },
         onError: (err: any) => {
@@ -222,7 +211,7 @@ function BranchRegistersList({
     );
   };
 
-  const handleCloseSession = () => {
+  const handleCloseSession = (closingBalance: number) => {
     if (!selectedRegister || !selectedRegister.active_session) return;
     closeSessionMutation.mutate(
       {
@@ -235,7 +224,6 @@ function BranchRegistersList({
         onSuccess: () => {
           toast.success("Session de caisse fermée.");
           setSelectedRegister(null);
-          setClosingBalance(0);
           setIsCloseSessionOpen(false);
         },
         onError: (err: any) => {
@@ -265,17 +253,15 @@ function BranchRegistersList({
     <div>
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 flex items-center gap-2">
-          <Activity className="h-4 w-4 text-teal-600" />
+          <Activity className="h-4 w-4 text-teal-605" />
           Caisses enregistrées
         </h3>
         {isAdmin && (
           <button
             onClick={() => {
-              setRegisterName("");
-              setMerchantCode("");
               setIsCreateOpen(true);
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-semibold transition-colors shadow-xs"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-semibold transition-colors shadow-xs cursor-pointer"
           >
             <Plus className="h-3.5 w-3.5" />
             Ajouter une caisse
@@ -304,149 +290,172 @@ function BranchRegistersList({
             return (
               <div
                 key={register.id}
-                className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-xs relative hover:shadow-md transition-all flex flex-col justify-between"
+                className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 px-4 py-3.5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between group"
               >
-                <div>
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h4 className="font-bold text-slate-800 dark:text-white text-base">
-                        {register.name}
-                      </h4>
-                      <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] text-gray-400 dark:text-gray-500">
-                        <span>ID: #{register.id}</span>
+                <div className="space-y-3">
+                  {/* Header */}
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-0.5 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <Store className="h-4 w-4 text-teal-600 dark:text-teal-400 flex-shrink-0" />
+                        <h4 className="font-semibold text-gray-800 dark:text-gray-100 text-sm truncate">
+                          {register.name}
+                        </h4>
+                      </div>
+                      <div className="flex items-center gap-1 text-[10px] text-gray-400 dark:text-gray-500 font-mono pl-5.5">
+                        code marchant:{" "}
                         {register.merchant_code && (
-                          <span className="font-semibold text-teal-600 dark:text-teal-400">
-                            • Code : {register.merchant_code}
-                          </span>
+                          <>
+                            <span className="text-gray-300 dark:text-gray-600">
+                              •
+                            </span>
+                            <span className="text-teal-600 dark:text-teal-400 font-medium">
+                              {register.merchant_code}
+                            </span>
+                          </>
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {isMySession && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 dark:bg-teal-950/40 dark:text-teal-400">
-                          Ma session
-                        </span>
-                      )}
+
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
                       <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        className={`text-[9px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded-full ${
                           register.status === "active"
-                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400"
-                            : "bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400"
+                            ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+                            : "bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400"
                         }`}
                       >
                         {register.status === "active" ? "Active" : "Inactive"}
                       </span>
+                      {isAdmin && (
+                        <div className="flex items-center bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md p-px opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => {
+                              setSelectedRegister(register);
+                              setIsEditOpen(true);
+                            }}
+                            className="p-1 text-blue-500 hover:bg-gray-100 dark:text-blue-400 dark:hover:bg-gray-800 rounded transition-colors cursor-pointer"
+                            title="Modifier"
+                          >
+                            <Edit className="h-3 w-3" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedRegister(register);
+                              setIsDeleteOpen(true);
+                            }}
+                            className="p-1 text-rose-500 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-900/30 rounded transition-colors cursor-pointer"
+                            title="Supprimer"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
 
-                  {/* Solde de Caisse */}
-                  <div className="bg-slate-50 dark:bg-gray-900/60 rounded-lg p-3 mb-3 flex justify-between items-center">
-                    <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 font-medium">
-                      <DollarSign className="h-3.5 w-3.5" />
-                      Solde actuel
+                  {/* Solde */}
+                  <div>
+                    <span className="text-[9px] uppercase font-semibold text-gray-400 dark:text-gray-500 tracking-wider">
+                      Solde
                     </span>
-                    <span className="font-mono font-bold text-slate-800 dark:text-white text-sm">
-                      {register.balance.toLocaleString()} {currency}
-                    </span>
+                    <div className="text-lg font-bold text-gray-900 dark:text-white font-mono tracking-tight flex items-baseline gap-0.5">
+                      {register.balance.toLocaleString()}
+                      <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500">
+                        XAF
+                      </span>
+                    </div>
                   </div>
 
-                  {/* Session Active */}
-                  <div className="text-xs space-y-1.5 border-t border-gray-100 dark:border-gray-700 pt-3 mb-4">
-                    <span className="block font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider text-[9px]">
-                      Session en cours
-                    </span>
-                    {register.active_session ? (
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-1.5 text-slate-700 dark:text-gray-300 font-medium">
-                          <User className="h-3.5 w-3.5 text-teal-600" />
-                          {userSessionName}
+                  {/* Session */}
+                  <div className="border-t border-gray-100 dark:border-gray-700 pt-2.5 space-y-1">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-gray-400 dark:text-gray-500">
+                        Session
+                      </span>
+                      {register.active_session ? (
+                        <div className="flex items-center gap-1 text-gray-700 dark:text-gray-300 font-medium">
+                          <User className="w-3 h-3 text-teal-500 dark:text-teal-400" />
+                          <span className="text-[11px]">{userSessionName}</span>
+                          {isMySession && (
+                            <span className="text-[8px] uppercase tracking-wide font-bold px-1 py-px bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400 rounded">
+                              Moi
+                            </span>
+                          )}
                         </div>
-                        <div className="text-[10px] text-gray-400 dark:text-gray-500 pl-5">
-                          Ouverte depuis:{" "}
+                      ) : (
+                        <span className="text-gray-400 dark:text-gray-500 italic text-[11px]">
+                          Aucune
+                        </span>
+                      )}
+                    </div>
+                    {register.active_session && (
+                      <div className="flex items-center justify-between text-[10px] text-gray-400 dark:text-gray-500 font-mono">
+                        <span>Depuis</span>
+                        <span>
                           {new Date(
                             register.active_session.opened_at,
-                          ).toLocaleString()}
-                        </div>
+                          ).toLocaleDateString()}{" "}
+                          {new Date(
+                            register.active_session.opened_at,
+                          ).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
                       </div>
-                    ) : (
-                      <span className="text-gray-400 dark:text-gray-500 italic block">
-                        Aucune session active
-                      </span>
                     )}
                   </div>
                 </div>
 
                 {/* Actions */}
-                <div className="flex justify-between items-center border-t border-gray-100 dark:border-gray-700 pt-3 mt-auto">
-                  {/* Session Toggle buttons */}
-                  <div className="flex gap-2">
-                    {!isAdmin && register.status === "active" && (
-                      <>
-                        {!register.active_session ? (
-                          <button
-                            onClick={() => {
-                              setSelectedRegister(register);
-                              setOpeningBalance(0);
-                              setIsOpenSessionOpen(true);
-                            }}
-                            disabled={!!myActiveSession}
-                            className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            title={
-                              myActiveSession
-                                ? "Vous avez déjà une session active ouverte ailleurs"
-                                : "Ouvrir une session"
-                            }
-                          >
-                            <Play className="h-3 w-3 fill-current" />
-                            Ouvrir session
-                          </button>
-                        ) : (
-                          isMySession && (
+                <div>
+                  {!isAdmin && (
+                    <div className="mt-3 pt-2.5 border-t border-gray-100 dark:border-gray-700">
+                      {register.status === "active" && (
+                        <>
+                          {!register.active_session ? (
                             <button
                               onClick={() => {
                                 setSelectedRegister(register);
-                                setClosingBalance(register.balance);
-                                setIsCloseSessionOpen(true);
+                                setIsOpenSessionOpen(true);
                               }}
-                              className="flex items-center gap-1 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold transition-colors"
-                              title="Fermer la session"
+                              disabled={!!myActiveSession}
+                              className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                             >
-                              <Power className="h-3 w-3" />
-                              Fermer session
+                              <Play className="h-3 w-3 fill-current" />
+                              Ouvrir session
                             </button>
-                          )
-                        )}
-                      </>
-                    )}
-                  </div>
-
-                  {/* Edit / Delete buttons (Admin only) */}
-                  {isAdmin && (
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => {
-                          setSelectedRegister(register);
-                          setRegisterName(register.name);
-                          setMerchantCode(register.merchant_code || "");
-                          setRegisterStatus(register.status);
-                          setIsEditOpen(true);
-                        }}
-                        className="p-1.5 hover:bg-slate-100 dark:hover:bg-gray-700 text-blue-600 dark:text-blue-400 rounded-lg transition-colors"
-                        title="Modifier"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelectedRegister(register);
-                          setIsDeleteOpen(true);
-                        }}
-                        className="p-1.5 hover:bg-slate-100 dark:hover:bg-gray-700 text-rose-600 dark:text-rose-400 rounded-lg transition-colors"
-                        title="Supprimer"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                          ) : (
+                            isMySession && (
+                              <button
+                                onClick={() => {
+                                  setSelectedRegister(register);
+                                  setIsCloseSessionOpen(true);
+                                }}
+                                className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-[11px] font-semibold transition-colors cursor-pointer"
+                              >
+                                <Power className="h-3 w-3" />
+                                Fermer session
+                              </button>
+                            )
+                          )}
+                        </>
+                      )}
                     </div>
+                  )}
+
+                  {isAdmin && (
+                    <button
+                      onClick={() => {
+                        setSelectedRegister(register);
+                        setIsDetailsOpen(true);
+                      }}
+                      className="w-full mt-3 py-1.5 bg-gray-50 hover:bg-gray-100 dark:bg-gray-700/50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 text-[11px] font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                      Superviser
+                    </button>
                   )}
                 </div>
               </div>
@@ -455,287 +464,78 @@ function BranchRegistersList({
         </div>
       )}
 
-      {/* MODAL: Ajouter une Caisse */}
       {isCreateOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-150 dark:border-gray-700 shadow-xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-6">
-              <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">
-                Ajouter une caisse
-              </h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                    Nom de la caisse
-                  </label>
-                  <input
-                    type="text"
-                    value={registerName}
-                    onChange={(e) => setRegisterName(e.target.value)}
-                    placeholder="ex: Caisse Principale, Comptoir A..."
-                    className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg outline-hidden focus:ring-2 focus:ring-teal-500 bg-slate-50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-900 text-sm text-slate-800 dark:text-white transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                    Code Marchand / Caisse
-                  </label>
-                  <input
-                    type="text"
-                    value={merchantCode}
-                    onChange={(e) => setMerchantCode(e.target.value)}
-                    placeholder="ex: CODE-CAISSE-1..."
-                    className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg outline-hidden focus:ring-2 focus:ring-teal-500 bg-slate-50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-900 text-sm text-slate-800 dark:text-white transition-all"
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="bg-slate-50 dark:bg-gray-900/60 p-4 flex justify-end gap-3 border-t border-gray-100 dark:border-gray-750">
-              <button
-                onClick={() => setIsCreateOpen(false)}
-                className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg text-sm font-semibold transition-colors"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={handleCreateRegister}
-                disabled={createMutation.isPending}
-                className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 shadow-xs disabled:opacity-50"
-              >
-                {createMutation.isPending ? "Création..." : "Ajouter"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <CreateCashRegisterModal
+          isOpen={isCreateOpen}
+          onClose={() => setIsCreateOpen(false)}
+          onSubmit={handleCreateRegister}
+          isPending={createMutation.isPending}
+        />
       )}
 
-      {/* MODAL: Modifier une Caisse */}
       {isEditOpen && selectedRegister && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-150 dark:border-gray-700 shadow-xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-6">
-              <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">
-                Modifier la caisse
-              </h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                    Nom de la caisse
-                  </label>
-                  <input
-                    type="text"
-                    value={registerName}
-                    onChange={(e) => setRegisterName(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg outline-hidden focus:ring-2 focus:ring-teal-500 bg-slate-50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-900 text-sm text-slate-800 dark:text-white transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                    Code Marchand / Caisse
-                  </label>
-                  <input
-                    type="text"
-                    value={merchantCode}
-                    onChange={(e) => setMerchantCode(e.target.value)}
-                    placeholder="ex: CODE-CAISSE-1..."
-                    className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg outline-hidden focus:ring-2 focus:ring-teal-500 bg-slate-50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-900 text-sm text-slate-800 dark:text-white transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                    Statut de la caisse
-                  </label>
-                  <select
-                    value={registerStatus}
-                    onChange={(e) =>
-                      setRegisterStatus(e.target.value as "active" | "inactive")
-                    }
-                    className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg outline-hidden focus:ring-2 focus:ring-teal-500 bg-slate-50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-900 text-sm text-slate-800 dark:text-white transition-all"
-                  >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-            <div className="bg-slate-50 dark:bg-gray-900/60 p-4 flex justify-end gap-3 border-t border-gray-100 dark:border-gray-750">
-              <button
-                onClick={() => {
-                  setSelectedRegister(null);
-                  setIsEditOpen(false);
-                }}
-                className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg text-sm font-semibold transition-colors"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={handleUpdateRegister}
-                disabled={updateMutation.isPending}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 shadow-xs disabled:opacity-50"
-              >
-                {updateMutation.isPending ? "Modification..." : "Enregistrer"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <EditCashRegisterModal
+          isOpen={isEditOpen}
+          onClose={() => {
+            setSelectedRegister(null);
+            setIsEditOpen(false);
+          }}
+          onSubmit={handleUpdateRegister}
+          isPending={updateMutation.isPending}
+          register={selectedRegister}
+        />
       )}
 
-      {/* MODAL: Supprimer une Caisse */}
       {isDeleteOpen && selectedRegister && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-150 dark:border-gray-700 shadow-xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-red-100 dark:bg-red-950/30 text-red-600 rounded-xl">
-                  <AlertCircle className="h-6 w-6" />
-                </div>
-                <h3 className="text-lg font-bold text-slate-800 dark:text-white">
-                  Supprimer la caisse ?
-                </h3>
-              </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Êtes-vous sûr de vouloir supprimer la caisse{" "}
-                <span className="font-bold text-slate-800 dark:text-white">
-                  {selectedRegister.name}
-                </span>{" "}
-                ? Cette action est irréversible.
-              </p>
-            </div>
-            <div className="bg-slate-50 dark:bg-gray-900/60 p-4 flex justify-end gap-3 border-t border-gray-100 dark:border-gray-750">
-              <button
-                onClick={() => {
-                  setSelectedRegister(null);
-                  setIsDeleteOpen(false);
-                }}
-                className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg text-sm font-semibold transition-colors"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={handleDeleteRegister}
-                disabled={deleteMutation.isPending}
-                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 shadow-xs disabled:opacity-50"
-              >
-                {deleteMutation.isPending ? "Suppression..." : "Supprimer"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <DeleteCashRegisterModal
+          isOpen={isDeleteOpen}
+          onClose={() => {
+            setSelectedRegister(null);
+            setIsDeleteOpen(false);
+          }}
+          onConfirm={handleDeleteRegister}
+          isPending={deleteMutation.isPending}
+          register={selectedRegister}
+        />
       )}
 
-      {/* MODAL: Ouvrir une session */}
       {isOpenSessionOpen && selectedRegister && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-150 dark:border-gray-700 shadow-xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-6">
-              <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">
-                Ouvrir la session
-              </h3>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">
-                Caisse : {selectedRegister.name}
-              </p>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                    Solde d'ouverture ({currency})
-                  </label>
-                  <input
-                    type="number"
-                    value={openingBalance}
-                    onChange={(e) =>
-                      setOpeningBalance(parseFloat(e.target.value) || 0)
-                    }
-                    min="0"
-                    placeholder="0"
-                    className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg outline-hidden focus:ring-2 focus:ring-teal-500 bg-slate-50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-900 text-sm text-slate-800 dark:text-white transition-all font-mono"
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="bg-slate-50 dark:bg-gray-900/60 p-4 flex justify-end gap-3 border-t border-gray-100 dark:border-gray-750">
-              <button
-                onClick={() => {
-                  setSelectedRegister(null);
-                  setOpeningBalance(0);
-                  setIsOpenSessionOpen(false);
-                }}
-                className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg text-sm font-semibold transition-colors"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={handleOpenSession}
-                disabled={openSessionMutation.isPending}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 shadow-xs disabled:opacity-50"
-              >
-                {openSessionMutation.isPending
-                  ? "Ouverture..."
-                  : "Ouvrir la session"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <OpenCashRegisterSessionModal
+          isOpen={isOpenSessionOpen}
+          onClose={() => {
+            setSelectedRegister(null);
+            setIsOpenSessionOpen(false);
+          }}
+          onSubmit={handleOpenSession}
+          isPending={openSessionMutation.isPending}
+          currency={currency}
+          register={selectedRegister}
+        />
       )}
 
-      {/* MODAL: Fermer une session */}
       {isCloseSessionOpen && selectedRegister && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-150 dark:border-gray-700 shadow-xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-6">
-              <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">
-                Fermer la session
-              </h3>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">
-                Caisse : {selectedRegister.name}
-              </p>
-              <div className="space-y-4">
-                <div className="bg-slate-50 dark:bg-gray-900/60 rounded-xl p-3 flex justify-between items-center text-xs">
-                  <span className="text-gray-500">
-                    Solde calculé (théorique)
-                  </span>
-                  <span className="font-mono font-bold text-slate-800 dark:text-white">
-                    {selectedRegister.balance.toLocaleString()} {currency}
-                  </span>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                    Solde de clôture réel ({currency})
-                  </label>
-                  <input
-                    type="number"
-                    value={closingBalance}
-                    onChange={(e) =>
-                      setClosingBalance(parseFloat(e.target.value) || 0)
-                    }
-                    min="0"
-                    className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg outline-hidden focus:ring-2 focus:ring-teal-500 bg-slate-50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-900 text-sm text-slate-800 dark:text-white transition-all font-mono"
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="bg-slate-50 dark:bg-gray-900/60 p-4 flex justify-end gap-3 border-t border-gray-100 dark:border-gray-750">
-              <button
-                onClick={() => {
-                  setSelectedRegister(null);
-                  setClosingBalance(0);
-                  setIsCloseSessionOpen(false);
-                }}
-                className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg text-sm font-semibold transition-colors"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={handleCloseSession}
-                disabled={closeSessionMutation.isPending}
-                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 shadow-xs disabled:opacity-50"
-              >
-                {closeSessionMutation.isPending
-                  ? "Clôture..."
-                  : "Fermer la session"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <CloseCashRegisterSessionModal
+          isOpen={isCloseSessionOpen}
+          onClose={() => {
+            setSelectedRegister(null);
+            setIsCloseSessionOpen(false);
+          }}
+          onSubmit={handleCloseSession}
+          isPending={closeSessionMutation.isPending}
+          register={selectedRegister}
+          currency={currency}
+        />
+      )}
+
+      {isDetailsOpen && selectedRegister && (
+        <CashRegisterDetailsModal
+          isOpen={isDetailsOpen}
+          onClose={() => {
+            setSelectedRegister(null);
+            setIsDetailsOpen(false);
+          }}
+          register={selectedRegister}
+        />
       )}
     </div>
   );

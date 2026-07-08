@@ -445,7 +445,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // ---------------------------------------------------------
         // ACCÈS RÉCEPTIONNISTE
         // ---------------------------------------------------------
-        Route::middleware(["role:admin,reception,doctor"])->prefix('receptionist')->group(function(){
+        Route::middleware(["role:admin,reception,doctor,pharmacy"])->prefix('receptionist')->group(function(){
             Route::apiResource('patients', \App\Http\Controllers\Receptionist\PatientController::class);
         });
 

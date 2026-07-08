@@ -38,7 +38,7 @@ class PosSaleController extends Controller
         }
 
         $query = PosSale::where('pharmacy_branch_id', $profile->branch_id)
-            ->with(['session.user', 'items.article']);
+            ->with(['session.user', 'items.article', 'patient']);
 
         // Filtrer par session active de l'utilisateur connecté par défaut si scope est 'my-active-session'
         $scope = $request->query('scope', 'my-active-session');
@@ -93,7 +93,7 @@ class PosSaleController extends Controller
         }
 
         $sale = PosSale::where('pharmacy_branch_id', $profile->branch_id)
-            ->with(['session.user', 'session.register', 'branch.country', 'items.article', 'items.batch'])
+            ->with(['session.user', 'session.register', 'branch.country', 'items.article', 'items.batch', 'patient'])
             ->findOrFail($id);
 
         return response()->json($sale, 200);
@@ -124,6 +124,7 @@ class PosSaleController extends Controller
 
         $validated = $request->validate([
             'customer_name' => 'nullable|string|max:255',
+            'patient_id' => 'nullable|integer|exists:patients,id',
             'has_prescription' => 'nullable|boolean',
             'prescription_ref' => 'nullable|string|max:255',
             'payment_method' => 'required|string|in:CASH,MOBILE_MONEY,CARD',
@@ -154,7 +155,15 @@ class PosSaleController extends Controller
             }
         }
 
-        $customerName = $validated['customer_name'] ?? 'Client Passage';
+        $patient = null;
+        if (isset($validated['patient_id']) && !is_null($validated['patient_id'])) {
+            $patient = \App\Models\Patient::find($validated['patient_id']);
+        }
+
+        $customerName = $validated['customer_name'] ?? 'Anonyme';
+        if ($patient) {
+            $customerName = trim($patient->first_name . ' ' . ($patient->last_name ?? ''));
+        }
 
         DB::beginTransaction();
 
@@ -209,6 +218,7 @@ class PosSaleController extends Controller
                 'pharmacy_branch_id' => $branchId,
                 'cash_register_session_id' => $session->id,
                 'customer_name' => $customerName,
+                'patient_id' => $validated['patient_id'] ?? null,
                 'has_prescription' => $validated['has_prescription'] ?? false,
                 'prescription_ref' => $validated['prescription_ref'] ?? null,
                 'total_amount' => $totalAmount,

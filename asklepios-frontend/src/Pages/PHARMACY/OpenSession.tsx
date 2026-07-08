@@ -27,7 +27,7 @@ export default function OpenSession({ onSessionOpened }: SessionOpeningProps) {
 
   // --- ÉTATS ---
   const [selectedRegisterId, setSelectedRegisterId] = useState<number | "">("");
-  const [openingBalance, setOpeningBalance] = useState<number>(0);
+  const [openingBalance, setOpeningBalance] = useState<number | "">("");
   const [notes, setNotes] = useState<string>("");
   const [showNotes, setShowNotes] = useState<boolean>(false);
 
@@ -59,7 +59,19 @@ export default function OpenSession({ onSessionOpened }: SessionOpeningProps) {
       return;
     }
 
-    if (openingBalance < 0) {
+    if (openingBalance === "") {
+      Swal.fire({
+        icon: "error",
+        title: "Fond de caisse requis",
+        text: "Veuillez renseigner le montant du fond de caisse initial (saisissez 0 s'il n'y a pas de monnaie de départ).",
+        confirmButtonColor: "#1e293b",
+      });
+      return;
+    }
+
+    const balanceValue = typeof openingBalance === "number" ? openingBalance : 0;
+
+    if (balanceValue < 0) {
       Swal.fire({
         icon: "error",
         title: "Montant invalide",
@@ -71,7 +83,7 @@ export default function OpenSession({ onSessionOpened }: SessionOpeningProps) {
 
     Swal.fire({
       title: "Confirmer l'ouverture ?",
-      text: `Vous allez initialiser la caisse "${selectedRegister?.name}" avec un fond de caisse de ${openingBalance.toLocaleString()} XAF.`,
+      text: `Vous allez initialiser la caisse "${selectedRegister?.name}" avec un fond de caisse de ${balanceValue.toLocaleString()} XAF.`,
       icon: "question",
       showCancelButton: true,
       confirmButtonColor: "#059669",
@@ -84,7 +96,7 @@ export default function OpenSession({ onSessionOpened }: SessionOpeningProps) {
           {
             registerId: Number(selectedRegisterId),
             payload: {
-              opening_balance: openingBalance,
+              opening_balance: balanceValue,
               opening_notes: notes,
             },
           },
@@ -96,7 +108,7 @@ export default function OpenSession({ onSessionOpened }: SessionOpeningProps) {
                 icon: "success",
                 confirmButtonColor: "#059669",
               });
-              if (onSessionOpened) onSessionOpened(openingBalance);
+              if (onSessionOpened) onSessionOpened(balanceValue);
               navigate("/pharmacy/cash");
             },
             onError: (err: any) => {
@@ -224,10 +236,16 @@ export default function OpenSession({ onSessionOpened }: SessionOpeningProps) {
                 min="0"
                 step="50"
                 placeholder="Ex: 15000"
-                value={openingBalance || ""}
-                onChange={(e) =>
-                  setOpeningBalance(parseInt(e.target.value) || 0)
-                }
+                value={openingBalance}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "") {
+                    setOpeningBalance("");
+                  } else {
+                    const parsed = parseInt(val);
+                    setOpeningBalance(isNaN(parsed) ? 0 : parsed);
+                  }
+                }}
                 className="w-full pl-20 pr-4 py-3 border border-slate-300 dark:border-gray-700 rounded-xl font-mono text-xl font-black text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-emerald-500 bg-slate-50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-900 transition-colors"
               />
             </div>

@@ -201,6 +201,9 @@
                     <div class="details-title">Informations Patient / Client</div>
                     <div class="details-content">
                         <span class="bold">Nom :</span> {{ $sale->customer_name }}<br>
+                        @if($sale->patient)
+                            <span class="bold">Code Patient :</span> {{ $sale->patient->patient_code }}<br>
+                        @endif
                         @if($sale->has_prescription)
                             <span class="bold" style="color: #ef4444;">Prescription obligatoire</span><br>
                             @if($sale->prescription_ref)

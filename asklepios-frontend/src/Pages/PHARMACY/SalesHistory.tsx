@@ -328,8 +328,17 @@ export default function SalesHistory() {
                           minute: "2-digit",
                         })}
                       </td>
-                      <td className="p-4 font-medium text-slate-700 dark:text-gray-300">
-                        {sale.customer_name || "Client Passage"}
+                      <td className="p-4">
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-slate-800 dark:text-gray-200 text-sm">
+                            {sale.customer_name || "Anonyme"}
+                          </span>
+                          {sale.patient && (
+                            <span className="text-[10px] text-teal-600 dark:text-teal-400 font-mono mt-0.5">
+                              Code : {sale.patient.patient_code}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="p-4 text-slate-500 dark:text-gray-400 flex items-center gap-1.5 mt-2">
                         <User className="w-3.5 h-3.5 text-slate-400" />
@@ -437,6 +446,11 @@ export default function SalesHistory() {
                   </span>
                   <span className="font-bold text-slate-800 dark:text-white mt-1 block">
                     {selectedSale.customer_name || "Client Passage"}
+                    {selectedSale.patient && (
+                      <span className="text-xs text-teal-600 dark:text-teal-400 font-mono block mt-0.5">
+                        Code : {selectedSale.patient.patient_code}
+                      </span>
+                    )}
                   </span>
                 </div>
                 <div>

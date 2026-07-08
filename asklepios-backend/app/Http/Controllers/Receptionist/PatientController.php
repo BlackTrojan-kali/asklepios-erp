@@ -33,11 +33,13 @@ class PatientController extends Controller
             return $user->profile_reception->hospital_id;
         } else if ($user->profile_admin) {
             return $user->profile_admin->hospital_id;
-        }else if($user->profile_doctor){
+        } else if ($user->profile_doctor) {
             return $user->profile_doctor->hospital_id;
+        } else if ($user->profile_pharm) {
+            return $user->profile_pharm->hospital_id ?? ($user->profile_pharm->branch->hospital_id ?? null);
         }
         
-        abort(403, "Profil non autorisé. Seul un réceptionniste ou un admin peut interagir avec les dossiers patients.");
+        abort(403, "Profil non autorisé. Seul le personnel autorisé peut interagir avec les dossiers patients.");
     }
 
     /**
