@@ -206,9 +206,7 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::get('/pharmacy-branches', [PharmacyBranchController::class, 'index']);
                 Route::get('/pharmacy-branches/{id}', [PharmacyBranchController::class, 'show']);
                 Route::get('/vehicules', [VehiculeController::class, 'index']);
-                Route::get('/vehicules/{id}', [VehiculeController::class, 'show']);
-                Route::get('/drivers', [DriverController::class, 'index']);
-                Route::get('/drivers/{id}', [DriverController::class, 'show']);
+                Route::get('/requests/{id}', [LabRequestController::class, 'show']);
                 Route::get('/articles', [ArticleController::class, 'index']);
                 
                 // Mouvements de stock
@@ -474,5 +472,29 @@ Route::middleware('auth:sanctum')->group(function () {
         });
 
     }); // Fin Middleware Licence Base_Hospital
+
+    // ==========================================================
+    // H. LABORATOIRE (SIL)
+    // ==========================================================
+    Route::middleware(['licence:laboratory'])->group(function () {
+        
+        // --- 0. Administration ---
+        Route::middleware(['role:admin'])->prefix('admin')->group(function () {
+            Route::apiResource('lab-technicians', App\Http\Controllers\Admin\LabTechnicianController::class);
+        });
+
+        // --- 1. Catalogue ---
+        Route::apiResource('laboratory/categories', App\Http\Controllers\Laboratory\LabCategoryController::class);
+        Route::apiResource('laboratory/tests', App\Http\Controllers\Laboratory\LabTestController::class);
+        Route::apiResource('laboratory/parameters', App\Http\Controllers\Laboratory\LabParameterController::class);
+
+        // --- 2. Exécution (Prélèvements & Résultats) ---
+        Route::get('laboratory/requests', [App\Http\Controllers\Laboratory\LabRequestController::class, 'index']);
+        Route::get('laboratory/requests/{id}', [App\Http\Controllers\Laboratory\LabRequestController::class, 'show']);
+        Route::post('laboratory/requests/{id}/sample', [App\Http\Controllers\Laboratory\LabRequestController::class, 'markAsSampled']);
+        Route::post('laboratory/requests/{id}/results', [\App\Http\Controllers\Laboratory\LabResultController::class, 'saveResults']);
+        Route::post('laboratory/requests/{id}/validate', [\App\Http\Controllers\Laboratory\LabResultController::class, 'validateResults']);
+        Route::get('laboratory/requests/{id}/pdf', [\App\Http\Controllers\Laboratory\LabResultController::class, 'generatePdf']);
+    });
 
 }); // Fin Middleware Auth:Sanctum
