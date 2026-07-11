@@ -294,6 +294,11 @@
                                     "name": {
                                         "type": "string"
                                     },
+                                    "default_selling_price": {
+                                        "description": "Prix de vente par défaut (0 par défaut)",
+                                        "type": "number",
+                                        "format": "float"
+                                    },
                                     "barcode": {
                                         "type": "string",
                                         "nullable": true
@@ -309,6 +314,10 @@
                                     },
                                     "track_batches": {
                                         "description": "Vrai si l'article gère des lots classiques",
+                                        "type": "boolean"
+                                    },
+                                    "is_prescripted": {
+                                        "description": "Vrai si l'article peut être prescrit",
                                         "type": "boolean"
                                     }
                                 },
@@ -6008,6 +6017,833 @@
                 ]
             }
         },
+        "/api/lab/categories": {
+            "get": {
+                "tags": [
+                    "Catégories Laboratoire"
+                ],
+                "summary": "Lister les catégories",
+                "operationId": "283562eb2998a4f4d979c7f1cbceffcc",
+                "parameters": [
+                    {
+                        "name": "center_id",
+                        "in": "query",
+                        "description": "Filtrer par centre",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste des catégories récupérée"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Catégories Laboratoire"
+                ],
+                "summary": "Créer une catégorie",
+                "operationId": "b5524b88290a26ff0f2532e07ef64878",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "center_id": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Catégorie créée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/lab/categories/{id}": {
+            "get": {
+                "tags": [
+                    "Catégories Laboratoire"
+                ],
+                "summary": "Voir une catégorie",
+                "operationId": "d25ae0e1290b39ba36c645fca59e1f36",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la catégorie",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Détails de la catégorie"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Catégories Laboratoire"
+                ],
+                "summary": "Modifier une catégorie",
+                "operationId": "f0caec948774e9a1c902a814f669f2d1",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la catégorie",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Catégorie mise à jour"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Catégories Laboratoire"
+                ],
+                "summary": "Supprimer une catégorie",
+                "operationId": "b8b222b7142e6a0f1bf720ca46376191",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la catégorie",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Catégorie supprimée"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/lab/parameters": {
+            "get": {
+                "tags": [
+                    "Paramètres Laboratoire"
+                ],
+                "summary": "Lister les paramètres",
+                "operationId": "f4c17260c362d6eb5f740cc0c04dfe43",
+                "parameters": [
+                    {
+                        "name": "lab_test_id",
+                        "in": "query",
+                        "description": "Filtrer par examen",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste des paramètres récupérée"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Paramètres Laboratoire"
+                ],
+                "summary": "Créer un paramètre",
+                "operationId": "a1d4d73a994a1ffd58c77d4c82316bb5",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "lab_test_id",
+                                    "name",
+                                    "unit"
+                                ],
+                                "properties": {
+                                    "lab_test_id": {
+                                        "type": "integer"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "unit": {
+                                        "type": "string"
+                                    },
+                                    "reference_min_male": {
+                                        "type": "number",
+                                        "nullable": true
+                                    },
+                                    "reference_max_male": {
+                                        "type": "number",
+                                        "nullable": true
+                                    },
+                                    "reference_min_female": {
+                                        "type": "number",
+                                        "nullable": true
+                                    },
+                                    "reference_max_female": {
+                                        "type": "number",
+                                        "nullable": true
+                                    },
+                                    "reference_text": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Paramètre créé avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/lab/parameters/{id}": {
+            "get": {
+                "tags": [
+                    "Paramètres Laboratoire"
+                ],
+                "summary": "Voir un paramètre",
+                "operationId": "e7772594d5f1411f883b368463fe5b7e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID du paramètre",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Détails du paramètre"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Paramètres Laboratoire"
+                ],
+                "summary": "Modifier un paramètre",
+                "operationId": "d019007c00a2e4477dad7f6a7b5cca64",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID du paramètre",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "lab_test_id": {
+                                        "type": "integer"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "unit": {
+                                        "type": "string"
+                                    },
+                                    "reference_min_male": {
+                                        "type": "number",
+                                        "nullable": true
+                                    },
+                                    "reference_max_male": {
+                                        "type": "number",
+                                        "nullable": true
+                                    },
+                                    "reference_min_female": {
+                                        "type": "number",
+                                        "nullable": true
+                                    },
+                                    "reference_max_female": {
+                                        "type": "number",
+                                        "nullable": true
+                                    },
+                                    "reference_text": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Paramètre mis à jour"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Paramètres Laboratoire"
+                ],
+                "summary": "Supprimer un paramètre",
+                "operationId": "f2f34993ec571c799bfe05846b7b1d40",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID du paramètre",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paramètre supprimé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/lab/requests": {
+            "get": {
+                "tags": [
+                    "Requêtes Laboratoire"
+                ],
+                "summary": "Lister les requêtes de laboratoire",
+                "description": "Obtenir la liste des requêtes de laboratoire.\nOn peut filtrer par status.",
+                "operationId": "3477a48c278b861e8156422345dbefbf",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filtrer par statut (ex: PAID, SAMPLED)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste des requêtes récupérée"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/lab/requests/{id}": {
+            "get": {
+                "tags": [
+                    "Requêtes Laboratoire"
+                ],
+                "summary": "Voir une requête",
+                "description": "Voir une requête spécifique.",
+                "operationId": "736aeb929c48b13c51f18e0b996392b6",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la requête",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Détails de la requête"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/lab/requests/{id}/sample": {
+            "post": {
+                "tags": [
+                    "Requêtes Laboratoire"
+                ],
+                "summary": "Générer les prélèvements",
+                "description": "Générer les prélèvements (tubes) pour une requête et la passer au statut 'SAMPLED'.",
+                "operationId": "de593e0ab0d34e3eba5c3f4e69756bcd",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la requête",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Échantillons générés avec succès"
+                    },
+                    "400": {
+                        "description": "Cette requête n'est pas au statut PAID"
+                    },
+                    "500": {
+                        "description": "Erreur lors de la génération des prélèvements"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/lab/results/{id}": {
+            "post": {
+                "tags": [
+                    "Résultats Laboratoire"
+                ],
+                "summary": "Enregistrer les résultats d'une requête",
+                "description": "Enregistrer les résultats de laboratoire",
+                "operationId": "363045f544c6dc5fd6b7865ca45da055",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la requête",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "results": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "lab_request_line_id": {
+                                                    "type": "integer"
+                                                },
+                                                "lab_parameter_id": {
+                                                    "type": "integer"
+                                                },
+                                                "value_numeric": {
+                                                    "type": "number",
+                                                    "nullable": true
+                                                },
+                                                "value_string": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Résultats enregistrés avec succès"
+                    },
+                    "500": {
+                        "description": "Erreur lors de l'enregistrement"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/lab/results/{id}/validate": {
+            "post": {
+                "tags": [
+                    "Résultats Laboratoire"
+                ],
+                "summary": "Valider les résultats d'une requête",
+                "description": "Valider les résultats (Biologiste)",
+                "operationId": "35cb37e0c48065b2f95ffee289f271b4",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la requête",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Dossier validé avec succès"
+                    },
+                    "500": {
+                        "description": "Erreur lors de la validation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/lab/results/{id}/pdf": {
+            "get": {
+                "tags": [
+                    "Résultats Laboratoire"
+                ],
+                "summary": "Générer le PDF des résultats validés",
+                "description": "Générer le PDF des résultats validés",
+                "operationId": "87a26bf77fb6c67f4a34e3576d2b31e1",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la requête",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Fichier PDF des résultats"
+                    },
+                    "400": {
+                        "description": "Le dossier n'est pas encore validé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/lab/tests": {
+            "get": {
+                "tags": [
+                    "Examens Laboratoire"
+                ],
+                "summary": "Lister les examens",
+                "operationId": "c76f87763bce76b693b07a36b7db7b98",
+                "parameters": [
+                    {
+                        "name": "lab_category_id",
+                        "in": "query",
+                        "description": "Filtrer par catégorie",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste des examens récupérée"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Examens Laboratoire"
+                ],
+                "summary": "Créer un examen",
+                "operationId": "6e8ae87ff1b74a96b84407456d488a31",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "lab_category_id",
+                                    "code",
+                                    "name",
+                                    "sample_type_required",
+                                    "price"
+                                ],
+                                "properties": {
+                                    "lab_category_id": {
+                                        "type": "integer"
+                                    },
+                                    "code": {
+                                        "type": "string"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "sample_type_required": {
+                                        "type": "string"
+                                    },
+                                    "price": {
+                                        "type": "number"
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Examen créé avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/lab/tests/{id}": {
+            "get": {
+                "tags": [
+                    "Examens Laboratoire"
+                ],
+                "summary": "Voir un examen",
+                "operationId": "35f78bd3a9ff553de79ea5557080b665",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de l'examen",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Détails de l'examen"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Examens Laboratoire"
+                ],
+                "summary": "Modifier un examen",
+                "operationId": "4c785f4464a6ce611e3ef40abbc0bf4c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de l'examen",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "lab_category_id": {
+                                        "type": "integer"
+                                    },
+                                    "code": {
+                                        "type": "string"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "sample_type_required": {
+                                        "type": "string"
+                                    },
+                                    "price": {
+                                        "type": "number"
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Examen mis à jour"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Examens Laboratoire"
+                ],
+                "summary": "Supprimer un examen",
+                "operationId": "45d46af483bdf403e266d9bb153ec7d0",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de l'examen",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Examen supprimé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/notifications": {
             "get": {
                 "tags": [
@@ -9536,6 +10372,26 @@
         {
             "name": "Paiements",
             "description": "Gestion des encaissements des factures"
+        },
+        {
+            "name": "Catégories Laboratoire",
+            "description": "Gestion des catégories d'examens (Biochimie, Hématologie, etc.)"
+        },
+        {
+            "name": "Paramètres Laboratoire",
+            "description": "Gestion des paramètres d'analyse"
+        },
+        {
+            "name": "Requêtes Laboratoire",
+            "description": "Gestion des requêtes d'analyses (demandes)"
+        },
+        {
+            "name": "Résultats Laboratoire",
+            "description": "Saisie et validation des résultats d'analyses"
+        },
+        {
+            "name": "Examens Laboratoire",
+            "description": "Gestion du catalogue des examens de laboratoire"
         },
         {
             "name": "Notifications",

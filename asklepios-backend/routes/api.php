@@ -37,6 +37,7 @@ use App\Http\Controllers\Hospital\AdmissionController;
 use App\Http\Controllers\Hospital\FinancialReportController;
 use App\Http\Controllers\Hospital\InvoiceController;
 use App\Http\Controllers\Hospital\PaymentController;
+use App\Http\Controllers\Laboratory\LabRequestController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Pharmacien\InventoryController;
 use App\Http\Controllers\Pharmacien\PurchaseOrderController;

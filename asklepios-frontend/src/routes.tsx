@@ -139,13 +139,8 @@ const routes = createBrowserRouter([
       </AuthMiddleware>
     ),
     children: [
-<<<<<<< HEAD
       // 👉 NOUVELLE ROUTE GLOBALE (Accessible à tous les connectés)
       { path: "search", element: <SearchResults /> },
-=======
->>>>>>> origin/dev-brice
-      // ====================================================
-      // A. ESPACE SUPER ADMIN
       // ====================================================
       {
         element: (
