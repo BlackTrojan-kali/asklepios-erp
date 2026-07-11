@@ -54,6 +54,11 @@ export default function AdminPendingDeposits() {
   // Variables calculées
   const pendingTxList = (pendingTxResponse as PaymentTransactionDto[]) || [];
 
+  const selectedBranchName = React.useMemo(() => {
+    const b = branches.find((branch) => branch.id === selectedBranchId);
+    return b ? b.name : "";
+  }, [branches, selectedBranchId]);
+
   // Rejeter/Annuler versement bancaire
   const handleCancelVerification = (tx: PaymentTransactionDto) => {
     Swal.fire({
@@ -96,7 +101,7 @@ export default function AdminPendingDeposits() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-            <DollarSign className="w-8 h-8 text-emerald-600" /> Versements en Attente
+            <DollarSign className="w-8 h-8 text-emerald-600" /> Versements en Attente {selectedBranchName && ` - ${selectedBranchName}`}
           </h1>
           <p className="text-sm text-slate-500 dark:text-gray-400">
             Validation des transferts de fonds et des dépôts bancaires physiques

@@ -128,6 +128,8 @@ export default function CloseSession() {
             sessionId: myActiveSession.id,
             payload: {
               closing_balance: countedCash,
+              closing_mobile_money: countedMomo,
+              closing_card: countedCard,
               password,
               closing_notes: closingNotes,
             },

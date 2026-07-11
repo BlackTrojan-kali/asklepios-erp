@@ -229,3 +229,105 @@ export interface PharmacienPayload {
     position: PharmacyPosition;
     hospital_id: number;
 }
+
+// ==========================================
+// DTOs POUR LE LABORATOIRE
+// ==========================================
+export interface LabCategoryDto {
+    id: number;
+    center_id: number | null;
+    name: string;
+    tests?: LabTestDto[];
+}
+
+export interface LabCategoryPayload {
+    center_id?: number | null;
+    name: string;
+}
+
+export interface LabTestDto {
+    id: number;
+    lab_category_id: number;
+    code: string;
+    name: string;
+    sample_type_required: string;
+    price: number;
+    is_active: boolean;
+    category?: LabCategoryDto;
+    parameters?: LabParameterDto[];
+}
+
+export interface LabTestPayload {
+    lab_category_id: number;
+    code: string;
+    name: string;
+    sample_type_required: string;
+    price: number;
+    is_active: boolean;
+}
+
+export interface LabParameterDto {
+    id: number;
+    lab_test_id: number;
+    name: string;
+    unit: string;
+    reference_min_male: number | null;
+    reference_max_male: number | null;
+    reference_min_female: number | null;
+    reference_max_female: number | null;
+    reference_text: string | null;
+    test?: LabTestDto;
+}
+
+export interface LabParameterPayload {
+    lab_test_id: number;
+    name: string;
+    unit: string;
+    reference_min_male?: number | null;
+    reference_max_male?: number | null;
+    reference_min_female?: number | null;
+    reference_max_female?: number | null;
+    reference_text?: string | null;
+}
+
+export interface LabSampleDto {
+    id: number;
+    lab_request_id: number;
+    lab_test_id?: number;
+    sample_type: string;
+    barcode: string;
+    status: 'COLLECTED' | 'RECEIVED' | 'REJECTED';
+    collected_at?: string;
+    collected_by?: number;
+}
+
+export interface LabResultDto {
+    id?: number;
+    lab_request_line_id: number;
+    lab_parameter_id: number;
+    value_numeric?: number;
+    value_string?: string;
+    is_abnormal?: boolean;
+    status?: 'DRAFT' | 'VALIDATED';
+}
+
+export interface LabRequestLineDto {
+    id: number;
+    lab_request_id: number;
+    lab_test_id: number;
+    test?: LabTestDto;
+}
+
+export interface LabRequestDto {
+    id: number;
+    patient_id: number;
+    center_id: number;
+    invoice_id: number | null;
+    priority: 'ROUTINE' | 'URGENT';
+    status: 'PENDING_PAYMENT' | 'PAID' | 'SAMPLED' | 'PARTIAL' | 'COMPLETED';
+    patient?: any; // You can type this with PatientDto if available
+    lines?: LabRequestLineDto[];
+    samples?: LabSampleDto[];
+    profileDoctor?: any;
+    created_at?: string;
+}

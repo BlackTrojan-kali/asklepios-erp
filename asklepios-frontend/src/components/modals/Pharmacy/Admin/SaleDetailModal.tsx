@@ -48,7 +48,12 @@ export default function SaleDetailModal({
                 Client
               </span>
               <span className="font-bold text-slate-800 dark:text-white mt-1 block">
-                {sale.customer_name || "Client Passage"}
+                {sale.customer_name || "Anonyme"}
+                {sale.patient && (
+                  <span className="text-xs text-teal-600 dark:text-teal-400 font-mono block mt-0.5">
+                    Code : {sale.patient.patient_code}
+                  </span>
+                )}
               </span>
             </div>
             <div>

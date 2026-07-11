@@ -9,12 +9,20 @@ export interface CashRegisterSessionDto {
   closed_at: string | null;
   opening_balance: number;
   closing_balance: number | null;
+  closing_mobile_money?: number | null;
+  closing_card?: number | null;
   opening_notes?: string | null;
   closing_notes?: string | null;
+  current_balance?: number;
   sales_totals?: {
     cash: number;
     mobile_money: number;
     card: number;
+  };
+  treasury_totals?: {
+    cash: { in: number; out: number; transfer: number; net: number };
+    mobile_money: { in: number; out: number; transfer: number; net: number };
+    card: { in: number; out: number; transfer: number; net: number };
   };
   created_at?: string;
   updated_at?: string;
@@ -31,6 +39,7 @@ export interface CashRegisterDto {
   id: number;
   pharmacy_branch_id: number;
   name: string;
+  merchant_code?: string | null;
   status: "active" | "inactive";
   balance: number;
   created_at?: string;
@@ -43,11 +52,13 @@ export interface CreateCashRegisterPayload {
   name: string;
   pharmacy_branch_id: number;
   status?: "active" | "inactive";
+  merchant_code?: string;
 }
 
 export interface UpdateCashRegisterPayload {
   name?: string;
   status?: "active" | "inactive";
+  merchant_code?: string | null;
 }
 
 

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId("pharmacy_branch_id")->constrained("pharmacy_branches")->onDelete("cascade");
             $table->foreignId("cash_register_session_id")->constrained("cash_register_sessions")->onDelete("cascade");
-            $table->string("customer_name")->default("Client Comptoire");
+            $table->string("customer_name")->default("Anonyme");
             $table->boolean("has_prescription")->default(false);
             $table->string("prescription_ref")->nullable();
             $table->decimal("total_amount", 15, 2);

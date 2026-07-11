@@ -38,7 +38,7 @@ class PosSaleController extends Controller
         }
 
         $query = PosSale::where('pharmacy_branch_id', $profile->branch_id)
-            ->with(['session.user', 'items.article']);
+            ->with(['session.user', 'items.article', 'patient']);
 
         // Filtrer par session active de l'utilisateur connecté par défaut si scope est 'my-active-session'
         $scope = $request->query('scope', 'my-active-session');
@@ -93,7 +93,7 @@ class PosSaleController extends Controller
         }
 
         $sale = PosSale::where('pharmacy_branch_id', $profile->branch_id)
-            ->with(['session.user', 'session.register', 'branch.country', 'items.article', 'items.batch'])
+            ->with(['session.user', 'session.register', 'branch.country', 'items.article', 'items.batch', 'patient'])
             ->findOrFail($id);
 
         return response()->json($sale, 200);
@@ -124,9 +124,11 @@ class PosSaleController extends Controller
 
         $validated = $request->validate([
             'customer_name' => 'nullable|string|max:255',
+            'patient_id' => 'nullable|integer|exists:patients,id',
             'has_prescription' => 'nullable|boolean',
             'prescription_ref' => 'nullable|string|max:255',
             'payment_method' => 'required|string|in:CASH,MOBILE_MONEY,CARD',
+            'payment_account_id' => 'nullable|integer',
             'amount_received' => 'nullable|numeric|min:0',
             'items' => 'required|array|min:1',
             'items.*.article_id' => 'required|integer|exists:articles,id',
@@ -136,7 +138,32 @@ class PosSaleController extends Controller
             'items.*.discount' => 'nullable|numeric|min:0|max:100',
         ]);
 
-        $customerName = $validated['customer_name'] ?? 'Client Passage';
+        $destinationAccount = null;
+        if (in_array($validated['payment_method'], ['MOBILE_MONEY', 'CARD'])) {
+            if (!isset($validated['payment_account_id']) || is_null($validated['payment_account_id'])) {
+                return response()->json(['message' => 'Le choix du compte de trésorerie récepteur est obligatoire pour les paiements dématérialisés.'], 422);
+            }
+
+            $accountType = $validated['payment_method'] === 'MOBILE_MONEY' ? 'mobile_money' : 'bank';
+            $destinationAccount = \App\Models\Pharmacy\PaymentAccount::where('pharmacy_branch_id', $branchId)
+                ->where('type', $accountType)
+                ->where('status', 'active')
+                ->find($validated['payment_account_id']);
+
+            if (!$destinationAccount) {
+                return response()->json(['message' => 'Le compte de trésorerie sélectionné est invalide ou inactif pour ce mode de paiement.'], 422);
+            }
+        }
+
+        $patient = null;
+        if (isset($validated['patient_id']) && !is_null($validated['patient_id'])) {
+            $patient = \App\Models\Patient::find($validated['patient_id']);
+        }
+
+        $customerName = $validated['customer_name'] ?? 'Anonyme';
+        if ($patient) {
+            $customerName = trim($patient->first_name . ' ' . ($patient->last_name ?? ''));
+        }
 
         DB::beginTransaction();
 
@@ -191,10 +218,12 @@ class PosSaleController extends Controller
                 'pharmacy_branch_id' => $branchId,
                 'cash_register_session_id' => $session->id,
                 'customer_name' => $customerName,
+                'patient_id' => $validated['patient_id'] ?? null,
                 'has_prescription' => $validated['has_prescription'] ?? false,
                 'prescription_ref' => $validated['prescription_ref'] ?? null,
                 'total_amount' => $totalAmount,
                 'payment_method' => $validated['payment_method'],
+                'payment_account_id' => $validated['payment_account_id'] ?? null,
                 'amount_received' => $amountReceived,
                 'change_due' => $changeDue,
             ]);
@@ -222,6 +251,26 @@ class PosSaleController extends Controller
                     null,
                     "Vente POS #{$sale->id}"
                 );
+            }
+
+            // Enregistrer le flux financier de la vente en Mobile Money ou Carte dans la trésorerie
+            if (in_array($validated['payment_method'], ['MOBILE_MONEY', 'CARD']) && $destinationAccount) {
+                \App\Models\Pharmacy\PaymentTransaction::create([
+                    'pharmacy_branch_id' => $branchId,
+                    'cash_register_session_id' => $session->id,
+                    'type' => 'cash_in',
+                    'payment_method' => $validated['payment_method'],
+                    'amount' => $totalAmount,
+                    'destination_account_id' => $destinationAccount->id,
+                    'reference' => 'SALE-' . $sale->id,
+                    'description' => "Paiement Client - Vente POS #{$sale->id}",
+                    'status' => 'completed',
+                    'user_id' => Auth::id(),
+                    'confirmed_by_id' => Auth::id(),
+                    'confirmed_at' => now(),
+                ]);
+
+                $destinationAccount->increment('balance', $totalAmount);
             }
 
             DB::commit();

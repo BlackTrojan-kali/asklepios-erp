@@ -52,7 +52,7 @@ class PosSaleController extends Controller
         $branchIds = PharmacyBranch::where('hospital_id', $hospitalId)->pluck('id')->toArray();
 
         $query = PosSale::whereIn('pharmacy_branch_id', $branchIds)
-            ->with(['session.user', 'session.register', 'branch.country', 'items.article']);
+            ->with(['session.user', 'session.register', 'branch.country', 'items.article', 'patient']);
 
         // Filtrage par succursale
         if ($request->filled('pharmacy_branch_id')) {
@@ -99,7 +99,12 @@ class PosSaleController extends Controller
             $query->where(function ($q) use ($search, $cleanSearch) {
                 $q->where('customer_name', 'like', "%{$search}%")
                   ->orWhere('prescription_ref', 'like', "%{$search}%")
-                  ->orWhere('id', $cleanSearch);
+                  ->orWhere('id', $cleanSearch)
+                  ->orWhereHas('patient', function ($pq) use ($search) {
+                      $pq->where('patient_code', 'like', "%{$search}%")
+                        ->orWhere('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%");
+                  });
             });
         }
 
@@ -145,12 +150,16 @@ class PosSaleController extends Controller
 
         $exportData = $sales->map(function ($s) {
             $currency = $s->session->register->branch->country->currency ?? 'XAF';
+            $clientName = $s->customer_name ?? 'Anonyme';
+            if ($s->patient) {
+                $clientName .= " (" . $s->patient->patient_code . ")";
+            }
             return [
                 'Ticket N°' => $s->receipt_number,
                 'Date' => $s->created_at->format('d/m/Y H:i'),
                 'Succursale' => $s->branch->name ?? 'N/A',
                 'Caisse' => $s->session->register->name ?? 'N/A',
-                'Client' => $s->customer_name ?? 'Client Comptoire',
+                'Client' => $clientName,
                 'Vendeur' => $s->session->user ? ($s->session->user->first_name . ' ' . $s->session->user->last_name) : 'Caissier',
                 'Mode Règlement' => $s->payment_method,
                 'Total' => $s->total_amount . ' ' . $currency,

@@ -258,8 +258,11 @@ class PaymentTransactionController extends Controller
             return response()->json(['message' => 'Cette transaction n\'est pas en attente.'], 400);
         }
 
+        $isCashOrInternal = $transaction->payment_method === 'CASH' || 
+            ($transaction->destinationAccount && in_array($transaction->destinationAccount->type, ['safe', 'cash_register']));
+
         $validated = $request->validate([
-            'reference' => 'required|string|max:255',
+            'reference' => $isCashOrInternal ? 'nullable|string|max:255' : 'required|string|max:255',
             'receipt' => 'nullable|image|max:4096',
         ]);
 
@@ -269,7 +272,7 @@ class PaymentTransactionController extends Controller
                 $transaction->receipt_path = $path;
             }
 
-            $transaction->reference = $validated['reference'];
+            $transaction->reference = $validated['reference'] ?? ($transaction->reference ?? 'INTERNAL-' . $transaction->id);
             $transaction->status = 'completed';
             $transaction->confirmed_by_id = Auth::id();
             $transaction->confirmed_at = now();

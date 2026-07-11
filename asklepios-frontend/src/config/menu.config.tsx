@@ -20,7 +20,10 @@ import {
   BriefcaseMedical,
   Building2,
   BedDouble,
-  Coins
+  Coins,
+  Microscope,
+  TestTubes,
+  Database,
 } from "lucide-react";
 
 // --- 1. DÉFINITION DES TYPES ---
@@ -95,9 +98,10 @@ export const MENU_CONFIG: MenuItemType[] = [
     subItems: [
       { title: "Docteurs", path: "/admin/doctors" },
       { title: "Réceptionnistes", path: "/admin/receptionists" },
+      { title: "Laborantins", path: "/admin/lab-technicians" },
     ],
   },
-  
+
   // ==========================================
   // C. MENUS ADMIN (Supervision Pharmacie)
   // ==========================================
@@ -163,8 +167,14 @@ export const MENU_CONFIG: MenuItemType[] = [
     requiredLicence: "pharmacy",
     subItems: [
       { title: "Comptes de Trésorerie", path: "/admin/pharmacy/accounts" },
-      { title: "Caisses Enregistreuses", path: "/admin/pharmacy/cash-register" },
-      { title: "Mouvements Trésorerie", path: "/admin/pharmacy/treasury-transactions" },
+      {
+        title: "Caisses Enregistreuses",
+        path: "/admin/pharmacy/cash-register",
+      },
+      {
+        title: "Mouvements Trésorerie",
+        path: "/admin/pharmacy/treasury-transactions",
+      },
       { title: "Versements en attente", path: "/admin/pharmacy/versements" },
     ],
   },
@@ -174,8 +184,14 @@ export const MENU_CONFIG: MenuItemType[] = [
     roles: ["admin"],
     requiredLicence: "pharmacy",
     subItems: [
-      { title: "Historiques des ventes", path: "/admin/pharmacy/pos-sales-history" },
-      { title: "Historique des sessions", path: "/admin/pharmacy/pos-sessions-history" },
+      {
+        title: "Historiques des ventes",
+        path: "/admin/pharmacy/pos-sales-history",
+      },
+      {
+        title: "Historique des sessions",
+        path: "/admin/pharmacy/pos-sessions-history",
+      },
     ],
   },
 
@@ -244,10 +260,16 @@ export const MENU_CONFIG: MenuItemType[] = [
     positions: ["vente"],
     requiredLicence: "pharmacy",
     subItems: [
-      { title: "Historique des Ventes", path: "/pharmacy/cash/sales-history" }, 
-      { title: "Historique des Sessions", path: "/pharmacy/cash/session/history" },
-      { title: "Mes Versements", path: "/pharmacy/cash/deposits-history" }, 
-      { title: "Mouvements de Caisse", path: "/pharmacy/cash/movements-history" }, 
+      { title: "Historique des Ventes", path: "/pharmacy/cash/sales-history" },
+      {
+        title: "Historique des Sessions",
+        path: "/pharmacy/cash/session/history",
+      },
+      { title: "Mes Versements", path: "/pharmacy/cash/deposits-history" },
+      {
+        title: "Mouvements de Caisse",
+        path: "/pharmacy/cash/movements-history",
+      },
     ],
   },
 
@@ -262,18 +284,18 @@ export const MENU_CONFIG: MenuItemType[] = [
     subItems: [
       { title: "Dossiers Patients", path: "/reception/patients" },
       { title: "Gestion des RDV", path: "/reception/rdv" },
-      { title: "Historique des RDV", path: "/historique_rdv" }
-    ]
+      { title: "Historique des RDV", path: "/historique_rdv" },
+    ],
   },
-  { 
+  {
     title: "Facturation et Paiement",
-    icon: <Coins size={20}/>,
+    icon: <Coins size={20} />,
     roles: ["reception", "admin"],
     requiredLicence: "base_hospital",
     subItems: [
       { title: "Gestion Factures", path: "/reception/facturation" },
       { title: "Paiements", path: "/reception/payments" },
-    ]
+    ],
   },
 
   // ==========================================
@@ -284,7 +306,7 @@ export const MENU_CONFIG: MenuItemType[] = [
     icon: <Computer size={20} />,
     roles: ["doctor"],
     requiredLicence: "base_hospital",
-    path: "/doctor/home"
+    path: "/doctor/home",
   },
   {
     title: "Mon Planning",
@@ -294,16 +316,49 @@ export const MENU_CONFIG: MenuItemType[] = [
     subItems: [
       { title: "Agenda des RDV", path: "/doctor/appointments/calendar" },
       { title: "Historique des RDV", path: "/historique_rdv" },
-    ]
+    ],
   },
   {
     title: "Mon Service",
-    icon: <BedDouble size={20} />, 
+    icon: <BedDouble size={20} />,
     roles: ["doctor"],
     requiredLicence: "base_hospital",
     subItems: [
-      { title: "Chambres & Lits", path: "/doctor/wards" }, 
+      { title: "Chambres & Lits", path: "/doctor/wards" },
       { title: "Actes Médicaux", path: "/doctor/medical_act" },
-    ]
-  }
+    ],
+  },
+
+  // ==========================================
+  // H. MENUS LABORATOIRE (SIL)
+  // ==========================================
+  {
+    title: "Configuration Labo",
+    icon: <Database size={20} />,
+    roles: ["admin", "laboratory"],
+    requiredLicence: "laboratory",
+    subItems: [
+      { title: "Catégories", path: "/laboratory/catalogue/categories" },
+      { title: "Examens", path: "/laboratory/catalogue/tests" },
+      { title: "Paramètres", path: "/laboratory/catalogue/parameters" },
+    ],
+  },
+  {
+    title: "Prélèvements",
+    icon: <TestTubes size={20} />,
+    roles: ["laboratory", "nurse", "admin"],
+    requiredLicence: "laboratory",
+    path: "/laboratory/sampling",
+  },
+  {
+    title: "Analyses & Résultats",
+    icon: <Microscope size={20} />,
+    roles: ["laboratory", "admin"],
+    requiredLicence: "laboratory",
+    subItems: [
+      { title: "Saisie des Résultats", path: "/laboratory/results" },
+      { title: "Validation Biologiste", path: "/laboratory/validation" },
+      { title: "Archives", path: "/laboratory/archives" },
+    ],
+  },
 ];
