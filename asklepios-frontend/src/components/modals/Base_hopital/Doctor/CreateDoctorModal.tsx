@@ -9,10 +9,11 @@ interface Props {
     isOpen: boolean;
     onClose: () => void;
     centers: CenterDto[];
+    AutoRefreshPage: () => void;
     // 👉 departments n'est plus passé en props, on le gère en local !
 }
 
-export const CreateDoctorModal: React.FC<Props> = ({ isOpen, onClose, centers }) => {
+export const CreateDoctorModal: React.FC<Props> = ({ isOpen, onClose, centers,AutoRefreshPage }) => {
     const { createDoctor, actionLoading } = useDoctorStore();
     
     // 👉 Utilisation du store des départements
@@ -48,6 +49,7 @@ export const CreateDoctorModal: React.FC<Props> = ({ isOpen, onClose, centers })
                 first_name: '', last_name: '', phone: '', email: '', password: '', 
                 speciality: '', specifications: '', center_id: '', department_id: null 
             });
+            AutoRefreshPage();
             onClose();
         }
     };

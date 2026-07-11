@@ -6,9 +6,10 @@ interface Props {
     isOpen: boolean;
     onClose: () => void;
     centerId: number; // Le centre sélectionné dans le dashboard
+    AutoRefreshPage: () => void;
 }
 
-export const CreateDepartmentModal: React.FC<Props> = ({ isOpen, onClose, centerId }) => {
+export const CreateDepartmentModal: React.FC<Props> = ({ isOpen, onClose, centerId,AutoRefreshPage }) => {
     const { createDepartment, loading } = useDepartmentStore();
     
     const [payload, setPayload] = useState({
@@ -27,6 +28,7 @@ export const CreateDepartmentModal: React.FC<Props> = ({ isOpen, onClose, center
         const success = await createDepartment(payload);
         if (success) {
             setPayload({ center_id: centerId, name: '', alias: '' });
+            AutoRefreshPage();
             onClose();
         }
     };

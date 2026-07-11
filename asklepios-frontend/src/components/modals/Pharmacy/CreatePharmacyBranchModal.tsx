@@ -9,9 +9,10 @@ interface Props {
     onClose: () => void;
     centers: CenterDto[]; 
     countries: CountryDto[]; // <-- NOUVELLE PROP
+    AutoRefreshPage: ()=> void;
 }
 
-export const CreatePharmacyBranchModal: React.FC<Props> = ({ isOpen, onClose, centers, countries }) => {
+export const CreatePharmacyBranchModal: React.FC<Props> = ({ isOpen, onClose, centers, countries, AutoRefreshPage }) => {
     const { createPharmacyBranch, actionLoading } = usePharmacyStore();
     
     const [payload, setPayload] = useState<PharmacyBranchPayload>({
@@ -28,6 +29,7 @@ export const CreatePharmacyBranchModal: React.FC<Props> = ({ isOpen, onClose, ce
         const success = await createPharmacyBranch(payload);
         if (success) {
             setPayload({ name: '', adress: '', type: '', center_id: null, country_id: null });
+            AutoRefreshPage();
             onClose();
         }
     };

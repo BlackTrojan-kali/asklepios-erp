@@ -8,13 +8,15 @@ interface MedicalBackgroundModalProps {
     onClose: () => void;
     patientId: number;
     existingData?: MedicalBackgroundDto | null;
+    AutoRefreshPage : () => void;
 }
 
 export const MedicalBackgroundModal: React.FC<MedicalBackgroundModalProps> = ({
     isOpen,
     onClose,
     patientId,
-    existingData
+    existingData,
+    AutoRefreshPage
 }) => {
     const { createMedicalBackground, updateMedicalBackground, actionLoading } = useMedicalBgStore();
 
@@ -95,6 +97,7 @@ export const MedicalBackgroundModal: React.FC<MedicalBackgroundModalProps> = ({
         }
 
         if (success) {
+            AutoRefreshPage()
             onClose();
         }
     };

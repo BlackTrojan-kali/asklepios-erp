@@ -8,19 +8,21 @@ interface Props {
     onClose: () => void;
     article: ArticleDto | null;
     categories: ArticleCategoryDto[];
+    AutoRefreshPage: () => void;
 }
 
-export const UpdateArticleModal: React.FC<Props> = ({ isOpen, onClose, article, categories }) => {
+export const UpdateArticleModal: React.FC<Props> = ({ isOpen, onClose, article, categories, AutoRefreshPage }) => {
     const { updateArticle, actionLoading } = useArticleStore();
     
     const [payload, setPayload] = useState<ArticlePayload>({
         category_id: '',
         name: '',
+        default_selling_price: '', // <-- Ajout de l'initialisation
         barcode: '',
         global_min_qty: '',
         track_batches: true,
-        image: null ,
-        is_prescripted:false,
+        image: null,
+        is_prescripted: false,
     });
 
     useEffect(() => {
@@ -28,11 +30,12 @@ export const UpdateArticleModal: React.FC<Props> = ({ isOpen, onClose, article, 
             setPayload({
                 category_id: article.category_id,
                 name: article.name,
+                default_selling_price: article.default_selling_price ?? '', // <-- Affectation de la valeur existante
                 barcode: article.barcode || '',
                 global_min_qty: article.global_min_qty || '',
-                track_batches: article.track_batches, // On récupère la vraie valeur
+                track_batches: article.track_batches, 
                 image: null,
-                is_prescripted:article.is_prescripted || false,
+                is_prescripted: article.is_prescripted || false,
             });
         }
     }, [article]);
@@ -40,7 +43,10 @@ export const UpdateArticleModal: React.FC<Props> = ({ isOpen, onClose, article, 
     const handleSubmit = async () => {
         if (!article || !payload.name || payload.category_id === '') return;
         const success = await updateArticle(article.id, payload);
-        if (success) onClose();
+        if (success) {
+            AutoRefreshPage();
+            onClose();
+        }
     };
 
     if (!isOpen || !article) return null;

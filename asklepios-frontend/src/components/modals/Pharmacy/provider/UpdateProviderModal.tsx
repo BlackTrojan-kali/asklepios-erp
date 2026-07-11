@@ -7,9 +7,10 @@ interface Props {
     isOpen: boolean;
     onClose: () => void;
     provider: ProviderDto | null;
+    AutoRefreshPage: () => void;
 }
 
-export const UpdateProviderModal: React.FC<Props> = ({ isOpen, onClose, provider }) => {
+export const UpdateProviderModal: React.FC<Props> = ({ isOpen, onClose, provider,AutoRefreshPage }) => {
     const { updateProvider, actionLoading } = useProviderStore();
     
     const [payload, setPayload] = useState<ProviderPayload>({
@@ -35,7 +36,9 @@ export const UpdateProviderModal: React.FC<Props> = ({ isOpen, onClose, provider
         if (!provider || !payload.name.trim()) return;
 
         const success = await updateProvider(provider.id, payload);
-        if (success) onClose();
+        if (success) {
+            AutoRefreshPage();
+            onClose();}
     };
 
     if (!isOpen || !provider) return null;

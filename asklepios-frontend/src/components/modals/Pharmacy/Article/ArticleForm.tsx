@@ -74,6 +74,21 @@ export const ArticleForm: React.FC<Props> = ({ payload, setPayload, categories, 
                     />
                 </div>
 
+                {/* PRIX DE VENTE PAR DÉFAUT */}
+                <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">
+                        Prix de vente standard (FCFA)
+                    </label>
+                    <input 
+                        type="number" 
+                        min="0"
+                        placeholder="Ex: 1500"
+                        className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm outline-none focus:border-[#00a896] dark:focus:border-teal-500 text-slate-800 dark:text-white transition-colors" 
+                        value={payload.default_selling_price}
+                        onChange={(e) => setPayload({...payload, default_selling_price: e.target.value === "" ? "" : Number(e.target.value)})} 
+                    />
+                </div>
+
                 {/* CODE BARRES */}
                 <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">
@@ -89,7 +104,7 @@ export const ArticleForm: React.FC<Props> = ({ payload, setPayload, categories, 
                 </div>
 
                 {/* SEUIL D'ALERTE */}
-                <div>
+                <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1">
                         Seuil d'alerte global (Qté min)
                     </label>
@@ -124,7 +139,7 @@ export const ArticleForm: React.FC<Props> = ({ payload, setPayload, categories, 
                     </div>
                 </div>
                 
-                {/* EST PRESCRIT (Correction du texte) */}
+                {/* EST PRESCRIT */}
                 <div className="md:col-span-2 p-3 bg-slate-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md flex items-start gap-3">
                     <div className="pt-0.5">
                         <input 

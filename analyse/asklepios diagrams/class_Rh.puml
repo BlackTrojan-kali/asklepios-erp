@@ -1,0 +1,168 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam nodesep 35
+skinparam ranksep 45
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+title Architecture Asklepios : Module RH, Gestion du Personnel & Paie Camerounaise
+
+' --- CONFIGURATION DES COULEURS ---
+skinparam package {
+    BackgroundColor<<Identity>> #E3F2FD
+    BackgroundColor<<Infra>> #E8F5E9
+    BackgroundColor<<HR>> #FFE0B2
+}
+
+package "1. Liens Core & Identité" <<Identity>> {
+    class tenant {
+        id: UnsignedBigInteger
+        name: String
+    }
+    class hospital_branch {
+        id: UnsignedBigInteger
+        name: String
+    }
+    class user {
+        id: UnsignedBigInteger
+        email: String
+        is_active: Boolean
+    }
+}
+
+package "2. Infrastructures Hospitalières" <<Infra>> {
+    class department {
+        id: UnsignedBigInteger
+        name: String (ex: Maternité, Pédiatrie)
+    }
+}
+
+package "3. Gestion des Ressources Humaines" <<HR>> {
+    class employee {
+        id: UnsignedBigInteger
+        tenant_id: UnsignedBigInteger
+        user_id: UnsignedBigInteger_optional (Pour accès ERP)
+        matricule: String (Unique, ex: ASK-2026-004)
+        first_name: String
+        last_name: String
+        nic_number: String (Numéro de CNI)
+        cnps_number: String_optional
+        birth_date: Date
+        hire_date: Date
+        termination_date: Date_optional
+        status: String ('ACTIVE', 'SUSPENDED', 'TERMINATED')
+        staff_type: String ('CONTRACTUEL', 'FONCTIONNAIRE_DETACHE', 'VACATAIRE')
+    }
+
+    class contract {
+        id: UnsignedBigInteger
+        employee_id: UnsignedBigInteger
+        contract_type: String ('CDI', 'CDD', 'VACATION', 'DETACHEMENT')
+        start_date: Date
+        end_date: Date_optional
+        base_salary: float (Salaire de base négocié)
+        housing_allowance: float_optional (Indemnité de logement)
+        risk_premium: float_optional (Prime de risque médical)
+        is_active: Boolean
+    }
+
+    class leave_request {
+        id: UnsignedBigInteger
+        employee_id: UnsignedBigInteger
+        leave_type: String ('ANNUAL', 'SICK', 'MATERNITY', 'EXCEPTIONAL')
+        start_date: Date
+        end_date: Date
+        total_days: float
+        status: String ('PENDING', 'APPROVED_BY_MAJOR', 'VALIDATED_BY_HR', 'REJECTED')
+        reason: Text_optional
+    }
+}
+
+package "4. Planning, Gardes & Présences" <<HR>> {
+    class medical_shift_planning {
+        id: UnsignedBigInteger
+        hospital_branch_id: UnsignedBigInteger
+        department_id: UnsignedBigInteger
+        employee_id: UnsignedBigInteger
+        shift_date: Date
+        shift_type: String ('DAY_SHIFT', 'NIGHT_GUARD', 'WEEKEND_ASTREINTE')
+        start_time: Time
+        end_time: Time
+        guard_rate_applied: float (Tarif de la garde spécifique à ce shift)
+        status: String ('SCHEDULED', 'PERFORMED', 'ABSENT')
+    }
+}
+
+package "5. Moteur de Paie & Fiscalité Camerounaise" <<HR>> {
+    class payroll_period {
+        id: UnsignedBigInteger
+        tenant_id: UnsignedBigInteger
+        year: Integer (ex: 2026)
+        month: Integer (ex: 7)
+        status: String ('OPEN', 'CALCULATING', 'CLOSED', 'PAID')
+    }
+
+    class payslip {
+        id: UnsignedBigInteger
+        payroll_period_id: UnsignedBigInteger
+        employee_id: UnsignedBigInteger
+        gross_salary: float (Salaire Brut)
+        total_deductions: float (Total retenues)
+        net_salary: float (Salaire Net à payer)
+        payment_method: String ('BANK_TRANSFER', 'CASH', 'MOBILE_MONEY')
+        bank_name: String_optional
+        bank_account_number: String_optional
+        status: String ('DRAFT', 'VALIDATED', 'PAID')
+    }
+
+    class payslip_line {
+        id: UnsignedBigInteger
+        payslip_id: UnsignedBigInteger
+        line_type: String ('EARNING', 'DEDUCTION')
+        code: String (ex: SAL_BASE, CNPS_OUV, IRPP, PR_GARDE, CFC_PAT)
+        description: String (ex: Salaire de base, Retenue CNPS, Prime de garde)
+        base_value: float (Assiette de calcul ou quantité)
+        rate: float (Taux appliqué en %)
+        amount: float (Montant net de la ligne)
+    }
+
+    class taxation_config {
+        id: UnsignedBigInteger
+        tenant_id: UnsignedBigInteger
+        cnps_employee_rate: float (4.2%)
+        cnps_employer_rate: float
+        cnps_ceiling: float (750000)
+        cfc_employee_rate: float (1%)
+        cfc_employer_rate: float (1.5%)
+        fne_employer_rate: float (1%)
+        irpp_brackets: JSON (Barème progressif DGI Cameroun)
+        rav_brackets: JSON (Barème CRTV)
+        tdl_brackets: JSON (Barème Taxe Commune)
+        is_active: Boolean
+    }
+}
+
+' --- RELATIONS ---
+tenant "1" *-- "*" hospital_branch
+tenant "1" *-- "*" employee
+tenant "1" *-- "*" payroll_period
+tenant "1" *-- "*" taxation_config
+
+user "1" <-- "0..1" employee : s'authentifie via <
+hospital_branch "1" *-- "*" department
+
+' --- RELATIONS RH ---
+employee "1" *-- "*" contract : détient >
+employee "1" *-- "*" leave_request : sollicite >
+employee "1" *-- "*" medical_shift_planning : accomplit >
+hospital_branch "1" <-- "*" medical_shift_planning : hébergé à <
+department "1" <-- "*" medical_shift_planning : affecté à <
+
+' --- RELATIONS PAISLIP ---
+payroll_period "1" *-- "*" payslip : rassemble >
+employee "1" *-- "*" payslip : reçoit >
+payslip "1" *-- "1..*" payslip_line : détaille >
+
+@enduml

@@ -10,9 +10,11 @@ interface Props {
     onClose: () => void;
     appointment: AppointmentDto | null;
     currentDepartmentId: number;
+    AutoRefreshPage: () => void;
 }
 
-export const AdmitToWaitingRoomModal: React.FC<Props> = ({ isOpen, onClose, appointment, currentDepartmentId }) => {
+export const AdmitToWaitingRoomModal: React.FC<Props> = ({ isOpen, onClose, appointment, currentDepartmentId,
+    AutoRefreshPage }) => {
     const { admitToWaitingRoom, actionLoading } = useAppointmentStore();
     const { sharedFacilityRooms, getSharedFacilityRooms, loading: roomsLoading } = useFacilityRoomStore();
     
@@ -37,6 +39,7 @@ export const AdmitToWaitingRoomModal: React.FC<Props> = ({ isOpen, onClose, appo
         if (success) {
             setRoomId('');
             setVisitType('ROUTINE');
+            AutoRefreshPage();
             onClose();
         }
     };

@@ -52,6 +52,7 @@ const Articles = () => {
     // États pour les modales
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [selectedArticle, setSelectedArticle] = useState<ArticleDto | null>(null);
+    const [autoRefreshPage,setAutoRefreshPage] = useState<boolean>(false);
 
     // URL de base pour afficher les images
     const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -60,8 +61,12 @@ const Articles = () => {
     useEffect(() => {
         getArticles(1, {});
         getAllArticleCategories(); // On charge toutes les catégories pour le filtre et les modales
-    }, [getArticles, getAllArticleCategories]);
+    }, [getArticles, getAllArticleCategories,autoRefreshPage]);
 
+
+    const handleAutoRefresh = ()=>{
+        setAutoRefreshPage(!autoRefreshPage);
+    }
     // Rafraîchir la liste en conservant la page et la recherche
     const handleRefresh = () => {
         getArticles(pagination?.currentPage || 1, filters);
@@ -378,6 +383,7 @@ const Articles = () => {
                 isOpen={isCreateOpen} 
                 onClose={() => setIsCreateOpen(false)} 
                 categories={allCategories}
+                AutoRefreshPage={handleAutoRefresh}
             />
 
             <UpdateArticleModal 
@@ -385,6 +391,7 @@ const Articles = () => {
                 onClose={() => setSelectedArticle(null)} 
                 article={selectedArticle}
                 categories={allCategories}
+                AutoRefreshPage={handleAutoRefresh}
             />
 
         </div>

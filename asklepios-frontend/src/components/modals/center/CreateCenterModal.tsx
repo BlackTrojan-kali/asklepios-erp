@@ -7,9 +7,10 @@ interface Props {
     isOpen: boolean;
     onClose: () => void;
     countries: CountryDto[];
+    AutoRefreshPage: () => void;
 }
 
-export const CreateCenterModal: React.FC<Props> = ({ isOpen, onClose, countries }) => {
+export const CreateCenterModal: React.FC<Props> = ({ isOpen, onClose, countries, AutoRefreshPage }) => {
     const { createCenter, actionLoading } = useCenterStore();
     
     // État initial vide
@@ -31,6 +32,7 @@ export const CreateCenterModal: React.FC<Props> = ({ isOpen, onClose, countries 
         if (success) {
             // Réinitialiser le formulaire après succès
             setPayload({ name: '', phone_1: '', phone_2: '', address: '', country_id: 0 });
+            AutoRefreshPage()
             onClose();
         }
     };
@@ -46,6 +48,7 @@ export const CreateCenterModal: React.FC<Props> = ({ isOpen, onClose, countries 
                     payload={payload} 
                     setPayload={setPayload}
                     countries={countries}
+                    AutoRefreshPage={AutoRefreshPage}
                 />
                 
                 <div className="mt-6 flex justify-end gap-3 border-t border-gray-100 dark:border-gray-800 pt-4">

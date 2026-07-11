@@ -22,6 +22,7 @@ const DoctorAdmissions = () => {
     // --- ÉTATS LOCAUX ---
     const [consultingAdmission, setConsultingAdmission] = useState<any | null>(null);
     const [dischargingAdmission, setDischargingAdmission] = useState<any | null>(null);
+    const [autoRefreshPage,SetAutoRefreshPage] = useState<boolean>(false);
 
     // --- CHARGEMENT INITIAL ---
     const fetchAdmissions = () => {
@@ -32,7 +33,7 @@ const DoctorAdmissions = () => {
     useEffect(() => {
         fetchAdmissions();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [autoRefreshPage]);
 
     // --- UTILITAIRE : Calculer les jours d'hospitalisation ---
     const getDaysAdmitted = (dateStr: string) => {
@@ -42,7 +43,9 @@ const DoctorAdmissions = () => {
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         return diffDays;
     };
-
+    const handleAutoRefresh = ()=>{
+        SetAutoRefreshPage(autoRefreshPage)
+    }
     return (
         <div className="h-[calc(100vh-100px)] flex flex-col space-y-6 relative overflow-hidden">
             

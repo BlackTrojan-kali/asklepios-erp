@@ -10,9 +10,10 @@ interface LicenceModalProps {
     isOpen: boolean;
     onClose: () => void;
     licenceToEdit?: LicenceDto | null; 
+    AutoRefreshPage: ()=> void;
 }
 
-const LicenceModal = ({ isOpen, onClose, licenceToEdit }: LicenceModalProps) => {
+const LicenceModal = ({ isOpen, onClose, licenceToEdit, AutoRefreshPage }: LicenceModalProps) => {
     const { createLicence, updateLicence } = useLicenceStore();
 
     // États du formulaire
@@ -65,7 +66,7 @@ const LicenceModal = ({ isOpen, onClose, licenceToEdit }: LicenceModalProps) => 
         }
 
         setLoading(false);
-
+        AutoRefreshPage();
         if (success) {
             onClose();
         }

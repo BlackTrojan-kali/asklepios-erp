@@ -62,18 +62,18 @@ const PurchaseOrders = () => {
   const [selectedOrderForView, setSelectedOrderForView] = useState<PurchaseOrderDto | null>(null);
   const [selectedOrderForReceive, setSelectedOrderForReceive] = useState<PurchaseOrderDto | null>(null);
   const [selectedOrderForReturn, setSelectedOrderForReturn] = useState<PurchaseOrderDto | null>(null);
-
+  const [autoRefreshPage,setAutoRefreshPage] = useState<boolean>(false);
   useEffect(() => {
     getProviders({});
     // 👉 L'admin charge la liste de toutes les succursales pour les filtres
     if (isAdmin) {
       getPharmacyBranches(1, {}, 100);
     }
-  }, [getProviders, getPharmacyBranches, isAdmin]);
+  }, [getProviders, getPharmacyBranches, isAdmin,autoRefreshPage]);
 
   useEffect(() => {
     getOrders({ ...filters, page });
-  }, [getOrders, filters, page]);
+  }, [getOrders, filters, page,autoRefreshPage]);
 
   const handleRefresh = () => {
     getOrders({ ...filters, page });
@@ -114,7 +114,9 @@ const PurchaseOrders = () => {
       if (success) handleRefresh();
     }
   };
-
+const handleAutoRefresh = ()=>{
+  setAutoRefreshPage(!autoRefreshPage)
+}
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "PENDING":

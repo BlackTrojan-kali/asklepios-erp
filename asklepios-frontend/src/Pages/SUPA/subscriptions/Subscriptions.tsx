@@ -28,6 +28,7 @@ const Subscriptions = () => {
     const { hospitals, getHospitals } = useHospitalStore();
     const { licences, getLicences } = useLicenceStore();
     const { countries,  getCountries } = useCountryStore();
+    const [autoRefreshPage, SetAutoRefreshPage]= useState<boolean>(false);
 
     // États pour les Filtres
     const [filters, setFilters] = useState({
@@ -36,7 +37,9 @@ const Subscriptions = () => {
         from_date: '',
         to_date: ''
     });
-
+    const handleAutoRefresh = ()=>{
+        SetAutoRefreshPage(!autoRefreshPage)
+    }
     // États pour les Modales
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [selectedSub, setSelectedSub] = useState<SubscriptionDto | null>(null);
@@ -44,14 +47,13 @@ const Subscriptions = () => {
     // État pour la prévisualisation
     const [previewData, setPreviewData] = useState<SubscriptionPreviewDto | null>(null);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-
     // Chargement initial
     useEffect(() => {
         getCountries(1,"",100);
         getSubscriptions(1, {});
         getHospitals(1, '', 100); 
         getLicences(1, '', 100);
-    }, [getSubscriptions, getHospitals, getLicences, getCountries]);
+    }, [getSubscriptions, getHospitals, getLicences, getCountries,autoRefreshPage]);
 
     // Lancer la recherche avec filtres
     const handleFilterSubmit = (e: React.FormEvent) => {
@@ -362,7 +364,8 @@ const Subscriptions = () => {
             <CreateSubscriptionModal 
                 isOpen={isCreateOpen} 
                 onClose={() => setIsCreateOpen(false)} 
-                dataSources={{ hospitals, countries, licences }} 
+                dataSources={{ hospitals, countries, licences }}
+                AutoRefreshPage = {handleAutoRefresh} 
             />
 
             <UpdateSubscriptionModal 
@@ -392,7 +395,7 @@ const Subscriptions = () => {
                                 <thead>
                                     <tr className="border-b border-gray-200 dark:border-gray-700 text-left text-gray-500 dark:text-gray-400">
                                         <th className="pb-2">Licence</th>
-                                        <th className="pb-2 text-center">Centres</th>
+                                        <th className="pb-2 text-center">Centres/ Pharmacies</th>
                                         <th className="pb-2 text-right">Sous-total</th>
                                     </tr>
                                 </thead>
@@ -400,7 +403,7 @@ const Subscriptions = () => {
                                     {previewData.licences.map((lic, i) => (
                                         <tr key={i} className="border-b border-gray-50 dark:border-gray-700/50 text-slate-800 dark:text-gray-200">
                                             <td className="py-2">{lic.licence_name}</td>
-                                            <td className="py-2 text-center">{lic.center_count}</td>
+                                            <td className="py-2 text-center">{lic.licence_name == "pharmacy" ? lic.pharmacy_count : lic.center_count}</td>
                                             <td className="py-2 text-right">{lic.sub_total.toLocaleString()} {previewData.currency}</td>
                                         </tr>
                                     ))}
@@ -416,7 +419,7 @@ const Subscriptions = () => {
                 </div>
             )}
 
-        </div>
+        </div> 
     );
 };
 

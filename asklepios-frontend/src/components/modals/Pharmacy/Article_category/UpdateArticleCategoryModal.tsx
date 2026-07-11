@@ -8,9 +8,10 @@ interface Props {
     onClose: () => void;
     category: ArticleCategoryDto | null;
     categories: ArticleCategoryDto[];
+    AutoRefreshPage: ()=>void;
 }
 
-export const UpdateArticleCategoryModal: React.FC<Props> = ({ isOpen, onClose, category, categories }) => {
+export const UpdateArticleCategoryModal: React.FC<Props> = ({ isOpen, onClose, category, categories,AutoRefreshPage }) => {
     const { updateArticleCategory, actionLoading } = useArticleCategoryStore();
     
     const [payload, setPayload] = useState<ArticleCategoryPayload>({
@@ -34,7 +35,9 @@ export const UpdateArticleCategoryModal: React.FC<Props> = ({ isOpen, onClose, c
         if (!category || !payload.name) return;
 
         const success = await updateArticleCategory(category.id, payload);
-        if (success) onClose();
+        if (success){ 
+            AutoRefreshPage()
+            onClose();}
     };
 
     if (!isOpen || !category) return null;

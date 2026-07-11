@@ -7,10 +7,12 @@ interface Props {
     isOpen: boolean;
     onClose: () => void;
     patient: PatientDto | null;
+    AutoRefreshPage: () => void;
 }
 
-export const UpdatePatientModal: React.FC<Props> = ({ isOpen, onClose, patient }) => {
+export const UpdatePatientModal: React.FC<Props> = ({ isOpen, onClose, patient,AutoRefreshPage }) => {
     const { updatePatient, actionLoading } = usePatientStore();
+
     
     const [payload, setPayload] = useState<PatientPayload>({
         first_name: '',
@@ -47,7 +49,9 @@ export const UpdatePatientModal: React.FC<Props> = ({ isOpen, onClose, patient }
         if (!patient || !isFormValid) return;
 
         const success = await updatePatient(patient.id, payload);
-        if (success) onClose();
+        if (success) {
+            AutoRefreshPage()
+            onClose();}
     };
 
     if (!isOpen || !patient) return null;

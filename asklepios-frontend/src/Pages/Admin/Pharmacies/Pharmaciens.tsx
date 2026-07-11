@@ -54,17 +54,21 @@ const Pharmaciens = () => {
     // États pour les modales
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [selectedPharmacien, setSelectedPharmacien] = useState<PharmacienDto | null>(null);
+    const [autoRefreshPage,setAutoRefreshPage] = useState<boolean>(false);
 
     // Chargement initial des données
     useEffect(() => {
         getPharmaciens({});
         getBranches({}); 
-    }, [getPharmaciens, getBranches]);
+    }, [getPharmaciens, getBranches,autoRefreshPage]);
 
     // Action de rafraîchissement manuel
     const handleRefresh = () => {
         getPharmaciens({ ...filters, page: pagination.current_page || 1 });
     };
+    const handleAutoRefresh= ()=>{
+        setAutoRefreshPage(!autoRefreshPage)
+    }
 
     // Soumission du formulaire de filtre (on force la page 1)
     const handleFilterSubmit = (e: React.FormEvent) => {
@@ -373,6 +377,7 @@ const Pharmaciens = () => {
                 isOpen={isCreateOpen} 
                 onClose={() => setIsCreateOpen(false)} 
                 branches={branches || []}
+                AutoRefreshPage={handleAutoRefresh}
             />
 
             <UpdatePharmacienModal 
@@ -380,6 +385,7 @@ const Pharmaciens = () => {
                 onClose={() => setSelectedPharmacien(null)} 
                 pharmacien={selectedPharmacien}
                 branches={branches || []}
+                AutoRefreshPage={handleAutoRefresh}
             />
 
         </div>

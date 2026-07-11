@@ -30,6 +30,9 @@ class ArticleController extends Controller
         else if(auth()->user()->role->name ==  "pharmacy"){
             return auth()->user()->profile_pharm->hospital_id;
         }
+        else if(auth()->user()->role->name ==  "doctor"){
+            return auth()->user()->profile_doctor->hospital_id;
+        }
     }
 
     /**
@@ -136,7 +139,6 @@ class ArticleController extends Controller
         } elseif ($request->filled('branch_id')) {
             $branchId = $request->query('branch_id');
         }
-
         $query = Article::with('category')->where('hospital_id', $hospitalId);
 
         $query->addSelect([
@@ -169,9 +171,7 @@ class ArticleController extends Controller
         });
 
         return response()->json($articles, 200);
-    }
-
-    /**
+    }/**
      * Créer un nouvel article
      */
     #[OA\Post(
@@ -190,10 +190,12 @@ class ArticleController extends Controller
                 properties: [
                     new OA\Property(property: "category_id", type: "integer"),
                     new OA\Property(property: "name", type: "string"),
+                    new OA\Property(property: "default_selling_price", type: "number", format: "float", description: "Prix de vente par défaut (0 par défaut)"),
                     new OA\Property(property: "barcode", type: "string", nullable: true),
                     new OA\Property(property: "global_min_qty", type: "number", format: "float"),
                     new OA\Property(property: "image", type: "string", format: "binary", nullable: true),
-                    new OA\Property(property: "track_batches", type: "boolean", description: "Vrai si l'article gère des lots classiques")
+                    new OA\Property(property: "track_batches", type: "boolean", description: "Vrai si l'article gère des lots classiques"),
+                    new OA\Property(property: "is_prescripted", type: "boolean", description: "Vrai si l'article peut être prescrit")
                 ]
             )
         )
@@ -211,16 +213,22 @@ class ArticleController extends Controller
                 }),
             ],
             'name' => 'required|string|max:255',
+            'default_selling_price' => 'nullable|numeric|min:0', // Ajout du champ manquant
             'barcode' => 'nullable|string|max:100',
             'global_min_qty' => 'nullable|numeric|min:0',
             'track_batches' => 'required|string', 
             'image' => 'nullable|image|mimes:jpeg,png,jpg,svg|max:2048',
-            'is_prescripted' => 'nullable|string', // <-- Changé ici (on s'attend à une string venant du FormData)
+            'is_prescripted' => 'nullable|string', 
         ]);
         
         $validatedData['hospital_id'] = $hospitalId;
         
-        // --- CORRECTION ICI : Cast des booléens ---
+        // Valeur par défaut pour le prix de vente si non fourni
+        if (!isset($validatedData['default_selling_price'])) {
+            $validatedData['default_selling_price'] = 0.0;
+        }
+
+        // --- Cast des booléens (Form Data) ---
         $validatedData['track_batches'] = filter_var($validatedData['track_batches'], FILTER_VALIDATE_BOOLEAN);
         
         if (isset($validatedData['is_prescripted'])) {
@@ -247,6 +255,7 @@ class ArticleController extends Controller
             'data' => $article->load('category')
         ], 201);
     }
+
     /**
      * Modifier un article
      */
@@ -272,14 +281,15 @@ class ArticleController extends Controller
                 }),
             ],
             'name' => 'sometimes|required|string|max:255',
+            'default_selling_price' => 'nullable|numeric|min:0', // Ajout du champ manquant
             'barcode' => 'nullable|string|max:100',
             'global_min_qty' => 'nullable|numeric|min:0',
             'track_batches' => 'sometimes|required|string', 
             'image' => 'nullable|image|mimes:jpeg,png,jpg,svg|max:2048',
-            'is_prescripted' => 'nullable|string', // <-- Changé ici
+            'is_prescripted' => 'nullable|string', 
         ]);
 
-        // --- CORRECTION ICI : Cast des booléens ---
+        // --- Cast des booléens (Form Data) ---
         if (isset($validatedData['track_batches'])) {
             $validatedData['track_batches'] = filter_var($validatedData['track_batches'], FILTER_VALIDATE_BOOLEAN);
         }
@@ -310,7 +320,6 @@ class ArticleController extends Controller
             'data' => $article->load('category')
         ], 200);
     }
-
     /**
      * Supprimer un article
      */

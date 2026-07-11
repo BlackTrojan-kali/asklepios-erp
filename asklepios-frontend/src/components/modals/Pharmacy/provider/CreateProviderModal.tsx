@@ -6,9 +6,10 @@ import type { ProviderPayload } from '../../../../types/ProviderTypes';
 interface Props {
     isOpen: boolean;
     onClose: () => void;
+    AutoRefreshPage: () => void;
 }
 
-export const CreateProviderModal: React.FC<Props> = ({ isOpen, onClose }) => {
+export const CreateProviderModal: React.FC<Props> = ({ isOpen, onClose,AutoRefreshPage }) => {
     const { createProvider, actionLoading } = useProviderStore();
     
     const initialPayload: ProviderPayload = {
@@ -26,6 +27,7 @@ export const CreateProviderModal: React.FC<Props> = ({ isOpen, onClose }) => {
         const success = await createProvider(payload);
         if (success) {
             setPayload(initialPayload); // Reset du formulaire
+            AutoRefreshPage()
             onClose();
         }
     };

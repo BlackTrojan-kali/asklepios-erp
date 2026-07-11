@@ -10,7 +10,8 @@ import {
     Plus,
     XCircle,
     Activity,
-    CheckCircle2
+    CheckCircle2,
+    Ticket // 👉 Nouvel icône pour le numéro de file
 } from 'lucide-react';
 
 // --- STORES & CONTEXTS ---
@@ -57,7 +58,7 @@ const DoctorAppointments = () => {
         user: profile,
         department: profile?.profile_doctor?.department
     }] : [];
-console.log(currentDoctorOption);
+
     // --- HELPERS DE DATES ---
     const getLocalYYYYMMDD = (date: Date) => {
         const year = date.getFullYear();
@@ -94,13 +95,43 @@ console.log(currentDoctorOption);
         return dates;
     }, [appointments]);
 
+    // 👉 MOTEUR DE TRI (Priorité et File d'attente)
     const selectedDateAppointments = useMemo(() => {
         const targetDateString = getLocalYYYYMMDD(selectedDate);
-        return appointments.filter(app => {
+        const filtered = appointments.filter(app => {
             if (!app.scheduled_datetime) return false;
             return getLocalYYYYMMDDFromAPI(app.scheduled_datetime) === targetDateString;
-        })
-        .sort((a, b) => new Date(a.scheduled_datetime.replace(' ', 'T')).getTime() - new Date(b.scheduled_datetime.replace(' ', 'T')).getTime());
+        });
+
+        // Tri intelligent basé sur le statut et le numéro de passage
+        return filtered.sort((a, b) => {
+            const getPriority = (appt: AppointmentDto) => {
+                const visitStatus = appt.patient_visit?.status || appt.visit?.status;
+                if (appt.status === 'CANCELLED') return 5;
+                if (appt.status === 'SCHEDULED') return 3; 
+                if (visitStatus === 'IN_CONSULTATION') return 1; // Priorité 1: En consultation
+                if (visitStatus === 'IN_WAITING_ROOM') return 2; // Priorité 2: En salle d'attente
+                if (visitStatus === 'COMPLETE') return 4; 
+                return 6; 
+            };
+
+            const priorityA = getPriority(a);
+            const priorityB = getPriority(b);
+
+            if (priorityA !== priorityB) return priorityA - priorityB;
+
+            // Si les deux patients sont en salle d'attente/consultation, on les classe par NUMÉRO DE PASSAGE
+            if (priorityA === 1 || priorityA === 2) {
+                const visitA = a.patient_visit || a.visit;
+                const visitB = b.patient_visit || b.visit;
+                const queueA = visitA?.queue_number || 999999;
+                const queueB = visitB?.queue_number || 999999;
+                return queueA - queueB;
+            }
+
+            // Sinon, tri classique par heure de rendez-vous
+            return new Date(a.scheduled_datetime.replace(' ', 'T')).getTime() - new Date(b.scheduled_datetime.replace(' ', 'T')).getTime();
+        });
     }, [appointments, selectedDate]);
 
 
@@ -113,6 +144,7 @@ console.log(currentDoctorOption);
         const success = await cancelAppointment(apptToCancel.id);
         if (success) {
             setApptToCancel(null);
+            fetchAppointments(); // Refresh local après annulation
         }
     };
 
@@ -243,7 +275,7 @@ console.log(currentDoctorOption);
                         onChange={(v) => setSelectedDate(v as Date)}
                         onClickDay={(value) => {
                             const dateStr = getLocalYYYYMMDD(value);
-                            // Si la date cliquée ne contient AUCUN rendez-vous, on ouvre la modale Multiple
+                            // On ouvre la modale Multiple si le jour est vide
                             if (!appointmentDatesSet.has(dateStr)) {
                                 setIsMultiScheduleOpen(true);
                             }
@@ -280,7 +312,7 @@ console.log(currentDoctorOption);
                             </p>
                         </div>
                         
-                        {/* Bouton '+' affiché uniquement si la date contient des rendez-vous */}
+                        {/* Bouton '+' affiché si la date contient des rendez-vous */}
                         {appointmentDatesSet.has(getLocalYYYYMMDD(selectedDate)) && (
                             <button 
                                 onClick={() => setIsNewApptOpen(true)}
@@ -306,21 +338,29 @@ console.log(currentDoctorOption);
                             </div>
                         ) : (
                             selectedDateAppointments.map(app => {
+                                const currentVisit = app.patient_visit || app.visit; // S'adapte au DTO
                                 const isScheduled = app.status === 'SCHEDULED';
-                                const isWaiting = app.status === 'ARRIVED' && app.patient_visit?.status === 'IN_WAITING_ROOM';
-                                const isConsulting = app.status === 'ARRIVED' && app.patient_visit?.status === 'IN_CONSULTATION';
-                                const isComplete = app.patient_visit?.status === 'COMPLETE';
+                                const isWaiting = app.status === 'ARRIVED' && currentVisit?.status === 'IN_WAITING_ROOM';
+                                const isConsulting = app.status === 'ARRIVED' && currentVisit?.status === 'IN_CONSULTATION';
+                                const isComplete = currentVisit?.status === 'COMPLETE';
                                 const isCancelled = app.status === 'CANCELLED';
 
                                 return (
                                     <div key={app.id} className={`group bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border ${isCancelled ? 'border-red-200 dark:border-red-900/50 opacity-60' : 'border-gray-100 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-700'} transition-all`}>
                                         
                                         <div className="flex justify-between items-start mb-3">
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-2 flex-wrap">
                                                 <span className="bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 font-bold px-2 py-1 rounded text-sm font-mono">
                                                     {new Date(app.scheduled_datetime.replace(' ', 'T')).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                                                 </span>
-                                                {/* BADGE DE STATUT CLARIFIÉ */}
+                                                
+                                                {/* 👉 AFFICHAGE DU NUMÉRO DE PASSAGE */}
+                                                {currentVisit?.queue_number && (isWaiting || isConsulting) && (
+                                                    <span className="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 font-bold px-2 py-1 rounded text-sm font-mono flex items-center gap-1.5 border border-indigo-200 dark:border-indigo-800/50 shadow-sm">
+                                                        <Ticket size={14} /> N° {currentVisit.queue_number}
+                                                    </span>
+                                                )}
+
                                                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-black uppercase tracking-wider ${
                                                     isComplete ? 'bg-emerald-100 text-emerald-700' :
                                                     isConsulting ? 'bg-blue-100 text-blue-700' :
@@ -351,7 +391,7 @@ console.log(currentDoctorOption);
                                                 <p className="font-bold text-slate-800 dark:text-white text-sm truncate font-brand">
                                                     {app.patient?.first_name} {app.patient?.last_name}
                                                 </p>
-                                                <p className="text-xs text-gray-500 font-mono">{app.patient?.patient_code || `ID_${app.patient?.id}`}</p>
+                                                <p className="text-xs text-gray-500 font-mono">{app.patient?.patient_code || app.patient?.code || `ID_${app.patient?.id}`}</p>
                                             </div>
                                         </div>
 
@@ -465,7 +505,7 @@ console.log(currentDoctorOption);
                     setApptToConsult(null);
                     fetchAppointments(); // Rafraîchit le planning après admission
                 }}
-                appointment={apptToConsult} // Appelle la modale qui prend bien l'appointment en prop et utilise appointment.patient_visit.id
+                appointment={apptToConsult} 
                 currentDepartmentId={currentDepartmentId}
             />
             

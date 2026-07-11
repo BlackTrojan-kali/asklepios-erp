@@ -8,9 +8,10 @@ interface Props {
     isOpen: boolean;
     onClose: () => void;
     centers: CenterDto[]; 
+    AutoRefreshPage: () => void;
 }
 
-export const CreateReceptionistModal: React.FC<Props> = ({ isOpen, onClose, centers }) => {
+export const CreateReceptionistModal: React.FC<Props> = ({ isOpen, onClose, centers,AutoRefreshPage }) => {
     const { createReceptionist, actionLoading } = useReceptionistStore();
     
     const [payload, setPayload] = useState<ReceptionistPayload>({
@@ -32,6 +33,7 @@ export const CreateReceptionistModal: React.FC<Props> = ({ isOpen, onClose, cent
         if (success) {
             // Réinitialiser le formulaire
             setPayload({ first_name: '', last_name: '', phone: '', email: '', password: '', center_id: '', desk_name: '' });
+            AutoRefreshPage();
             onClose();
         }
     };

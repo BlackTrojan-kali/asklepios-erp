@@ -7,19 +7,21 @@ interface Props {
     isOpen: boolean;
     onClose: () => void;
     categories: ArticleCategoryDto[];
+    AutoRefreshPage: () => void;
 }
 
-export const CreateArticleModal: React.FC<Props> = ({ isOpen, onClose, categories }) => {
+export const CreateArticleModal: React.FC<Props> = ({ isOpen, onClose, categories, AutoRefreshPage }) => {
     const { createArticle, actionLoading } = useArticleStore();
     
     const [payload, setPayload] = useState<ArticlePayload>({
         category_id: '',
         name: '',
+        default_selling_price: '', // <-- Ajout de l'initialisation
         barcode: '',
         global_min_qty: '',
-        track_batches: true, // Coché par défaut
+        track_batches: true,
         image: null,
-        is_prescripted:false,
+        is_prescripted: false,
     });
 
     const handleSubmit = async () => {
@@ -27,7 +29,17 @@ export const CreateArticleModal: React.FC<Props> = ({ isOpen, onClose, categorie
         
         const success = await createArticle(payload);
         if (success) {
-            setPayload({ category_id: '', name: '', barcode: '', global_min_qty: '', track_batches: true, image: null,is_prescripted:false });
+            setPayload({ 
+                category_id: '', 
+                name: '', 
+                default_selling_price: '', // <-- Ajout du reset
+                barcode: '', 
+                global_min_qty: '', 
+                track_batches: true, 
+                image: null,
+                is_prescripted: false 
+            });
+            AutoRefreshPage();
             onClose();
         }
     };

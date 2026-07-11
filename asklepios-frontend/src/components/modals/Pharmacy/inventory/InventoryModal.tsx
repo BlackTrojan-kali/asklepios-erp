@@ -16,6 +16,7 @@ interface Props {
     onClose: () => void;
     existingInventory: InventoryDto | null;
     onSuccess: () => void;
+    AutoRefreshPage: ()=> void;
 }
 
 interface LocalLine {
@@ -28,7 +29,7 @@ interface LocalLine {
     physical_qty: number | '';
 }
 
-export const InventoryModal: React.FC<Props> = ({ isOpen, onClose, existingInventory, onSuccess }) => {
+export const InventoryModal: React.FC<Props> = ({ isOpen, onClose, existingInventory, onSuccess,AutoRefreshPage }) => {
     const { createInventory, updateInventory, actionLoading } = useInventoryStore();
     const { stocks, getMyBranchStocks, loading: stockLoading } = useStockStore();
 
@@ -153,6 +154,7 @@ export const InventoryModal: React.FC<Props> = ({ isOpen, onClose, existingInven
 
         if (success) {
             onSuccess();
+            AutoRefreshPage()
             onClose();
         }
     };

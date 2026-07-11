@@ -97,6 +97,7 @@ import DoctorAdmissions from "./Pages/Doctor/DoctorAdmissions";
 import Invoices from "./Pages/Reception/Invoices";
 import Payments from "./Pages/Reception/Payments";
 import Appointments from "./Pages/Hospital/Appointment_history";
+import { SearchResults } from "./Pages/SearchResults";
 
 import LabCategories from "./Pages/Laboratory/Catalogue/LabCategories";
 import LabTests from "./Pages/Laboratory/Catalogue/LabTests";
@@ -138,6 +139,11 @@ const routes = createBrowserRouter([
       </AuthMiddleware>
     ),
     children: [
+<<<<<<< HEAD
+      // 👉 NOUVELLE ROUTE GLOBALE (Accessible à tous les connectés)
+      { path: "search", element: <SearchResults /> },
+=======
+>>>>>>> origin/dev-brice
       // ====================================================
       // A. ESPACE SUPER ADMIN
       // ====================================================

@@ -8,9 +8,10 @@ interface Props {
     onClose: () => void;
     batch: BatchDto | null;
     articles: ArticleDto[];
+    AutoRefreshPage:()=>void;
 }
 
-export const UpdateBatchModal: React.FC<Props> = ({ isOpen, onClose, batch, articles }) => {
+export const UpdateBatchModal: React.FC<Props> = ({ isOpen, onClose, batch, articles,AutoRefreshPage }) => {
     const { updateBatch, actionLoading } = useBatchStore();
     
     const [payload, setPayload] = useState<BatchPayload>({
@@ -37,7 +38,9 @@ export const UpdateBatchModal: React.FC<Props> = ({ isOpen, onClose, batch, arti
         if (!batch || !payload.article_id || !payload.batch_number ||  payload.purchase_price === '') return;
 
         const success = await updateBatch(batch.id, payload);
-        if (success) onClose();
+        if (success){ 
+            AutoRefreshPage();
+            onClose();}
     };
 
     if (!isOpen || !batch) return null;

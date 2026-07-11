@@ -43,16 +43,20 @@ const Providers = () => {
     const [filters, setFilters] = useState({ search: '' });
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [selectedProvider, setSelectedProvider] = useState<ProviderDto | null>(null);
+    const [autoRefreshPage,setAutoRefreshPage] = useState<boolean>();
 
     // Chargement initial
     useEffect(() => {
         getProviders({});
-    }, [getProviders]);
+    }, [getProviders,autoRefreshPage]);
 
     // Rafraîchissement manuel
     const handleRefresh = () => {
         getProviders(filters);
     };
+    const handleAutoRefresh = ()=>{
+        setAutoRefreshPage(!autoRefreshPage);
+    }
 
     // Soumission du filtre
     const handleFilterSubmit = (e: React.FormEvent) => {
@@ -313,12 +317,14 @@ const Providers = () => {
             <CreateProviderModal 
                 isOpen={isCreateOpen} 
                 onClose={() => setIsCreateOpen(false)} 
+                AutoRefreshPage={handleAutoRefresh}
             />
 
             <UpdateProviderModal 
                 isOpen={!!selectedProvider} 
                 onClose={() => setSelectedProvider(null)} 
                 provider={selectedProvider}
+                AutoRefreshPage={handleAutoRefresh}
             />
 
         </div>

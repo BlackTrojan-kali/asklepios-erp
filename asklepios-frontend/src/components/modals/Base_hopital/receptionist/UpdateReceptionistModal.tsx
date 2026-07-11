@@ -10,9 +10,10 @@ interface Props {
     onClose: () => void;
     receptionist: ReceptionistDto | null;
     centers: CenterDto[]; 
+    AutoRefreshPage: () => void;
 }
 
-export const UpdateReceptionistModal: React.FC<Props> = ({ isOpen, onClose, receptionist, centers }) => {
+export const UpdateReceptionistModal: React.FC<Props> = ({ isOpen, onClose, receptionist, centers,AutoRefreshPage }) => {
     const { updateReceptionist, actionLoading } = useReceptionistStore();
     
     const [payload, setPayload] = useState<ReceptionistPayload>({
@@ -47,7 +48,11 @@ export const UpdateReceptionistModal: React.FC<Props> = ({ isOpen, onClose, rece
         if (!receptionist || !isFormValid) return;
 
         const success = await updateReceptionist(receptionist.id, payload);
-        if (success) onClose();
+        if (success) {
+            
+            AutoRefreshPage();
+            onClose();
+        }
     };
 
     if (!isOpen || !receptionist) return null;

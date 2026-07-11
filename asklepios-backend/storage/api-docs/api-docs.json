@@ -6525,33 +6525,22 @@
                 "tags": [
                     "Commandes Fournisseurs"
                 ],
-                "summary": "Lister les commandes (Filtrable avec Pagination)",
+                "summary": "Lister les commandes (Filtrable)",
                 "operationId": "75ef4b95a8b16eeab89a5ded5dbdc9bf",
                 "parameters": [
                     {
-                        "name": "page",
+                        "name": "pharmacy_branch_id",
                         "in": "query",
-                        "description": "Numéro de la page",
+                        "description": "Filtrer par succursale (Admin)",
                         "required": false,
                         "schema": {
-                            "type": "integer",
-                            "default": 1
-                        }
-                    },
-                    {
-                        "name": "per_page",
-                        "in": "query",
-                        "description": "Nombre d'éléments par page",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "default": 15
+                            "type": "integer"
                         }
                     },
                     {
                         "name": "status",
                         "in": "query",
-                        "description": "Filtrer par statut (ex: PENDING, RECEIVED)",
+                        "description": "Filtrer par statut",
                         "required": false,
                         "schema": {
                             "type": "string"
@@ -6564,6 +6553,26 @@
                         "required": false,
                         "schema": {
                             "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "Date de début",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "Date de fin",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
                         }
                     }
                 ],
@@ -6677,6 +6686,46 @@
                 ],
                 "summary": "Exporter l'historique détaillé en PDF",
                 "operationId": "b3e56624c0f300d987346d7312006fc4",
+                "parameters": [
+                    {
+                        "name": "pharmacy_branch_id",
+                        "in": "query",
+                        "description": "Succursale",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Statut",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "Début",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "Fin",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Fichier généré avec succès"
@@ -6696,6 +6745,37 @@
                 ],
                 "summary": "Exporter l'historique détaillé en Excel",
                 "operationId": "63aae7a2fc7f44eece1260569a6a1324",
+                "parameters": [
+                    {
+                        "name": "pharmacy_branch_id",
+                        "in": "query",
+                        "description": "Succursale",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "Début",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "Fin",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Fichier généré avec succès"
@@ -6734,6 +6814,60 @@
                 ],
                 "summary": "Lister les retours fournisseurs",
                 "operationId": "1f8539b6f4ada9ef0569c930a11981b2",
+                "parameters": [
+                    {
+                        "name": "pharmacy_branch_id",
+                        "in": "query",
+                        "description": "Filtrer par succursale (Admin uniquement)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filtrer par statut",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "PENDING",
+                                "SHIPPED",
+                                "CANCELLED"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "provider_id",
+                        "in": "query",
+                        "description": "Filtrer par fournisseur",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "Date de début (Y-m-d)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "Date de fin (Y-m-d)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Liste des retours récupérée"
@@ -6844,6 +6978,51 @@
                 ],
                 "summary": "Exporter les retours détaillés en PDF",
                 "operationId": "ea6dfaf7d1aa5cc18dde4496fbd6f7eb",
+                "parameters": [
+                    {
+                        "name": "pharmacy_branch_id",
+                        "in": "query",
+                        "description": "Filtrer par succursale (Admin uniquement)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filtrer par statut",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "PENDING",
+                                "SHIPPED",
+                                "CANCELLED"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "Date de début",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "Date de fin",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Fichier PDF généré"
@@ -6863,6 +7042,37 @@
                 ],
                 "summary": "Exporter les retours détaillés en Excel",
                 "operationId": "6ee322aa7a081efa52c2c5ffe4855a73",
+                "parameters": [
+                    {
+                        "name": "pharmacy_branch_id",
+                        "in": "query",
+                        "description": "Filtrer par succursale",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "Date de début",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "Date de fin",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Fichier Excel généré"

@@ -8,9 +8,10 @@ interface Props {
     onClose: () => void;
     center: CenterDto | null;
     countries: CountryDto[];
+    AutoRefreshPage: () => void;
 }
 
-export const UpdateCenterModal: React.FC<Props> = ({ isOpen, onClose, center, countries }) => {
+export const UpdateCenterModal: React.FC<Props> = ({ isOpen, onClose, center, countries,AutoRefreshPage }) => {
     const { updateCenter, actionLoading } = useCenterStore();
     
     const [payload, setPayload] = useState({
@@ -38,7 +39,10 @@ export const UpdateCenterModal: React.FC<Props> = ({ isOpen, onClose, center, co
         if (!center || !payload.name || payload.country_id === 0) return;
 
         const success = await updateCenter(center.id, payload);
-        if (success) onClose();
+        if (success) {
+            
+            AutoRefreshPage();
+            onClose();}
     };
 
     if (!isOpen || !center) return null;
@@ -57,6 +61,7 @@ export const UpdateCenterModal: React.FC<Props> = ({ isOpen, onClose, center, co
                     payload={payload} 
                     setPayload={setPayload}
                     countries={countries}
+                    AutoRefreshPage={AutoRefreshPage}
                 />
 
                 <div className="mt-6 flex justify-end gap-3 border-t border-gray-100 dark:border-gray-800 pt-4">

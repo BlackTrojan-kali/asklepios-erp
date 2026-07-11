@@ -10,9 +10,10 @@ interface Props {
     doctor: DoctorDto | null;
     centers: CenterDto[];
     departments: DepartmentDto[];
+    AutoRefreshPage: () => void;
 }
 
-export const UpdateDoctorModal: React.FC<Props> = ({ isOpen, onClose, doctor, centers, departments }) => {
+export const UpdateDoctorModal: React.FC<Props> = ({ isOpen, onClose, doctor, centers, departments,AutoRefreshPage }) => {
     const { updateDoctor, actionLoading } = useDoctorStore();
     
     const [payload, setPayload] = useState<DoctorPayload>({
@@ -51,7 +52,9 @@ export const UpdateDoctorModal: React.FC<Props> = ({ isOpen, onClose, doctor, ce
         if (!doctor || !isFormValid) return;
 
         const success = await updateDoctor(doctor.id, payload);
-        if (success) onClose();
+        if (success) {
+            AutoRefreshPage()
+            onClose();}
     };
 
     if (!isOpen || !doctor) return null;

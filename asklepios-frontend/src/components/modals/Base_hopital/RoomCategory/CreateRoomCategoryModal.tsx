@@ -8,9 +8,10 @@ interface Props {
     isOpen: boolean;
     onClose: () => void;
     centers: CenterDto[];
+    AutoRefreshPage: () => void;
 }
 
-export const CreateRoomCategoryModal: React.FC<Props> = ({ isOpen, onClose, centers }) => {
+export const CreateRoomCategoryModal: React.FC<Props> = ({ isOpen, onClose, centers,AutoRefreshPage}) => {
     const { createRoomCategory, actionLoading } = useRoomCategoryStore();
 
     const [payload, setPayload] = useState<RoomCategoryPayload>({
@@ -27,6 +28,7 @@ export const CreateRoomCategoryModal: React.FC<Props> = ({ isOpen, onClose, cent
         const success = await createRoomCategory(payload);
         if (success) {
             setPayload({ center_id: '', name: '', price_per_night: '' });
+            AutoRefreshPage();
             onClose();
         }
     };

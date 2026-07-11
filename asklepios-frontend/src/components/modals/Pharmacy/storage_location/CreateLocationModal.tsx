@@ -6,9 +6,10 @@ import type { StorageLocationPayload } from '../../../../types/PharmMagTypes';
 interface Props {
     isOpen: boolean;
     onClose: () => void;
+    AutoRefreshPage: ()=>void;
 }
 
-export const CreateLocationModal: React.FC<Props> = ({ isOpen, onClose }) => {
+export const CreateLocationModal: React.FC<Props> = ({ isOpen, onClose,AutoRefreshPage }) => {
     const { createLocation, actionLoading } = useStorageLocationStore();
     
     const initialPayload: StorageLocationPayload = { aisle: '', shelf: '', code: '' };
@@ -21,6 +22,7 @@ export const CreateLocationModal: React.FC<Props> = ({ isOpen, onClose }) => {
         const success = await createLocation(payload);
         if (success) {
             setPayload(initialPayload);
+            AutoRefreshPage();
             onClose();
         }
     };

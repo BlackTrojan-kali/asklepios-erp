@@ -42,18 +42,22 @@ const RoomCategories = () => {
     // États pour les modales
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<RoomCategoryDto | null>(null);
+    const [autoRefreshPage,setAutoRefreshPage] = useState<boolean>(false);
 
     // --- CHARGEMENT INITIAL ---
     useEffect(() => {
         // Chargement des centres pour le filtre (limite à 100 pour tout récupérer d'un coup)
         getCenters(1, {}, 100);
-    }, [getCenters]);
+    }, [getCenters,autoRefreshPage]);
 
     useEffect(() => {
         fetchCategories(page);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [page]);
+    }, [page,autoRefreshPage]);
 
+    const handleAutoRefresh = ()=>{
+        setAutoRefreshPage(!autoRefreshPage);
+    }
     const fetchCategories = (targetPage: number = 1) => {
         getRoomCategories(targetPage, {
             search: searchQuery,
@@ -315,6 +319,7 @@ const RoomCategories = () => {
                 isOpen={isCreateOpen} 
                 onClose={() => setIsCreateOpen(false)} 
                 centers={centers}
+                AutoRefreshPage={handleAutoRefresh}
             />
 
             <UpdateRoomCategoryModal 
@@ -322,6 +327,7 @@ const RoomCategories = () => {
                 onClose={() => setSelectedCategory(null)} 
                 category={selectedCategory}
                 centers={centers}
+                AutoRefreshPage={handleAutoRefresh}
             />
 
         </div>

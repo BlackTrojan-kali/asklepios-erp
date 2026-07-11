@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import useSubscriptionStore from '../../../functions/subscriptions/useSubscriptionStore'; 
 import { SubscriptionForm } from './SubscriptionForm';
 
-export const CreateSubscriptionModal = ({ isOpen, onClose, dataSources }: any) => {
+export const CreateSubscriptionModal = ({ isOpen, onClose, dataSources,AutoRefreshPage }: any) => {
     const { createSubscription, actionLoading } = useSubscriptionStore();
     const [payload, setPayload] = useState({
         hospital_id: 0,
@@ -15,7 +15,9 @@ export const CreateSubscriptionModal = ({ isOpen, onClose, dataSources }: any) =
 
     const handleSubmit = async () => {
         const success = await createSubscription(payload);
-        if (success) onClose();
+        if (success) {
+            AutoRefreshPage()
+            onClose();}
     };
 
     if (!isOpen) return null;

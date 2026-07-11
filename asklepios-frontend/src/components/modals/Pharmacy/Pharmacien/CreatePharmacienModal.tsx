@@ -7,12 +7,14 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   branches: any[]; // Remplace par ton type exact PharmacyBranchDto[]
+  AutoRefreshPage: ()=>void;
 }
 
 export const CreatePharmacienModal: React.FC<Props> = ({
   isOpen,
   onClose,
   branches,
+  AutoRefreshPage
 }) => {
   const { createPharmacien, actionLoading } = usePharmacienStore();
 
@@ -42,6 +44,7 @@ export const CreatePharmacienModal: React.FC<Props> = ({
 
     const success = await createPharmacien(payload);
     if (success) {
+      AutoRefreshPage();
       setPayload(initialPayload); // Reset du formulaire
       onClose();
     }
