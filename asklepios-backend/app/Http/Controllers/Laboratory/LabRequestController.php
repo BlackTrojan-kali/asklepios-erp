@@ -9,13 +9,18 @@ use App\Models\Laboratory\LabSample;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use OpenApi\Attributes as OA;
 
+#[OA\Tag(name: "Requêtes Laboratoire", description: "Gestion des requêtes d'analyses (demandes)")]
 class LabRequestController extends Controller
 {
     /**
      * Obtenir la liste des requêtes de laboratoire.
      * On peut filtrer par status.
      */
+    #[OA\Get(path: "/api/lab/requests", summary: "Lister les requêtes de laboratoire", security: [["bearerAuth" => []]], tags: ["Requêtes Laboratoire"])]
+    #[OA\Parameter(name: "status", in: "query", required: false, description: "Filtrer par statut (ex: PAID, SAMPLED)", schema: new OA\Schema(type: "string"))]
+    #[OA\Response(response: 200, description: "Liste des requêtes récupérée")]
     public function index(Request $request)
     {
         $status = $request->query('status'); // ex: 'PAID', 'SAMPLED'
@@ -47,6 +52,9 @@ class LabRequestController extends Controller
     /**
      * Voir une requête spécifique.
      */
+    #[OA\Get(path: "/api/lab/requests/{id}", summary: "Voir une requête", security: [["bearerAuth" => []]], tags: ["Requêtes Laboratoire"])]
+    #[OA\Parameter(name: "id", in: "path", required: true, description: "ID de la requête", schema: new OA\Schema(type: "integer"))]
+    #[OA\Response(response: 200, description: "Détails de la requête")]
     public function show($id)
     {
         $labRequest = LabRequest::with([
@@ -64,6 +72,11 @@ class LabRequestController extends Controller
     /**
      * Générer les prélèvements (tubes) pour une requête et la passer au statut 'SAMPLED'.
      */
+    #[OA\Post(path: "/api/lab/requests/{id}/sample", summary: "Générer les prélèvements", security: [["bearerAuth" => []]], tags: ["Requêtes Laboratoire"])]
+    #[OA\Parameter(name: "id", in: "path", required: true, description: "ID de la requête", schema: new OA\Schema(type: "integer"))]
+    #[OA\Response(response: 200, description: "Échantillons générés avec succès")]
+    #[OA\Response(response: 400, description: "Cette requête n'est pas au statut PAID")]
+    #[OA\Response(response: 500, description: "Erreur lors de la génération des prélèvements")]
     public function markAsSampled($id)
     {
         $labRequest = LabRequest::with('lines.test')->findOrFail($id);

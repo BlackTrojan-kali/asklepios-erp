@@ -9,12 +9,37 @@ use App\Models\Laboratory\LabResult;
 use App\Models\Laboratory\LabParameter;
 use App\Models\Laboratory\LabRequestLine;
 use Illuminate\Support\Facades\DB;
+use OpenApi\Attributes as OA;
 
+#[OA\Tag(name: "Résultats Laboratoire", description: "Saisie et validation des résultats d'analyses")]
 class LabResultController extends Controller
 {
     /**
      * Enregistrer les résultats de laboratoire
      */
+    #[OA\Post(path: "/api/lab/results/{id}", summary: "Enregistrer les résultats d'une requête", security: [["bearerAuth" => []]], tags: ["Résultats Laboratoire"])]
+    #[OA\Parameter(name: "id", in: "path", required: true, description: "ID de la requête", schema: new OA\Schema(type: "integer"))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(
+                    property: "results",
+                    type: "array",
+                    items: new OA\Items(
+                        properties: [
+                            new OA\Property(property: "lab_request_line_id", type: "integer"),
+                            new OA\Property(property: "lab_parameter_id", type: "integer"),
+                            new OA\Property(property: "value_numeric", type: "number", nullable: true),
+                            new OA\Property(property: "value_string", type: "string", nullable: true)
+                        ]
+                    )
+                )
+            ]
+        )
+    )]
+    #[OA\Response(response: 200, description: "Résultats enregistrés avec succès")]
+    #[OA\Response(response: 500, description: "Erreur lors de l'enregistrement")]
     public function saveResults(Request $request, $id)
     {
         $validated = $request->validate([
@@ -101,6 +126,10 @@ class LabResultController extends Controller
     /**
      * Valider les résultats (Biologiste)
      */
+    #[OA\Post(path: "/api/lab/results/{id}/validate", summary: "Valider les résultats d'une requête", security: [["bearerAuth" => []]], tags: ["Résultats Laboratoire"])]
+    #[OA\Parameter(name: "id", in: "path", required: true, description: "ID de la requête", schema: new OA\Schema(type: "integer"))]
+    #[OA\Response(response: 200, description: "Dossier validé avec succès")]
+    #[OA\Response(response: 500, description: "Erreur lors de la validation")]
     public function validateResults(Request $request, $id)
     {
         $labRequest = LabRequest::with('lines.results')->findOrFail($id);
@@ -136,6 +165,10 @@ class LabResultController extends Controller
     /**
      * Générer le PDF des résultats validés
      */
+    #[OA\Get(path: "/api/lab/results/{id}/pdf", summary: "Générer le PDF des résultats validés", security: [["bearerAuth" => []]], tags: ["Résultats Laboratoire"])]
+    #[OA\Parameter(name: "id", in: "path", required: true, description: "ID de la requête", schema: new OA\Schema(type: "integer"))]
+    #[OA\Response(response: 200, description: "Fichier PDF des résultats")]
+    #[OA\Response(response: 400, description: "Le dossier n'est pas encore validé")]
     public function generatePdf($id)
     {
         $labRequest = LabRequest::with([

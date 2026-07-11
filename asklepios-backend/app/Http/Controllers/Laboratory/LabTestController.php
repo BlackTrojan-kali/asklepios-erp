@@ -5,9 +5,14 @@ namespace App\Http\Controllers\Laboratory;
 use App\Http\Controllers\Controller;
 use App\Models\Laboratory\LabTest;
 use Illuminate\Http\Request;
+use OpenApi\Attributes as OA;
 
+#[OA\Tag(name: "Examens Laboratoire", description: "Gestion du catalogue des examens de laboratoire")]
 class LabTestController extends Controller
 {
+    #[OA\Get(path: "/api/lab/tests", summary: "Lister les examens", security: [["bearerAuth" => []]], tags: ["Examens Laboratoire"])]
+    #[OA\Parameter(name: "lab_category_id", in: "query", required: false, description: "Filtrer par catégorie", schema: new OA\Schema(type: "integer"))]
+    #[OA\Response(response: 200, description: "Liste des examens récupérée")]
     public function index(Request $request)
     {
         $query = LabTest::with('category');
@@ -19,6 +24,22 @@ class LabTestController extends Controller
         return response()->json($tests, 200);
     }
 
+    #[OA\Post(path: "/api/lab/tests", summary: "Créer un examen", security: [["bearerAuth" => []]], tags: ["Examens Laboratoire"])]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ["lab_category_id", "code", "name", "sample_type_required", "price"],
+            properties: [
+                new OA\Property(property: "lab_category_id", type: "integer"),
+                new OA\Property(property: "code", type: "string"),
+                new OA\Property(property: "name", type: "string"),
+                new OA\Property(property: "sample_type_required", type: "string"),
+                new OA\Property(property: "price", type: "number"),
+                new OA\Property(property: "is_active", type: "boolean", nullable: true)
+            ]
+        )
+    )]
+    #[OA\Response(response: 201, description: "Examen créé avec succès")]
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -38,12 +59,31 @@ class LabTestController extends Controller
         ], 201);
     }
 
+    #[OA\Get(path: "/api/lab/tests/{id}", summary: "Voir un examen", security: [["bearerAuth" => []]], tags: ["Examens Laboratoire"])]
+    #[OA\Parameter(name: "id", in: "path", required: true, description: "ID de l'examen", schema: new OA\Schema(type: "integer"))]
+    #[OA\Response(response: 200, description: "Détails de l'examen")]
     public function show($id)
     {
         $test = LabTest::with(['category', 'parameters'])->findOrFail($id);
         return response()->json($test, 200);
     }
 
+    #[OA\Put(path: "/api/lab/tests/{id}", summary: "Modifier un examen", security: [["bearerAuth" => []]], tags: ["Examens Laboratoire"])]
+    #[OA\Parameter(name: "id", in: "path", required: true, description: "ID de l'examen", schema: new OA\Schema(type: "integer"))]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: "lab_category_id", type: "integer"),
+                new OA\Property(property: "code", type: "string"),
+                new OA\Property(property: "name", type: "string"),
+                new OA\Property(property: "sample_type_required", type: "string"),
+                new OA\Property(property: "price", type: "number"),
+                new OA\Property(property: "is_active", type: "boolean", nullable: true)
+            ]
+        )
+    )]
+    #[OA\Response(response: 200, description: "Examen mis à jour")]
     public function update(Request $request, $id)
     {
         $test = LabTest::findOrFail($id);
@@ -65,6 +105,9 @@ class LabTestController extends Controller
         ], 200);
     }
 
+    #[OA\Delete(path: "/api/lab/tests/{id}", summary: "Supprimer un examen", security: [["bearerAuth" => []]], tags: ["Examens Laboratoire"])]
+    #[OA\Parameter(name: "id", in: "path", required: true, description: "ID de l'examen", schema: new OA\Schema(type: "integer"))]
+    #[OA\Response(response: 200, description: "Examen supprimé")]
     public function destroy($id)
     {
         $test = LabTest::findOrFail($id);
