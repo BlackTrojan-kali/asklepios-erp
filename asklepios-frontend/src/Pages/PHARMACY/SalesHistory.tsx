@@ -97,6 +97,19 @@ export default function SalesHistory() {
     return filteredSales.reduce((sum, s) => sum + s.total_amount, 0);
   }, [filteredSales]);
 
+  // --- TOTAUX DÉTAILLÉS DES VENTES FILTRÉES ---
+  const totalsDetailed = useMemo(() => {
+    let cash = 0;
+    let momo = 0;
+    let card = 0;
+    filteredSales.forEach((s) => {
+      if (s.payment_method === "CASH") cash += s.total_amount;
+      else if (s.payment_method === "MOBILE_MONEY") momo += s.total_amount;
+      else if (s.payment_method === "CARD") card += s.total_amount;
+    });
+    return { cash, momo, card };
+  }, [filteredSales]);
+
   // --- RÉINITIALISATION DES FILTRES ---
   const handleResetFilters = () => {
     setSearch("");
@@ -114,31 +127,83 @@ export default function SalesHistory() {
   return (
     <div className="p-6 bg-slate-50 dark:bg-gray-900 min-h-screen text-slate-800 dark:text-white transition-colors duration-200">
       {/* En-tête de page */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
             <FileText className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />{" "}
             Ventes de la Session Active
           </h1>
           <p className="text-sm text-slate-500 dark:text-gray-400">
-            Consultez et réimprimez les tickets de caisse réalisés depuis l'ouverture de votre session.
+            Consultez et réimprimez les tickets de caisse réalisés depuis
+            l'ouverture de votre session.
           </p>
         </div>
 
-        {/* Affichage rapide du CA */}
-        <div className="bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-md flex items-center gap-3 self-stretch md:self-auto justify-center">
-          <div className="p-2 bg-emerald-700 rounded-lg">
-            <DollarSign className="w-5 h-5" />
+        {/* Affichage rapide des CA par mode de règlement */}
+        <div className="flex flex-wrap gap-3 items-center w-full xl:w-auto">
+          {/* Total Global */}
+          <div className="bg-emerald-600 text-white px-4 py-2.5 rounded-2xl shadow-md flex items-center gap-2.5 flex-1 sm:flex-initial min-w-[140px]">
+            <div className="p-1.5 bg-emerald-700/60 rounded-lg">
+              <DollarSign className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-[8px] font-bold uppercase tracking-wider text-emerald-200">
+                Total Vendu
+              </p>
+              <h3 className="text-sm font-black font-mono mt-0.5">
+                {isLoading
+                  ? "---"
+                  : `${totalRevenue.toLocaleString()} ${currency}`}
+              </h3>
+            </div>
           </div>
-          <div>
-            <p className="text-[9px] font-black uppercase tracking-wider text-emerald-200">
-              Total Vendu (Session)
-            </p>
-            <h3 className="text-lg font-black font-mono mt-0.5">
-              {isLoading
-                ? "---"
-                : `${totalRevenue.toLocaleString()} ${currency}`}
-            </h3>
+          {/* Total Espèces */}
+          <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-slate-800 dark:text-white px-4 py-2.5 rounded-2xl shadow-xs flex items-center gap-2.5 flex-1 sm:flex-initial min-w-[140px]">
+            <div className="p-1.5 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 rounded-lg">
+              <DollarSign className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-[8px] font-bold uppercase tracking-wider text-slate-400 dark:text-gray-500">
+                Espèces
+              </p>
+              <h3 className="text-sm font-black font-mono mt-0.5">
+                {isLoading
+                  ? "---"
+                  : `${totalsDetailed.cash.toLocaleString()} ${currency}`}
+              </h3>
+            </div>
+          </div>
+          {/* Total Momo */}
+          <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-slate-800 dark:text-white px-4 py-2.5 rounded-2xl shadow-xs flex items-center gap-2.5 flex-1 sm:flex-initial min-w-[140px]">
+            <div className="p-1.5 bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 rounded-lg">
+              <CreditCard className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-[8px] font-bold uppercase tracking-wider text-slate-400 dark:text-gray-500">
+                Momo/OM
+              </p>
+              <h3 className="text-sm font-black font-mono mt-0.5">
+                {isLoading
+                  ? "---"
+                  : `${totalsDetailed.momo.toLocaleString()} ${currency}`}
+              </h3>
+            </div>
+          </div>
+          {/* Total Carte */}
+          <div className="bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 text-slate-800 dark:text-white px-4 py-2.5 rounded-2xl shadow-xs flex items-center gap-2.5 flex-1 sm:flex-initial min-w-[140px]">
+            <div className="p-1.5 bg-purple-50 dark:bg-purple-950/20 text-purple-600 dark:text-purple-400 rounded-lg">
+              <CreditCard className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-[8px] font-bold uppercase tracking-wider text-slate-400 dark:text-gray-500">
+                Carte BC
+              </p>
+              <h3 className="text-sm font-black font-mono mt-0.5">
+                {isLoading
+                  ? "---"
+                  : `${totalsDetailed.card.toLocaleString()} ${currency}`}
+              </h3>
+            </div>
           </div>
         </div>
       </div>
@@ -263,8 +328,17 @@ export default function SalesHistory() {
                           minute: "2-digit",
                         })}
                       </td>
-                      <td className="p-4 font-medium text-slate-700 dark:text-gray-300">
-                        {sale.customer_name || "Client Passage"}
+                      <td className="p-4">
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-slate-800 dark:text-gray-200 text-sm">
+                            {sale.customer_name || "Anonyme"}
+                          </span>
+                          {sale.patient && (
+                            <span className="text-[10px] text-teal-600 dark:text-teal-400 font-mono mt-0.5">
+                              Code : {sale.patient.patient_code}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="p-4 text-slate-500 dark:text-gray-400 flex items-center gap-1.5 mt-2">
                         <User className="w-3.5 h-3.5 text-slate-400" />
@@ -372,6 +446,11 @@ export default function SalesHistory() {
                   </span>
                   <span className="font-bold text-slate-800 dark:text-white mt-1 block">
                     {selectedSale.customer_name || "Client Passage"}
+                    {selectedSale.patient && (
+                      <span className="text-xs text-teal-600 dark:text-teal-400 font-mono block mt-0.5">
+                        Code : {selectedSale.patient.patient_code}
+                      </span>
+                    )}
                   </span>
                 </div>
                 <div>

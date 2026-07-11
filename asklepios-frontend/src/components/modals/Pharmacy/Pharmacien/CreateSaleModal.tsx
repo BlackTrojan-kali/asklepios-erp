@@ -20,6 +20,9 @@ import { useAuth } from "../../../../contexts/AuthContext";
 import { useBranchArticlesAll } from "../../../../hooks/pharmacy/useBrancheArticle";
 import { useCreatePosSale } from "../../../../hooks/pharmacy/usePosSale";
 import { useMyActiveSession } from "../../../../hooks/pharmacy/useCashRegisterSession";
+import { usePaymentAccounts } from "../../../../hooks/pharmacy/usePaymentAccount";
+import usePatientStore from "../../../../functions/base_hospital/usePatientStore";
+import type { PatientDto } from "../../../../types/PatientTypes";
 import api from "../../../../api/api";
 import SaleReceiptPreviewModal from "./SaleReceiptPreviewModal";
 
@@ -36,6 +39,7 @@ interface Product {
   requiresPrescription: boolean;
   expiryDate: string;
   location: string;
+  imageUrl?: string | null;
 }
 
 interface CartItem {
@@ -59,13 +63,19 @@ export default function CreateSaleModal({
 }: SaleModalProps) {
   // 1. TOUS LES HOOKS DOIVENT ÊTRE DÉCLARÉS TOUT EN HAUT
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [customerName, setCustomerName] = useState<string>("");
   const [hasPrescription, setHasPrescription] = useState<boolean>(false);
   const [prescriptionRef, setPrescriptionRef] = useState<string>(""); // Correction de la variable indéfinie
   const [paymentMethod, setPaymentMethod] = useState<
     "CASH" | "MOBILE_MONEY" | "CARD"
   >("CASH");
   const [amountReceived, setAmountReceived] = useState<number>(0);
+  const [selectedAccountId, setSelectedAccountId] = useState<
+    number | undefined
+  >(undefined);
+  
+  // PATIENT SYSTEM
+  const { allPatients, getAllPatients } = usePatientStore();
+  const [selectedPatient, setSelectedPatient] = useState<PatientDto | null>(null);
 
   const searchSelectRef = useRef<any>(null);
 
@@ -77,6 +87,29 @@ export default function CreateSaleModal({
   );
 
   const { data: myActiveSession } = useMyActiveSession();
+
+  // Charger les comptes de trésorerie de la succursale (non-admin)
+  const { data: paymentAccounts } = usePaymentAccounts(
+    { pharmacy_branch_id: currentBranchId || undefined },
+    false,
+  );
+
+  const activePaymentAccounts = useMemo(() => {
+    return paymentAccounts?.filter((acc) => acc.status === "active") || [];
+  }, [paymentAccounts]);
+
+  const momoAccounts = useMemo(() => {
+    return activePaymentAccounts.filter((acc) => acc.type === "mobile_money");
+  }, [activePaymentAccounts]);
+
+  const bankAccounts = useMemo(() => {
+    return activePaymentAccounts.filter((acc) => acc.type === "bank");
+  }, [activePaymentAccounts]);
+
+  const selectedAccount = useMemo(() => {
+    return activePaymentAccounts.find((acc) => acc.id === selectedAccountId);
+  }, [activePaymentAccounts, selectedAccountId]);
+
   const createSaleMutation = useCreatePosSale();
   const [completedSaleId, setCompletedSaleId] = useState<number | null>(null);
 
@@ -85,11 +118,28 @@ export default function CreateSaleModal({
     : "Caissier";
   const registerName = myActiveSession?.register?.name || "N/A";
 
+  // Charger les patients à l'ouverture de la modal
+  useEffect(() => {
+    if (isOpen) {
+      getAllPatients();
+    }
+  }, [isOpen, getAllPatients]);
+
+  // Options pour React-Select pour les patients
+  const patientOptions = useMemo(() => {
+    return allPatients.map((p) => ({
+      value: p.id,
+      label: `${p.patient_code} - ${p.first_name} ${p.last_name || ""}`,
+      patient: p,
+    }));
+  }, [allPatients]);
+
   const handleCloseReceiptPreview = () => {
     setCompletedSaleId(null);
     setCart([]);
     setAmountReceived(0);
-    setCustomerName("Patient Comptoir");
+    setSelectedAccountId(undefined);
+    setSelectedPatient(null);
     setHasPrescription(false);
     setPrescriptionRef("");
     if (onSaleSuccess) onSaleSuccess();
@@ -128,6 +178,7 @@ export default function CreateSaleModal({
               requiresPrescription: article.is_prescripted,
               expiryDate: batch.expire_date || "Sans date",
               location: locationStr,
+              imageUrl: article.image_url,
             });
           }
         });
@@ -145,6 +196,7 @@ export default function CreateSaleModal({
             requiresPrescription: article.is_prescripted,
             expiryDate: "N/A",
             location: locationStr,
+            imageUrl: article.image_url,
           });
         }
       } else {
@@ -159,6 +211,7 @@ export default function CreateSaleModal({
           requiresPrescription: article.is_prescripted,
           expiryDate: "N/A",
           location: locationStr,
+          imageUrl: article.image_url,
         });
       }
     });
@@ -301,10 +354,14 @@ export default function CreateSaleModal({
 
         createSaleMutation.mutate(
           {
-            customer_name: customerName,
+            customer_name: selectedPatient
+              ? `${selectedPatient.first_name} ${selectedPatient.last_name || ""}`.trim()
+              : "Anonyme",
+            patient_id: selectedPatient ? selectedPatient.id : undefined,
             has_prescription: hasPrescription,
             prescription_ref: prescriptionRef,
             payment_method: paymentMethod,
+            payment_account_id: selectedAccountId,
             amount_received:
               paymentMethod === "CASH" ? amountReceived : totals.total,
             items: itemsPayload,
@@ -384,6 +441,33 @@ export default function CreateSaleModal({
                   placeholder="Scanner ou taper le nom du produit..."
                   onChange={(option) => option && addToCart(option.product)}
                   isClearable
+                  formatOptionLabel={(data: any) => (
+                    <div className="flex items-center gap-2 py-0.5">
+                      {data.product.imageUrl ? (
+                        <img
+                          src={data.product.imageUrl}
+                          alt={data.product.name}
+                          className="w-7 h-7 rounded-md object-cover border border-slate-200 dark:border-gray-700 bg-white"
+                          onError={(e) => {
+                            (e.target as HTMLElement).style.display = "none";
+                          }}
+                        />
+                      ) : (
+                        <div className="w-7 h-7 rounded-md bg-slate-100 dark:bg-gray-800 flex items-center justify-center border border-slate-200 dark:border-gray-700">
+                          <Package className="w-4 h-4 text-slate-400" />
+                        </div>
+                      )}
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-semibold truncate text-xs text-slate-900 dark:text-white">
+                          {data.product.name}
+                        </span>
+                        <span className="text-[10px] text-slate-400 dark:text-gray-500 font-mono">
+                          {data.product.code} • {data.product.price.toLocaleString()} XAF • Stock: {data.product.stock}
+                          {data.product.expiryDate !== "N/A" && ` • Exp: ${data.product.expiryDate}`}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                   components={{
                     DropdownIndicator: () => (
                       <Search className="w-5 h-5 text-slate-400 mr-3" />
@@ -441,17 +525,69 @@ export default function CreateSaleModal({
 
             <div className="col-span-3">
               <label className="block text-xs font-semibold text-slate-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-                Patient
+                Patient / Client
               </label>
-              <div className="relative">
-                <User className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-                <input
-                  type="text"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 border border-slate-300 dark:border-gray-700 rounded-lg text-sm focus:outline-hidden focus:ring-2 focus:ring-emerald-500 dark:focus:ring-teal-500 bg-slate-50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-800 text-slate-900 dark:text-white transition-colors"
-                />
-              </div>
+              <Select
+                options={patientOptions}
+                placeholder="Client Anonyme (Rechercher...)"
+                value={
+                  selectedPatient
+                    ? {
+                        value: selectedPatient.id,
+                        label: `${selectedPatient.patient_code} - ${selectedPatient.first_name} ${selectedPatient.last_name || ""}`,
+                      }
+                    : null
+                }
+                onChange={(val: any) => {
+                  setSelectedPatient(val ? val.patient : null);
+                }}
+                isClearable
+                styles={{
+                  control: (base) => ({
+                    ...base,
+                    borderRadius: "0.5rem",
+                    borderColor: document.documentElement.classList.contains("dark")
+                      ? "#4b5563"
+                      : "#cbd5e1",
+                    backgroundColor: document.documentElement.classList.contains("dark")
+                      ? "#1f2937"
+                      : "#ffffff",
+                    color: document.documentElement.classList.contains("dark")
+                      ? "#ffffff"
+                      : "#1e293b",
+                    fontSize: "0.875rem",
+                    minHeight: "38px",
+                  }),
+                  singleValue: (base) => ({
+                    ...base,
+                    color: document.documentElement.classList.contains("dark")
+                      ? "#ffffff"
+                      : "#1e293b",
+                  }),
+                  menu: (base) => ({
+                    ...base,
+                    backgroundColor: document.documentElement.classList.contains("dark")
+                      ? "#1f2937"
+                      : "#ffffff",
+                  }),
+                  option: (base, state) => ({
+                    ...base,
+                    backgroundColor: state.isSelected
+                      ? "#059669"
+                      : state.isFocused
+                        ? document.documentElement.classList.contains("dark")
+                          ? "#374151"
+                          : "#f1f5f9"
+                        : "transparent",
+                    color: state.isSelected
+                      ? "#ffffff"
+                      : document.documentElement.classList.contains("dark")
+                        ? "#ffffff"
+                        : "#1e293b",
+                    fontSize: "0.75rem",
+                  }),
+                }}
+              />
             </div>
 
             <div className="col-span-3 flex items-center h-full pt-5">
@@ -517,14 +653,30 @@ export default function CreateSaleModal({
                       key={item.product.id}
                       className={`grid grid-cols-12 items-center p-3 text-sm hover:bg-slate-50/80 dark:hover:bg-gray-750/30 transition-colors ${missingPrescription ? "bg-red-50/60 dark:bg-red-950/20" : ""}`}
                     >
-                      <div className="col-span-5 pr-2">
-                        <div className="font-semibold text-slate-900 dark:text-white flex items-center gap-1.5 flex-wrap">
-                          {item.product.name}
-                          {item.product.requiresPrescription && (
-                            <span className="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
-                              Ordonnance Obligatoire
-                            </span>
-                          )}
+                      <div className="col-span-5 pr-2 flex items-center gap-2">
+                        {item.product.imageUrl ? (
+                          <img
+                            src={item.product.imageUrl}
+                            alt={item.product.name}
+                            className="w-8 h-8 rounded-md object-cover border border-slate-200 dark:border-gray-700 bg-white"
+                            onError={(e) => {
+                              (e.target as HTMLElement).style.display = "none";
+                            }}
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-md bg-slate-100 dark:bg-gray-900 flex items-center justify-center border border-slate-200 dark:border-gray-700 shrink-0">
+                            <Package className="w-4 h-4 text-slate-400" />
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold text-slate-900 dark:text-white flex items-center gap-1.5 flex-wrap">
+                            {item.product.name}
+                            {item.product.requiresPrescription && (
+                              <span className="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
+                                Ordonnance Obligatoire
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <div className="text-xs text-slate-500 dark:text-gray-400 flex items-center gap-3 mt-1">
                           <span className="bg-slate-100 dark:bg-gray-900 px-1.5 py-0.5 rounded font-mono text-slate-600 dark:text-gray-300 font-medium">
@@ -698,7 +850,10 @@ export default function CreateSaleModal({
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
-                    onClick={() => setPaymentMethod("CASH")}
+                    onClick={() => {
+                      setPaymentMethod("CASH");
+                      setSelectedAccountId(undefined);
+                    }}
                     className={`p-3 rounded-xl border text-center flex flex-col items-center justify-center gap-1 cursor-pointer transition-all ${paymentMethod === "CASH" ? "border-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 font-bold shadow-xs" : "border-slate-200 dark:border-gray-700 hover:bg-slate-50 dark:hover:bg-gray-750 text-slate-600 dark:text-gray-300"}`}
                   >
                     <DollarSign className="w-5 h-5" />
@@ -706,7 +861,10 @@ export default function CreateSaleModal({
                   </button>
                   <button
                     type="button"
-                    onClick={() => setPaymentMethod("MOBILE_MONEY")}
+                    onClick={() => {
+                      setPaymentMethod("MOBILE_MONEY");
+                      setSelectedAccountId(momoAccounts[0]?.id);
+                    }}
                     className={`p-3 rounded-xl border text-center flex flex-col items-center justify-center gap-1 cursor-pointer transition-all ${paymentMethod === "MOBILE_MONEY" ? "border-blue-600 bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400 font-bold shadow-xs" : "border-slate-200 dark:border-gray-700 hover:bg-slate-50 dark:hover:bg-gray-750 text-slate-600 dark:text-gray-300"}`}
                   >
                     <CreditCard className="w-5 h-5 text-blue-500" />
@@ -714,7 +872,10 @@ export default function CreateSaleModal({
                   </button>
                   <button
                     type="button"
-                    onClick={() => setPaymentMethod("CARD")}
+                    onClick={() => {
+                      setPaymentMethod("CARD");
+                      setSelectedAccountId(bankAccounts[0]?.id);
+                    }}
                     className={`p-3 rounded-xl border text-center flex flex-col items-center justify-center gap-1 cursor-pointer transition-all ${paymentMethod === "CARD" ? "border-purple-600 bg-purple-50 dark:bg-purple-950/20 text-purple-700 dark:text-purple-400 font-bold shadow-xs" : "border-slate-200 dark:border-gray-700 hover:bg-slate-50 dark:hover:bg-gray-750 text-slate-600 dark:text-gray-300"}`}
                   >
                     <CreditCard className="w-5 h-5 text-purple-500" />
@@ -722,6 +883,99 @@ export default function CreateSaleModal({
                   </button>
                 </div>
               </div>
+
+              {/* Sélection du compte de trésorerie si dématérialisé */}
+              {paymentMethod === "MOBILE_MONEY" && (
+                <div className="mb-4">
+                  {momoAccounts.length === 0 ? (
+                    <div className="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/30 rounded-xl p-3.5 text-rose-850 dark:text-rose-350 text-xs flex items-start gap-2">
+                      <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                      <div>
+                        Aucun compte Mobile Money actif n'est configuré pour
+                        cette succursale. Le règlement Momo est impossible.
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
+                        Compte de Règlement Momo
+                      </label>
+                      <div className="flex flex-col gap-1.5">
+                        {momoAccounts.map((acc) => (
+                          <button
+                            key={acc.id}
+                            type="button"
+                            onClick={() => setSelectedAccountId(acc.id)}
+                            className={`w-full p-2.5 rounded-lg border text-left flex items-center justify-between text-xs transition-all ${
+                              selectedAccountId === acc.id
+                                ? "border-blue-600 bg-blue-50/50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400 font-bold"
+                                : "border-slate-200 dark:border-gray-700 hover:bg-slate-50 dark:hover:bg-gray-750 text-slate-700 dark:text-gray-300"
+                            }`}
+                          >
+                            <span>{acc.name}</span>
+                            <span className="font-mono text-[10px] bg-slate-100 dark:bg-gray-900 px-1.5 py-0.5 rounded text-slate-500">
+                              {acc.account_number || "Sans numéro"}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {paymentMethod === "CARD" && (
+                <div className="mb-4">
+                  {bankAccounts.length === 0 ? (
+                    <div className="bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/30 rounded-xl p-3.5 text-rose-850 dark:text-rose-350 text-xs flex items-start gap-2">
+                      <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                      <div>
+                        Aucun compte bancaire actif n'est configuré pour cette
+                        succursale. Le règlement par carte est impossible.
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-bold text-slate-500 dark:text-gray-400 uppercase tracking-wider">
+                        Compte Bancaire de Réception
+                      </label>
+                      <div className="flex flex-col gap-1.5">
+                        {bankAccounts.map((acc) => (
+                          <button
+                            key={acc.id}
+                            type="button"
+                            onClick={() => setSelectedAccountId(acc.id)}
+                            className={`w-full p-2.5 rounded-lg border text-left flex items-center justify-between text-xs transition-all ${
+                              selectedAccountId === acc.id
+                                ? "border-purple-600 bg-purple-50/50 dark:bg-purple-950/20 text-purple-700 dark:text-purple-400 font-bold"
+                                : "border-slate-200 dark:border-gray-700 hover:bg-slate-50 dark:hover:bg-gray-750 text-slate-700 dark:text-gray-300"
+                            }`}
+                          >
+                            <span>{acc.name}</span>
+                            <span className="font-mono text-[10px] bg-slate-100 dark:bg-gray-900 px-1.5 py-0.5 rounded text-slate-500">
+                              {acc.account_number || "Sans numéro"}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Code marchand caisse si Momo ou Carte */}
+              {paymentMethod !== "CASH" && selectedAccount?.account_number && (
+                <div className="mb-4 p-3 bg-teal-50 dark:bg-teal-950/20 border border-teal-200 dark:border-teal-900/30 rounded-xl flex items-center justify-between text-teal-800 dark:text-teal-400 text-xs animate-in fade-in slide-in-from-top-1 duration-150">
+                  <span className="font-medium">
+                    {paymentMethod === "MOBILE_MONEY"
+                      ? `Code marchand (${selectedAccount.name}) :`
+                      : `Numéro de compte (${selectedAccount.account_number}) :`}
+                  </span>
+                  <strong className="font-mono text-sm bg-teal-100 dark:bg-teal-950 px-2 py-0.5 rounded">
+                    {selectedAccount.account_number}
+                  </strong>
+                </div>
+              )}
 
               {/* Calcul du reliquat */}
               {paymentMethod === "CASH" && (
@@ -758,7 +1012,8 @@ export default function CreateSaleModal({
                 disabled={
                   cart.length === 0 ||
                   (!hasPrescription &&
-                    cart.some((i) => i.product.requiresPrescription))
+                    cart.some((i) => i.product.requiresPrescription)) ||
+                  (paymentMethod !== "CASH" && !selectedAccountId)
                 }
                 onClick={handleValidateSale}
                 className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-200 dark:disabled:bg-gray-700 disabled:text-slate-400 dark:disabled:text-gray-500 text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 tracking-wide cursor-pointer disabled:cursor-not-allowed"

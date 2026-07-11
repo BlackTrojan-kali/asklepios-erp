@@ -1,0 +1,165 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam nodesep 35
+skinparam ranksep 45
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+title Architecture Asklepios : Module Laboratoire (SIL), Prélèvements & Facturation
+
+' --- DEFINITION DES COULEURS ---
+skinparam package {
+    BackgroundColor<<Identity>> #E3F2FD
+    BackgroundColor<<LabConfig>> #F3E5F5
+    BackgroundColor<<Workflow>> #FFF9C4
+    BackgroundColor<<LabExecution>> #FCE4EC
+    BackgroundColor<<Billing>> #ECEFF1
+}
+
+package "1. Core & Patients" <<Identity>> {
+    class hospital {
+        id: UnsignedBigInteger
+        name: String
+    }
+    class center {
+        id: UnsignedBigInteger
+        hospital_id: UnsignedBigInteger
+        name: String
+    }
+    class patient {
+        id: UnsignedBigInteger
+        patient_code: String
+        first_name: String
+        last_name: String
+        gender: String
+        birth_date: Date
+    }
+    class profile_doctors {
+        id: UnsignedBigInteger
+        user_id: UnsignedBigInteger
+        specialty: String
+    }
+    class patient_visit {
+        id: UnsignedBigInteger
+        patient_id: UnsignedBigInteger
+        status: String
+    }
+}
+
+package "2. Catalogue Labo (Facturation & Paramètres)" <<LabConfig>> {
+    class lab_category {
+        id: UnsignedBigInteger
+        center_id: UnsignedBigInteger_optional (Null = Global)
+        name: String (ex: Hématologie, Biochimie, Parasitologie)
+    }
+    class lab_test {
+        id: UnsignedBigInteger
+        lab_category_id: UnsignedBigInteger
+        code: String (ex: NFS, WIDAL, GE)
+        name: String (ex: Numération Formule Sanguine)
+        sample_type_required: String (ex: 'SANG_EDTA', 'URINE')
+        price: float (Prix facturé au patient)
+        is_active: Boolean
+    }
+    class lab_parameter {
+        id: UnsignedBigInteger
+        lab_test_id: UnsignedBigInteger
+        name: String (ex: Leucocytes, Hémoglobine)
+        unit: String (ex: G/L, g/dL)
+        reference_min_male: float_optional
+        reference_max_male: float_optional
+        reference_min_female: float_optional
+        reference_max_female: float_optional
+        reference_text: String_optional (ex: "Négatif")
+    }
+}
+
+package "3. Demandes & Facturation (La Caisse)" <<Billing>> {
+    class lab_request {
+        id: UnsignedBigInteger
+        patient_id: UnsignedBigInteger
+        center_id: UnsignedBigInteger
+        invoice_id: UnsignedBigInteger_optional
+        patient_visit_id: UnsignedBigInteger_optional (Null si externe)
+        profile_doctor_id: UnsignedBigInteger_optional (Médecin interne)
+        external_prescriber_name: String_optional (Médecin externe)
+        priority: String ('ROUTINE', 'URGENT')
+        status: String ('PENDING_PAYMENT', 'PAID', 'SAMPLED', 'PARTIAL', 'COMPLETED')
+        created_at: Datetime
+    }
+    class lab_request_line {
+        id: UnsignedBigInteger
+        lab_request_id: UnsignedBigInteger
+        lab_test_id: UnsignedBigInteger
+    }
+    class invoice {
+        id: UnsignedBigInteger
+        patient_id: UnsignedBigInteger
+        center_id: UnsignedBigInteger
+        patient_visit_id: UnsignedBigInteger_optional
+        total_amount: float
+        status: String ('UNPAID', 'PAID')
+    }
+    class payment {
+        id: UnsignedBigInteger
+        invoice_id: UnsignedBigInteger
+        cashier_id: UnsignedBigInteger
+        amount: float
+        payment_method: String
+    }
+}
+
+package "4. Exécution (Prélèvements & Résultats)" <<LabExecution>> {
+    class lab_sample {
+        id: UnsignedBigInteger
+        lab_request_id: UnsignedBigInteger
+        barcode: String (ex: L2026-08992)
+        sample_type: String (ex: SANG_EDTA, SERUM)
+        collected_by: UnsignedBigInteger (Infirmier/Technicien)
+        collected_at: Datetime
+        status: String ('COLLECTED', 'REJECTED_HEMOLYSIS', 'ANALYZING', 'DISCARDED')
+    }
+    class lab_result {
+        id: UnsignedBigInteger
+        lab_request_line_id: UnsignedBigInteger
+        lab_parameter_id: UnsignedBigInteger
+        lab_sample_id: UnsignedBigInteger
+        technician_id: UnsignedBigInteger (Qui a fait l'analyse ?)
+        validator_id: UnsignedBigInteger_optional (Biologiste)
+        value_numeric: float_optional
+        value_string: String_optional (ex: "Présence de Plasmodium")
+        is_abnormal: Boolean (Calculé auto selon ref)
+        status: String ('DRAFT', 'VALIDATED')
+        validated_at: Datetime_optional
+    }
+}
+
+' --- RELATIONS CORE ---
+hospital "1" *-- "*" center
+hospital "1" *-- "*" patient
+patient "1" *-- "*" patient_visit
+patient "1" *-- "*" lab_request
+
+' --- RELATIONS CONFIGURATION LABO ---
+center "1" *-- "*" lab_category
+lab_category "1" *-- "*" lab_test
+lab_test "1" *-- "1..*" lab_parameter : est mesuré par >
+
+' --- RELATIONS DEMANDE & FACTURATION ---
+profile_doctors "1" <-- "*" lab_request : prescrit _optional <
+patient_visit "1" <-- "*" lab_request : génère _optional <
+lab_request "1" *-- "1..*" lab_request_line : contient >
+lab_test "1" <-- "*" lab_request_line : cible <
+
+invoice "1" <-- "0..*" lab_request : est facturé via >
+invoice "1" *-- "*" payment : reçoit >
+
+' --- RELATIONS EXECUTION ---
+lab_request "1" *-- "1..*" lab_sample : nécessite >
+lab_request_line "1" *-- "1..*" lab_result : génère >
+lab_parameter "1" <-- "*" lab_result : renseigne <
+lab_sample "1" <-- "*" lab_result : extrait de <
+
+@enduml

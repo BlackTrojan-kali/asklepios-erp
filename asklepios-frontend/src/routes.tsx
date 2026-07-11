@@ -24,7 +24,7 @@ import Licences from "./Pages/SUPA/licence/Licences";
 // ============================================================================
 import Centers from "./Pages/Admin/Centers";
 import Departments from "./Pages/Admin/departments/Departments";
-import ManageDepartment from './Pages/Admin/Base_hospital/ManageDepartment';
+import ManageDepartment from "./Pages/Admin/Base_hospital/ManageDepartment";
 import RoomCategories from "./Pages/Admin/Base_hospital/room_category/RoomCategories";
 import FacilityRoomsExplorer from "./Pages/Admin/Base_hospital/FacilityRoomsExplorer";
 import BedsExplorer from "./Pages/Admin/Base_hospital/BedsExplorer";
@@ -35,6 +35,7 @@ import MedicalActExplorer from "./Pages/Admin/Base_hospital/MedicalActExplorer";
 import Receptionists from "./Pages/Admin/Base_hospital/receptionist/Receptionist";
 import Doctors from "./Pages/Admin/Base_hospital/doctor/Doctors";
 import Pharmaciens from "./Pages/Admin/Pharmacies/Pharmaciens";
+import LabTechnicians from "./Pages/Admin/Base_hospital/laboratory/LabTechnicians";
 
 // ============================================================================
 // IMPORTS : ADMIN & PHARMACIE (Stock, Ventes, Logistique)
@@ -98,6 +99,21 @@ import Payments from "./Pages/Reception/Payments";
 import Appointments from "./Pages/Hospital/Appointment_history";
 import { SearchResults } from "./Pages/SearchResults";
 
+import LabCategories from "./Pages/Laboratory/Catalogue/LabCategories";
+import LabTests from "./Pages/Laboratory/Catalogue/LabTests";
+import LabParameters from "./Pages/Laboratory/Catalogue/LabParameters";
+import LabSampling from "./Pages/Laboratory/Execution/LabSampling";
+import LabResultsEntry from "./Pages/Laboratory/Execution/LabResultsEntry";
+import LabValidation from "./Pages/Laboratory/Execution/LabValidation";
+
+// ============================================================================
+// IMPORTS : LABORATOIRE
+// ============================================================================
+/*
+import LabDashboard from "./Pages/Laboratory/LabDashboard";
+*/
+import LabArchives from "./Pages/Laboratory/Execution/LabArchives";
+
 // ============================================================================
 // CONFIGURATION DES ROUTES
 // ============================================================================
@@ -123,8 +139,11 @@ const routes = createBrowserRouter([
       </AuthMiddleware>
     ),
     children: [
+<<<<<<< HEAD
       // 👉 NOUVELLE ROUTE GLOBALE (Accessible à tous les connectés)
       { path: "search", element: <SearchResults /> },
+=======
+>>>>>>> origin/dev-brice
       // ====================================================
       // A. ESPACE SUPER ADMIN
       // ====================================================
@@ -158,20 +177,33 @@ const routes = createBrowserRouter([
           { path: "receptionists", element: <Receptionists /> },
           { path: "doctors", element: <Doctors /> },
           { path: "pharmaciens", element: <Pharmaciens /> },
+          { path: "lab-technicians", element: <LabTechnicians /> },
 
           // -- Structure de l'Hôpital --
           { path: "centers", element: <Centers /> },
           { path: "departments", element: <Departments /> },
-          { path: "departments/:id/manage_department", element: <ManageDepartment /> },
+          {
+            path: "departments/:id/manage_department",
+            element: <ManageDepartment />,
+          },
           { path: "departments/:id/rooms", element: <FacilityRoomsExplorer /> },
-          { path: "departments/:id/equipments", element: <EquipmentExplorer /> },
-          { path: "departments/:id/medical-acts", element: <MedicalActExplorer /> },
+          {
+            path: "departments/:id/equipments",
+            element: <EquipmentExplorer />,
+          },
+          {
+            path: "departments/:id/medical-acts",
+            element: <MedicalActExplorer />,
+          },
           { path: "rooms/:id/beds", element: <BedsExplorer /> },
           { path: "room_categories", element: <RoomCategories /> },
 
           // -- Pharmacie (Supervision Admin) --
           { path: "pharmacies", element: <Pharmacies /> },
-          { path: "pharmacy/acticles-categories", element: <ArticleCategories /> },
+          {
+            path: "pharmacy/acticles-categories",
+            element: <ArticleCategories />,
+          },
           { path: "pharmacy/articles", element: <Articles /> },
           { path: "pharmacy/articles/pricing", element: <ArticlePricing /> },
           { path: "pharmacy/batch", element: <Batches /> },
@@ -182,13 +214,19 @@ const routes = createBrowserRouter([
           { path: "pharmacy/orders", element: <AdminPurchaseOrders /> },
           { path: "pharmacy/returns", element: <AdminPurchaseReturns /> },
           { path: "pharmacy/cash-register", element: <CashRegister /> },
-          
+
           // Nouveautés de Brice : Trésorerie et Historiques
           { path: "pharmacy/pos-sales-history", element: <PosSalesHistory /> },
-          { path: "pharmacy/pos-sessions-history", element: <PosSessionsHistory /> },
+          {
+            path: "pharmacy/pos-sessions-history",
+            element: <PosSessionsHistory />,
+          },
           { path: "pharmacy/accounts", element: <AdminAccounts /> },
           { path: "pharmacy/versements", element: <AdminPendingDeposits /> },
-          { path: "pharmacy/treasury-transactions", element: <AdminTreasuryTransactions /> },
+          {
+            path: "pharmacy/treasury-transactions",
+            element: <AdminTreasuryTransactions />,
+          },
 
           // -- Logistique --
           { path: "vehicules", element: <Vehicules /> },
@@ -242,11 +280,23 @@ const routes = createBrowserRouter([
             ),
             children: [
               { path: "pharmacy/cash", element: <CashHome /> },
-              { path: "pharmacy/cash/sales-history", element: <SalesHistory /> },
-              { path: "pharmacy/cash/deposits-history", element: <DepositsHistory /> },
+              {
+                path: "pharmacy/cash/sales-history",
+                element: <SalesHistory />,
+              },
+              {
+                path: "pharmacy/cash/deposits-history",
+                element: <DepositsHistory />,
+              },
               { path: "pharmacy/cash/session/open", element: <OpenSession /> },
-              { path: "pharmacy/cash/session/close", element: <CloseSession /> },
-              { path: "pharmacy/cash/session/history", element: <CashSessionHistory /> },
+              {
+                path: "pharmacy/cash/session/close",
+                element: <CloseSession />,
+              },
+              {
+                path: "pharmacy/cash/session/history",
+                element: <CashSessionHistory />,
+              },
             ],
           },
         ],
@@ -266,7 +316,7 @@ const routes = createBrowserRouter([
           { path: "reception/rdv", element: <ReceptionistAppointments /> },
           { path: "reception/facturation", element: <Invoices /> },
           { path: "reception/payments", element: <Payments /> },
-        ]
+        ],
       },
       {
         element: (
@@ -274,11 +324,9 @@ const routes = createBrowserRouter([
             <Outlet />
           </CheckRole>
         ),
-        children: [
-          { path: "historique_rdv", element: <Appointments /> }
-        ]
+        children: [{ path: "historique_rdv", element: <Appointments /> }],
       },
-      
+
       // ====================================================
       // F. ESPACE MÉDECIN
       // ====================================================
@@ -295,7 +343,33 @@ const routes = createBrowserRouter([
           { path: "admissions", element: <DoctorAdmissions /> },
           { path: "wards", element: <DoctorWardManager /> },
           { path: "medical_act", element: <MedicalActExplorer /> },
-        ]
+        ],
+      },
+
+      // ====================================================
+      // H. ESPACE LABORATOIRE (SIL)
+      // ====================================================
+      {
+        path: "laboratory", // Préfixe : /laboratory/...
+        element: (
+          <CheckRole roles={["admin", "laboratory"]}>
+            <Outlet />
+          </CheckRole>
+        ),
+        children: [
+          // { path: "dashboard", element: <LabDashboard /> },
+
+          // -- Configuration (Admin / Chef de Labo) --
+          { path: "catalogue/categories", element: <LabCategories /> },
+          { path: "catalogue/tests", element: <LabTests /> },
+          { path: "catalogue/parameters", element: <LabParameters /> },
+
+          // -- Opérationnel --
+          { path: "sampling", element: <LabSampling /> },
+          { path: "results", element: <LabResultsEntry /> },
+          { path: "validation", element: <LabValidation /> },
+          { path: "archives", element: <LabArchives /> },
+        ],
       },
     ],
   },

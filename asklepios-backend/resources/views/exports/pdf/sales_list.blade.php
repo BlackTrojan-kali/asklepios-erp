@@ -127,7 +127,12 @@
                     <td>{{ $sale->created_at->format('d/m/Y H:i') }}</td>
                     <td>{{ $sale->branch->name ?? 'N/A' }}</td>
                     <td>{{ $sale->session->register->name ?? 'N/A' }}</td>
-                    <td>{{ $sale->customer_name }}</td>
+                    <td>
+                        {{ $sale->customer_name }}
+                        @if($sale->patient)
+                            <br><span style="font-size: 8px; color: #059669; font-family: monospace;">Code: {{ $sale->patient->patient_code }}</span>
+                        @endif
+                    </td>
                     <td>{{ $sale->session->user ? ($sale->session->user->first_name . ' ' . $sale->session->user->last_name) : 'Caissier' }}</td>
                     <td class="text-center">{{ $sale->payment_method }}</td>
                     <td class="text-right bold font-mono">{{ number_format($sale->total_amount, 0, ',', ' ') }}</td>

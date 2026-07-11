@@ -108,6 +108,7 @@ class CashRegisterController extends Controller
             'name' => 'required|string|max:255',
             'pharmacy_branch_id' => 'required|integer|exists:pharmacy_branches,id',
             'status' => 'nullable|string|in:active,inactive',
+            'merchant_code' => 'nullable|string|max:255',
         ]);
 
         // Vérifier que la branche appartient bien à l'hôpital
@@ -117,6 +118,7 @@ class CashRegisterController extends Controller
             'name' => $validated['name'],
             'pharmacy_branch_id' => $validated['pharmacy_branch_id'],
             'status' => $validated['status'] ?? 'active',
+            'merchant_code' => $validated['merchant_code'] ?? null,
         ]);
 
         return response()->json($register->load(['activeSession.user', 'branch']), 201);
@@ -156,6 +158,7 @@ class CashRegisterController extends Controller
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
             'status' => 'sometimes|required|string|in:active,inactive',
+            'merchant_code' => 'nullable|string|max:255',
         ]);
 
         $register->update($validated);
@@ -293,7 +296,8 @@ class CashRegisterController extends Controller
                 'card' => $card,
             ];
             
-            $session->current_balance = (float)$session->opening_balance + $cash;
+            $treasury = $session->treasury_totals;
+            $session->current_balance = (float)$session->opening_balance + $cash + (float)($treasury['cash']['net'] ?? 0);
         }
 
         return response()->json($sessions, 200);

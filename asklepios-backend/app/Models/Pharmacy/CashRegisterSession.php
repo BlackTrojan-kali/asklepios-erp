@@ -14,6 +14,8 @@ class CashRegisterSession extends Model
         'closed_at' => 'datetime',
         'opening_balance' => 'float',
         'closing_balance' => 'float',
+        'closing_mobile_money' => 'float',
+        'closing_card' => 'float',
     ];
 
     protected $appends = ['sales_totals', 'treasury_totals'];

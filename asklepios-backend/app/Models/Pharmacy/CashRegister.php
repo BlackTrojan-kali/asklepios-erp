@@ -31,7 +31,10 @@ class CashRegister extends Model
         if (!$activeSession) {
             return 0.0;
         }
-        return (float) ($activeSession->opening_balance + $activeSession->sales()->sum('total_amount'));
+        $cashSales = (float) $activeSession->sales()->where('payment_method', 'CASH')->sum('total_amount');
+        $treasury = $activeSession->treasury_totals;
+        $cashNet = (float) ($treasury['cash']['net'] ?? 0.0);
+        return (float) ($activeSession->opening_balance + $cashSales + $cashNet);
     }
 }
 

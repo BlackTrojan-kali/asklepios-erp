@@ -8,8 +8,17 @@ class ProfileLab extends Model
 {
     //
     protected $guarded = [];
+    
     public function user(){
         return $this->belongsTo(User::class,"user_id");
-}
+    }
+
+    public function center() {
+        return $this->belongsTo(Center::class, 'center_id');
+    }
+
+    public function hospital() {
+        return $this->belongsTo(Hospital::class, 'hospital_id');
+    }
 
 }

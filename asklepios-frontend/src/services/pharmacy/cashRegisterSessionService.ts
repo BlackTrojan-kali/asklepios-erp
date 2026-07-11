@@ -9,6 +9,8 @@ export interface OpenSessionPayload {
 
 export interface CloseSessionPayload {
   closing_balance: number;
+  closing_mobile_money?: number;
+  closing_card?: number;
   password?: string;
   closing_notes?: string;
 }

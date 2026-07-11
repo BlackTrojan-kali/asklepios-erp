@@ -10,9 +10,11 @@ export interface PosSaleItemPayload {
 
 export interface PosSalePayload {
   customer_name?: string;
+  patient_id?: number;
   has_prescription?: boolean;
   prescription_ref?: string;
   payment_method: "CASH" | "MOBILE_MONEY" | "CARD";
+  payment_account_id?: number;
   amount_received?: number;
   items: PosSaleItemPayload[];
 }
@@ -42,10 +44,19 @@ export interface PosSaleDto {
   pharmacy_branch_id: number;
   cash_register_session_id: number;
   customer_name: string;
+  patient_id?: number | null;
+  patient?: {
+    id: number;
+    patient_code: string;
+    first_name: string;
+    last_name?: string;
+    contact_phone?: string;
+  } | null;
   has_prescription: boolean;
   prescription_ref?: string;
   total_amount: number;
   payment_method: "CASH" | "MOBILE_MONEY" | "CARD";
+  payment_account_id?: number | null;
   amount_received?: number;
   change_due?: number;
   created_at?: string;
