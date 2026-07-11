@@ -1,20 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { X, Pill, Database, PenLine, PlusCircle } from 'lucide-react';
-import type { PrescriptionLinePayload } from '../../../../types/ConsultationTypes'; // Ajuste le chemin
-// import type { ArticleDto } from '../../../../types/PharmTypes'; // Si tu as défini ce type
+import Select from 'react-select';
+import type { PrescriptionLinePayload } from '../../../../types/ConsultationTypes'; 
+import type { ArticleDto } from '../../../../types/PharmTypes'; 
 
 interface AddMedicationModalProps {
     isOpen: boolean;
     onClose: () => void;
     onAdd: (medication: PrescriptionLinePayload) => void;
-    availableArticles: any[]; // Remplace 'any' par 'ArticleDto' selon ton typage
+    availableArticles: ArticleDto[]; 
+    AutoRefreshPage?: () => void;
 }
 
 export const AddMedicationModal: React.FC<AddMedicationModalProps> = ({
     isOpen,
     onClose,
     onAdd,
-    availableArticles
+    availableArticles,
+    AutoRefreshPage
 }) => {
     const [mode, setMode] = useState<'catalogue' | 'manuel'>('catalogue');
     const [selectedArticleId, setSelectedArticleId] = useState<number | ''>('');
@@ -30,6 +33,15 @@ export const AddMedicationModal: React.FC<AddMedicationModalProps> = ({
         }
     }, [isOpen]);
 
+    // CORRECTION : Évaluation flexible (accepte true, 1 ou "1") pour ne plus vider la liste
+    const articleOptions = useMemo(() => {
+        return availableArticles
+            .map(article => ({
+                value: article.id,
+                label: article.name
+            }));
+    }, [availableArticles]);
+
     if (!isOpen) return null;
 
     const handleSubmit = () => {
@@ -42,13 +54,16 @@ export const AddMedicationModal: React.FC<AddMedicationModalProps> = ({
         };
 
         onAdd(payload);
+        if (AutoRefreshPage) {
+            AutoRefreshPage();
+        }
         onClose();
     };
 
     const isSubmitDisabled = !dosage.trim() || (mode === 'catalogue' && !selectedArticleId) || (mode === 'manuel' && !customName.trim());
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
             <div className="bg-[#faf8f1] dark:bg-gray-900 w-full max-w-md rounded-2xl shadow-2xl flex flex-col border border-gray-200 dark:border-gray-800">
                 
                 {/* HEADER */}
@@ -86,16 +101,23 @@ export const AddMedicationModal: React.FC<AddMedicationModalProps> = ({
                     {mode === 'catalogue' ? (
                         <div>
                             <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5 font-lato">Médicament (Stock de l'hôpital)</label>
-                            <select 
-                                value={selectedArticleId} 
-                                onChange={(e) => setSelectedArticleId(e.target.value)}
-                                className="w-full p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#00a896] outline-none transition-colors dark:text-white"
-                            >
-                                <option value="">-- Sélectionner un article --</option>
-                                {availableArticles.map(article => (
-                                    <option key={article.id} value={article.id}>{article.name}</option>
-                                ))}
-                            </select>
+                            
+                            {/* CORRECTION : isSearchable est explicite 
+                                noOptionsMessage est dynamique selon la saisie
+                            */}
+                            <Select 
+                                options={articleOptions}
+                                value={articleOptions.find(opt => opt.value === selectedArticleId) || null}
+                                onChange={(selected) => setSelectedArticleId(selected ? selected.value : '')}
+                                placeholder="Rechercher un médicament..."
+                                isClearable
+                                isSearchable // Active la recherche et l'autocomplétion
+                                className="text-sm react-select-container"
+                                classNamePrefix="react-select"
+                                noOptionsMessage={({ inputValue }) => 
+                                    inputValue ? "Aucun médicament trouvé pour cette recherche" : "Aucun médicament prescriptible disponible"
+                                }
+                            />
                         </div>
                     ) : (
                         <div>
@@ -124,8 +146,8 @@ export const AddMedicationModal: React.FC<AddMedicationModalProps> = ({
                 </div>
 
                 {/* FOOTER */}
-                <div className="p-5 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-3 rounded-b-2xl bg-white dark:bg-gray-900">
-                    <button onClick={onClose} className="px-5 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg font-medium transition-colors">
+                <div className="p-5 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-3 rounded-b-2xl bg-slate-50 dark:bg-gray-900/50">
+                    <button onClick={onClose} className="px-5 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-lg font-medium transition-colors">
                         Annuler
                     </button>
                     <button 

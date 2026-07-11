@@ -53,17 +53,17 @@ const Patients = () => {
     const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
     const [selectedPatient, setSelectedPatient] = useState<PatientDto | null>(null);
     const [appointmentPatient, setAppointmentPatient] = useState<PatientDto | null>(null);
-
+    const [autoRefreshPage, setAutoRefreshPage] = useState<boolean>(false);
     const currentCenterId = 1; 
 
     // --- CHARGEMENT INITIAL ---
     useEffect(() => {
         getPatients(page, { search: searchQuery });
-    }, [getPatients, page]);
+    }, [getPatients, page,autoRefreshPage]);
 
     useEffect(() => {
         getAllDoctors(); 
-    }, [getAllDoctors]);
+    }, [getAllDoctors,autoRefreshPage]);
 
     // --- ACTIONS ---
     const handleRefresh = () => {
@@ -75,6 +75,9 @@ const Patients = () => {
         setPage(1); 
         getPatients(1, { search: searchQuery });
     };
+    const handleAutoRefresh = ()=>{
+        setAutoRefreshPage(!autoRefreshPage);
+    }
 
     const handleResetSearch = () => {
         setSearchQuery('');
@@ -371,12 +374,14 @@ const Patients = () => {
             <CreatePatientModal 
                 isOpen={isCreateOpen} 
                 onClose={() => setIsCreateOpen(false)} 
+                AutoRefreshPage={handleAutoRefresh}
             />
 
             <UpdatePatientModal 
                 isOpen={!!selectedPatient} 
                 onClose={() => setSelectedPatient(null)} 
                 patient={selectedPatient}
+                AutoRefreshPage={handleAutoRefresh}
             />
 
             <PatientAppointmentManagerModal

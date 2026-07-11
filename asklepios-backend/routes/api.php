@@ -131,7 +131,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware(["licence:pharmacy,base_hospital"])->group(function(){
         Route::middleware('role:admin,doctor,pharmacy')->prefix('admin')->group(function () {
-            Route::get('admin/articles/all', [ArticleController::class, 'all']);
+            Route::get('articles/all', [ArticleController::class, 'all']);
         });
     });
 

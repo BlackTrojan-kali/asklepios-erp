@@ -19,7 +19,7 @@ interface SelectOption {
     label: string;
 }
 
-export const ExportPaymentsModal: React.FC<ExportPaymentsModalProps> = ({ isOpen, onClose }) => {
+export const ExportPaymentsModal: React.FC<ExportPaymentsModalProps> = ({ isOpen, onClose, }) => {
     const { profile } = useAuth();
     const { downloadPaymentsReportPdf, actionLoading } = usePaymentStore();
     

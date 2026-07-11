@@ -57,7 +57,7 @@ const ReceptionistAppointments = () => {
     const [apptToCancel, setApptToCancel] = useState<AppointmentDto | null>(null); 
 
     const currentCenterId = isReceptionist ? profile?.profile_reception?.center_id : (selectedCenter ? Number(selectedCenter.value) : 0);
-
+    const [autoRefreshPage,setAutoRefreshPage] = useState<boolean>(false);
     // --- HELPERS DE DATES ---
     const getLocalYYYYMMDD = (date: Date) => {
         const year = date.getFullYear();
@@ -71,7 +71,9 @@ const ReceptionistAppointments = () => {
         const d = new Date(datetimeStr.replace(' ', 'T'));
         return getLocalYYYYMMDD(d);
     };
-
+    const handleAutoRefresh = ()=>{
+        setAutoRefreshPage(!autoRefreshPage);
+    }
     // --- CHARGEMENT INITIAL ---
     const fetchAppointments = useCallback(() => {
         const filterParams = currentCenterId ? { center_id: currentCenterId } : {};
@@ -92,7 +94,7 @@ const ReceptionistAppointments = () => {
         } else if (isAdmin) {
             getAllDoctors({}); 
         }
-    }, [currentCenterId, fetchAppointments, getAllDoctors, isAdmin]);
+    }, [currentCenterId, fetchAppointments, getAllDoctors, isAdmin,autoRefreshPage]);
 
 
     // --- DÉRIVATION DES DONNÉES ---
@@ -419,7 +421,7 @@ const ReceptionistAppointments = () => {
                                                 <p className="font-bold text-slate-800 dark:text-white text-sm truncate font-brand">
                                                     {app.patient?.first_name} {app.patient?.last_name}
                                                 </p>
-                                                <p className="text-xs text-gray-500 font-mono">{app.patient?.code || `ID_${app.patient?.id}`}</p>
+                                                <p className="text-xs text-gray-500 font-mono">{app.patient?.patient_code || `ID_${app.patient?.id}`}</p>
                                             </div>
                                         </div>
 
@@ -506,6 +508,8 @@ const ReceptionistAppointments = () => {
                         doctors={allDoctors} 
                         prefilledDate={selectedDate}
                         isDateLocked={false} 
+                        AutoRefreshPage={handleAutoRefresh}
+                    
                     />
 
                     <DoctorRescheduleModal
@@ -515,6 +519,7 @@ const ReceptionistAppointments = () => {
                             if (hasChanged) fetchAppointments();
                         }}
                         appointment={apptToReschedule}
+                        AutoRefreshPage={handleAutoRefresh}
                     />
 
                     {apptToAdmit && (
@@ -526,6 +531,7 @@ const ReceptionistAppointments = () => {
                             }}
                             appointment={apptToAdmit}
                             currentDepartmentId={apptToAdmit.doctor?.department_id || 0}
+                            AutoRefreshPage={handleAutoRefresh}
                         />
                     )}
                 </>

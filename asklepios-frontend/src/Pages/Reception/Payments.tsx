@@ -40,7 +40,7 @@ const Payments = () => {
     const [searchInvoiceId, setSearchInvoiceId] = useState<string>('');
     const [selectedCenter, setSelectedCenter] = useState<SelectOption | null>(null);
     const [selectedPayment, setSelectedPayment] = useState<PaymentInvoiceDto | null>(null);
-    
+    const [autoRefreshPage,setAutoRefreshPage] = useState<boolean>(false);
     // 👉 NOUVEL ÉTAT pour la modale d'export
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
@@ -49,12 +49,12 @@ const Payments = () => {
         if (canManagePayments) {
             getCenters(1, {}, 100); 
         }
-    }, [canManagePayments, getCenters]);
+    }, [canManagePayments, getCenters,autoRefreshPage]);
 
     // --- CHARGEMENT DES PAIEMENTS ---
     useEffect(() => {
         fetchPayments();
-    }, [page, selectedCenter]); 
+    }, [page, selectedCenter,autoRefreshPage]); 
 
     const fetchPayments = () => {
         getPayments(page, { 
@@ -62,7 +62,9 @@ const Payments = () => {
             invoice_id: searchInvoiceId ? Number(searchInvoiceId.replace(/\D/g, '')) : undefined 
         });
     };
-
+    const handleAutoRefresh = ()=>{
+        setAutoRefreshPage(!autoRefreshPage)
+    }
     const handleSearchSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setPage(1);

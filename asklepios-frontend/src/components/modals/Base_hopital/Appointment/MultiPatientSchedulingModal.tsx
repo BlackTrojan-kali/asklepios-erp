@@ -29,10 +29,11 @@ interface Props {
     currentCenterId: number;
     doctors: any[]; // ProfileDoctorDto[]
     prefilledDate?: Date | null; // Optionnel, si on veut pré-remplir la date
+    AutoRefreshPage: () => void;
 }
 
 export const MultiPatientSchedulingModal: React.FC<Props> = ({ 
-    isOpen, onClose, currentCenterId, doctors, prefilledDate 
+    isOpen, onClose, currentCenterId, doctors, prefilledDate,AutoRefreshPage 
 }) => {
     // --- STORES ---
     const { patients, pagination, getPatients, loading: patientsLoading } = usePatientStore();
@@ -48,7 +49,7 @@ export const MultiPatientSchedulingModal: React.FC<Props> = ({
     const [formTime, setFormTime] = useState('');
     const [doctorId, setDoctorId] = useState<number | ''>('');
     const [reason, setReason] = useState('');
-
+    
     // --- HELPER DE DATE ---
     const getLocalYYYYMMDD = (date: Date) => {
         const year = date.getFullYear();
@@ -124,6 +125,8 @@ export const MultiPatientSchedulingModal: React.FC<Props> = ({
             // Attendre que toutes les requêtes soient terminées
             await Promise.all(promises);
             toast.success(`${selectedPatients.length} rendez-vous programmés avec succès !`);
+           
+            AutoRefreshPage();
             onClose();
         } catch (error) {
             toast.error("Une erreur est survenue lors de la programmation groupée.");

@@ -8,6 +8,7 @@ interface AddMedicalActModalProps {
     onAdd: (act: PerformedMedicalActPayload) => void;
     medicalActs: any[]; // Remplacer par MedicalActDto[]
     equipments: any[];  // Remplacer par EquipmentDto[]
+    AutoRefreshPage: () => void;
 }
 
 export const AddMedicalActModal: React.FC<AddMedicalActModalProps> = ({
@@ -15,7 +16,8 @@ export const AddMedicalActModal: React.FC<AddMedicalActModalProps> = ({
     onClose,
     onAdd,
     medicalActs,
-    equipments
+    equipments,
+    AutoRefreshPage
 }) => {
     const [selectedActId, setSelectedActId] = useState<number | ''>('');
     const [selectedEquipmentId, setSelectedEquipmentId] = useState<number | ''>('');
@@ -49,7 +51,9 @@ export const AddMedicalActModal: React.FC<AddMedicalActModalProps> = ({
             equipment_id: selectedEquipmentId ? Number(selectedEquipmentId) : null,
             applied_price: Number(appliedPrice)
         });
+        AutoRefreshPage();
         onClose();
+
     };
 
     return (

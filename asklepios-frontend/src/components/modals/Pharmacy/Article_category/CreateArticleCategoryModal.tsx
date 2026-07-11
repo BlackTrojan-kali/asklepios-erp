@@ -7,9 +7,10 @@ interface Props {
     isOpen: boolean;
     onClose: () => void;
     categories: ArticleCategoryDto[]; // La liste de toutes les catégories pour le menu déroulant
+    AutoRefreshPage: ()=> void
 }
 
-export const CreateArticleCategoryModal: React.FC<Props> = ({ isOpen, onClose, categories }) => {
+export const CreateArticleCategoryModal: React.FC<Props> = ({ isOpen, onClose, categories, AutoRefreshPage }) => {
     const { createArticleCategory, actionLoading } = useArticleCategoryStore();
     
     const [payload, setPayload] = useState<ArticleCategoryPayload>({
@@ -24,6 +25,7 @@ export const CreateArticleCategoryModal: React.FC<Props> = ({ isOpen, onClose, c
         const success = await createArticleCategory(payload);
         if (success) {
             setPayload({ name: '', description: '', article_category_id: null });
+            AutoRefreshPage()
             onClose();
         }
     };

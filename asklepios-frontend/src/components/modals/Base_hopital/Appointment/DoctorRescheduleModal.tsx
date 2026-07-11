@@ -7,9 +7,10 @@ interface Props {
     isOpen: boolean;
     onClose: () => void;
     appointment: AppointmentDto | null;
+    AutoRefreshPage: () => void;
 }
 
-export const DoctorRescheduleModal: React.FC<Props> = ({ isOpen, onClose, appointment }) => {
+export const DoctorRescheduleModal: React.FC<Props> = ({ isOpen, onClose, appointment,AutoRefreshPage }) => {
     const { rescheduleAppointment, actionLoading } = useAppointmentStore();
     const [formDate, setFormDate] = useState('');
     const [formTime, setFormTime] = useState('');
@@ -38,6 +39,7 @@ export const DoctorRescheduleModal: React.FC<Props> = ({ isOpen, onClose, appoin
         const success = await rescheduleAppointment(appointment.id, { scheduled_datetime: datetime });
         
         if (success) {
+            AutoRefreshPage()
             onClose();
         }
     };

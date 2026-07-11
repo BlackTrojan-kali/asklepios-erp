@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
     X, User, Activity, Pill, Stethoscope, Download, Save, 
     Loader2, Plus, TestTube, AlertTriangle, Edit, Syringe,
-    Scissors, HeartPulse, History, Coffee // Nouvelles icônes
+    Scissors, HeartPulse, History, Coffee
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -43,6 +43,10 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
     const { profile } = useAuth();
     const departmentId = profile?.profile_doctor?.department_id || 0;
 
+    // Déclaration sécurisée au top niveau pour éviter les erreurs de Hooks
+    const patient = visit?.patient;
+    const patientId = patient?.id;
+
     // --- STORES ---
     const { createConsultation, actionLoading: isConsultingLoading } = useConsultationStore();
     const { downloadMedicalRecord } = useMedicalBgStore();
@@ -68,17 +72,29 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
     const [isAddExamModalOpen, setIsAddExamModalOpen] = useState(false);
     const [isAddActModalOpen, setIsAddActModalOpen] = useState(false);
     const [isMedicalBgModalOpen, setIsMedicalBgModalOpen] = useState(false);
+    
+    const [autoRefreshPage, setAutoRefreshPage] = useState<boolean>(false);
+
+    // Fonction de rafraîchissement sécurisée via useCallback
+    const fetchLocalMedicalBg = useCallback(async () => {
+        if (!patientId) return;
+        try {
+            const response = await api.get(`/shared/patients/${patientId}/medical-background`);
+            setLocalMedicalBg(response.data.data || response.data);
+        } catch (error) {
+            console.error("Impossible de rafraîchir le dossier médical", error);
+        }
+    }, [patientId]);
 
     // --- INITIALISATION ---
     useEffect(() => {
-        if (isOpen && visit && visit.patient) {
+        if (isOpen && visit && patient) {
             setChiefComplaint('');
             setClinicalNotes('');
             setPrescriptions([]);
             setExams([]);
             setPerformedActs([]);
-            
-            setLocalMedicalBg(visit.patient.medical_background || null);
+            setLocalMedicalBg(patient.medical_background || null);
 
             getAllArticles();
             if (departmentId) {
@@ -86,19 +102,19 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
                 getSharedEquipment(departmentId);
             }
         }
-    }, [isOpen, visit, departmentId, getAllArticles, getSharedMedicalActs, getSharedEquipment]);
+    }, [isOpen, visit, patient, departmentId, getAllArticles, getSharedMedicalActs, getSharedEquipment]);
 
-    if (!isOpen || !visit || !visit.patient) return null;
-
-    const patient = visit.patient;
-
-    const fetchLocalMedicalBg = async () => {
-        try {
-            const response = await api.get(`/shared/patients/${patient.id}/medical-background`);
-            setLocalMedicalBg(response.data.data || response.data);
-        } catch (error) {
-            console.error("Impossible de rafraîchir le dossier médical", error);
+    // Écoute du trigger d'AutoRefresh
+    useEffect(() => {
+        if (isOpen && patientId) {
+            fetchLocalMedicalBg();
         }
+    }, [autoRefreshPage, fetchLocalMedicalBg, isOpen, patientId]);
+    // Retour précoce si données manquantes (Doit être après tous les hooks)
+    if (!isOpen || !visit || !patient) return null;
+
+    const handleAutoRefreshPage = () => {
+        setAutoRefreshPage(!autoRefreshPage);
     };
 
     const handleDownloadRecord = async () => {
@@ -153,7 +169,7 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
                             <div className="flex items-center gap-2 mt-0.5">
                                 <p className="text-sm text-blue-100 font-medium">{patient.first_name} {patient.last_name}</p>
                                 <span className="text-[10px] bg-blue-900/50 text-blue-200 px-1.5 py-0.5 rounded font-mono border border-blue-800">
-                                    {patient.patient_code}
+                                    {patient.patient_code || `ID_${patient.id}`}
                                 </span>
                             </div>
                         </div>
@@ -425,11 +441,29 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
             {/* MODALES ENFANTS */}
             {/* ================================================================= */}
             
-            <AddMedicationModal isOpen={isAddMedModalOpen} onClose={() => setIsAddMedModalOpen(false)} onAdd={(med) => setPrescriptions(prev => [...prev, med])} availableArticles={allArticles} />
-            <AddExamModal isOpen={isAddExamModalOpen} onClose={() => setIsAddExamModalOpen(false)} onAdd={(exam) => setExams(prev => [...prev, exam])} />
-            <AddMedicalActModal isOpen={isAddActModalOpen} onClose={() => setIsAddActModalOpen(false)} onAdd={(act) => setPerformedActs(prev => [...prev, act])} medicalActs={sharedMedicalActs} equipments={sharedEquipment} />
+            <AddMedicationModal 
+                AutoRefreshPage={handleAutoRefreshPage} 
+                isOpen={isAddMedModalOpen} 
+                onClose={() => setIsAddMedModalOpen(false)} 
+                onAdd={(med) => setPrescriptions(prev => [...prev, med])} 
+                availableArticles={allArticles} 
+            />
+            <AddExamModal 
+                isOpen={isAddExamModalOpen} 
+                onClose={() => setIsAddExamModalOpen(false)} 
+                onAdd={(exam) => setExams(prev => [...prev, exam])} 
+            />
+            <AddMedicalActModal 
+                AutoRefreshPage={handleAutoRefreshPage} 
+                isOpen={isAddActModalOpen} 
+                onClose={() => setIsAddActModalOpen(false)} 
+                onAdd={(act) => setPerformedActs(prev => [...prev, act])} 
+                medicalActs={sharedMedicalActs} 
+                equipments={sharedEquipment} 
+            />
 
             <MedicalBackgroundModal
+                AutoRefreshPage={handleAutoRefreshPage}
                 isOpen={isMedicalBgModalOpen}
                 onClose={(hasChanged?: boolean) => {
                     setIsMedicalBgModalOpen(false);

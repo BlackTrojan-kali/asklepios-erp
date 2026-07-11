@@ -47,6 +47,7 @@ const PurchaseReturns = () => {
     // Retours sélectionnés pour action
     const [selectedReturnForEdit, setSelectedReturnForEdit] = useState<PurchaseReturnDto | null>(null);
     const [selectedReturnForView, setSelectedReturnForView] = useState<PurchaseReturnDto | null>(null);
+    const [autoRefreshPage,setAutoRefreshPage] = useState(false); 
 
     // Chargement initial
     useEffect(() => {
@@ -55,15 +56,18 @@ const PurchaseReturns = () => {
         if (isAdmin) {
             getPharmacyBranches(1, {}, 100); 
         }
-    }, [getProviders, getPharmacyBranches, isAdmin]);
+    }, [getProviders, getPharmacyBranches, isAdmin,autoRefreshPage]);
 
     useEffect(() => {
         getReturns({ ...filters, page });
-    }, [getReturns, filters, page]);
+    }, [getReturns, filters, page,autoRefreshPage]);
 
     const handleRefresh = () => {
         getReturns({ ...filters, page });
     };
+    const handleAutoRefresh= ()=>{
+        setAutoRefreshPage(!autoRefreshPage)
+    }
 
     // --- ACTIONS DIRECTES ---
 

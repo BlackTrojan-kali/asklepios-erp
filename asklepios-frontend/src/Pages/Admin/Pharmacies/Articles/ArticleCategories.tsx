@@ -45,12 +45,12 @@ const ArticleCategories = () => {
     // États pour les modales
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<ArticleCategoryDto | null>(null);
-
+    const [autoRefreshPage,setAutoRefreshPage] = useState<boolean>(false);
     // Chargement initial des données
     useEffect(() => {
         getArticleCategories(1, {}); // Page 1 par défaut
         getAllArticleCategories();   // Charge la liste complète pour les Selects des modales
-    }, [getArticleCategories, getAllArticleCategories]);
+    }, [getArticleCategories, getAllArticleCategories,autoRefreshPage]);
 
     // Rafraîchir la liste en conservant la page et la recherche
     const handleRefresh = () => {
@@ -63,7 +63,9 @@ const ArticleCategories = () => {
         e.preventDefault();
         getArticleCategories(1, filters); // Retour à la page 1 lors d'une recherche
     };
-
+    const handleAutoRefresh = ()=>{
+        setAutoRefreshPage(!autoRefreshPage)
+    }
     // Réinitialisation des filtres
     const handleResetFilters = () => {
         setFilters({ search: '' });
@@ -287,6 +289,7 @@ const ArticleCategories = () => {
                 isOpen={isCreateOpen} 
                 onClose={() => setIsCreateOpen(false)}
                 categories={allCategories} 
+                AutoRefreshPage={handleAutoRefresh}
             />
 
             <UpdateArticleCategoryModal 
@@ -294,6 +297,7 @@ const ArticleCategories = () => {
                 onClose={() => setSelectedCategory(null)} 
                 category={selectedCategory}
                 categories={allCategories}
+                AutoRefreshPage={handleAutoRefresh}
             />
 
         </div>

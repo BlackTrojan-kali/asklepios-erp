@@ -6,9 +6,10 @@ import type { PatientPayload } from '../../../../types/PatientTypes';
 interface Props {
     isOpen: boolean;
     onClose: () => void;
+    AutoRefreshPage: () => void;
 }
 
-export const CreatePatientModal: React.FC<Props> = ({ isOpen, onClose }) => {
+export const CreatePatientModal: React.FC<Props> = ({ isOpen, onClose,AutoRefreshPage }) => {
     const { createPatient, actionLoading } = usePatientStore();
     
     const [payload, setPayload] = useState<PatientPayload>({
@@ -35,6 +36,7 @@ export const CreatePatientModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 first_name: '', last_name: '', bith_date: '', contact_phone: '',
                 birth_place: '', address: '', emergency_contact_name: '', emergency_contact_number: '', gender: ''
             });
+            AutoRefreshPage()
             onClose();
         }
     };

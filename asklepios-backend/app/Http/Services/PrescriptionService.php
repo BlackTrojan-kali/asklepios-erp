@@ -1,8 +1,8 @@
 <?php
-
 namespace App\Http\Services;
 
 use App\Models\Hospital\Prescription;
+use App\Models\Pharmacy\Article;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
@@ -25,15 +25,33 @@ class PrescriptionService
                 'consultation_id' => $consultationId,
                 'status'          => 'PENDING', // En attente de délivrance à la pharmacie
             ]);
+            
+            // 2. Optimisation : Récupérer tous les IDs des articles pour faire UNE SEULE requête
+            $articleIds = collect($medications)->pluck('article_id')->filter()->unique();
+            
+            // On crée un dictionnaire [id => name] (ex: [5 => 'Paracétamol', 12 => 'Aspirine'])
+            $articleNames = $articleIds->isEmpty() 
+                ? collect() 
+                : Article::whereIn('id', $articleIds)->pluck('name', 'id');
 
-            // 2. Ajout des lignes
+            // 3. Préparation des lignes pour l'insertion en masse
+            $prescriptionLines = [];
+            
             foreach ($medications as $med) {
-                $prescription->prescriptionLines()->create([
-                    'article_id'             => $med['article_id'] ?? null,
-                    'custom_medication_name' => $med['custom_medication_name'] ?? null,
+                $articleId = $med['article_id'] ?? null;
+                
+                // Récupération sécurisée du nom de l'article depuis la collection
+                $fetchedName = $articleId ? $articleNames->get($articleId) : null;
+
+                $prescriptionLines[] = [
+                    'article_id'             => $articleId,
+                    'custom_medication_name' => $med['custom_medication_name'] ?? $fetchedName,
                     'dosage'                 => $med['dosage'],
-                ]);
+                ];
             }
+
+            // 4. Insertion de toutes les lignes en une seule opération via la relation
+            $prescription->prescriptionLines()->createMany($prescriptionLines);
 
             // Retourne l'ordonnance avec ses lignes chargées
             return $prescription->load('prescriptionLines');

@@ -28,7 +28,7 @@ const Inventories = () => {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [selectedForEdit, setSelectedForEdit] = useState<InventoryDto | null>(null);
     const [selectedForView, setSelectedForView] = useState<number | null>(null);
-
+    const [autoRefreshPage,setAutoRefreshPage] = useState(false);
     // --- CHARGEMENT ---
     useEffect(() => {
         // Un petit délai (debounce) peut être utile si l'utilisateur tape vite les dates
@@ -98,7 +98,9 @@ const Inventories = () => {
             if (success) handleRefresh();
         }
     };
-
+    const handleAutoRefresh = ()=>{
+        setAutoRefreshPage(!autoRefreshPage)
+    }
     // --- UTILITAIRES ---
     const getStatusBadge = (status: string) => {
         if (status === 'VALIDATED') {
@@ -319,6 +321,7 @@ const Inventories = () => {
                     setIsCreateOpen(false);
                     setSelectedForEdit(null);
                 }}
+                AutoRefreshPage={handleAutoRefresh}
                 existingInventory={selectedForEdit}
                 onSuccess={handleRefresh}
             />

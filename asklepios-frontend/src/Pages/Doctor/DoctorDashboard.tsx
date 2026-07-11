@@ -44,6 +44,7 @@ const DoctorDashboard = () => {
     
     const [previewConsultationId, setPreviewConsultationId] = useState<number | null>(null);
     const [consultationToDelete, setConsultationToDelete] = useState<number | null>(null);
+    const [autoRefreshPage,setAutoRefreshPage] = useState<boolean>(false);
 
     const todayStr = new Date().toISOString().split('T')[0];
 
@@ -52,13 +53,13 @@ const DoctorDashboard = () => {
         if (doctorId) {
             getAppointments(1, { profile_doctor_id: doctorId, date: todayStr });
         }
-    }, [doctorId, getAppointments, todayStr]);
+    }, [doctorId, getAppointments, todayStr,autoRefreshPage]);
 
     const refreshHistory = useCallback(() => {
         if (selectedAppointment?.patient?.id) {
             getConsultations(historyPage, { patient_id: selectedAppointment.patient.id });
         }
-    }, [selectedAppointment?.patient?.id, historyPage, getConsultations]);
+    }, [selectedAppointment?.patient?.id, historyPage, getConsultations,autoRefreshPage]);
 
     useEffect(() => { refreshQueue(); }, [refreshQueue]);
     useEffect(() => { setHistoryPage(1); }, [selectedAppointment?.patient?.id]);
@@ -86,6 +87,9 @@ const DoctorDashboard = () => {
             refreshHistory();
         }
     };
+    const handleAutoRefresh = ()=>{
+        setAutoRefreshPage(!autoRefreshPage);
+    }
 
     // =========================================================================
     // MOTEUR DE TRI : Logique de la file d'attente clinique
@@ -388,6 +392,7 @@ const DoctorDashboard = () => {
                         }}
                         appointment={selectedAppointment}
                         currentDepartmentId={departmentId}
+                        AutoRefreshPage={handleAutoRefresh}
                     />
 
                     <AdmitToConsultationModal 
@@ -398,6 +403,7 @@ const DoctorDashboard = () => {
                         }}
                         appointment={selectedAppointment} 
                         currentDepartmentId={departmentId}
+                        AutoRefreshPage={handleAutoRefresh}
                     />
 
                     {selectedAppointment.visit && (
