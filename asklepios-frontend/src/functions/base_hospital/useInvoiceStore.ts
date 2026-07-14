@@ -25,7 +25,8 @@ const useInvoiceStore = () => {
     // --- GET /shared/invoices ---
     const getInvoices = useCallback(async (
         page: number = 1,
-        filters: { center_id?: number; patient_id?: number; status?: string } = {},
+        // 👉 AJOUT DE patient_code ICI
+        filters: { center_id?: number; patient_id?: number; patient_code?: string; status?: string } = {},
         perPage: number = 15
     ) => {
         try {
@@ -150,19 +151,18 @@ const useInvoiceStore = () => {
         }
     };
 
-    // 👉 NOUVEAU : GET /shared/reports/invoices-pdf ---
+    // --- GET /shared/reports/invoices-pdf ---
     const downloadInvoicesReportPdf = async (filters: InvoiceReportFilters) => {
         try {
             setActionLoading(true);
             
             const res = await api.get("/shared/reports/invoices-pdf", {
                 params: filters,
-                responseType: 'blob' // Indispensable pour lire un PDF en retour
+                responseType: 'blob'
             });
 
             const fileUrl = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
             
-            // On ouvre le rapport dans un nouvel onglet
             window.open(fileUrl, '_blank');
             toast.success("Rapport généré avec succès !");
             
@@ -187,7 +187,7 @@ const useInvoiceStore = () => {
         cancelInvoice,
         downloadInvoicePdf,
         generateInvoiceForPatient,
-        downloadInvoicesReportPdf // Export de la nouvelle fonction
+        downloadInvoicesReportPdf
     };
 };
 

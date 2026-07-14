@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { 
     Receipt, Printer, Eye, Trash2, 
-    Loader2, RefreshCw, ChevronLeft, ChevronRight, Filter, Plus, Wallet, Building2, FileDown
+    Loader2, RefreshCw, ChevronLeft, ChevronRight, Filter, Plus, Wallet, Building2, FileDown, Search
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
@@ -19,7 +19,6 @@ import type { InvoiceDto } from '../../types/InvoiceTypes';
 import { InvoicePreviewModal } from '../../components/modals/Base_hopital/hospital/InvoicePreviewModal'; 
 import { GenerateInvoiceModal } from '../../components/modals/Base_hopital/facturation/GenerateInvoiceModal'; 
 import { CreatePaymentModal } from '../../components/modals/Base_hopital/Finance/CreatePaymentModal';
-// 👉 Import de la nouvelle modale d'exportation
 import { ExportInvoicesModal } from '../../components/modals/Base_hopital/Finance/ExportInvoicesModal'; 
 
 interface SelectOption {
@@ -40,14 +39,13 @@ const Invoices = () => {
     const [page, setPage] = useState(1);
     const [statusFilter, setStatusFilter] = useState<string>(''); // '', 'PAID', 'UNPAID'
     const [selectedCenter, setSelectedCenter] = useState<SelectOption | null>(null);
+    const [searchQuery, setSearchQuery] = useState(''); // 👉 NOUVEAU : Barre de recherche
     
     // --- ÉTATS DES MODALES ---
     const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null);
     const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false); 
     const [isPaymentOpen, setIsPaymentOpen] = useState(false);
     const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<InvoiceDto | null>(null);
-    
-    // 👉 NOUVEL ÉTAT pour la modale d'export
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
     // --- CHARGEMENT DES CENTRES (Si Admin) ---
@@ -58,19 +56,45 @@ const Invoices = () => {
     }, [profile, getCenters]);
 
     // --- CHARGEMENT DES FACTURES ---
-    useEffect(() => {
-        fetchInvoices();
-    }, [page, statusFilter, selectedCenter]);
-
     const fetchInvoices = () => {
         getInvoices(page, { 
             status: statusFilter || undefined,
-            center_id: selectedCenter?.value ? Number(selectedCenter.value) : undefined
+            center_id: selectedCenter?.value ? Number(selectedCenter.value) : undefined,
+            patient_code: searchQuery || undefined // 👉 NOUVEAU
         });
     };
 
+    // On écoute les changements de pagination et de filtres directs
+    useEffect(() => {
+        fetchInvoices();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [page, statusFilter, selectedCenter]);
+
     const handleRefresh = () => {
         fetchInvoices();
+    };
+
+    // 👉 SOUMISSION DE LA RECHERCHE
+    const handleSearchSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        setPage(1); 
+        // L'appel de getInvoices direct ici garantit la réactivité
+        getInvoices(1, { 
+            status: statusFilter || undefined,
+            center_id: selectedCenter?.value ? Number(selectedCenter.value) : undefined,
+            patient_code: searchQuery || undefined 
+        });
+    };
+
+    // 👉 RÉINITIALISATION DE LA RECHERCHE
+    const handleResetSearch = () => {
+        setSearchQuery('');
+        setPage(1);
+        getInvoices(1, { 
+            status: statusFilter || undefined,
+            center_id: selectedCenter?.value ? Number(selectedCenter.value) : undefined,
+            patient_code: undefined 
+        });
     };
 
     const handleFilterChange = (newStatus: string) => {
@@ -113,7 +137,7 @@ const Invoices = () => {
         <div className="space-y-6">
             
             {/* --- EN-TÊTE --- */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 rounded-lg">
                         <Receipt size={24} />
@@ -128,7 +152,7 @@ const Invoices = () => {
                     </div>
                 </div>
                 
-                <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full xl:w-auto">
                     <button 
                         onClick={handleRefresh}
                         disabled={loading}
@@ -138,7 +162,6 @@ const Invoices = () => {
                         Rafraîchir
                     </button>
                     
-                    {/* 👉 BOUTON EXPORTER LE RAPPORT PDF */}
                     <button 
                         onClick={() => setIsExportModalOpen(true)}
                         className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#003366] hover:bg-blue-900 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-colors"
@@ -155,6 +178,41 @@ const Invoices = () => {
                         Nouvelle Facture
                     </button>
                 </div>
+            </div>
+
+            {/* --- RECHERCHE PAR CODE PATIENT --- */}
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row gap-3">
+                    <div className="flex-1 relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Search size={18} className="text-gray-400" />
+                        </div>
+                        <input 
+                            type="text" 
+                            placeholder="Rechercher par Code Patient (ex: H1-0001)..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-10 p-2 min-h-[42px] bg-slate-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:border-[#00a896] text-sm text-slate-800 dark:text-white transition-colors"
+                        />
+                    </div>
+                    <div className="flex gap-2">
+                        <button 
+                            type="submit" 
+                            className="bg-slate-800 hover:bg-slate-900 dark:bg-gray-700 dark:hover:bg-gray-600 text-white px-6 py-2 min-h-[42px] rounded-lg font-medium transition-colors text-sm shadow-sm"
+                        >
+                            Rechercher
+                        </button>
+                        {searchQuery && (
+                            <button 
+                                type="button"
+                                onClick={handleResetSearch}
+                                className="px-4 py-2 min-h-[42px] bg-gray-200 hover:bg-gray-300 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200 dark:border dark:border-gray-600 rounded-lg font-medium transition-colors text-sm"
+                            >
+                                Effacer
+                            </button>
+                        )}
+                    </div>
+                </form>
             </div>
 
             {/* --- BARRE DE FILTRES --- */}
@@ -250,7 +308,7 @@ const Invoices = () => {
                                 <tr>
                                     <td colSpan={7} className="p-12 text-center">
                                         <Receipt size={48} className="mx-auto mb-3 opacity-20 text-gray-500" />
-                                        <p className="font-medium text-gray-500">Aucune facture trouvée.</p>
+                                        <p className="font-medium text-gray-500">Aucune facture trouvée pour ces critères.</p>
                                     </td>
                                 </tr>
                             ) : (
@@ -395,7 +453,6 @@ const Invoices = () => {
                 invoice={selectedInvoiceForPayment}
             />
 
-            {/* 👉 MODALE D'EXPORTATION DU RAPPORT */}
             <ExportInvoicesModal
                 isOpen={isExportModalOpen}
                 onClose={() => setIsExportModalOpen(false)}

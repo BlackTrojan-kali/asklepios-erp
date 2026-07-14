@@ -7,12 +7,14 @@ interface DischargePatientModalProps {
     isOpen: boolean;
     onClose: () => void;
     admission: AdmissionDto | null;
+    AutoRefershPage: () => void;
 }
 
 export const DischargePatientModal: React.FC<DischargePatientModalProps> = ({
     isOpen,
     onClose,
-    admission
+    admission,
+    AutoRefershPage
 }) => {
     const { dischargePatient, actionLoading } = useAdmissionStore();
     const [dischargeNotes, setDischargeNotes] = useState('');
@@ -31,7 +33,9 @@ export const DischargePatientModal: React.FC<DischargePatientModalProps> = ({
         });
 
         if (success) {
+            AutoRefershPage();
             onClose();
+            
         }
     };
 

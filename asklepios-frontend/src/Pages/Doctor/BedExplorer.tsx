@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { 
     BedDouble, Activity, LogOut, CheckCircle, 
-    AlertTriangle, RefreshCw, Loader2, Filter, User, FileText
+    AlertTriangle, RefreshCw, Loader2, Filter, User, FileText, History
 } from 'lucide-react';
 import useBedStore from '../../functions/base_hospital/useBedStore';
 import type { FacilityRoomDto } from '../../types/FacilityRoomTypes';
@@ -9,21 +9,24 @@ import type { BedDto } from '../../types/AdmissionTypes';
 
 interface BedExplorerProps {
     room: FacilityRoomDto;
+    refreshTrigger?: number; // 👉 AJOUT: Permet d'écouter les demandes de rafraîchissement du composant parent
     onAdmitPatient: (bed: BedDto) => void;
     onDischargePatient: (admission: any) => void;
     onStartConsultation: (admission: any) => void;
     onViewPatient: (patient: any) => void;
-    // Ajoute cette ligne si tu as implémenté le changement de statut (AVAILABLE/CLEANING)
     onUpdateBedStatus?: (bed: BedDto) => void; 
+    onViewHistory?: (patient: any) => void; // 👉 AJOUT: Déclenche le split screen
 }
 
 export const BedExplorer: React.FC<BedExplorerProps> = ({
     room,
+    refreshTrigger = 0,
     onAdmitPatient,
     onDischargePatient,
     onStartConsultation,
     onViewPatient,
-    onUpdateBedStatus
+    onUpdateBedStatus,
+    onViewHistory
 }) => {
     // --- STORES ---
     const { beds, getBeds, loading, pagination } = useBedStore();
@@ -39,10 +42,11 @@ export const BedExplorer: React.FC<BedExplorerProps> = ({
         }
     };
 
+    // 👉 Le useEffect écoute maintenant le refreshTrigger venant du DoctorWardManager
     useEffect(() => {
         fetchBeds();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [room.id, currentPage, statusFilter]);
+    }, [room.id, currentPage, statusFilter, refreshTrigger]);
 
     // Revenir à la page 1 si le filtre change
     useEffect(() => {
@@ -130,7 +134,6 @@ export const BedExplorer: React.FC<BedExplorerProps> = ({
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
                         {beds.map((bed) => {
                             // --- RÉCUPÉRATION ROBUSTE DE L'ADMISSION ---
-                            // On fouille dans les clés possibles renvoyées par Laravel
                             const admissionsArray = (bed as any).admissions || [];
                             const activeAdmission = (bed as any).current_admission || 
                                                     (bed as any).active_admission || 
@@ -194,7 +197,7 @@ export const BedExplorer: React.FC<BedExplorerProps> = ({
                                     </div>
 
                                     {/* Ligne basse : Actions contextuelles */}
-                                    <div className="border-t border-gray-100 dark:border-gray-700/60 pt-2.5 flex items-center justify-end gap-2 shrink-0">
+                                    <div className="border-t border-gray-100 dark:border-gray-700/60 pt-2.5 flex items-center justify-end gap-1.5 shrink-0">
                                         
                                         {/* Action: Admettre */}
                                         {bed.state === 'AVAILABLE' && (
@@ -218,6 +221,15 @@ export const BedExplorer: React.FC<BedExplorerProps> = ({
                                                     <FileText size={12} /> Dossier
                                                 </button>
 
+                                                {/* 👉 NOUVEAU BOUTON HISTORIQUE */}
+                                                <button 
+                                                    onClick={() => onViewHistory && onViewHistory(activeAdmission.patient)}
+                                                    className="flex-1 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-slate-700 dark:text-gray-300 font-bold rounded-lg text-xs shadow-sm transition-colors flex items-center justify-center gap-1"
+                                                    title="Historique des consultations"
+                                                >
+                                                    <History size={12} /> Historique
+                                                </button>
+
                                                 {/* VISITE */}
                                                 <button 
                                                     onClick={() => onStartConsultation(activeAdmission)}
@@ -233,7 +245,7 @@ export const BedExplorer: React.FC<BedExplorerProps> = ({
                                                     className="p-1.5 border border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-colors"
                                                     title="Autoriser la sortie"
                                                 >
-                                                    <LogOut size={12} />
+                                                    <LogOut size={14} />
                                                 </button>
                                             </>
                                         ) : isOccupied ? (
@@ -260,31 +272,30 @@ export const BedExplorer: React.FC<BedExplorerProps> = ({
                         })}
                     </div>
                 )}
-
-                {/* PAGINATION DE L'EXPLORATEUR */}
-                {pagination && pagination.lastPage > 1 && (
-                    <div className="p-4 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 flex items-center justify-between shrink-0 mt-auto">
-                        <button 
-                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                            disabled={currentPage === 1 || loading}
-                            className="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded disabled:opacity-50 transition-colors"
-                        >
-                            &larr; Précédent
-                        </button>
-                        <span className="text-xs text-gray-500 dark:text-gray-400 font-mono">
-                            Page {currentPage} sur {pagination.lastPage}
-                        </span>
-                        <button 
-                            onClick={() => setCurrentPage(p => Math.min(pagination.lastPage, p + 1))}
-                            disabled={currentPage === pagination.lastPage || loading}
-                            className="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded disabled:opacity-50 transition-colors"
-                        >
-                            Suivant &rarr;
-                        </button>
-                    </div>
-                )}
             </div>
 
+            {/* PAGINATION DE L'EXPLORATEUR */}
+            {pagination && pagination.lastPage > 1 && (
+                <div className="p-4 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 flex items-center justify-between shrink-0 mt-auto">
+                    <button 
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1 || loading}
+                        className="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded disabled:opacity-50 transition-colors"
+                    >
+                        &larr; Précédent
+                    </button>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 font-mono">
+                        Page {currentPage} sur {pagination.lastPage}
+                    </span>
+                    <button 
+                        onClick={() => setCurrentPage(p => Math.min(pagination.lastPage, p + 1))}
+                        disabled={currentPage === pagination.lastPage || loading}
+                        className="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded disabled:opacity-50 transition-colors"
+                    >
+                        Suivant &rarr;
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

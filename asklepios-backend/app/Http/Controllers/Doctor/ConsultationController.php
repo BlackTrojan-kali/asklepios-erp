@@ -117,12 +117,12 @@ class ConsultationController extends Controller
         ]);
 
         // Empêcher de faire 2 consultations sur la même visite
-        if (Consultation::where('patient_visit_id', $validated['patient_visit_id'])->exists()) {
+/*        if (Consultation::where('patient_visit_id', $validated['patient_visit_id'])->exists()) {
             return response()->json([
                 'message' => 'Une consultation a déjà été enregistrée pour cette visite.'
             ], 422);
         }
-
+*/
         try {
             // 2. Transaction DB pour garantir l'intégrité
             $consultation = DB::transaction(function () use ($validated, $user) {

@@ -47,6 +47,7 @@ class InvoiceController extends Controller
     )]
     #[OA\Parameter(name: "center_id", in: "query", required: false, description: "Filtrer par centre (Cliniq/Succursale)", schema: new OA\Schema(type: "integer"))]
     #[OA\Parameter(name: "patient_id", in: "query", required: false, description: "Filtrer par patient spécifique", schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "patient_code", in: "query", required: false, description: "Filtrer par code patient (ex: H1-0001)", schema: new OA\Schema(type: "string"))]
     #[OA\Parameter(name: "status", in: "query", required: false, description: "Filtrer par statut (UNPAID, PAID)", schema: new OA\Schema(type: "string"))]
     #[OA\Response(response: 200, description: "Liste récupérée avec succès")]
     public function index(Request $request)
@@ -84,11 +85,20 @@ class InvoiceController extends Controller
             $query->where('status', $request->status);
         }
 
+        // 👉 NOUVEAU : Filtre par code patient (Recherche via la relation "patient")
+        if ($request->filled('patient_code')) {
+            $query->whereHas('patient', function($q) use ($request) {
+                // On utilise LIKE pour permettre une recherche partielle (ex: taper juste les chiffres)
+                $q->where('patient_code', 'like', '%' . $request->patient_code . '%');
+            });
+        }
+
         $query->orderBy('created_at', 'desc');
 
         $perPage = $request->query('per_page', 15);
         return response()->json($query->paginate($perPage), 200);
     }
+
     #[OA\Get(
         path: "/api/shared/invoices/{id}",
         summary: "Prévisualiser les détails d'une facture",
@@ -209,7 +219,7 @@ class InvoiceController extends Controller
             return response()->json(['message' => $e->getMessage()], 422);
         }
     }
-    // 👉 LA MÉTHODE MANQUANTE POUR ANNULER LA FACTURE 
+
     #[OA\Delete(
         path: "/api/shared/invoices/{id}",
         summary: "Annuler une facture proforma non payée",

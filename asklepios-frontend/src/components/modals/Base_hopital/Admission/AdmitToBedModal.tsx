@@ -14,6 +14,7 @@ interface AdmitToBedModalProps {
     availableBeds: BedDto[];
     patientVisitId?: number;
     profileDoctorId?: number;
+    AutoRefreshPage: () => void;
 }
 
 export const AdmitToBedModal: React.FC<AdmitToBedModalProps> = ({
@@ -23,7 +24,8 @@ export const AdmitToBedModal: React.FC<AdmitToBedModalProps> = ({
     patientName,
     availableBeds,
     patientVisitId,
-    profileDoctorId
+    profileDoctorId,
+    AutoRefreshPage,
 }) => {
     const { createAdmission, actionLoading } = useAdmissionStore();
     const { getPatients, patients, loading: patientsLoading } = usePatientStore();
@@ -75,7 +77,9 @@ export const AdmitToBedModal: React.FC<AdmitToBedModalProps> = ({
             expected_discharge_date: expectedDischarge || null,
         });
 
-        if (success) onClose();
+        if (success){ 
+            AutoRefreshPage()
+            onClose();}
     };
 
     return (
