@@ -13,6 +13,9 @@ class Hospital extends Model
     public function centers(){
         return $this->hasMany(Center::class);
     }
+    public function laboratories(){
+        return $this->hasMany(\App\Models\Laboratory\Laboratory::class);
+    }
     public function pharmacies(){
         return $this->hasMany(PharmacyBranch::class);
     }

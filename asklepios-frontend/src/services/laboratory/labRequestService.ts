@@ -8,6 +8,20 @@ export const getLabRequests = async (status?: string): Promise<LabRequestDto[]> 
     return response.data;
 };
 
+export interface CreateLabRequestDto {
+    patient_id: number;
+    test_ids: number[];
+    priority?: 'ROUTINE' | 'URGENT';
+    external_prescriber_name?: string;
+    profile_doctor_id?: number;
+    patient_visit_id?: number;
+}
+
+export const createLabRequest = async (data: CreateLabRequestDto): Promise<{ message: string, lab_request: LabRequestDto, invoice: any }> => {
+    const response = await api.post('/laboratory/requests', data);
+    return response.data;
+};
+
 export const getLabRequestById = async (id: number): Promise<LabRequestDto> => {
     const response = await api.get(`/laboratory/requests/${id}`);    
     return response.data;

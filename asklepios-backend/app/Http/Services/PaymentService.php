@@ -72,9 +72,19 @@ class PaymentService
         // Si la somme payée est supérieure ou égale au total de la facture
         if ($totalPaid >= $invoice->total_amount) {
             $invoice->update(['status' => 'PAID']);
+
+            // Marquer aussi la requête laboratoire comme PAID
+            \App\Models\Laboratory\LabRequest::where('invoice_id', $invoice->id)
+                ->where('status', 'PENDING_PAYMENT')
+                ->update(['status' => 'PAID']);
         } else {
             // S'il manque de l'argent (paiement partiel ou suppression d'un paiement)
             $invoice->update(['status' => 'UNPAID']);
+            
+            // Si on repasse en UNPAID, on pourrait vouloir repasser la LabRequest en PENDING_PAYMENT
+            \App\Models\Laboratory\LabRequest::where('invoice_id', $invoice->id)
+                ->where('status', 'PAID')
+                ->update(['status' => 'PENDING_PAYMENT']);
         }
     }
 }

@@ -14,6 +14,7 @@ class InvoiceLine extends Model
         'invoice_id',
         'consultation_id',
         'admission_id',
+        'lab_request_id',
         // 'performed_medical_act_id', <-- Je te conseille fortement de l'ajouter à ta migration
         // 'description',              <-- Idem
         // 'quantity',                 <-- Idem
@@ -42,5 +43,13 @@ class InvoiceLine extends Model
     public function admission(): BelongsTo
     {
         return $this->belongsTo(Admission::class);
+    }
+
+    /**
+     * Si la ligne facture un examen de laboratoire.
+     */
+    public function labRequest(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Laboratory\LabRequest::class);
     }
 }

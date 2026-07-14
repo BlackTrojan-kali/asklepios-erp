@@ -130,6 +130,20 @@
                 </tr>
             @endforeach
 
+            {{-- 4. EXAMENS DE LABORATOIRE --}}
+            @if(isset($invoice->labRequests))
+                @foreach($invoice->labRequests as $labReq)
+                    @foreach($labReq->lines as $line)
+                        @if($line->test)
+                        <tr>
+                            <td>Examen : {{ $line->test->name }}</td>
+                            <td class="text-right font-mono">{{ number_format($line->test->price, 0, ',', ' ') }}</td>
+                        </tr>
+                        @endif
+                    @endforeach
+                @endforeach
+            @endif
+
         </tbody>
     </table>
 

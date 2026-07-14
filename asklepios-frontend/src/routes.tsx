@@ -35,7 +35,7 @@ import MedicalActExplorer from "./Pages/Admin/Base_hospital/MedicalActExplorer";
 import Receptionists from "./Pages/Admin/Base_hospital/receptionist/Receptionist";
 import Doctors from "./Pages/Admin/Base_hospital/doctor/Doctors";
 import Pharmaciens from "./Pages/Admin/Pharmacies/Pharmaciens";
-import LabTechnicians from "./Pages/Admin/Base_hospital/laboratory/LabTechnicians";
+import LabPersonnel from "./Pages/Admin/laboratory/LabPersonnel";
 
 // ============================================================================
 // IMPORTS : ADMIN & PHARMACIE (Stock, Ventes, Logistique)
@@ -114,6 +114,13 @@ import LabDashboard from "./Pages/Laboratory/LabDashboard";
 */
 import LabArchives from "./Pages/Laboratory/Execution/LabArchives";
 
+// Import Admin Laboratoire
+import LaboratoriesAdmin from "./Pages/Admin/laboratory/LaboratoriesAdmin";
+
+// Import Comptoir Laboratoire
+import LabPatients from "./Pages/Laboratory/Patients/LabPatients";
+import LabInvoices from "./Pages/Laboratory/Billing/LabInvoices";
+
 // ============================================================================
 // CONFIGURATION DES ROUTES
 // ============================================================================
@@ -139,11 +146,9 @@ const routes = createBrowserRouter([
       </AuthMiddleware>
     ),
     children: [
-<<<<<<< HEAD
       // 👉 NOUVELLE ROUTE GLOBALE (Accessible à tous les connectés)
       { path: "search", element: <SearchResults /> },
-=======
->>>>>>> origin/dev-brice
+
       // ====================================================
       // A. ESPACE SUPER ADMIN
       // ====================================================
@@ -177,9 +182,10 @@ const routes = createBrowserRouter([
           { path: "receptionists", element: <Receptionists /> },
           { path: "doctors", element: <Doctors /> },
           { path: "pharmaciens", element: <Pharmaciens /> },
-          { path: "lab-technicians", element: <LabTechnicians /> },
+          { path: "lab-personnel", element: <LabPersonnel /> },
 
           // -- Structure de l'Hôpital --
+          { path: "laboratories", element: <LaboratoriesAdmin /> },
           { path: "centers", element: <Centers /> },
           { path: "departments", element: <Departments /> },
           {
@@ -358,6 +364,20 @@ const routes = createBrowserRouter([
         ),
         children: [
           // { path: "dashboard", element: <LabDashboard /> },
+
+          // -- Gestion du Labo (Lab Manager) --
+          { 
+            path: "personnel", 
+            element: (
+              <CheckRole roles={["admin", "laboratory"]}>
+                <LabPersonnel />
+              </CheckRole>
+            ) 
+          },
+
+          // -- Comptoir Labo --
+          { path: "patients", element: <LabPatients /> },
+          { path: "invoices", element: <LabInvoices /> },
 
           // -- Configuration (Admin / Chef de Labo) --
           { path: "catalogue/categories", element: <LabCategories /> },

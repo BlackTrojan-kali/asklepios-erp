@@ -2,10 +2,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { labCategoryService } from "../../services/laboratory/labCategoryService";
 import type { LabCategoryPayload } from "../../types/types";
 
-export const useLabCategories = () => {
+export const useLabCategories = (params?: { hospital_id?: number | string }) => {
   return useQuery({
-    queryKey: ["labCategories"],
-    queryFn: () => labCategoryService.getLabCategories(),
+    queryKey: ["labCategories", params],
+    queryFn: () => labCategoryService.getLabCategories(params),
   });
 };
 

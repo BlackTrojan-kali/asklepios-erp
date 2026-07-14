@@ -15,7 +15,7 @@ class CheckLicence
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      * @param  string $licenceName Le nom de la licence requise (ex: 'pharmacy')
      */
-    public function handle(Request $request, Closure $next, string $licenceName): Response
+    public function handle(Request $request, Closure $next, ...$licenceNames): Response
     {
         $user = $request->user();
 
@@ -52,10 +52,22 @@ class CheckLicence
             return response()->json(['message' => 'Accès refusé : Aucun abonnement actif trouvé pour cet établissement.'], 403);
         }
 
-        // 4. L'abonnement est actif, on vérifie s'il contient la licence demandée
-        if (!$subscription->licences->contains('name', $licenceName)) {
+        // 4. L'abonnement est actif, on vérifie s'il contient au moins une des licences demandées
+        $hasLicence = false;
+        foreach ($licenceNames as $name) {
+            $subNames = explode(',', $name);
+            foreach ($subNames as $subName) {
+                if ($subscription->licences->contains('name', trim($subName))) {
+                    $hasLicence = true;
+                    break 2;
+                }
+            }
+        }
+
+        if (!$hasLicence) {
+            $namesStr = implode(" ou ", $licenceNames);
             return response()->json([
-                'message' => "Accès restreint : Votre établissement n'a pas souscrit à la licence '{$licenceName}'."
+                'message' => "Accès restreint : Votre établissement n'a pas souscrit à la licence '{$namesStr}'."
             ], 403);
         }
 
@@ -71,7 +83,8 @@ class CheckLicence
         return $user->profile_admin->hospital_id 
             ?? $user->profile_pharm->hospital_id 
             ?? $user->profile_doctor->hospital_id 
-            ?? $user->profile_lab->hospital_id 
+            ?? $user->profile_lab?->hospital_id 
+          //  ?? $user->profile_lab?->laboratory->hospital_id 
             ?? $user->profile_reception->hospital_id 
             ?? null;
     }

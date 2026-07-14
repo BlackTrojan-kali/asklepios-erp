@@ -1,6 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getLabRequests, getLabRequestById, markAsSampled, saveLabResults, validateLabResults, downloadLabResultsPdf } from '../../services/laboratory/labRequestService';
+import { getLabRequests, getLabRequestById, markAsSampled, saveLabResults, validateLabResults, downloadLabResultsPdf, createLabRequest, type CreateLabRequestDto } from '../../services/laboratory/labRequestService';
 import type { LabResultDto } from '../../types/types';
+
+export const useCreateLabRequest = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (data: CreateLabRequestDto) => createLabRequest(data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['labRequests'] });
+        }
+    });
+};
 
 export const useLabRequests = (status?: string) => {
     return useQuery({

@@ -233,15 +233,35 @@ export interface PharmacienPayload {
 // ==========================================
 // DTOs POUR LE LABORATOIRE
 // ==========================================
+export interface LaboratoryDto {
+    id: number;
+    hospital_id: number;
+    center_id: number | null;
+    country_id: number | null;
+    name: string;
+    address: string | null;
+    hospital?: any;
+    center?: any;
+    country?: any;
+}
+
+export interface LaboratoryPayload {
+    hospital_id: number;
+    center_id?: number | null;
+    country_id?: number | null;
+    name: string;
+    address?: string | null;
+}
+
 export interface LabCategoryDto {
     id: number;
-    center_id: number | null;
+    hospital_id: number | null;
     name: string;
     tests?: LabTestDto[];
 }
 
 export interface LabCategoryPayload {
-    center_id?: number | null;
+    hospital_id?: number | null;
     name: string;
 }
 
@@ -321,11 +341,12 @@ export interface LabRequestLineDto {
 export interface LabRequestDto {
     id: number;
     patient_id: number;
-    center_id: number;
+    laboratory_id: number;
     invoice_id: number | null;
     priority: 'ROUTINE' | 'URGENT';
     status: 'PENDING_PAYMENT' | 'PAID' | 'SAMPLED' | 'PARTIAL' | 'COMPLETED';
     patient?: any; // You can type this with PatientDto if available
+    invoice?: any;
     lines?: LabRequestLineDto[];
     samples?: LabSampleDto[];
     profileDoctor?: any;

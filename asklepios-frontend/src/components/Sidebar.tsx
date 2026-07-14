@@ -45,6 +45,13 @@ const Sidebar = () => {
         }
       }
 
+      // 2.b. EXCLUSION DE LICENCE (Si le menu est interdit quand une certaine licence est présente)
+      if (item.excludedLicence && userRole !== "super_admin") {
+        if (activeLicences.includes(item.excludedLicence)) {
+          return false; // On cache le menu
+        }
+      }
+
       // 3. S'il s'agit du rôle pharmacie ET que le menu cible une position spécifique
       if (
         userRole === "pharmacy" &&
@@ -52,6 +59,27 @@ const Sidebar = () => {
         item.positions.length > 0
       ) {
         return item.positions.includes(userPosition);
+      }
+
+      // 4. S'il s'agit du rôle laboratory ET que le menu cible un labRole spécifique
+      if (
+        userRole === "laboratory" &&
+        item.labRoles &&
+        item.labRoles.length > 0
+      ) {
+        // Le profil de laboratoire stocke les rôles dans un tableau JSON `lab_roles`
+        let userLabRoles: string[] = [];
+        const rawRoles = (profile as any)?.profile_lab?.lab_roles;
+        if (rawRoles) {
+          try {
+            userLabRoles = typeof rawRoles === 'string' ? JSON.parse(rawRoles) : rawRoles;
+          } catch (e) {
+            console.error("Erreur parsing lab_roles", e);
+          }
+        }
+        
+        const hasLabRole = item.labRoles.some((role) => userLabRoles.includes(role));
+        if (!hasLabRole) return false;
       }
 
       // Pour les autres rôles (admin, super_admin) ayant passé les vérifications précédentes

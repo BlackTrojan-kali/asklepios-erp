@@ -1,8 +1,8 @@
 import api from "../../api/api";
 import type { LabCategoryDto, LabCategoryPayload } from "../../types/types";
 
-const getLabCategories = async (): Promise<LabCategoryDto[]> => {
-  const response = await api.get<LabCategoryDto[]>("/laboratory/categories");
+const getLabCategories = async (params?: { hospital_id?: number | string }): Promise<LabCategoryDto[]> => {
+  const response = await api.get<LabCategoryDto[]>("/laboratory/categories", { params });
   return response.data;
 };
 

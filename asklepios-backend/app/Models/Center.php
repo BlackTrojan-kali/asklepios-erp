@@ -22,4 +22,8 @@ class Center extends Model
     {
         return $this->hasMany(Department::class);
     }
+    
+    public function laboratories(){
+        return $this->hasMany(\App\Models\Laboratory\Laboratory::class);
+    }
 }
