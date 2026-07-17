@@ -82,6 +82,8 @@ export interface PrescriptionLinePayload {
 
 export interface ExamRequestLinePayload {
     exam_name: string;
+    send_to_internal_lab?: boolean;
+    lab_test_id?: number;
 }
 
 export interface PerformedMedicalActPayload {

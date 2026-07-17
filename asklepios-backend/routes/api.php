@@ -30,6 +30,7 @@ use App\Http\Controllers\Admin\RoomCategoryController;
 use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Admin\VehiculeController;
 use App\Http\Controllers\Doctor\ConsultationController;
+use App\Http\Controllers\Doctor\PdfController as DoctorPdfController;
 use App\Http\Controllers\Doctor\EquipmentController;
 use App\Http\Controllers\Doctor\MedicalActCatalogController;
 use App\Http\Controllers\Doctor\MedicalBackgroundController;
@@ -336,6 +337,8 @@ Route::middleware('auth:sanctum')->group(function () {
             // Consultations
             Route::get('consultations', [ConsultationController::class, 'index']);
             Route::post('consultations', [ConsultationController::class, 'store']);
+            Route::get('/consultations/{id}/prescription-pdf', [DoctorPdfController::class, 'downloadPrescriptionPdf']);
+            Route::get('/consultations/{id}/exam-request-pdf', [DoctorPdfController::class, 'downloadExamRequestPdf']);
             Route::get('consultations/{id}', [ConsultationController::class, 'show']);
             Route::put('consultations/{id}', [ConsultationController::class, 'update']);
             Route::delete('consultations/{id}', [ConsultationController::class, 'destroy']);
