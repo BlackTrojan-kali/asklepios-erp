@@ -12,6 +12,7 @@ use App\Models\Hospital\PerformedMedicalAct;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
 use Exception;
+use Illuminate\Support\Facades\Auth;
 
 #[OA\Tag(name: "Facturation", description: "Génération, historique et impression des factures")]
 class InvoiceController extends Controller
@@ -30,12 +31,18 @@ class InvoiceController extends Controller
      */
     private function getHospitalId()
     {
-        $user = auth()->user();
+        $user = Auth::user();
+    
         if ($user->profile_admin) return $user->profile_admin->hospital_id;
         if ($user->profile_reception) return $user->profile_reception->hospital_id;
         if ($user->profile_doctor) return $user->profile_doctor->hospital_id;
-        
         abort(403, "Profil non autorisé à accéder aux ressources financières.");
+    }
+    private function getCenterId()
+    {
+        $user= Auth::user();
+        if($user->profile_doctor) return $user->profile_doctor->center_id;
+        if($user->profile_reception) return $user->profile_reception->center_id;
     }
 
    #[OA\Get(
@@ -110,6 +117,8 @@ class InvoiceController extends Controller
     public function show($id)
     {
         $hospitalId = $this->getHospitalId();
+        $centerId = $this->getCenterId();
+    
 
         // Récupération de la facture avec chargement complet de toutes ses composantes
         $invoice = Invoice::whereHas('patient', function($q) use ($hospitalId) {
@@ -153,27 +162,34 @@ class InvoiceController extends Controller
         return $this->invoicePdfService->generateInvoicePdf($invoice->id, $action);
     }
 
-    #[OA\Get(
-        path: "/api/shared/visits/{visitId}/unbilled-preview",
-        summary: "Prévisualiser les éléments non facturés d'une visite",
+#[OA\Get(
+        path: "/api/shared/patients/{patientId}/unbilled-preview",
+        summary: "Prévisualiser les éléments non facturés d'un patient",
         security: [["sanctum" => []]],
         tags: ["Facturation"]
     )]
-    #[OA\Get(path: "/api/shared/patients/{patientId}/unbilled-preview")]
-    
-    #[OA\Response(response: 200, description: "element récupérée avec succès")]
+    #[OA\Response(response: 200, description: "Eléments récupérés avec succès")]
     public function previewUnbilledForPatient($patientId)
     {
-        // Consultations non facturées de TOUTES les visites du patient
-        $consultationsCount = Consultation::whereHas('patientVisit', function($q) use ($patientId) {
-            $q->where('patient_id', $patientId);
+        // 1. Consultations non facturées (Visites externes OU Hospitalisations)
+        $consultationsCount = Consultation::where(function($query) use ($patientId) {
+            $query->whereHas('patientVisit', function($subQ) use ($patientId) {
+                $subQ->where('patient_id', $patientId);
+            })->orWhereHas('admission', function($subQ) use ($patientId) {
+                $subQ->where('patient_id', $patientId);
+            });
         })->where('is_billed', false)->count();
-
-        // Actes non facturés
-        $actsTotal = PerformedMedicalAct::whereHas('visit', function($q) use ($patientId) {
-            $q->where('patient_id', $patientId);
+        
+        // 2. Actes médicaux non facturés (Visites externes OU Hospitalisations)
+        $actsTotal = PerformedMedicalAct::where(function($query) use ($patientId) {
+            $query->whereHas('patientVisit', function($subQ) use ($patientId) {
+                $subQ->where('patient_id', $patientId);
+            })->orWhereHas('admission', function($subQ) use ($patientId) {
+                $subQ->where('patient_id', $patientId);
+            });
         })->where('is_billed', false)->sum('applied_price');
 
+        // 3. Admissions (frais de séjour / chambre) non facturées
         $admissions = Admission::with('bed.facilityRoom.category')
             ->where('patient_id', $patientId)
             ->where('is_billed', false)
@@ -181,18 +197,19 @@ class InvoiceController extends Controller
         
         $admissionsTotal = 0;
         foreach ($admissions as $admission) {
-            $room = $admission->bed->facilityRoom;
-            // 👉 CORRECTION ICI : price_per_night au lieu de base_price
+            $room = $admission->bed->facilityRoom ?? null;
+            // On récupère le prix par nuitée
             $nightPrice = $room && $room->category ? $room->category->price_per_night : 0;
             
             $startDate = \Carbon\Carbon::parse($admission->admission_date);
             $endDate = $admission->actual_discharge_date ? \Carbon\Carbon::parse($admission->actual_discharge_date) : now();
             
-            // Calcul du nombre de nuits (Minimum 1)
+            // Calcul du nombre de nuits (Minimum 1 nuit facturée)
             $nights = max(1, $startDate->diffInDays($endDate));
             
             $admissionsTotal += ($nightPrice * $nights);
         }
+
         return response()->json([
             'unbilled_consultations_count' => $consultationsCount,
             'unbilled_acts_total'          => $actsTotal,
@@ -205,12 +222,16 @@ class InvoiceController extends Controller
     
     #[OA\Response(response: 201, description: "element crée avec succès")]
     public function generateForPatient(Request $request, $patientId)
+    
     {
+        
         $request->validate(['consultation_price' => 'nullable|numeric|min:0']);
         $price = $request->input('consultation_price', 0);
+        $centerId = $this->getCenterId();
+
 
         try {
-            $invoice = $this->invoiceService->generateInvoiceForPatient($patientId, $price);
+            $invoice = $this->invoiceService->generateInvoiceForPatient($patientId, $price,$centerId);
             return response()->json([
                 'message' => 'Facture générée avec succès.',
                 'data'    => $invoice

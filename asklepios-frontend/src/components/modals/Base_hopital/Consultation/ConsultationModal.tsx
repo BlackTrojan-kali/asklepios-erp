@@ -30,7 +30,8 @@ import { MedicalBackgroundModal } from './MedicalBackgroundModal';
 interface ConsultationModalProps {
     isOpen: boolean;
     onClose: (hasChanged?: boolean) => void; 
-    visit: PatientVisitDto | null;
+    // 👉 On utilise "any" ici car l'objet peut être un PatientVisitDto (externe) ou un Admission (hospitalisation)
+    visit: PatientVisitDto | any | null; 
     isHospitalization?: boolean;
 }
 
@@ -110,6 +111,7 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
             fetchLocalMedicalBg();
         }
     }, [autoRefreshPage, fetchLocalMedicalBg, isOpen, patientId]);
+    
     // Retour précoce si données manquantes (Doit être après tous les hooks)
     if (!isOpen || !visit || !patient) return null;
 
@@ -128,20 +130,30 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
         );
     };
 
+    // =====================================================================
+    // 👉 SOUMISSION DE LA CONSULTATION (Prise en charge de l'Hospitalisation)
+    // =====================================================================
     const handleSubmitConsultation = async () => {
         if (!chiefComplaint.trim()) {
             toast.error("Le motif de consultation est obligatoire.");
             return;
         }
 
+        // Création du Payload (sans l'ID de visite dans un premier temps)
         const payload: CreateConsultationPayload = {
-            patient_visit_id: visit.id,
             chief_complaint: chiefComplaint,
             clinical_data: { notes: clinicalNotes },
             prescriptions: prescriptions,
             exams: exams,
             medical_acts: performedActs 
         };
+
+        // Assignation dynamique de la clé correcte selon le contexte
+        if (isHospitalization) {
+            payload.admission_id = visit.id; 
+        } else {
+            payload.patient_visit_id = visit.id;
+        }
 
         const success = await createConsultation(payload);
         if (success) {

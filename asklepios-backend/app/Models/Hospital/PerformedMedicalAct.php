@@ -11,13 +11,15 @@ class PerformedMedicalAct extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
+  protected $fillable = [
         'patient_visit_id',
+        'admission_id', // 👉 IL MANQUAIT CECI !
         'medical_act_catalog_id',
         'equipment_id',
         'applied_price',
+        'is_billed',
+        'invoice_id'
     ];
-
     protected $casts = [
         'applied_price' => 'float',
     ];
@@ -38,5 +40,8 @@ class PerformedMedicalAct extends Model
     }
     public function visit(){
         return $this->belongsTo(PatientVisit::class,"patient_visit_id");
+    }
+    public function admission(){
+        return $this->belongsTo(Admission::class);
     }
 }

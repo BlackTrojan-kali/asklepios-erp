@@ -19,6 +19,7 @@ interface Props {
     departmentId: number; // L'ID du département (récupéré depuis la page parent)
     equipmentToEdit?: EquipmentDto | null; // Null = Création, Objet = Modification
     facilityRooms?: { id: number; name: string }[]; // Optionnel : Liste des salles pour l'assignation physique
+    AutoRefreshPage: ()=> void;
 }
 
 const defaultFormState: EquipmentPayload = {
@@ -40,7 +41,8 @@ export const EquipmentModal: React.FC<Props> = ({
     onClose, 
     departmentId, 
     equipmentToEdit,
-    facilityRooms = []
+    facilityRooms = [],
+    AutoRefreshPage,
 }) => {
     const { createEquipment, updateEquipment, actionLoading } = useEquipmentStore();
     const [formData, setFormData] = useState<EquipmentPayload>(defaultFormState);
@@ -99,6 +101,7 @@ export const EquipmentModal: React.FC<Props> = ({
         }
 
         if (success) {
+            AutoRefreshPage()
             onClose();
         }
     };

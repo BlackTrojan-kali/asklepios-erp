@@ -8,9 +8,10 @@ interface Props {
     isOpen: boolean;
     onClose: () => void;
     roomId: number; // La salle dans laquelle on ajoute le lit
+    AutoRefreshPage:()=>void;
 }
 
-export const CreateBedModal: React.FC<Props> = ({ isOpen, onClose, roomId }) => {
+export const CreateBedModal: React.FC<Props> = ({ isOpen, onClose, roomId,AutoRefreshPage }) => {
     const { createBed, actionLoading } = useBedStore();
 
     const [payload, setPayload] = useState<BedPayload>({
@@ -35,7 +36,9 @@ export const CreateBedModal: React.FC<Props> = ({ isOpen, onClose, roomId }) => 
         if (!isFormValid) return;
 
         const success = await createBed(payload);
-        if (success) onClose();
+        if (success) {
+            AutoRefreshPage()
+            onClose();}
     };
 
     if (!isOpen) return null;

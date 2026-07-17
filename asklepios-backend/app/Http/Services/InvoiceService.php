@@ -14,40 +14,64 @@ use Exception;
 class InvoiceService
 {
     /**
-     * Génère une facture (UNPAID) regroupant tous les actes non facturés d'une visite.
-     * * @param int $visitId L'ID de la visite du patient
+     * Génère une facture (UNPAID) regroupant tous les actes non facturés d'un patient.
+     * 
+     * @param int $patientId L'ID du patient
      * @param float|null $consultationPrice Le prix appliqué à la consultation
      * @return Invoice
      */
-
-    public function generateInvoiceForPatient(int $patientId, ?float $consultationPrice = 0.0)
+    public function generateInvoiceForPatient(int $patientId, ?float $consultationPrice = 0.0, ?int $centerId)
     {
         $patient = Patient::findOrFail($patientId);
 
-        return DB::transaction(function () use ($patient, $consultationPrice) {
+        return DB::transaction(function () use ($patient, $consultationPrice, $centerId) {
             
-            $unbilledConsultations = Consultation::whereHas('patientVisit', fn($q) => $q->where('patient_id', $patient->id))->where('is_billed', false)->get();
-            $unbilledActs = PerformedMedicalAct::whereHas('visit', fn($q) => $q->where('patient_id', $patient->id))->where('is_billed', false)->get();
-            $unbilledAdmissions = Admission::where('patient_id', $patient->id)->where('is_billed', false)->get();
+            // 1. Récupérer les consultations non facturées (liées à une Visite OU à une Admission)
+            $unbilledConsultations = Consultation::where(function($query) use ($patient) {
+                $query->whereHas('patientVisit', function($q) use ($patient) {
+                    $q->where('patient_id', $patient->id);
+                })->orWhereHas('admission', function($q) use ($patient) {
+                    $q->where('patient_id', $patient->id);
+                });
+            })->where('is_billed', false)->get();
+
+            // 2. Récupérer les actes non facturés (liés à une Visite OU à une Admission)
+            $unbilledActs = PerformedMedicalAct::where(function($query) use ($patient) {
+                $query->whereHas('patientVisit', function($q) use ($patient) {
+                    $q->where('patient_id', $patient->id);
+                })->orWhereHas('admission', function($q) use ($patient) {
+                    $q->where('patient_id', $patient->id);
+                });
+            })->where('is_billed', false)->get();
+
+            // 3. Récupérer les séjours (hospitalisations) non facturés
+            $unbilledAdmissions = Admission::with('bed.facilityRoom.category')
+                ->where('patient_id', $patient->id)
+                ->where('is_billed', false)
+                ->get();
+
+            // S'il n'y a absolument rien à facturer
             if ($unbilledConsultations->isEmpty() && $unbilledActs->isEmpty() && $unbilledAdmissions->isEmpty()) {
                 throw new Exception("Ce patient n'a aucun soin en attente de facturation.");
             }
 
             $totalAmount = 0.0;
 
+            // --- A. Calcul des consultations
             foreach ($unbilledConsultations as $consultation) {
                 $consultation->consultation_price = $consultationPrice;
                 $consultation->save();
                 $totalAmount += $consultationPrice;
             }
 
-            foreach ($unbilledActs as $act) { $totalAmount += $act->applied_price; }
+            // --- B. Calcul des actes médicaux
+            foreach ($unbilledActs as $act) { 
+                $totalAmount += $act->applied_price; 
+            }
 
-           // Calculer les frais de séjour (Hospitalisations)
+            // --- C. Calcul des frais de séjour (Hospitalisations)
             foreach ($unbilledAdmissions as $admission) {
-                $room = $admission->bed->facilityRoom;
-                
-                // 👉 CORRECTION ICI : price_per_night au lieu de base_price
+                $room = $admission->bed->facilityRoom ?? null;
                 $nightPrice = $room && $room->category ? $room->category->price_per_night : 0;
                 
                 $startDate = \Carbon\Carbon::parse($admission->admission_date);
@@ -57,16 +81,19 @@ class InvoiceService
                 $totalAmount += ($nightPrice * $nights);
             }
 
-            // On utilise le premier centre trouvé dans les visites du patient (ou celui de l'admin)
+            // On utilise la dernière visite trouvée pour attacher la facture à un centre
             $lastVisit = PatientVisit::where('patient_id', $patient->id)->latest('id')->first();
+            
+            // Création de la facture
             $invoice = Invoice::create([
                 'patient_id'       => $patient->id,
-                'center_id'        => $lastVisit ? $lastVisit->center_id : auth()->user()->profile_admin->hospital_id,
+                'center_id'        => $lastVisit ? $lastVisit->center_id : $centerId,
                 'patient_visit_id' => $lastVisit ? $lastVisit->id : null,
                 'total_amount'     => $totalAmount,
                 'status'           => 'UNPAID',
             ]);
 
+            // Mise à jour de tous les éléments liés (is_billed = true)
             Consultation::whereIn('id', $unbilledConsultations->pluck('id'))->update(['is_billed' => true, 'invoice_id' => $invoice->id]);
             PerformedMedicalAct::whereIn('id', $unbilledActs->pluck('id'))->update(['is_billed' => true, 'invoice_id' => $invoice->id]);
             Admission::whereIn('id', $unbilledAdmissions->pluck('id'))->update(['is_billed' => true, 'invoice_id' => $invoice->id]);
@@ -74,6 +101,10 @@ class InvoiceService
             return $invoice;
         });
     }
+
+    /**
+     * Génère une facture spécifique pour une visite unique donnée.
+     */
     public function generateInvoiceForVisit(int $visitId, ?float $consultationPrice = 0.0)
     {
         $visit = PatientVisit::findOrFail($visitId);
@@ -98,9 +129,8 @@ class InvoiceService
             // 3. Calcul du montant total
             $totalAmount = 0.0;
 
-            // 3.a Calculer les consultations (avec le prix fourni par le docteur)
+            // 3.a Calculer les consultations
             foreach ($unbilledConsultations as $consultation) {
-                // On met à jour le prix de la consultation en base avec celui saisi
                 $consultation->consultation_price = $consultationPrice;
                 $consultation->save();
                 $totalAmount += $consultationPrice;
@@ -111,17 +141,13 @@ class InvoiceService
                 $totalAmount += $act->applied_price;
             }
 
-            // 3.c Calculer les admissions (Ex: Nuits d'hospitalisation)
+            // 3.c Calculer les admissions
             foreach ($unbilledAdmissions as $admission) {
-                // On utilise le prix de base de la catégorie de la chambre
-                $room = $admission->bed->facilityRoom;
-                $nightPrice = $room && $room->category ? $room->category->base_price : 0;
+                $room = $admission->bed->facilityRoom ?? null;
+                $nightPrice = $room && $room->category ? $room->category->price_per_night : 0;
                 
-                // Calcul du nombre de nuits (Minimum 1)
                 $startDate = \Carbon\Carbon::parse($admission->admission_date);
-                $endDate = $admission->actual_discharge_date 
-                            ? \Carbon\Carbon::parse($admission->actual_discharge_date) 
-                            : now();
+                $endDate = $admission->actual_discharge_date ? \Carbon\Carbon::parse($admission->actual_discharge_date) : now();
                             
                 $nights = max(1, $startDate->diffInDays($endDate));
                 $totalAmount += ($nightPrice * $nights);
@@ -137,18 +163,14 @@ class InvoiceService
             ]);
 
             // 5. Attacher l'ID de la facture et marquer tout comme FACTURÉ (is_billed = true)
-            Consultation::whereIn('id', $unbilledConsultations->pluck('id'))
-                        ->update(['is_billed' => true, 'invoice_id' => $invoice->id]);
-
-            PerformedMedicalAct::whereIn('id', $unbilledActs->pluck('id'))
-                               ->update(['is_billed' => true, 'invoice_id' => $invoice->id]);
-
-            Admission::whereIn('id', $unbilledAdmissions->pluck('id'))
-                     ->update(['is_billed' => true, 'invoice_id' => $invoice->id]);
+            Consultation::whereIn('id', $unbilledConsultations->pluck('id'))->update(['is_billed' => true, 'invoice_id' => $invoice->id]);
+            PerformedMedicalAct::whereIn('id', $unbilledActs->pluck('id'))->update(['is_billed' => true, 'invoice_id' => $invoice->id]);
+            Admission::whereIn('id', $unbilledAdmissions->pluck('id'))->update(['is_billed' => true, 'invoice_id' => $invoice->id]);
 
             return $invoice;
         });
     }
+
     /**
      * Annule une facture non payée et libère toutes les ressources associées.
      *

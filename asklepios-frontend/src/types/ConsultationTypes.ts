@@ -64,6 +64,7 @@ export interface ConsultationDto {
     profile_doctor?: ProfileDoctorDto;
     prescriptions?: PrescriptionDto[];
     exam_requests?: ExamRequestDto[];
+    admission?: any; // 👉 Ajouter ceci
     
     created_at: string;
     updated_at: string;
@@ -94,15 +95,12 @@ export interface PerformedMedicalActPayload {
  * Le Payload global envoyé lors de la validation d'une consultation
  */
 export interface CreateConsultationPayload {
-    patient_visit_id: number;
+    patient_visit_id?: number; // 👉 Devient optionnel
+    admission_id?: number;     // 👉 Nouvel attribut optionnel
     chief_complaint: string;
-    clinical_data?: Record<string, any>; // ex: { poids: 75, tension: "12/8" }
+    clinical_data?: Record<string, any>;
     consultation_price?: number;
-    
-    // Tableaux optionnels générés par les services
-    prescriptions?: PrescriptionLinePayload[];
-    exams?: ExamRequestLinePayload[];
-    medical_acts?: PerformedMedicalActPayload[];
+    // ...
 }
 
 export interface UpdateConsultationNotesPayload {
