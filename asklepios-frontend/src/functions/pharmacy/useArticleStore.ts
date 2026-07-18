@@ -31,9 +31,14 @@ const useArticleStore = () => {
         formData.append('category_id', String(payload.category_id));
         formData.append('name', payload.name);
         
+        // 👇 CORRECTION : Ajout du prix de vente par défaut
+        if (payload.default_selling_price !== "" && payload.default_selling_price !== undefined && payload.default_selling_price !== null) {
+            formData.append('default_selling_price', String(payload.default_selling_price));
+        }
+        
         // Conversion des booléens en chaînes de caractères ('true'/'false') pour le FormData
         formData.append('track_batches', payload.track_batches ? 'true' : 'false');
-        formData.append('is_prescripted', payload.is_prescripted ? 'true' : 'false'); // <-- LIGNE AJOUTÉE ICI
+        formData.append('is_prescripted', payload.is_prescripted ? 'true' : 'false');
         
         if (payload.barcode) {
             formData.append('barcode', payload.barcode);
@@ -126,7 +131,7 @@ const useArticleStore = () => {
             setActionLoading(true);
             const formData = createFormData(payload, true);
             
-            // ⚠️ Attention : On utilise POST ici à cause du multipart/form-data
+            // 👇 CORRECTION : La requête a été dé-commentée
             await api.post(`/admin/articles/${id}`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });

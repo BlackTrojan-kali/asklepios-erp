@@ -42,6 +42,7 @@ export const UpdateArticleModal: React.FC<Props> = ({ isOpen, onClose, article, 
 
     const handleSubmit = async () => {
         if (!article || !payload.name || payload.category_id === '') return;
+       
         const success = await updateArticle(article.id, payload);
         if (success) {
             AutoRefreshPage();
