@@ -148,9 +148,6 @@ const routes = createBrowserRouter([
     children: [
       // 👉 NOUVELLE ROUTE GLOBALE (Accessible à tous les connectés)
       { path: "search", element: <SearchResults /> },
-
-      // ====================================================
-      // A. ESPACE SUPER ADMIN
       // ====================================================
       {
         element: (

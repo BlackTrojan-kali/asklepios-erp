@@ -46,10 +46,11 @@ import { AddMedicalActModal } from "./AddMedicalActModal";
 import { MedicalBackgroundModal } from "./MedicalBackgroundModal";
 
 interface ConsultationModalProps {
-  isOpen: boolean;
-  onClose: (hasChanged?: boolean) => void;
-  visit: PatientVisitDto | null;
-  isHospitalization?: boolean;
+    isOpen: boolean;
+    onClose: (hasChanged?: boolean) => void; 
+    // 👉 On utilise "any" ici car l'objet peut être un PatientVisitDto (externe) ou un Admission (hospitalisation)
+    visit: PatientVisitDto | any | null; 
+    isHospitalization?: boolean;
 }
 
 export const ConsultationModal: React.FC<ConsultationModalProps> = ({
@@ -140,6 +141,84 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
   }, [
     isOpen,
     visit,
+    isHospitalization = false
+}) => {
+    const { profile } = useAuth();
+    const departmentId = profile?.profile_doctor?.department_id || 0;
+
+    // Déclaration sécurisée au top niveau pour éviter les erreurs de Hooks
+    const patient = visit?.patient;
+    const patientId = patient?.id;
+
+    // --- STORES ---
+    const { createConsultation, actionLoading: isConsultingLoading } = useConsultationStore();
+    const { downloadMedicalRecord } = useMedicalBgStore();
+    
+    // Chargement des catalogues
+    const { getAllArticles, allArticles } = useArticleStore();
+    const { getSharedMedicalActs, sharedMedicalActs } = useMedicalActStore();
+    const { getSharedEquipment, sharedEquipment } = useEquipmentStore();
+
+    // --- ÉTATS DU FORMULAIRE ---
+    const [chiefComplaint, setChiefComplaint] = useState('');
+    const [clinicalNotes, setClinicalNotes] = useState(''); 
+    
+    const [prescriptions, setPrescriptions] = useState<PrescriptionLinePayload[]>([]);
+    const [exams, setExams] = useState<{exam_name: string}[]>([]);
+    const [performedActs, setPerformedActs] = useState<PerformedMedicalActPayload[]>([]);
+
+    // État local du dossier médical
+    const [localMedicalBg, setLocalMedicalBg] = useState<any>(null);
+
+    // --- ÉTATS DES MODALES ENFANTS ---
+    const [isAddMedModalOpen, setIsAddMedModalOpen] = useState(false);
+    const [isAddExamModalOpen, setIsAddExamModalOpen] = useState(false);
+    const [isAddActModalOpen, setIsAddActModalOpen] = useState(false);
+    const [isMedicalBgModalOpen, setIsMedicalBgModalOpen] = useState(false);
+    
+    const [autoRefreshPage, setAutoRefreshPage] = useState<boolean>(false);
+
+    // Fonction de rafraîchissement sécurisée via useCallback
+    const fetchLocalMedicalBg = useCallback(async () => {
+        if (!patientId) return;
+        try {
+            const response = await api.get(`/shared/patients/${patientId}/medical-background`);
+            setLocalMedicalBg(response.data.data || response.data);
+        } catch (error) {
+            console.error("Impossible de rafraîchir le dossier médical", error);
+        }
+    }, [patientId]);
+
+    // --- INITIALISATION ---
+    useEffect(() => {
+        if (isOpen && visit && patient) {
+            setChiefComplaint('');
+            setClinicalNotes('');
+            setPrescriptions([]);
+            setExams([]);
+            setPerformedActs([]);
+            setLocalMedicalBg(patient.medical_background || null);
+
+            getAllArticles();
+            if (departmentId) {
+                getSharedMedicalActs(departmentId);
+                getSharedEquipment(departmentId);
+            }
+        }
+    }, [isOpen, visit, patient, departmentId, getAllArticles, getSharedMedicalActs, getSharedEquipment]);
+
+    // Écoute du trigger d'AutoRefresh
+    useEffect(() => {
+        if (isOpen && patientId) {
+            fetchLocalMedicalBg();
+        }
+    }, [autoRefreshPage, fetchLocalMedicalBg, isOpen, patientId]);
+    
+    // Retour précoce si données manquantes (Doit être après tous les hooks)
+    if (!isOpen || !visit || !patient) return null;
+
+    const handleAutoRefreshPage = () => {
+        setAutoRefreshPage(!autoRefreshPage);
     patient,
     departmentId,
     getAllArticles,
@@ -256,6 +335,36 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
           </div>
         </div>
 
+    // =====================================================================
+    // 👉 SOUMISSION DE LA CONSULTATION (Prise en charge de l'Hospitalisation)
+    // =====================================================================
+    const handleSubmitConsultation = async () => {
+        if (!chiefComplaint.trim()) {
+            toast.error("Le motif de consultation est obligatoire.");
+            return;
+        }
+
+        // Création du Payload (sans l'ID de visite dans un premier temps)
+        const payload: CreateConsultationPayload = {
+            chief_complaint: chiefComplaint,
+            clinical_data: { notes: clinicalNotes },
+            prescriptions: prescriptions,
+            exams: exams,
+            medical_acts: performedActs 
+        };
+
+        // Assignation dynamique de la clé correcte selon le contexte
+        if (isHospitalization) {
+            payload.admission_id = visit.id; 
+        } else {
+            payload.patient_visit_id = visit.id;
+        }
+
+        const success = await createConsultation(payload);
+        if (success) {
+            onClose(true);
+        }
+    };
         {/* --- CORPS DE LA MODALE --- */}
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
           {/* COLONNE GAUCHE : DOSSIER PATIENT COMPLET */}

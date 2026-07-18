@@ -52,4 +52,10 @@ class Admission extends Model
     {
         return $this->belongsTo(Bed::class);
     }
+    public function consultations(){
+        return $this->hasMany(Consultation::class);
+    }
+    public function performedMedicalActs(){
+        return $this->hasMany(PerformedMedicalAct::class);
+    }
 }

@@ -14,7 +14,7 @@ use Illuminate\Validation\Rule;
 #[OA\Tag(name: "Gestion des Rendez-vous", description: "Planification, admission et suivi des rendez-vous des patients")]
 class AppointmentController extends Controller
 {
-    protected PatientAdmissionService $admissionService;
+protected PatientAdmissionService $admissionService;
 
     public function __construct(PatientAdmissionService $admissionService)
     {
@@ -61,6 +61,15 @@ class AppointmentController extends Controller
         if ($request->filled('profile_doctor_id')) {
             $query->where('profile_doctor_id', $request->profile_doctor_id);
         }
+        
+        // 👉 NOUVEAU : Filtre par code patient (Recherche via la relation "patient")
+        if ($request->filled('patient_code')) {
+            $query->whereHas('patient', function($q) use ($request) {
+                // On utilise LIKE pour permettre une recherche partielle (ex: taper juste les chiffres)
+                $q->where('patient_code', 'like', '%' . $request->patient_code . '%');
+            });
+        }
+
         // Pour une recherche sur une date précise (Calendrier)
         if ($request->filled('date')) {
             $query->whereDate('scheduled_datetime', $request->date);
@@ -91,6 +100,7 @@ class AppointmentController extends Controller
     #[OA\Parameter(name: "profile_doctor_id", in: "query", required: false, description: "Filtrer par médecin spécifique", schema: new OA\Schema(type: "integer"))]
     #[OA\Parameter(name: "center_id", in: "query", required: false, description: "Filtrer par centre (Réservé aux Administrateurs)", schema: new OA\Schema(type: "integer"))]
     #[OA\Parameter(name: "patient_id", in: "query", required: false, description: "Filtrer par patient spécifique", schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "patient_code", in: "query", required: false, description: "Filtrer par code patient (ex: H1-0001)", schema: new OA\Schema(type: "string"))] // 👉 NOUVEAU
     #[OA\Response(response: 200, description: "Liste des rendez-vous récupérée avec succès")]
     public function index(Request $request)
     {
@@ -101,7 +111,6 @@ class AppointmentController extends Controller
 
         return response()->json($query->paginate($request->query('per_page', 15)), 200);
     }
-
     #[OA\Get(
         path: "/api/appointments/export-history-pdf",
         operationId: "exportAppointmentsHistoryPdf",

@@ -6076,9 +6076,9 @@
                 "operationId": "283562eb2998a4f4d979c7f1cbceffcc",
                 "parameters": [
                     {
-                        "name": "hospital_id",
+                        "name": "center_id",
                         "in": "query",
-                        "description": "Filtrer par hôpital",
+                        "description": "Filtrer par centre",
                         "required": false,
                         "schema": {
                             "type": "integer"
@@ -6111,7 +6111,7 @@
                                     "name"
                                 ],
                                 "properties": {
-                                    "hospital_id": {
+                                    "center_id": {
                                         "type": "integer",
                                         "nullable": true
                                     },
@@ -6479,75 +6479,6 @@
                 "responses": {
                     "200": {
                         "description": "Liste des requêtes récupérée"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "post": {
-                "tags": [
-                    "Requêtes Laboratoire"
-                ],
-                "summary": "Créer une demande d'examen",
-                "description": "Créer une nouvelle requête de laboratoire avec facturation.",
-                "operationId": "9126fd50c1342e18cbbb839cb46f8d30",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "patient_id",
-                                    "test_ids"
-                                ],
-                                "properties": {
-                                    "patient_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "test_ids": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer"
-                                        },
-                                        "example": [
-                                            1,
-                                            2
-                                        ]
-                                    },
-                                    "external_prescriber_name": {
-                                        "type": "string",
-                                        "example": "Dr. Dupont",
-                                        "nullable": true
-                                    },
-                                    "profile_doctor_id": {
-                                        "type": "integer",
-                                        "nullable": true
-                                    },
-                                    "patient_visit_id": {
-                                        "type": "integer",
-                                        "nullable": true
-                                    },
-                                    "priority": {
-                                        "type": "string",
-                                        "default": "ROUTINE",
-                                        "enum": [
-                                            "ROUTINE",
-                                            "URGENT"
-                                        ]
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Requête et facture créées avec succès"
                     }
                 },
                 "security": [
@@ -6954,140 +6885,6 @@
                 "responses": {
                     "200": {
                         "description": "Examen supprimé"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/laboratories": {
-            "get": {
-                "tags": [
-                    "Laboratoires"
-                ],
-                "summary": "Lister les laboratoires",
-                "operationId": "f8ee78d280793d36997808078ed41d0e",
-                "parameters": [
-                    {
-                        "name": "hospital_id",
-                        "in": "query",
-                        "description": "Filtrer par hôpital (Tenant)",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Liste des laboratoires"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "post": {
-                "tags": [
-                    "Laboratoires"
-                ],
-                "summary": "Créer un laboratoire",
-                "operationId": "485471948f7694f4c00a1282677a14a8",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "name",
-                                    "hospital_id"
-                                ],
-                                "properties": {
-                                    "hospital_id": {
-                                        "type": "integer"
-                                    },
-                                    "center_id": {
-                                        "type": "integer",
-                                        "nullable": true
-                                    },
-                                    "country_id": {
-                                        "type": "integer",
-                                        "nullable": true
-                                    },
-                                    "name": {
-                                        "type": "string"
-                                    },
-                                    "address": {
-                                        "type": "string",
-                                        "nullable": true
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Laboratoire créé"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/laboratories/{id}": {
-            "get": {
-                "tags": [
-                    "Laboratoires"
-                ],
-                "summary": "Voir un laboratoire",
-                "operationId": "641928de560ed7eb6923a38d4fe01e06",
-                "responses": {
-                    "200": {
-                        "description": "Détails du laboratoire"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "put": {
-                "tags": [
-                    "Laboratoires"
-                ],
-                "summary": "Modifier un laboratoire",
-                "operationId": "637924f0f454be67828994ec3bf739ff",
-                "responses": {
-                    "200": {
-                        "description": "Laboratoire mis à jour"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "delete": {
-                "tags": [
-                    "Laboratoires"
-                ],
-                "summary": "Supprimer un laboratoire",
-                "operationId": "8720446f73e5a228098b1a85bcfa08cf",
-                "responses": {
-                    "200": {
-                        "description": "Laboratoire supprimé"
                     }
                 },
                 "security": [
@@ -10645,10 +10442,6 @@
         {
             "name": "Examens Laboratoire",
             "description": "Gestion du catalogue des examens de laboratoire"
-        },
-        {
-            "name": "Laboratoires",
-            "description": "Gestion des laboratoires (Entité)"
         },
         {
             "name": "Notifications",

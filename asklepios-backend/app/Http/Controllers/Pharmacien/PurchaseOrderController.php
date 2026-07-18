@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Pharmacien;
 
 use App\Http\Controllers\Controller;
-use App\Models\Pharmacy\PurchaseOrder;
 use App\Models\Pharmacy\PurchaseOrderLine;
 use App\Models\Pharmacy\Batch;
 use App\Http\Services\StockMovementService;
+use App\Models\Pharmacy\PurchaseOrder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -52,7 +52,6 @@ class PurchaseOrderController extends Controller
     {
         $context = $this->getContext();
         $query = PurchaseOrder::with(['provider', 'destinationPharmacy', 'user', 'lines.article']);
-
         // Filtrage par rôle
         if ($context['role'] === 'admin') {
             $query->where('hospital_id', $context['hospital_id']);
@@ -63,22 +62,22 @@ class PurchaseOrderController extends Controller
         } else {
             // Le pharmacien ne voit que sa succursale
             $query->where('destination_pharmacy_id', $context['branch_id']);
-        }
+            
+            }
 
         // Filtres globaux (Statut, Fournisseur)
         if ($request->filled('status')) {
-            $query->where('status', $request->query('status'));
+            $query->where('status', $request->input('status'));
         }
         if ($request->filled('provider_id')) {
-            $query->where('provider_id', $request->query('provider_id'));
+            $query->where('provider_id', $request->input('provider_id'));
         }
-        
         // 🚨 CORRECTION DU FILTRE DE PÉRIODE 🚨
         if ($request->filled('start_date')) {
-            $query->where('created_at', '>=', $request->query('start_date') . ' 00:00:00');
+            $query->where('created_at', '>=', $request->input('start_date') . ' 00:00:00');
         }
         if ($request->filled('end_date')) {
-            $query->where('created_at', '<=', $request->query('end_date') . ' 23:59:59');
+            $query->where('created_at', '<=', $request->input('end_date') . ' 23:59:59');
         }
 
         return $query->orderBy('created_at', 'desc');
@@ -161,9 +160,9 @@ class PurchaseOrderController extends Controller
     #[OA\Put(path: "/api/purchase-orders/{id}", summary: "Modifier une commande en attente", security: [["bearerAuth" => []]], tags: ["Commandes Fournisseurs"])]
     #[OA\Response(response: 200, description: "Commande mise à jour")]
     public function update(Request $request, $id)
-    {
+    {   
         $order = $this->getBaseQuery($request)->where('id', $id)->firstOrFail();
-
+    
         if ($order->status !== 'PENDING') {
             return response()->json(['message' => 'Impossible de modifier une commande déjà traitée ou annulée.'], 400);
         }

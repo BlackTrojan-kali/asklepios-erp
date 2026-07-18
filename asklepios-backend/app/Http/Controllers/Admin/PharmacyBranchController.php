@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Pharmacy\PharmacyBranch;
+use App\Models\User;
+use App\Notifications\NewPharmacyNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
 use OpenApi\Attributes as OA;
 
@@ -156,7 +159,12 @@ class PharmacyBranchController extends Controller
         $validatedData['hospital_id'] = $hospitalId;
 
         $branch = PharmacyBranch::create($validatedData);
-
+        $users = User::whereHas("role",function($q){
+            $q->where("name","super_admin");
+        })->get();
+        if($users->isNotEmpty()){
+            Notification::send($users,new NewPharmacyNotification($branch));
+        }
         return response()->json([
             'message' => 'Succursale de pharmacie créée avec succès',
             'data' => $branch->load(['center', 'country'])

@@ -26,32 +26,47 @@ class ConsultationController extends Controller
         $this->examService = $examService;
     }
 
-    #[OA\Get(
+#[OA\Get(
         path: "/api/doctor/consultations",
         summary: "Lister les consultations du médecin",
-        description: "Récupère l'historique des consultations effectuées par le médecin connecté.",
+        description: "Récupère l'historique des consultations effectuées par le médecin connecté (inclut les visites classiques et les hospitalisations).",
         security: [["sanctum" => []]],
         tags: ["Consultations Médicales"]
     )]
+    #[OA\Parameter(name: "date", in: "query", required: false, description: "Filtrer par date (ex: 2026-07-17)", schema: new OA\Schema(type: "string", format: "date"))]
+    #[OA\Parameter(name: "patient_id", in: "query", required: false, description: "Filtrer par patient", schema: new OA\Schema(type: "integer"))]
     #[OA\Response(response: 200, description: "Liste récupérée avec succès")]
-   public function index(Request $request)
+    public function index(Request $request)
     {
         $user = auth()->user();
         if (!$user->profile_doctor) {
             return response()->json(['message' => 'Profil médecin introuvable.'], 403);
         }
 
-        $query = Consultation::with(['patientVisit.patient'])
+        // 👉 MISE À JOUR : On "Eager Load" le patient depuis les deux flux possibles
+        $query = Consultation::with([
+                'patientVisit.patient', 
+                'admission.patient'
+            ])
             ->where('profile_doctor_id', $user->profile_doctor->id);
 
         if ($request->filled('date')) {
             $query->whereDate('created_at', $request->date);
         }
 
-        // 👇 NOUVEAU : On filtre par patient si l'ID est fourni par le front-end
+        // 👉 MISE À JOUR : On filtre par patient si l'ID est fourni par le front-end
         if ($request->filled('patient_id')) {
-            $query->whereHas('patientVisit', function($q) use ($request) {
-                $q->where('patient_id', $request->patient_id);
+            $patientId = $request->patient_id;
+            
+            // On utilise un groupe logique (where) pour faire un "OU" entre les deux relations
+            // afin de ne pas casser les autres filtres de la requête principale.
+            $query->where(function($q) use ($patientId) {
+                $q->whereHas('patientVisit', function($subQ) use ($patientId) {
+                    $subQ->where('patient_id', $patientId);
+                })
+                ->orWhereHas('admission', function($subQ) use ($patientId) {
+                    $subQ->where('patient_id', $patientId);
+                });
             });
         }
 
@@ -83,6 +98,7 @@ class ConsultationController extends Controller
             ]
         )
     )]
+    
     #[OA\Response(response: 201, description: "Consultation finalisée avec succès")]
     #[OA\Response(response: 422, description: "Erreur de validation ou visite déjà traitée")]
     public function store(Request $request)
@@ -92,9 +108,12 @@ class ConsultationController extends Controller
             return response()->json(['message' => 'Accès refusé : Profil médecin introuvable.'], 403);
         }
 
-        // 1. Validation stricte
+        // 1. Validation stricte et flexible (Visite OU Admission)
         $validated = $request->validate([
-            'patient_visit_id'   => 'required|integer|exists:patient_visits,id',
+            // L'un des deux est obligatoire
+            'patient_visit_id'   => 'required_without:admission_id|nullable|integer|exists:patient_visits,id',
+            'admission_id'       => 'required_without:patient_visit_id|nullable|integer|exists:admissions,id',
+            
             'chief_complaint'    => 'required|string',
             'clinical_data'      => 'nullable|array',
             'consultation_price' => 'nullable|numeric|min:0',
@@ -112,30 +131,24 @@ class ConsultationController extends Controller
             'exams.*.lab_test_id'            => 'nullable|integer|exists:lab_tests,id',
 
             // Validation des actes médicaux réalisés
-            'medical_acts'                          => 'nullable|array',
-            'medical_acts.*.medical_act_catalog_id' => 'required_with:medical_acts|integer|exists:medical_act_catalogs,id',
-            'medical_acts.*.equipment_id'           => 'nullable|integer|exists:equipments,id', 
-            'medical_acts.*.applied_price'          => 'required_with:medical_acts|numeric|min:0',
+            'medical_acts'                            => 'nullable|array',
+            'medical_acts.*.medical_act_catalog_id'   => 'required_with:medical_acts|integer|exists:medical_act_catalogs,id',
+            'medical_acts.*.equipment_id'             => 'nullable|integer|exists:equipments,id', 
+            'medical_acts.*.applied_price'            => 'required_with:medical_acts|numeric|min:0',
         ]);
-
-        // Empêcher de faire 2 consultations sur la même visite
-        if (Consultation::where('patient_visit_id', $validated['patient_visit_id'])->exists()) {
-            return response()->json([
-                'message' => 'Une consultation a déjà été enregistrée pour cette visite.'
-            ], 422);
-        }
 
         try {
             // 2. Transaction DB pour garantir l'intégrité
             $consultation = DB::transaction(function () use ($validated, $user) {
                 
-                // A. Création de la consultation
+                // A. Création de la consultation (liée à la visite OU à l'admission)
                 $consult = Consultation::create([
-                    'patient_visit_id'   => $validated['patient_visit_id'],
+                    'patient_visit_id'   => $validated['patient_visit_id'] ?? null,
+                    'admission_id'       => $validated['admission_id'] ?? null, // 👉 AJOUT
                     'profile_doctor_id'  => $user->profile_doctor->id,
                     'chief_complaint'    => $validated['chief_complaint'],
                     'clinical_data'      => $validated['clinical_data'] ?? [],
-                    'consultation_price' => $validated['consultation_price'] ?? 0.0, // Par défaut 0 si non envoyé par le front
+                    'consultation_price' => $validated['consultation_price'] ?? 0.0,
                 ]);
 
                 // B. Traitement des Ordonnances
@@ -167,7 +180,8 @@ class ConsultationController extends Controller
                 if (!empty($validated['medical_acts'])) {
                     foreach ($validated['medical_acts'] as $act) {
                         PerformedMedicalAct::create([
-                            'patient_visit_id'       => $validated['patient_visit_id'],
+                            'patient_visit_id'       => $validated['patient_visit_id'] ?? null,
+                            'admission_id'           => $validated['admission_id'] ?? null, // 👉 AJOUT
                             'medical_act_catalog_id' => $act['medical_act_catalog_id'],
                             'equipment_id'           => $act['equipment_id'] ?? null,
                             'applied_price'          => $act['applied_price'],
@@ -176,15 +190,16 @@ class ConsultationController extends Controller
                 }
 
                 // =================================================================
-                // E. CRITIQUE : Clôturer la visite du patient (Flux Front-End)
+                // E. Clôturer la visite du patient UNIQUEMENT si c'est une visite classique
                 // =================================================================
-                PatientVisit::where('id', $validated['patient_visit_id'])
-                            ->update(['status' => 'COMPLETE']);
+                if (!empty($validated['patient_visit_id'])) {
+                    \App\Models\Hospital\PatientVisit::where('id', $validated['patient_visit_id'])
+                                ->update(['status' => 'COMPLETE']);
+                }
 
                 return $consult->load([
                     'prescriptions.prescriptionLines', 
-                    'examRequests.examRequestLines',
-                    'patientVisit.performedMedicalActs'
+                    'examRequests.examRequestLines'
                 ]);
             });
 
@@ -202,7 +217,7 @@ class ConsultationController extends Controller
         }
     }
 
-    #[OA\Get(
+ #[OA\Get(
         path: "/api/doctor/consultations/{id}",
         summary: "Voir les détails d'une consultation",
         security: [["sanctum" => []]],
@@ -213,10 +228,13 @@ class ConsultationController extends Controller
     {
         $user = auth()->user();
         
+        // 👉 MISE À JOUR : Eager loading des deux flux (Visite OU Admission)
         $consultation = Consultation::with([
             'patientVisit.patient',
             'patientVisit.performedMedicalActs.medicalActCatalog', 
-            'prescriptions.prescriptionLines',
+            'admission.patient',
+            'admission.performedMedicalActs.medicalActCatalog', 
+            'prescriptions.prescriptionLines.article', // Bonus : Chargement de l'article pour le nom du médicament
             'examRequests.examRequestLines'
         ])
         ->where('profile_doctor_id', $user->profile_doctor->id ?? 0)
@@ -252,10 +270,11 @@ class ConsultationController extends Controller
             'data' => $consultation
         ]);
     }
+
     #[OA\Delete(
         path: "/api/doctor/consultations/{id}",
         summary: "Supprimer une consultation",
-        description: "Annule et supprime une consultation si elle n'est pas encore facturée, et replace le patient en salle de consultation.",
+        description: "Annule et supprime une consultation si elle n'est pas encore facturée.",
         security: [["sanctum" => []]],
         tags: ["Consultations Médicales"]
     )]
@@ -278,24 +297,35 @@ class ConsultationController extends Controller
 
         try {
             DB::transaction(function () use ($consultation) {
-                $visitId = $consultation->patient_visit_id;
+                
+                // 👉 MISE À JOUR : Logique conditionnelle selon le contexte (Visite ou Admission)
+                if ($consultation->patient_visit_id) {
+                    
+                    $visitId = $consultation->patient_visit_id;
 
-                // 2. Supprimer la consultation 
-                // (La DB gère la suppression en cascade des Prescriptions et ExamRequests via le onDelete('cascade'))
+                    // Supprimer les actes médicaux liés à cette visite spécifique qui ne sont pas facturés
+                    \App\Models\Hospital\PerformedMedicalAct::where('patient_visit_id', $visitId)
+                        ->where('is_billed', false)
+                        ->delete();
+
+                    // Restaurer le statut de la visite pour permettre au médecin de recommencer
+                    \App\Models\Hospital\PatientVisit::where('id', $visitId)
+                        ->update(['status' => 'IN_CONSULTATION']);
+                        
+                } elseif ($consultation->admission_id) {
+                    // ⚠️ ATTENTION : Dans le cadre d'une hospitalisation, on ne supprime PAS tous les actes
+                    // non facturés de l'admission. En effet, le patient peut être là depuis 3 jours,
+                    // et des actes infirmiers légitimes pourraient être en attente de facturation.
+                    // On se contente donc de supprimer uniquement la consultation (Ordonnances et Examens 
+                    // seront supprimés en cascade grâce au onDelete('cascade') de la DB).
+                }
+
+                // Supprimer la consultation elle-même
                 $consultation->delete();
-
-                // 3. Supprimer les actes médicaux liés à cette visite qui ne sont pas encore facturés
-                PerformedMedicalAct::where('patient_visit_id', $visitId)
-                    ->where('is_billed', false)
-                    ->delete();
-
-                // 4. Restaurer le statut de la visite pour permettre au médecin de recommencer
-                PatientVisit::where('id', $visitId)
-                    ->update(['status' => 'IN_CONSULTATION']);
             });
 
             return response()->json([
-                'message' => 'Consultation annulée avec succès. Le patient est de retour en examen clinique.'
+                'message' => 'Consultation annulée avec succès.'
             ], 200);
 
         } catch (Exception $e) {
@@ -304,5 +334,5 @@ class ConsultationController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
-    }
+    }                                         
 }

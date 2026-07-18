@@ -37,6 +37,10 @@ class RoleSeeder extends Seeder
                 'name' => 'laboratory', 
                 'permissions' => json_encode(['view_test_requests', 'input_test_results', 'manage_lab_inventory'])
             ],
+            [
+                'name' => 'ceo', 
+                'permissions' => json_encode(['view_test_stats', 'manage_licence'])
+            ],
         ];
 
         foreach ($roles as $role) {

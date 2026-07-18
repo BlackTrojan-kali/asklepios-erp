@@ -43,4 +43,4 @@ class PatientAdmittedNotification extends Notification
             'message'      => "Le patient {$patientName} a été admis dans le lit {$bed->bed_number} (Chambre : {$roomName}).",
         ];
     }
-}
+} 

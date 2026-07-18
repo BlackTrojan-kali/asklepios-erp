@@ -8,13 +8,15 @@ interface UpdateBedStatusModalProps {
     onClose: () => void;
     bed: BedDto | null;
     roomId: number;
+    AutoRefreshPage: ()=> void;
 }
 
 export const UpdateBedStatusModal: React.FC<UpdateBedStatusModalProps> = ({
     isOpen,
     onClose,
     bed,
-    roomId
+    roomId,
+    AutoRefreshPage
 }) => {
     const { updateBed, actionLoading } = useBedStore();
 
@@ -29,6 +31,7 @@ export const UpdateBedStatusModal: React.FC<UpdateBedStatusModalProps> = ({
         });
 
         if (success) {
+            AutoRefreshPage();
             onClose();
             // L'actualisation de la liste des lits est gérée automatiquement par updateBed() dans le store !
         }
