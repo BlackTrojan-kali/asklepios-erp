@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { 
-    Calendar, Clock, Building2, Filter, FileDown, 
+    Calendar, Clock, Building2, Filter, FileDown, Search,
     RefreshCw, XCircle, CheckCircle, ChevronLeft, ChevronRight, Loader2, Printer
 } from 'lucide-react';
 import Swal from 'sweetalert2';
@@ -16,8 +16,6 @@ import type { AppointmentDto } from '../../types/AppointmentTypes';
 
 // --- MODALES ---
 import { ExportAppointmentsModal } from '../../components/modals/Base_hopital/Appointment/ExportAppointmentsModal';
-// Placeholder pour ta modale d'admission si elle existe :
-// import { AdmitPatientModal } from '../../../components/modals/Base_hopital/Appointment/AdmitPatientModal';
 
 interface SelectOption {
     value: string;
@@ -32,7 +30,7 @@ const Appointment_history = () => {
         appointments, loading, pagination, 
         getAppointments, cancelAppointment, exportPdf, actionLoading 
     } = useAppointmentStore();
-
+ 
     // Rôles
     const isAdmin = ['admin', 'super_admin'].includes(profile?.role || '');
     const isDoctor = profile?.role === 'doctor';
@@ -43,6 +41,7 @@ const Appointment_history = () => {
     const [startDate, setStartDate] = useState<string>(''); // Période: Du
     const [endDate, setEndDate] = useState<string>('');     // Période: Au
     const [selectedCenter, setSelectedCenter] = useState<SelectOption | null>(null);
+    const [searchQuery, setSearchQuery] = useState(''); // 👉 NOUVEAU : Recherche par code
 
     // --- ÉTATS DES MODALES ---
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -59,22 +58,50 @@ const Appointment_history = () => {
     }, [isAdmin, getCenters]);
 
     // Fonction centralisée pour récupérer les données avec les filtres actuels
-    const fetchAppointments = useCallback(() => {
+    const fetchAppointments = () => {
         getAppointments(page, {
             status: statusFilter || undefined,
             start_date: startDate || undefined,
             end_date: endDate || undefined,
-            center_id: selectedCenter?.value ? Number(selectedCenter.value) : undefined
+            center_id: selectedCenter?.value ? Number(selectedCenter.value) : undefined,
+            patient_code: searchQuery || undefined // 👉 NOUVEAU
         });
-    }, [page, statusFilter, startDate, endDate, selectedCenter, getAppointments]);
+    };
 
-    // Déclencheur automatique quand un filtre ou la page change
+    // Déclencheur automatique quand un filtre standard (autre que la recherche) ou la page change
     useEffect(() => {
         fetchAppointments();
-    }, [fetchAppointments]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [page, statusFilter, startDate, endDate, selectedCenter]);
 
     const handleRefresh = () => {
         fetchAppointments();
+    };
+
+    // 👉 SOUMISSION DE LA RECHERCHE
+    const handleSearchSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        setPage(1); 
+        getAppointments(1, { 
+            status: statusFilter || undefined,
+            start_date: startDate || undefined,
+            end_date: endDate || undefined,
+            center_id: selectedCenter?.value ? Number(selectedCenter.value) : undefined,
+            patient_code: searchQuery || undefined 
+        });
+    };
+
+    // 👉 RÉINITIALISATION DE LA RECHERCHE
+    const handleResetSearch = () => {
+        setSearchQuery('');
+        setPage(1);
+        getAppointments(1, { 
+            status: statusFilter || undefined,
+            start_date: startDate || undefined,
+            end_date: endDate || undefined,
+            center_id: selectedCenter?.value ? Number(selectedCenter.value) : undefined,
+            patient_code: undefined 
+        });
     };
 
     // Gérer le changement de filtre (et remettre la page à 1)
@@ -167,6 +194,41 @@ const Appointment_history = () => {
                         Exporter Bilan (PDF)
                     </button>
                 </div>
+            </div>
+
+            {/* --- RECHERCHE PAR CODE PATIENT --- */}
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
+                <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row gap-3">
+                    <div className="flex-1 relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Search size={18} className="text-gray-400" />
+                        </div>
+                        <input 
+                            type="text" 
+                            placeholder="Rechercher par Code Patient (ex: H1-0001)..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-10 p-2 min-h-[42px] bg-slate-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:border-[#00a896] text-sm text-slate-800 dark:text-white transition-colors"
+                        />
+                    </div>
+                    <div className="flex gap-2">
+                        <button 
+                            type="submit" 
+                            className="bg-slate-800 hover:bg-slate-900 dark:bg-gray-700 dark:hover:bg-gray-600 text-white px-6 py-2 min-h-[42px] rounded-lg font-medium transition-colors text-sm shadow-sm"
+                        >
+                            Rechercher
+                        </button>
+                        {searchQuery && (
+                            <button 
+                                type="button"
+                                onClick={handleResetSearch}
+                                className="px-4 py-2 min-h-[42px] bg-gray-200 hover:bg-gray-300 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200 dark:border dark:border-gray-600 rounded-lg font-medium transition-colors text-sm"
+                            >
+                                Effacer
+                            </button>
+                        )}
+                    </div>
+                </form>
             </div>
 
             {/* --- BARRE DE FILTRES DYNAMIQUES --- */}
@@ -389,8 +451,6 @@ const Appointment_history = () => {
                 isOpen={isExportModalOpen}
                 onClose={() => setIsExportModalOpen(false)}
             />
-
-            {/* <AdmitPatientModal isOpen={isAdmitModalOpen} onClose={() => { setIsAdmitModalOpen(false); fetchAppointments(); }} appointment={selectedAppointment} /> */}
 
         </div>
     );

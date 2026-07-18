@@ -11,6 +11,7 @@ interface Props {
     currentDepartmentId: number | null; // Département actuellement exploré
     departments: DepartmentDto[];
     roomCategories: RoomCategoryDto[];
+    AutoRefreshPage: () => void;
 }
 
 export const CreateFacilityRoomModal: React.FC<Props> = ({ 
@@ -18,7 +19,8 @@ export const CreateFacilityRoomModal: React.FC<Props> = ({
     onClose, 
     currentDepartmentId, 
     departments, 
-    roomCategories 
+    roomCategories,
+    AutoRefreshPage 
 }) => {
     const { createFacilityRoom, actionLoading } = useFacilityRoomStore();
 
@@ -47,7 +49,9 @@ export const CreateFacilityRoomModal: React.FC<Props> = ({
         if (!isFormValid) return;
 
         const success = await createFacilityRoom(payload);
-        if (success) onClose();
+        if (success){ 
+            AutoRefreshPage()
+            onClose();}
     };
 
     if (!isOpen) return null;

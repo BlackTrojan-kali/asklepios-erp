@@ -37,6 +37,7 @@ use App\Http\Controllers\Hospital\AdmissionController;
 use App\Http\Controllers\Hospital\FinancialReportController;
 use App\Http\Controllers\Hospital\InvoiceController;
 use App\Http\Controllers\Hospital\PaymentController;
+use App\Http\Controllers\Laboratory\LabRequestController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Pharmacien\InventoryController;
 use App\Http\Controllers\Pharmacien\PurchaseOrderController;
@@ -69,7 +70,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
-    
+    // On garde le préfixe /admin/centers pour ne pas casser tes appels Axios côté frontend.
+        Route::get('admin/centers', [CenterController::class, 'index']);
     // LECTURE SEULE : Pays (Accessible à tous les connectés)
     Route::get('/countries/all', [CountryController::class, 'all']); 
     
@@ -117,8 +119,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware(["licence:base_hospital"])->group(function(){
         
         // 👉 CORRECTION ICI : Rendre la liste des centres accessible à tout utilisateur authentifié.
-        // On garde le préfixe /admin/centers pour ne pas casser tes appels Axios côté frontend.
-        Route::get('admin/centers', [CenterController::class, 'index']);
+        
         Route::get('admin/centers/{center}', [CenterController::class, 'show']);
 
         Route::middleware('role:admin')->prefix('admin')->group(function () {
@@ -143,6 +144,10 @@ Route::middleware('auth:sanctum')->group(function () {
         // ------------------------------------------------------
         // 5.1. ACCÈS ADMINISTRATEUR EXCLUSIF (Configuration)
         // ------------------------------------------------------
+        Route::middleware(["role:admin,pharmacy"])->prefix("admin")->group(function(){
+                
+            Route::apiResource('drivers', DriverController::class);
+        });
         Route::middleware('role:admin')->prefix('admin')->group(function () {
             // Gestion complète (CRUD) des médecins de l'hôpital
             Route::apiResource('doctors', DoctorController::class);
@@ -188,12 +193,12 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::get('/export/excel', [DriverController::class, 'exportExcel']);
                 Route::post('/import', [DriverController::class, 'importExcel']);
             });
-            Route::apiResource('drivers', DriverController::class);
 
             // Supervision des transferts (Lecture)
             Route::get('/stock-transfers', [StockTransferController::class, 'index']);
             Route::get('/stock-transfers/export/pdf', [StockTransferController::class, 'exportPdf']);
-        });
+        }
+        );
 
         // ------------------------------------------------------
         // 5.2. ACCÈS PARTAGÉ (Admin + Pharmacien)

@@ -14,22 +14,27 @@ class MedicalRecordPdfService
         $patient = Patient::with([
             'hospital',
             'medicalBackground',
+            
+            // --- CHARGEMENT DES HOSPITALISATIONS (Admissions) ---
             'admissions' => function($query) { $query->orderBy('admission_date', 'desc'); },
             'admissions.bed.facilityRoom',
             'admissions.doctor.user',
+            // 👉 NOUVEAU : On charge aussi les soins réalisés pendant l'hospitalisation
+            'admissions.consultations.profileDoctor.user',
+            'admissions.consultations.prescriptions.prescriptionLines.article',
+            'admissions.consultations.examRequests.examRequestLines',
+            'admissions.performedMedicalActs.medicalActCatalog',
+            'admissions.performedMedicalActs.equipment',
             
-            // CHARGEMENT DES VISITES
+            // --- CHARGEMENT DES VISITES CLASSIQUES ---
             'patientVisits' => function($query) { $query->orderBy('arrival_time', 'desc'); },
             'patientVisits.center',
             'patientVisits.consultations.profileDoctor.user',
             'patientVisits.consultations.prescriptions.prescriptionLines.article',
             'patientVisits.consultations.examRequests.examRequestLines',
-            
-            // AJOUT DU CHARGEMENT DES ACTES RÉALISÉS PENDANT LA VISITE
             'patientVisits.performedMedicalActs.medicalActCatalog',
-            'patientVisits.performedMedicalActs.equipment' // S'il y a un équipement lié
+            'patientVisits.performedMedicalActs.equipment'
         ])->findOrFail($patientId);
-        // ... Le reste du code des logos (Hospital et Asclépios) reste inchangé ...
         
         // 2. Gestion du Logo de l'Hôpital (En-tête)
         $hospitalLogoBase64 = null;

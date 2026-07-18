@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { 
     Folder, BedDouble, Building2, ChevronRight, 
-    ArrowLeft, Search, Loader2, AlertCircle 
+    ArrowLeft, Search, Loader2, AlertCircle, X, ClipboardCopy, FileText
 } from 'lucide-react';
+
 import { useAuth } from '../../contexts/AuthContext';
 import useFacilityRoomStore from '../../functions/base_hospital/useFacilityRoomStore';
+import useConsultationStore from '../../functions/base_hospital/useConsultationStore';
+
 import type { FacilityRoomDto } from '../../types/FacilityRoomTypes';
 import type { BedDto } from '../../types/AdmissionTypes';
 
@@ -16,7 +19,8 @@ import { DischargePatientModal } from '../../components/modals/Base_hopital/Admi
 import { ConsultationModal } from '../../components/modals/Base_hopital/Consultation/ConsultationModal';
 import { AdmitToBedModal } from '../../components/modals/Base_hopital/Admission/AdmitToBedModal';
 import { MedicalBackgroundModal } from '../../components/modals/Base_hopital/Consultation/MedicalBackgroundModal';
-import { UpdateBedStatusModal } from '../../components/modals/Base_hopital/Bed/UpdateBedStatusModal'; // <-- NOUVEL IMPORT
+import { UpdateBedStatusModal } from '../../components/modals/Base_hopital/Bed/UpdateBedStatusModal';
+import { PastConsultationPreviewModal } from '../../components/modals/Base_hopital/Consultation/PastConsultationPreviewModal';
 
 const DoctorWardManager = () => {
     const { profile } = useAuth();
@@ -25,6 +29,10 @@ const DoctorWardManager = () => {
 
     // --- STORES ---
     const { facilityRooms, getFacilityRooms, loading } = useFacilityRoomStore();
+    const { consultations, loading: historyLoading, getConsultations, pagination: historyPagination } = useConsultationStore();
+
+    // Trigger pour forcer l'auto-refresh des lits
+    const [autoRefreshTrigger, setAutoRefreshTrigger] = useState<number>(0);
 
     // --- ÉTATS DE NAVIGATION ---
     const [selectedRoom, setSelectedRoom] = useState<FacilityRoomDto | null>(null);
@@ -35,14 +43,51 @@ const DoctorWardManager = () => {
     const [admissionToDischarge, setAdmissionToDischarge] = useState<any | null>(null);
     const [admissionToConsult, setAdmissionToConsult] = useState<any | null>(null);
     const [patientToView, setPatientToView] = useState<any | null>(null);
-    const [bedToUpdateStatus, setBedToUpdateStatus] = useState<BedDto | null>(null); // <-- NOUVEL ÉTAT
+    const [bedToUpdateStatus, setBedToUpdateStatus] = useState<BedDto | null>(null);
 
-    // --- CHARGEMENT ---
+    // États pour l'historique des consultations (Split Screen)
+    const [patientForHistory, setPatientForHistory] = useState<any | null>(null);
+    const [previewConsultationId, setPreviewConsultationId] = useState<number | null>(null);
+    const [historyPage, setHistoryPage] = useState(1);
+
+    // ==========================================
+    // LOGIQUE DE CHARGEMENT ET D'AUTO-REFRESH
+    // ==========================================
+    const handleAutoRefreshPage = () => {
+        // En incrémentant ce state, on force tous les useEffect qui en dépendent à se re-déclencher
+        setAutoRefreshTrigger(prev => prev + 1);
+    };
+
+    // 1. Récupération des chambres
     useEffect(() => {
-        if (departmentId && !selectedRoom) {
+        if (departmentId) {
             getFacilityRooms(departmentId, 1, { search: searchTerm, type: 'WARD' }, 50);
         }
-    }, [departmentId, selectedRoom, searchTerm, getFacilityRooms]);
+    }, [departmentId, searchTerm, getFacilityRooms, autoRefreshTrigger]);
+
+    // 2. Cascade de mise à jour de la chambre (Pour que BedExplorer reçoive les nouvelles datas)
+    useEffect(() => {
+        if (selectedRoom) {
+            const updatedRoom = facilityRooms.find(r => r.id === selectedRoom.id);
+            if (updatedRoom && JSON.stringify(updatedRoom) !== JSON.stringify(selectedRoom)) {
+                setSelectedRoom(updatedRoom);
+            }
+        }
+    }, [facilityRooms, selectedRoom]);
+
+    // ==========================================
+    // LOGIQUE DE L'HISTORIQUE DES CONSULTATIONS
+    // ==========================================
+    useEffect(() => {
+        if (patientForHistory) {
+            getConsultations(historyPage, { patient_id: patientForHistory.id });
+        }
+    }, [patientForHistory, historyPage, getConsultations, autoRefreshTrigger]);
+
+    useEffect(() => {
+        setHistoryPage(1); // Retour à la page 1 si on change de patient
+    }, [patientForHistory?.id]);
+
 
     return (
         <div className="h-[calc(100vh-100px)] flex flex-col space-y-4 relative">
@@ -75,7 +120,10 @@ const DoctorWardManager = () => {
                     </div>
                 ) : (
                     <button 
-                        onClick={() => setSelectedRoom(null)}
+                        onClick={() => {
+                            setSelectedRoom(null);
+                            setPatientForHistory(null); // On ferme l'historique en sortant
+                        }}
                         className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg text-sm font-bold transition-colors"
                     >
                         <ArrowLeft size={16} /> Retour aux chambres
@@ -84,12 +132,11 @@ const DoctorWardManager = () => {
             </div>
 
             {/* --- CONTENEUR PRINCIPAL --- */}
-            <div className="flex-1 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden flex flex-col relative">
-                
-                {!selectedRoom ? (
-                    // VUE 1 : EXPLORATEUR DE CHAMBRES
+            {!selectedRoom ? (
+                // VUE 1 : EXPLORATEUR DE CHAMBRES
+                <div className="flex-1 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden flex flex-col relative">
                     <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-                        {loading ? (
+                        {loading && facilityRooms.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-full text-gray-400">
                                 <Loader2 size={40} className="animate-spin text-[#00a896] mb-4" />
                                 <p className="text-sm font-mono tracking-widest uppercase">Chargement des chambres...</p>
@@ -126,37 +173,130 @@ const DoctorWardManager = () => {
                             </div>
                         )}
                     </div>
-                ) : (
-                    // VUE 2 : LITS DE LA CHAMBRE
-                    <div className="flex-1 flex flex-col overflow-hidden">
+                </div>
+            ) : (
+                // VUE 2 : SPLIT SCREEN (Lits à gauche / Historique à droite si sélectionné)
+                <div className="flex-1 flex flex-col lg:flex-row gap-4 overflow-hidden min-h-0">
+                    
+                    {/* Colonne de Gauche : Explorateur des lits */}
+                    <div className={`bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden flex flex-col transition-all duration-300 ${patientForHistory ? 'lg:w-7/12 xl:w-2/3' : 'w-full'}`}>
                          <BedExplorer 
                              room={selectedRoom} 
+                             refreshTrigger={autoRefreshTrigger} // 👉 On passe le trigger pour que BedExplorer se recharge si besoin
                              onAdmitPatient={(bed) => setBedToAdmit(bed)}
                              onDischargePatient={(admission) => setAdmissionToDischarge(admission)}
                              onStartConsultation={(admission) => setAdmissionToConsult(admission)}
                              onViewPatient={(patient) => setPatientToView(patient)}
-                             onUpdateBedStatus={(bed) => setBedToUpdateStatus(bed)} // <--- LE PROP MANQUANT EST LÀ !
+                             onUpdateBedStatus={(bed) => setBedToUpdateStatus(bed)}
+                             onViewHistory={(patient) => setPatientForHistory(patient)} // 👉 Clic pour ouvrir le panneau de droite
                          />
                     </div>
-                )}
-            </div>
+
+                    {/* Colonne de Droite : Historique (Apparaît si un patient est sélectionné) */}
+                    {patientForHistory && (
+                        <div className="w-full lg:w-5/12 xl:w-1/3 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex flex-col overflow-hidden animate-fadeIn">
+                            <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-800 bg-slate-50 dark:bg-gray-900/50 shrink-0">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
+                                        <ClipboardCopy size={20} />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-lg font-bold text-slate-800 dark:text-white font-brand">Historique</h2>
+                                        <p className="text-xs text-gray-500 font-mono">Patient: {patientForHistory.first_name} {patientForHistory.last_name}</p>
+                                    </div>
+                                </div>
+                                <button onClick={() => setPatientForHistory(null)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition-colors">
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto p-5 custom-scrollbar bg-slate-50/50 dark:bg-gray-900/20">
+                                {historyLoading ? (
+                                    <div className="flex flex-col items-center justify-center py-10">
+                                        <Loader2 size={32} className="animate-spin text-[#00a896] mb-2" />
+                                        <p className="text-sm text-gray-500">Chargement de l'historique...</p>
+                                    </div>
+                                ) : consultations.length === 0 ? (
+                                    <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 shadow-sm">
+                                        <FileText size={40} className="text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+                                        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Aucune consultation passée trouvée.</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {consultations.map((consult) => (
+                                            <div 
+                                                key={consult.id}
+                                                onClick={() => setPreviewConsultationId(consult.id)}
+                                                className="p-4 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl shadow-sm cursor-pointer hover:border-[#00a896] dark:hover:border-[#00a896] hover:shadow-md transition-all group"
+                                            >
+                                                <div className="flex justify-between items-center text-xs font-mono border-b border-gray-50 dark:border-gray-700 pb-2 mb-2 text-gray-400 dark:text-gray-500">
+                                                    <span className="font-bold text-slate-700 dark:text-gray-300">Consultation #{consult.id}</span>
+                                                    <span className="flex items-center gap-2">
+                                                        {new Date(consult.created_at).toLocaleDateString('fr-FR')}
+                                                        <ChevronRight size={14} className="group-hover:text-[#00a896] group-hover:translate-x-1 transition-transform" />
+                                                    </span>
+                                                </div>
+                                                <p className="text-sm font-bold text-slate-800 dark:text-gray-200 line-clamp-2">
+                                                    Motif : <span className="font-medium text-gray-600 dark:text-gray-400">{consult.chief_complaint}</span>
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Pagination de l'historique */}
+                                {historyPagination && historyPagination.lastPage > 1 && (
+                                    <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                                        <button 
+                                            onClick={() => setHistoryPage(p => Math.max(1, p - 1))}
+                                            disabled={historyPage === 1 || historyLoading}
+                                            className="px-4 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium shadow-sm"
+                                        >
+                                            &larr; Précédent
+                                        </button>
+                                        <span className="text-xs text-gray-500 dark:text-gray-400 font-medium font-mono">
+                                            Page {historyPage} sur {historyPagination.lastPage}
+                                        </span>
+                                        <button 
+                                            onClick={() => setHistoryPage(p => Math.min(historyPagination.lastPage, p + 1))}
+                                            disabled={historyPage === historyPagination.lastPage || historyLoading}
+                                            className="px-4 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium shadow-sm"
+                                        >
+                                            Suivant &rarr;
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* ========================================================= */}
             {/* ZONES DES MODALES PROTOCOLAIRES                           */}
             {/* ========================================================= */}
 
-            {/* 1. Sortie du patient (Discharge) */}
+            {/* Modale d'aperçu d'une consultation passée */}
+            <PastConsultationPreviewModal
+                isOpen={!!previewConsultationId}
+                onClose={() => setPreviewConsultationId(null)}
+                consultationId={previewConsultationId}
+            />
+
             <DischargePatientModal
                 isOpen={!!admissionToDischarge}
                 onClose={() => setAdmissionToDischarge(null)}
                 admission={admissionToDischarge}
+                AutoRefreshPage={handleAutoRefreshPage}
             />
 
-            {/* 2. Visite de contrôle (Consultation) */}
             {admissionToConsult && (
                 <ConsultationModal 
                     isOpen={!!admissionToConsult}
-                    onClose={() => setAdmissionToConsult(null)}
+                    onClose={() => {
+                        setAdmissionToConsult(null);
+                        handleAutoRefreshPage();
+                    }}
                     isHospitalization={true}
                     visit={{ 
                         ...(admissionToConsult.patientVisit || {}),
@@ -166,7 +306,6 @@ const DoctorWardManager = () => {
                 />
             )}
 
-            {/* 3. Admission directe sur un lit vide */}
             {bedToAdmit && (
                 <AdmitToBedModal
                     isOpen={!!bedToAdmit}
@@ -175,26 +314,27 @@ const DoctorWardManager = () => {
                     patientName="Nouveau Patient" 
                     availableBeds={[bedToAdmit]} 
                     profileDoctorId={profile?.profile_doctor?.id}
+                    AutoRefreshPage={handleAutoRefreshPage}
                 />
             )}
 
-            {/* 4. Consultation du Dossier Médical (Antécédents) */}
             {patientToView && (
                 <MedicalBackgroundModal
                     isOpen={!!patientToView}
                     onClose={() => setPatientToView(null)}
                     patientId={patientToView.id}
                     existingData={patientToView.medical_background}
+                    AutoRefreshPage={handleAutoRefreshPage}
                 />
             )}
 
-            {/* 5. NOUVEAU : Modale pour déverrouiller un lit (Marquer disponible) */}
             {bedToUpdateStatus && selectedRoom && (
                 <UpdateBedStatusModal
                     isOpen={!!bedToUpdateStatus}
                     onClose={() => setBedToUpdateStatus(null)}
                     bed={bedToUpdateStatus}
                     roomId={selectedRoom.id}
+                    AutoRefreshPage={handleAutoRefreshPage}
                 />
             )}
 

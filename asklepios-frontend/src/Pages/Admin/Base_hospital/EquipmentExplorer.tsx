@@ -53,6 +53,7 @@ const EquipmentExplorer = () => {
     // États pour la modale unique de création/édition
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedEquipment, setSelectedEquipment] = useState<EquipmentDto | null>(null);
+    const [autoRefreshPage,setAutoRefreshPage] = useState<boolean>(false);
 
     // --- CHARGEMENT INITIAL ---
     useEffect(() => {
@@ -62,7 +63,7 @@ const EquipmentExplorer = () => {
             fetchEquipment(page);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [departmentId, page]);
+    }, [departmentId, page, autoRefreshPage]);
 
     const fetchEquipment = (targetPage: number = 1) => {
         getEquipment(departmentId, targetPage, {
@@ -70,7 +71,9 @@ const EquipmentExplorer = () => {
             status: selectedStatusFilter
         });
     };
-
+    const handleAutoRefresh = () =>{
+        setAutoRefreshPage(!autoRefreshPage)
+    }
     // --- ACTIONS DE FILTRAGE ---
     const handleRefresh = () => fetchEquipment(page);
 
@@ -305,6 +308,7 @@ const EquipmentExplorer = () => {
                 departmentId={departmentId}
                 equipmentToEdit={selectedEquipment}
                 facilityRooms={sharedFacilityRooms}
+                AutoRefreshPage={handleAutoRefresh}
             />
 
         </div>

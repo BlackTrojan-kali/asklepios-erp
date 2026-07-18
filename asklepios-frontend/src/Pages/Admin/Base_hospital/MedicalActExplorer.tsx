@@ -65,6 +65,7 @@ const MedicalActExplorer = () => {
     // États pour la modale
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedAct, setSelectedAct] = useState<MedicalActDto | null>(null);
+    const [autoRefreshPage,setAutoRefreshPage] = useState<boolean>(false);
 
     // --- CHARGEMENT INITIAL ---
     useEffect(() => {
@@ -72,7 +73,7 @@ const MedicalActExplorer = () => {
             fetchActs(page);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [departmentId, page]);
+    }, [departmentId, page, autoRefreshPage]);
 
     const fetchActs = (targetPage: number = 1) => {
         getMedicalActs(departmentId, targetPage, {
@@ -101,7 +102,9 @@ const MedicalActExplorer = () => {
         setSelectedAct(null);
         setIsModalOpen(true);
     };
-
+    const handleAutoRefresh = () =>{
+        setAutoRefreshPage(!autoRefreshPage)
+    }
     const handleOpenEdit = (e: React.MouseEvent, act: MedicalActDto) => {
         e.stopPropagation();
         if (isReceptionist) return; // Mode lecture seule
@@ -300,6 +303,7 @@ const MedicalActExplorer = () => {
                     departmentId={departmentId}
                     currentHospitalId={currentHospitalId}
                     actToEdit={selectedAct}
+                    AutoRefreshPage={handleAutoRefresh}
                 />
             )}
 

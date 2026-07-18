@@ -55,6 +55,8 @@ const FacilityRoomsExplorer = () => {
     // États pour les modales
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [selectedRoom, setSelectedRoom] = useState<FacilityRoomDto | null>(null);
+    const [autoRefreshPage,setAutoRefreshPage] =useState<boolean>(false);
+
 
     // --- CHARGEMENT INITIAL ---
     useEffect(() => {
@@ -62,14 +64,15 @@ const FacilityRoomsExplorer = () => {
         // Note: l'ID du centre est requis pour filtrer les catégories, on récupère tout par défaut
         getDepartments(); 
         getSharedRoomCategories({}); 
-    }, [getDepartments, getSharedRoomCategories]);
+    }, [getDepartments, getSharedRoomCategories,autoRefreshPage]);
 
+    
     useEffect(() => {
         if (departmentId) {
             fetchRooms(page);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [departmentId, page]);
+    }, [departmentId, page,autoRefreshPage]);
 
     const fetchRooms = (targetPage: number = 1) => {
         getFacilityRooms(departmentId, targetPage, {
@@ -77,6 +80,9 @@ const FacilityRoomsExplorer = () => {
             type: selectedTypeFilter
         });
     };
+    const handleAutoRefresh = ()=>{
+        setAutoRefreshPage(!autoRefreshPage);
+    }
 
     // Actions
     const handleRefresh = () => fetchRooms(page);
@@ -326,6 +332,7 @@ const FacilityRoomsExplorer = () => {
                 currentDepartmentId={departmentId}
                 departments={departments}
                 roomCategories={sharedRoomCategories}
+                AutoRefreshPage={handleAutoRefresh}
             />
 
             <UpdateFacilityRoomModal 
@@ -334,6 +341,7 @@ const FacilityRoomsExplorer = () => {
                 room={selectedRoom}
                 departments={departments}
                 roomCategories={sharedRoomCategories}
+                AutoRefreshPage={handleAutoRefresh}
             />
 
         </div>

@@ -25,9 +25,19 @@ const useAppointmentStore = () => {
     const [actionLoading, setActionLoading] = useState<boolean>(false);
 
     // --- LISTER & FILTRER LES RENDEZ-VOUS (Paginé) ---
-    const getAppointments = useCallback(async (
+   const getAppointments = useCallback(async (
         page: number = 1,
-        filters: { date?: string; start_date?: string; end_date?: string; status?: string; patient_id?: number | string; profile_doctor_id?: number | string; center_id?: number | string } = {},
+        // 👉 AJOUT DE patient_code ICI
+        filters: { 
+            date?: string; 
+            start_date?: string; 
+            end_date?: string; 
+            status?: string; 
+            patient_id?: number | string; 
+            profile_doctor_id?: number | string; 
+            center_id?: number | string;
+            patient_code?: string; 
+        } = {},
         perPage: number = 15
     ) => {
         try {
@@ -51,7 +61,6 @@ const useAppointmentStore = () => {
             setLoading(false);
         }
     }, []);
-
     // --- RÉCUPÉRER LES RENDEZ-VOUS D'UN PATIENT SPÉCIFIQUE (Paginé) ---
     const getPatientAppointments = useCallback(async (
         patientId: number,

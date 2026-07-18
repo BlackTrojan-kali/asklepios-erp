@@ -22,10 +22,16 @@ export const PastConsultationPreviewModal: React.FC<Props> = ({ isOpen, onClose,
 
     if (!isOpen) return null;
 
+    // 👉 RÉCUPÉRATION DYNAMIQUE (Gère le cas Visite Externe OU Hospitalisation)
+    const patient = currentConsultation?.patient_visit?.patient || currentConsultation?.admission?.patient;
+    const medicalActs = currentConsultation?.patient_visit?.performed_medical_acts || currentConsultation?.admission?.performed_medical_acts || [];
+    const prescriptions = currentConsultation?.prescriptions || [];
+    const exams = currentConsultation?.exam_requests || [];
+
     const handleDownloadRecord = () => {
-        if (currentConsultation?.patient_visit?.patient?.id) {
+        if (patient?.id) {
             toast.promise(
-                downloadMedicalRecord(currentConsultation.patient_visit.patient.id, 'download'),
+                downloadMedicalRecord(patient.id, 'download'),
                 { loading: 'Génération...', success: 'Téléchargement démarré !', error: 'Erreur' }
             );
         }
@@ -41,10 +47,10 @@ export const PastConsultationPreviewModal: React.FC<Props> = ({ isOpen, onClose,
                         <FileText size={24} className="text-[#00a896]" />
                         <div>
                             <h2 className="text-xl font-bold font-brand">Détails de la consultation</h2>
-                            {currentConsultation && (
+                            {currentConsultation && patient && (
                                 <p className="text-sm text-blue-200 flex items-center gap-1">
                                     <CalendarDays size={14}/> {new Date(currentConsultation.created_at).toLocaleDateString('fr-FR')} 
-                                    - {currentConsultation.patient_visit?.patient?.first_name} {currentConsultation.patient_visit?.patient?.last_name}
+                                    - {patient.first_name} {patient.last_name}
                                 </p>
                             )}
                         </div>
@@ -65,7 +71,7 @@ export const PastConsultationPreviewModal: React.FC<Props> = ({ isOpen, onClose,
                         <div className="flex justify-center py-20"><Activity className="animate-spin text-[#00a896]" size={40} /></div>
                     ) : (
                         <>
-                            {/* Notes Cliniques */}
+                            {/* 1. Notes Cliniques */}
                             <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 shadow-sm">
                                 <h3 className="font-bold text-[#003366] dark:text-blue-400 mb-3 border-b pb-2">1. Examen Clinique</h3>
                                 <p className="text-sm font-bold text-gray-800 dark:text-gray-200 mb-2">Motif : <span className="font-normal">{currentConsultation.chief_complaint}</span></p>
@@ -74,12 +80,12 @@ export const PastConsultationPreviewModal: React.FC<Props> = ({ isOpen, onClose,
                                 </div>
                             </div>
 
-                            {/* Actes Médicaux */}
+                            {/* 2. Actes Médicaux */}
                             <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 shadow-sm">
                                 <h3 className="font-bold text-[#003366] dark:text-blue-400 mb-3 border-b pb-2">2. Actes Médicaux Réalisés</h3>
-                                {currentConsultation.patient_visit?.performed_medical_acts?.length > 0 ? (
+                                {medicalActs.length > 0 ? (
                                     <ul className="space-y-2">
-                                        {currentConsultation.patient_visit.performed_medical_acts.map((act: any) => (
+                                        {medicalActs.map((act: any) => (
                                             <li key={act.id} className="flex items-center gap-3 text-sm p-2 bg-gray-50 rounded border">
                                                 <Syringe size={16} className="text-indigo-500" />
                                                 <span className="font-bold">{act.medical_act_catalog?.name || "Acte"}</span> 
@@ -90,17 +96,17 @@ export const PastConsultationPreviewModal: React.FC<Props> = ({ isOpen, onClose,
                                 ) : <p className="text-sm text-gray-500 italic">Aucun acte facturable enregistré.</p>}
                             </div>
 
-                            {/* Ordonnance */}
+                            {/* 3. Ordonnance */}
                             <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 shadow-sm">
                                 <h3 className="font-bold text-[#003366] dark:text-blue-400 mb-3 border-b pb-2">3. Ordonnance</h3>
-                                {currentConsultation.prescriptions?.length > 0 ? (
+                                {prescriptions.length > 0 ? (
                                     <ul className="space-y-2">
-                                        {currentConsultation.prescriptions.map((presc: any) => 
+                                        {prescriptions.map((presc: any) => 
                                             presc.prescription_lines?.map((line: any) => (
                                                 <li key={line.id} className="flex items-start gap-3 text-sm p-2 bg-blue-50/50 rounded border">
                                                     <Pill size={16} className="text-blue-500 mt-0.5" />
                                                     <div>
-                                                        <p className="font-bold">{line.custom_medication_name || "Médicament"}</p>
+                                                        <p className="font-bold">{line.custom_medication_name || line.article?.name || "Médicament"}</p>
                                                         <p className="text-gray-600 text-xs">{line.dosage}</p>
                                                     </div>
                                                 </li>
@@ -109,6 +115,29 @@ export const PastConsultationPreviewModal: React.FC<Props> = ({ isOpen, onClose,
                                     </ul>
                                 ) : <p className="text-sm text-gray-500 italic">Aucune prescription.</p>}
                             </div>
+
+                            {/* 4. Examens Demandés (NOUVEAU) */}
+                            <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 shadow-sm">
+                                <h3 className="font-bold text-[#003366] dark:text-blue-400 mb-3 border-b pb-2">4. Examens Demandés</h3>
+                                {exams.length > 0 ? (
+                                    <ul className="space-y-2">
+                                        {exams.map((exam: any) => 
+                                            exam.exam_request_lines?.map((line: any) => (
+                                                <li key={line.id} className="flex items-start gap-3 text-sm p-2 bg-purple-50/50 rounded border border-purple-100">
+                                                    <TestTube size={16} className="text-purple-500 mt-0.5" />
+                                                    <div>
+                                                        <p className="font-bold text-purple-900">{line.exam_name}</p>
+                                                        <p className="text-gray-600 text-xs mt-0.5">
+                                                            {line.result_notes ? `Résultat : ${line.result_notes}` : "En attente de résultat"}
+                                                        </p>
+                                                    </div>
+                                                </li>
+                                            ))
+                                        )}
+                                    </ul>
+                                ) : <p className="text-sm text-gray-500 italic">Aucun examen demandé.</p>}
+                            </div>
+
                         </>
                     )}
                 </div>

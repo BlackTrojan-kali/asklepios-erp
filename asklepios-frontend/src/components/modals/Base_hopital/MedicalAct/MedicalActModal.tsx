@@ -17,6 +17,7 @@ interface Props {
     departmentId: number;      // L'ID du département actuel
     currentHospitalId: number; // L'ID de l'hôpital actuel (requis par l'API)
     actToEdit?: MedicalActDto | null; // Null = Création, Objet = Modification
+    AutoRefreshPage: () => void;
 }
 
 const defaultFormState = {
@@ -29,7 +30,8 @@ export const MedicalActModal: React.FC<Props> = ({
     onClose, 
     departmentId, 
     currentHospitalId,
-    actToEdit 
+    actToEdit,
+    AutoRefreshPage
 }) => {
     const { createMedicalAct, updateMedicalAct, actionLoading } = useMedicalActStore();
     
@@ -77,6 +79,7 @@ export const MedicalActModal: React.FC<Props> = ({
         }
 
         if (success) {
+            AutoRefreshPage()
             onClose();
         }
     };

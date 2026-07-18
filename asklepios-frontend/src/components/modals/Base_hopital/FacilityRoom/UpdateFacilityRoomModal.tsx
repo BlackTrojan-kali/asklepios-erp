@@ -11,6 +11,7 @@ interface Props {
     room: FacilityRoomDto | null;
     departments: DepartmentDto[];
     roomCategories: RoomCategoryDto[];
+    AutoRefreshPage: () => void;
 }
 
 export const UpdateFacilityRoomModal: React.FC<Props> = ({ 
@@ -18,7 +19,8 @@ export const UpdateFacilityRoomModal: React.FC<Props> = ({
     onClose, 
     room, 
     departments, 
-    roomCategories 
+    roomCategories,
+    AutoRefreshPage,
 }) => {
     const { updateFacilityRoom, actionLoading } = useFacilityRoomStore();
 
@@ -46,7 +48,9 @@ export const UpdateFacilityRoomModal: React.FC<Props> = ({
         if (!room || !isFormValid) return;
 
         const success = await updateFacilityRoom(room.id, payload);
-        if (success) onClose();
+        if (success){
+            AutoRefreshPage();
+            onClose();}
     };
 
     if (!isOpen || !room) return null;

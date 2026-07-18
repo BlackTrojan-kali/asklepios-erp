@@ -51,6 +51,7 @@ const BedsExplorer = () => {
     const [page, setPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedStateFilter, setSelectedStateFilter] = useState('');
+    const [autoRefreshPage,setAutoRefreshPage] = useState<boolean>(false);
 
     // États pour les modales
     const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -62,7 +63,7 @@ const BedsExplorer = () => {
             fetchBeds(page);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [roomId, page]);
+    }, [roomId, page,autoRefreshPage]);
 
     const fetchBeds = (targetPage: number = 1) => {
         getBeds(roomId, targetPage, {
@@ -79,7 +80,9 @@ const BedsExplorer = () => {
         setPage(1);
         fetchBeds(1);
     };
-
+    const handleAutoRefresh = ()=>{
+        setAutoRefreshPage(!autoRefreshPage)
+    }
     const handleResetFilters = () => {
         setSearchQuery('');
         setSelectedStateFilter('');
@@ -316,12 +319,14 @@ const BedsExplorer = () => {
                 isOpen={isCreateOpen} 
                 onClose={() => setIsCreateOpen(false)} 
                 roomId={roomId}
+                AutoRefreshPage={handleAutoRefresh}
             />
 
             <UpdateBedModal 
                 isOpen={!!selectedBed} 
                 onClose={() => setSelectedBed(null)} 
                 bed={selectedBed}
+                AutoRefreshPage={handleAutoRefresh}
             />
 
         </div>

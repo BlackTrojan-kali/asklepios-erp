@@ -7,9 +7,10 @@ interface Props {
     isOpen: boolean;
     onClose: () => void;
     bed: BedDto | null;
+    AutoRefreshPage: ()=> void;
 }
 
-export const UpdateBedModal: React.FC<Props> = ({ isOpen, onClose, bed }) => {
+export const UpdateBedModal: React.FC<Props> = ({ isOpen, onClose, bed, AutoRefreshPage }) => {
     const { updateBed, actionLoading } = useBedStore();
 
     const [payload, setPayload] = useState<BedPayload>({
@@ -34,7 +35,9 @@ export const UpdateBedModal: React.FC<Props> = ({ isOpen, onClose, bed }) => {
         if (!bed || !isFormValid) return;
 
         const success = await updateBed(bed.id, payload);
-        if (success) onClose();
+        if (success) {
+            AutoRefreshPage()
+            onClose();}
     };
 
     if (!isOpen || !bed) return null;
