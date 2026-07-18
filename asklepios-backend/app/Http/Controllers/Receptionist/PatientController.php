@@ -37,6 +37,8 @@ class PatientController extends Controller
             return $user->profile_doctor->hospital_id;
         } else if ($user->profile_pharm) {
             return $user->profile_pharm->hospital_id ?? ($user->profile_pharm->branch->hospital_id ?? null);
+        } else if ($user->profile_lab) {
+            return $user->profile_lab->hospital_id ?? null;
         }
         
         abort(403, "Profil non autorisé. Seul le personnel autorisé peut interagir avec les dossiers patients.");

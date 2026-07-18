@@ -175,6 +175,16 @@ const useConsultationStore = () => {
         }
     }, []);
 
+    // --- RÉCUPÉRER LES EXAMENS DU LABORATOIRE ---
+    const getLabTests = useCallback(async () => {
+        try {
+            const res = await api.get('/laboratory/tests');
+            return res.data.data || res.data;
+        } catch (error) {
+            return [];
+        }
+    }, []);
+
     return {
         // États
         consultations,
@@ -190,7 +200,8 @@ const useConsultationStore = () => {
         updateConsultationNotes,
         deleteConsultation, // <--- NOUVELLE MÉTHODE EXPOSÉE ICI
         submitExamResult,
-        getMedicalActs
+        getMedicalActs,
+        getLabTests
     };
 };
 

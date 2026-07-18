@@ -30,6 +30,7 @@ use App\Http\Controllers\Admin\RoomCategoryController;
 use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Admin\VehiculeController;
 use App\Http\Controllers\Doctor\ConsultationController;
+use App\Http\Controllers\Doctor\PdfController as DoctorPdfController;
 use App\Http\Controllers\Doctor\EquipmentController;
 use App\Http\Controllers\Doctor\MedicalActCatalogController;
 use App\Http\Controllers\Doctor\MedicalBackgroundController;
@@ -341,6 +342,8 @@ Route::middleware('auth:sanctum')->group(function () {
             // Consultations
             Route::get('consultations', [ConsultationController::class, 'index']);
             Route::post('consultations', [ConsultationController::class, 'store']);
+            Route::get('/consultations/{id}/prescription-pdf', [DoctorPdfController::class, 'downloadPrescriptionPdf']);
+            Route::get('/consultations/{id}/exam-request-pdf', [DoctorPdfController::class, 'downloadExamRequestPdf']);
             Route::get('consultations/{id}', [ConsultationController::class, 'show']);
             Route::put('consultations/{id}', [ConsultationController::class, 'update']);
             Route::delete('consultations/{id}', [ConsultationController::class, 'destroy']);
@@ -371,10 +374,17 @@ Route::middleware('auth:sanctum')->group(function () {
             });
         });
 
+    }); // Fin Middleware Licence Base_Hospital
+
+    // ---------------------------------------------------------
+    // ACCÈS PARTAGÉ (Base Hospital ou Laboratoire)
+    // ---------------------------------------------------------
+    Route::middleware(['licence:base_hospital,laboratory'])->group(function () {
+
         // ---------------------------------------------------------
-        // ACCÈS PARTAGÉ (Admin, Docteur, Réception)
+        // ACCÈS PARTAGÉ (Admin, Docteur, Réception, Laboratoire)
         // ---------------------------------------------------------
-        Route::middleware(["role:admin,doctor,reception"])->prefix('shared')->group(function () {
+        Route::middleware(["role:admin,doctor,reception,laboratory"])->prefix('shared')->group(function () {
             
             Route::prefix('patients/{patientId}')->group(function () {
                 Route::get('medical-background', [MedicalBackgroundController::class, 'show']);
@@ -448,9 +458,16 @@ Route::middleware('auth:sanctum')->group(function () {
         // ---------------------------------------------------------
         // ACCÈS RÉCEPTIONNISTE
         // ---------------------------------------------------------
-        Route::middleware(["role:admin,reception,doctor,pharmacy"])->prefix('receptionist')->group(function(){
+        Route::middleware(["role:admin,reception,doctor,pharmacy,laboratory"])->prefix('receptionist')->group(function(){
             Route::apiResource('patients', \App\Http\Controllers\Receptionist\PatientController::class);
         });
+
+    }); // Fin Middleware Licence Base_Hospital, Laboratory
+
+    // ---------------------------------------------------------
+    // ACCÈS EXCLUSIF RÉCEPTIONNISTES ET MÉDECINS (Base Hospital)
+    // ---------------------------------------------------------
+    Route::middleware(['licence:base_hospital'])->group(function () {
 
         Route::middleware(['role:reception'])->prefix('reception')->group(function () {
             // Lecture seule : Liste des médecins
@@ -485,8 +502,11 @@ Route::middleware('auth:sanctum')->group(function () {
         
         // --- 0. Administration ---
         Route::middleware(['role:admin'])->prefix('admin')->group(function () {
-            Route::apiResource('lab-technicians', App\Http\Controllers\Admin\LabTechnicianController::class);
+            Route::apiResource('lab-personnel', App\Http\Controllers\Admin\LabPersonnelController::class);
         });
+
+        // Gestion de l'entité Laboratoire
+        Route::apiResource('laboratories', App\Http\Controllers\Laboratory\LaboratoryController::class);
 
         // --- 1. Catalogue ---
         Route::apiResource('laboratory/categories', App\Http\Controllers\Laboratory\LabCategoryController::class);
@@ -495,6 +515,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // --- 2. Exécution (Prélèvements & Résultats) ---
         Route::get('laboratory/requests', [App\Http\Controllers\Laboratory\LabRequestController::class, 'index']);
+        Route::post('laboratory/requests', [App\Http\Controllers\Laboratory\LabRequestController::class, 'store']);
         Route::get('laboratory/requests/{id}', [App\Http\Controllers\Laboratory\LabRequestController::class, 'show']);
         Route::post('laboratory/requests/{id}/sample', [App\Http\Controllers\Laboratory\LabRequestController::class, 'markAsSampled']);
         Route::post('laboratory/requests/{id}/results', [\App\Http\Controllers\Laboratory\LabResultController::class, 'saveResults']);

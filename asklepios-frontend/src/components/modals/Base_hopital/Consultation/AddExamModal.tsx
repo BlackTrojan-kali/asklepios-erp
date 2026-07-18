@@ -6,23 +6,38 @@ interface AddExamModalProps {
     isOpen: boolean;
     onClose: () => void;
     onAdd: (exam: ExamRequestLinePayload) => void;
+    labTests?: any[]; // Les tests de laboratoire disponibles
 }
 
-export const AddExamModal: React.FC<AddExamModalProps> = ({ isOpen, onClose, onAdd }) => {
+export const AddExamModal: React.FC<AddExamModalProps> = ({ isOpen, onClose, onAdd, labTests = [] }) => {
     const [examName, setExamName] = useState('');
+    const [sendToInternalLab, setSendToInternalLab] = useState(false);
+    const [labTestId, setLabTestId] = useState<number | ''>('');
 
     useEffect(() => {
         if (isOpen) {
             setExamName('');
+            setSendToInternalLab(false);
+            setLabTestId('');
         }
     }, [isOpen]);
 
     if (!isOpen) return null;
 
     const handleSubmit = () => {
-        if (!examName.trim()) return;
-
-        onAdd({ exam_name: examName.trim() });
+        if (sendToInternalLab) {
+            if (!labTestId) return;
+            const selectedTest = labTests.find(t => t.id === Number(labTestId));
+            if (!selectedTest) return;
+            onAdd({ 
+                exam_name: selectedTest.name, 
+                send_to_internal_lab: true, 
+                lab_test_id: Number(labTestId) 
+            });
+        } else {
+            if (!examName.trim()) return;
+            onAdd({ exam_name: examName.trim(), send_to_internal_lab: false });
+        }
         onClose();
     };
 
@@ -45,23 +60,58 @@ export const AddExamModal: React.FC<AddExamModalProps> = ({ isOpen, onClose, onA
 
                 {/* BODY */}
                 <div className="p-6 space-y-4">
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5 font-lato">
-                            Nom de l'examen de laboratoire ou imagerie <span className="text-red-500">*</span>
+                    {/* OPTIONS DE LABORATOIRE */}
+                    <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                className="sr-only peer" 
+                                checked={sendToInternalLab} 
+                                onChange={(e) => setSendToInternalLab(e.target.checked)} 
+                            />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#00a896]/30 dark:peer-focus:ring-[#00a896]/30 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-[#00a896]"></div>
                         </label>
-                        <input 
-                            type="text" 
-                            value={examName} 
-                            onChange={(e) => setExamName(e.target.value)}
-                            onKeyDown={(e) => { if(e.key === 'Enter') handleSubmit() }}
-                            placeholder="Ex: Numération Formule Sanguine (NFS), Échographie..."
-                            className="w-full p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#00a896] outline-none dark:text-white"
-                            autoFocus
-                        />
-                        <p className="text-xs text-gray-500 mt-2">
-                            Cette demande sera automatiquement transmise au laboratoire de l'hôpital une fois la consultation validée.
-                        </p>
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Intégrer au laboratoire de l'hôpital</span>
                     </div>
+
+                    {sendToInternalLab ? (
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5 font-lato">
+                                Sélectionner un examen de laboratoire <span className="text-red-500">*</span>
+                            </label>
+                            <select 
+                                value={labTestId}
+                                onChange={(e) => setLabTestId(e.target.value ? Number(e.target.value) : '')}
+                                className="w-full p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#00a896] outline-none dark:text-white"
+                            >
+                                <option value="">-- Choisir un examen --</option>
+                                {labTests.map((test) => (
+                                    <option key={test.id} value={test.id}>{test.name}</option>
+                                ))}
+                            </select>
+                            <p className="text-xs text-gray-500 mt-2">
+                                Cette demande sera automatiquement transmise au laboratoire de l'hôpital une fois la consultation validée.
+                            </p>
+                        </div>
+                    ) : (
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5 font-lato">
+                                Nom de l'examen prescrit <span className="text-red-500">*</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                value={examName} 
+                                onChange={(e) => setExamName(e.target.value)}
+                                onKeyDown={(e) => { if(e.key === 'Enter') handleSubmit() }}
+                                placeholder="Ex: Numération Formule Sanguine (NFS), Échographie..."
+                                className="w-full p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#00a896] outline-none dark:text-white"
+                                autoFocus
+                            />
+                            <p className="text-xs text-gray-500 mt-2">
+                                Le patient devra présenter l'ordonnance imprimée à un laboratoire externe.
+                            </p>
+                        </div>
+                    )}
                 </div>
 
                 {/* FOOTER */}
@@ -71,7 +121,7 @@ export const AddExamModal: React.FC<AddExamModalProps> = ({ isOpen, onClose, onA
                     </button>
                     <button 
                         onClick={handleSubmit} 
-                        disabled={!examName.trim()}
+                        disabled={sendToInternalLab ? !labTestId : !examName.trim()}
                         className="px-6 py-2 bg-[#00a896] hover:bg-[#008f7f] text-white rounded-lg font-bold flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
                     >
                         <PlusCircle size={18} /> Ajouter

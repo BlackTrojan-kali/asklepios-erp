@@ -4,7 +4,6 @@ import {
   Search,
   Edit,
   Trash2,
-  Loader2,
   RefreshCw,
   ChevronLeft,
   ChevronRight,
@@ -15,16 +14,20 @@ import {
 } from "lucide-react";
 import Swal from "sweetalert2";
 
-// --- STORES ---
-import useLabTechnicianStore from "../../../../functions/base_hospital/useLabTechnicianStore";
-import useCenterStore from "../../../../functions/center/useCenterStore";
+// --- HOOKS ---
+import {
+  useLabPersonnelList,
+  useDeleteLabPersonnel,
+} from "../../../hooks/laboratory/useLabPersonnel";
+import { useLaboratories } from "../../../hooks/laboratory/useLaboratory";
+import { useAuth } from "../../../contexts/AuthContext";
 
 // --- TYPES ---
-import type { LabTechnicianDto } from "../../../../types/LabTechnicianTypes";
+import type { LabPersonnelDto } from "../../../types/LabPersonnelTypes";
 
 // --- MODALES ---
-import { CreateLabTechnicianModal } from "../../../../components/modals/Base_hopital/Laboratory/CreateLabTechnicianModal";
-import { UpdateLabTechnicianModal } from "../../../../components/modals/Base_hopital/Laboratory/UpdateLabTechnicianModal";
+import { CreateLabPersonnelModal } from "../../../components/modals/Laboratory/CreateLabPersonnelModal";
+import { UpdateLabPersonnelModal } from "../../../components/modals/Laboratory/UpdateLabPersonnelModal";
 
 const SkeletonRow = () => (
   <tr className="animate-pulse bg-white dark:bg-gray-800">
@@ -59,41 +62,44 @@ const SkeletonRow = () => (
   </tr>
 );
 
-const LabTechnicians = () => {
-  // --- STORES ---
-  const {
-    technicians,
-    loading,
-    pagination,
-    getTechnicians,
-    deleteTechnician,
-    createTechnician,
-    updateTechnician,
-  } = useLabTechnicianStore();
-
-  const { centers, getCenters } = useCenterStore();
-
+const LabPersonnel = () => {
   // --- ÉTATS ---
+  const { profile } = useAuth();
+  const isLabManager = profile?.role_name === "laboratory";
+  
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCenterFilter, setSelectedCenterFilter] = useState("");
+  const [selectedLaboratoryFilter, setSelectedLaboratoryFilter] = useState(
+    isLabManager ? String(profile?.laboratory_id || "") : ""
+  );
 
   // États pour l'ouverture des modales
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isUpdateOpen, setIsUpdateOpen] = useState(false);
   const [selectedTechnician, setSelectedTechnician] =
-    useState<LabTechnicianDto | null>(null);
+    useState<LabPersonnelDto | null>(null);
 
-  // --- CHARGEMENT INITIAL ---
-  useEffect(() => {
-    getCenters(1, {}, 100);
-  }, [getCenters]);
+  // --- HOOKS ---
+  // Requête pour les laboratoires (pour le filtre et les modales)
+  // On ne charge la liste des labos que si on n'est pas un lab manager (ou si on a besoin de passer les labos aux modales)
+  const { data: laboratories = [] } = useLaboratories();
+
+  // Requête pour le personnel
+  const { data: personnelData, isLoading: loading } = useLabPersonnelList({
+    page,
+    per_page: 15,
+    search: searchQuery,
+    laboratory_id: selectedLaboratoryFilter,
+  });
+
+  const technicians = personnelData?.data || [];
+  const pagination = personnelData?.meta;
+
+  // Mutation pour supprimer
+  const deleteMutation = useDeleteLabPersonnel();
 
   const fetchTechnicians = (targetPage: number = 1) => {
-    getTechnicians(targetPage, {
-      search: searchQuery,
-      center_id: selectedCenterFilter,
-    });
+    setPage(targetPage);
   };
 
   useEffect(() => {
@@ -113,9 +119,10 @@ const LabTechnicians = () => {
 
   const handleResetFilters = () => {
     setSearchQuery("");
-    setSelectedCenterFilter("");
+    if (!isLabManager) {
+      setSelectedLaboratoryFilter("");
+    }
     setPage(1);
-    getTechnicians(1, { search: "", center_id: "" });
   };
 
   const handleDelete = async (id: number, name: string) => {
@@ -131,11 +138,19 @@ const LabTechnicians = () => {
     });
 
     if (result.isConfirmed) {
-      await deleteTechnician(id);
+      deleteMutation.mutate(id, {
+        onSuccess: () => {
+          Swal.fire(
+            "Supprimé !",
+            "Le profil a été supprimé avec succès.",
+            "success",
+          );
+        },
+      });
     }
   };
 
-  const openUpdateModal = (technician: LabTechnicianDto) => {
+  const openUpdateModal = (technician: LabPersonnelDto) => {
     setSelectedTechnician(technician);
     setIsUpdateOpen(true);
   };
@@ -150,7 +165,7 @@ const LabTechnicians = () => {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-slate-800 dark:text-white">
-              Techniciens de Laboratoire
+              Personnels de Laboratoire
             </h1>
             <p className="text-sm text-gray-500">
               Gestion du personnel habilité au laboratoire
@@ -171,7 +186,7 @@ const LabTechnicians = () => {
             className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm"
           >
             <Plus size={20} />
-            Nouveau Technicien
+            Nouveau Personnel
           </button>
         </div>
       </div>
@@ -184,34 +199,33 @@ const LabTechnicians = () => {
         >
           {/* Recherche Texte */}
           <div className="flex-1 relative">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              size={20}
-            />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Rechercher (nom, email, téléphone, spécialité...)"
+              placeholder="Rechercher par nom, email, spécialité..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-900 text-slate-800 dark:text-white"
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-blue-500"
             />
           </div>
-
-          {/* Filtre Centre */}
-          <select
-            value={selectedCenterFilter}
-            onChange={(e) => setSelectedCenterFilter(e.target.value)}
-            className="w-full sm:w-48 px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-900 text-slate-800 dark:text-white"
-          >
-            <option value="">Tous les centres</option>
-            {centers.map((center) => (
-              <option key={center.id} value={center.id}>
-                {center.name}
-              </option>
-            ))}
-          </select>
-
-          {/* Boutons de filtrage */}
+          
+          {!isLabManager && (
+            <div className="flex gap-2">
+              <select
+                value={selectedLaboratoryFilter}
+                onChange={(e) => setSelectedLaboratoryFilter(e.target.value)}
+                className="px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800"
+              >
+                <option value="">Tous les laboratoires</option>
+                {laboratories.map((lab: any) => (
+                  <option key={lab.id} value={lab.id}>
+                    {lab.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          
           <div className="flex gap-2">
             <button
               type="submit"
@@ -237,7 +251,7 @@ const LabTechnicians = () => {
             <thead>
               <tr className="bg-gray-50/50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700">
                 <th className="px-6 py-4 text-sm font-semibold text-gray-500 uppercase tracking-wider">
-                  Technicien
+                  Employé
                 </th>
                 <th className="px-6 py-4 text-sm font-semibold text-gray-500 uppercase tracking-wider">
                   Contact
@@ -246,7 +260,7 @@ const LabTechnicians = () => {
                   Affectation
                 </th>
                 <th className="px-6 py-4 text-sm font-semibold text-gray-500 uppercase tracking-wider">
-                  Spécialité
+                  Rôles & Spécialité
                 </th>
                 <th className="px-6 py-4 text-sm font-semibold text-gray-500 uppercase tracking-wider text-right">
                   Actions
@@ -316,15 +330,28 @@ const LabTechnicians = () => {
                       <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                         <Building2 size={16} className="text-blue-500" />
                         <span className="font-medium">
-                          {tech.center?.name || "Non assigné"}
+                          {tech.laboratory?.name || "Non assigné"}
                         </span>
                       </div>
                     </td>
 
-                    {/* Colonne Spécialité */}
+                    {/* Colonne Rôles */}
                     <td className="px-6 py-4">
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {tech.lab_roles?.map((role, idx) => (
+                          <span
+                            key={idx}
+                            className="px-2 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 rounded text-xs font-semibold"
+                          >
+                            {role === "lab_receptionist" && "Réceptionniste"}
+                            {role === "lab_technician" && "Technicien"}
+                            {role === "lab_biologist" && "Biologiste"}
+                            {role === "lab_manager" && "Manager"}
+                          </span>
+                        ))}
+                      </div>
                       <span className="px-3 py-1 bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 rounded-full text-xs font-semibold">
-                        {tech.speciality}
+                        {tech.speciality || "Aucune"}
                       </span>
                       {tech.specifications && (
                         <p
@@ -404,24 +431,20 @@ const LabTechnicians = () => {
       </div>
 
       {/* MODALES */}
-      <CreateLabTechnicianModal
+      <CreateLabPersonnelModal
         isOpen={isCreateOpen}
         onClose={() => setIsCreateOpen(false)}
-        onSubmit={createTechnician}
-        centers={centers}
-        loading={loading}
+        laboratories={isLabManager ? laboratories.filter(l => l.id === profile?.laboratory_id) : laboratories}
       />
 
-      <UpdateLabTechnicianModal
+      <UpdateLabPersonnelModal
         isOpen={isUpdateOpen}
         onClose={() => setIsUpdateOpen(false)}
-        onSubmit={updateTechnician}
         technician={selectedTechnician}
-        centers={centers}
-        loading={loading}
+        laboratories={isLabManager ? laboratories.filter(l => l.id === profile?.laboratory_id) : laboratories}
       />
     </div>
   );
 };
 
-export default LabTechnicians;
+export default LabPersonnel;

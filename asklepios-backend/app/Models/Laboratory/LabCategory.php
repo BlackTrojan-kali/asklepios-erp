@@ -10,11 +10,11 @@ class LabCategory extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['center_id', 'name'];
+    protected $fillable = ['hospital_id', 'name'];
 
-    public function center()
+    public function hospital()
     {
-        return $this->belongsTo(Center::class);
+        return $this->belongsTo(\App\Models\Hospital::class);
     }
 
     public function tests()

@@ -6,6 +6,11 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Laboratory\LabRequest;
 use App\Models\Laboratory\LabSample;
+use App\Models\Laboratory\LabTest;
+use App\Models\Laboratory\LabRequestLine;
+use App\Models\Laboratory\Laboratory;
+use App\Models\Hospital\Invoice;
+use App\Models\Center;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -26,9 +31,9 @@ class LabRequestController extends Controller
         $status = $request->query('status'); // ex: 'PAID', 'SAMPLED'
 
         $user = auth()->user();
-        $centerId = 1; // Default fallback for MVP
+        $laboratoryId = 1; // Default fallback for MVP
 
-        $centerId = $user?->profile_admin?->hospital?->centers?->first()?->id ?? 1;
+        $laboratoryId = $user?->profile_lab?->laboratory_id ?? 1;
 
         $query = LabRequest::with([
             'patient',
@@ -36,9 +41,10 @@ class LabRequestController extends Controller
             'lines.test.parameters',
             'lines.results',
             'samples',
-            'profileDoctor.user'
+            'profileDoctor.user',
+            'invoice.payments'
         ])
-        ->where('center_id', $centerId);
+        ->where('laboratory_id', $laboratoryId);
 
         if ($status) {
             $query->where('status', $status);
@@ -47,6 +53,105 @@ class LabRequestController extends Controller
         $requests = $query->orderBy('created_at', 'desc')->get();
 
         return response()->json($requests);
+    }
+
+    /**
+     * Créer une nouvelle requête de laboratoire avec facturation.
+     */
+    #[OA\Post(path: "/api/lab/requests", summary: "Créer une demande d'examen", security: [["bearerAuth" => []]], tags: ["Requêtes Laboratoire"])]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ["patient_id", "test_ids"],
+            properties: [
+                new OA\Property(property: "patient_id", type: "integer", example: 1),
+                new OA\Property(property: "test_ids", type: "array", items: new OA\Items(type: "integer"), example: [1, 2]),
+                new OA\Property(property: "external_prescriber_name", type: "string", example: "Dr. Dupont", nullable: true),
+                new OA\Property(property: "profile_doctor_id", type: "integer", nullable: true),
+                new OA\Property(property: "patient_visit_id", type: "integer", nullable: true),
+                new OA\Property(property: "priority", type: "string", enum: ["ROUTINE", "URGENT"], default: "ROUTINE")
+            ]
+        )
+    )]
+    #[OA\Response(response: 201, description: "Requête et facture créées avec succès")]
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'patient_id' => 'required|exists:patients,id',
+            'test_ids' => 'required|array|min:1',
+            'test_ids.*' => 'exists:lab_tests,id',
+            'external_prescriber_name' => 'nullable|string',
+            'profile_doctor_id' => 'nullable|exists:profile_doctors,id',
+            'patient_visit_id' => 'nullable|exists:patient_visits,id',
+            'priority' => 'nullable|in:ROUTINE,URGENT'
+        ]);
+
+        $user = auth()->user();
+        $laboratoryId = $user?->profile_lab?->laboratory_id;
+        
+        if (!$laboratoryId) {
+            return response()->json(['message' => 'Utilisateur non associé à un laboratoire'], 403);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $laboratory = Laboratory::findOrFail($laboratoryId);
+            $hospitalId = $laboratory->hospital_id;
+            $centerId = $laboratory->center_id;
+
+            // Calcul du prix total
+            $tests = LabTest::whereIn('id', $validated['test_ids'])->get();
+            $totalAmount = $tests->sum('price');
+
+            // 1. Création de la facture (Invoice)
+            $invoice = Invoice::create([
+                'patient_id' => $validated['patient_id'],
+                'center_id' => $centerId,
+                'patient_visit_id' => $validated['patient_visit_id'] ?? null,
+                'total_amount' => $totalAmount,
+                'status' => 'UNPAID',
+            ]);
+
+            // 2. Création de la requête labo (LabRequest) liée à la facture
+            $labRequest = LabRequest::create([
+                'patient_id' => $validated['patient_id'],
+                'laboratory_id' => $laboratoryId,
+                'invoice_id' => $invoice->id,
+                'patient_visit_id' => $validated['patient_visit_id'] ?? null,
+                'profile_doctor_id' => $validated['profile_doctor_id'] ?? null,
+                'external_prescriber_name' => $validated['external_prescriber_name'] ?? null,
+                'priority' => $validated['priority'] ?? 'ROUTINE',
+                'status' => 'PENDING_PAYMENT',
+            ]);
+
+            // 3. Création des lignes de requête
+            foreach ($tests as $test) {
+                LabRequestLine::create([
+                    'lab_request_id' => $labRequest->id,
+                    'lab_test_id' => $test->id,
+                ]);
+
+                \App\Models\Hospital\InvoiceLine::create([
+                    'invoice_id' => $invoice->id,
+                    'lab_request_id' => $labRequest->id,
+                    'unit_price' => $test->price,
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Demande d\'examen créée avec succès',
+                'lab_request' => $labRequest->load('lines.test'),
+                'invoice' => $invoice
+            ], 201);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Erreur création LabRequest: " . $e->getMessage());
+            return response()->json(['message' => 'Erreur lors de la création de la demande.', 'error' => $e->getMessage()], 500);
+        }
     }
 
     /**
@@ -63,7 +168,8 @@ class LabRequestController extends Controller
             'lines.test.parameters',
             'lines.results',
             'samples',
-            'profileDoctor.user'
+            'profileDoctor.user',
+            'invoice.payments'
         ])->findOrFail($id);
 
         return response()->json($labRequest);

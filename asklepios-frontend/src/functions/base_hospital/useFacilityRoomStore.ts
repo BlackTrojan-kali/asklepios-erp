@@ -46,6 +46,8 @@ const useFacilityRoomStore = () => {
                 lastPage: res.data.last_page || 1,
                 total: res.data.total || 0
             });
+            
+            
         } catch (error) {
             if (axios.isAxiosError(error) && !axios.isCancel(error)) {
                 toast.error("Erreur lors de la récupération des salles");

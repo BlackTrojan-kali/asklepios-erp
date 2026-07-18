@@ -9,7 +9,7 @@ class LabRequestLine extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['lab_request_id', 'lab_test_id'];
+    protected $fillable = ['lab_request_id', 'lab_test_id', 'exam_request_line_id'];
 
     public function request()
     {

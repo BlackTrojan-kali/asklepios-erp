@@ -125,8 +125,10 @@ class ConsultationController extends Controller
             'prescriptions.*.dosage'                 => 'required_with:prescriptions|string',
 
             // Validation des examens
-            'exams'               => 'nullable|array',
-            'exams.*.exam_name'   => 'required_with:exams|string',
+            'exams'                          => 'nullable|array',
+            'exams.*.exam_name'              => 'required_with:exams|string',
+            'exams.*.send_to_internal_lab'   => 'nullable|boolean',
+            'exams.*.lab_test_id'            => 'nullable|integer|exists:lab_tests,id',
 
             // Validation des actes médicaux réalisés
             'medical_acts'                            => 'nullable|array',
@@ -156,7 +158,22 @@ class ConsultationController extends Controller
 
                 // C. Traitement des Examens
                 if (!empty($validated['exams'])) {
-                    $this->examService->createExamRequest($consult->id, $validated['exams']);
+                    $laboratoryId = null;
+                    if ($user->profile_doctor->center_id) {
+                        $lab = \App\Models\Laboratory\Laboratory::where('center_id', $user->profile_doctor->center_id)->first();
+                        $laboratoryId = $lab ? $lab->id : null;
+                    }
+                    
+                    $patientVisit = \App\Models\Hospital\PatientVisit::find($validated['patient_visit_id']);
+
+                    $this->examService->createExamRequest(
+                        $consult->id, 
+                        $validated['exams'],
+                        $user->profile_doctor->id,
+                        $validated['patient_visit_id'],
+                        $patientVisit->patient_id ?? null,
+                        $laboratoryId
+                    );
                 }
 
                 // D. Traitement des Actes Médicaux Réalisés
