@@ -3,6 +3,7 @@
 namespace App\Models\Hospital;
 
 use App\Models\Center;
+use App\Models\Laboratory\LabRequest;
 use App\Models\Patient;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -63,7 +64,9 @@ class Invoice extends Model
     public function admissions() {
         return $this->hasMany(Admission::class);
     }
-
+    public function labRequests(){
+        return $this->hasMany(LabRequest::class);
+    }
     // ==========================================
     // ATTRIBUTS VIRTUELS (ACCESSEURS)
     // ==========================================

@@ -46,11 +46,11 @@ import { AddMedicalActModal } from "./AddMedicalActModal";
 import { MedicalBackgroundModal } from "./MedicalBackgroundModal";
 
 interface ConsultationModalProps {
-    isOpen: boolean;
-    onClose: (hasChanged?: boolean) => void; 
-    // 👉 On utilise "any" ici car l'objet peut être un PatientVisitDto (externe) ou un Admission (hospitalisation)
-    visit: PatientVisitDto | any | null; 
-    isHospitalization?: boolean;
+  isOpen: boolean;
+  onClose: (hasChanged?: boolean) => void;
+  // 👉 "any" car l'objet peut être un PatientVisitDto (externe) ou un Admission (hospitalisation)
+  visit: PatientVisitDto | any | null;
+  isHospitalization?: boolean;
 }
 
 export const ConsultationModal: React.FC<ConsultationModalProps> = ({
@@ -62,7 +62,7 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
   const { profile } = useAuth();
   const departmentId = profile?.profile_doctor?.department_id || 0;
 
-  // Déclaration sécurisée au top niveau pour éviter les erreurs de Hooks
+  // Déclaration sécurisée au top niveau
   const patient = visit?.patient;
   const patientId = patient?.id;
 
@@ -83,18 +83,12 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
   const [chiefComplaint, setChiefComplaint] = useState("");
   const [clinicalNotes, setClinicalNotes] = useState("");
 
-  const [prescriptions, setPrescriptions] = useState<PrescriptionLinePayload[]>(
-    [],
-  );
+  const [prescriptions, setPrescriptions] = useState<PrescriptionLinePayload[]>([]);
   const [exams, setExams] = useState<any[]>([]);
-  const [performedActs, setPerformedActs] = useState<
-    PerformedMedicalActPayload[]
-  >([]);
+  const [performedActs, setPerformedActs] = useState<PerformedMedicalActPayload[]>([]);
 
   const [labTests, setLabTests] = useState<any[]>([]);
-  const [successConsultationId, setSuccessConsultationId] = useState<
-    number | null
-  >(null);
+  const [successConsultationId, setSuccessConsultationId] = useState<number | null>(null);
 
   // État local du dossier médical
   const [localMedicalBg, setLocalMedicalBg] = useState<any>(null);
@@ -111,9 +105,7 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
   const fetchLocalMedicalBg = useCallback(async () => {
     if (!patientId) return;
     try {
-      const response = await api.get(
-        `/shared/patients/${patientId}/medical-background`,
-      );
+      const response = await api.get(`/shared/patients/${patientId}/medical-background`);
       setLocalMedicalBg(response.data.data || response.data);
     } catch (error) {
       console.error("Impossible de rafraîchir le dossier médical", error);
@@ -141,89 +133,12 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
   }, [
     isOpen,
     visit,
-    isHospitalization = false
-}) => {
-    const { profile } = useAuth();
-    const departmentId = profile?.profile_doctor?.department_id || 0;
-
-    // Déclaration sécurisée au top niveau pour éviter les erreurs de Hooks
-    const patient = visit?.patient;
-    const patientId = patient?.id;
-
-    // --- STORES ---
-    const { createConsultation, actionLoading: isConsultingLoading } = useConsultationStore();
-    const { downloadMedicalRecord } = useMedicalBgStore();
-    
-    // Chargement des catalogues
-    const { getAllArticles, allArticles } = useArticleStore();
-    const { getSharedMedicalActs, sharedMedicalActs } = useMedicalActStore();
-    const { getSharedEquipment, sharedEquipment } = useEquipmentStore();
-
-    // --- ÉTATS DU FORMULAIRE ---
-    const [chiefComplaint, setChiefComplaint] = useState('');
-    const [clinicalNotes, setClinicalNotes] = useState(''); 
-    
-    const [prescriptions, setPrescriptions] = useState<PrescriptionLinePayload[]>([]);
-    const [exams, setExams] = useState<{exam_name: string}[]>([]);
-    const [performedActs, setPerformedActs] = useState<PerformedMedicalActPayload[]>([]);
-
-    // État local du dossier médical
-    const [localMedicalBg, setLocalMedicalBg] = useState<any>(null);
-
-    // --- ÉTATS DES MODALES ENFANTS ---
-    const [isAddMedModalOpen, setIsAddMedModalOpen] = useState(false);
-    const [isAddExamModalOpen, setIsAddExamModalOpen] = useState(false);
-    const [isAddActModalOpen, setIsAddActModalOpen] = useState(false);
-    const [isMedicalBgModalOpen, setIsMedicalBgModalOpen] = useState(false);
-    
-    const [autoRefreshPage, setAutoRefreshPage] = useState<boolean>(false);
-
-    // Fonction de rafraîchissement sécurisée via useCallback
-    const fetchLocalMedicalBg = useCallback(async () => {
-        if (!patientId) return;
-        try {
-            const response = await api.get(`/shared/patients/${patientId}/medical-background`);
-            setLocalMedicalBg(response.data.data || response.data);
-        } catch (error) {
-            console.error("Impossible de rafraîchir le dossier médical", error);
-        }
-    }, [patientId]);
-
-    // --- INITIALISATION ---
-    useEffect(() => {
-        if (isOpen && visit && patient) {
-            setChiefComplaint('');
-            setClinicalNotes('');
-            setPrescriptions([]);
-            setExams([]);
-            setPerformedActs([]);
-            setLocalMedicalBg(patient.medical_background || null);
-
-            getAllArticles();
-            if (departmentId) {
-                getSharedMedicalActs(departmentId);
-                getSharedEquipment(departmentId);
-            }
-        }
-    }, [isOpen, visit, patient, departmentId, getAllArticles, getSharedMedicalActs, getSharedEquipment]);
-
-    // Écoute du trigger d'AutoRefresh
-    useEffect(() => {
-        if (isOpen && patientId) {
-            fetchLocalMedicalBg();
-        }
-    }, [autoRefreshPage, fetchLocalMedicalBg, isOpen, patientId]);
-    
-    // Retour précoce si données manquantes (Doit être après tous les hooks)
-    if (!isOpen || !visit || !patient) return null;
-
-    const handleAutoRefreshPage = () => {
-        setAutoRefreshPage(!autoRefreshPage);
     patient,
     departmentId,
     getAllArticles,
     getSharedMedicalActs,
     getSharedEquipment,
+    getLabTests
   ]);
 
   // Écoute du trigger d'AutoRefresh
@@ -232,7 +147,8 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
       fetchLocalMedicalBg();
     }
   }, [autoRefreshPage, fetchLocalMedicalBg, isOpen, patientId]);
-  // Retour précoce si données manquantes (Doit être après tous les hooks)
+
+  // Retour précoce si données manquantes
   if (!isOpen || !visit || !patient) return null;
 
   const handleAutoRefreshPage = () => {
@@ -247,6 +163,9 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
     });
   };
 
+  // =====================================================================
+  // 👉 SOUMISSION DE LA CONSULTATION (Visite Externe ET Hospitalisation)
+  // =====================================================================
   const handleSubmitConsultation = async () => {
     if (!chiefComplaint.trim()) {
       toast.error("Le motif de consultation est obligatoire.");
@@ -254,7 +173,6 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
     }
 
     const payload: CreateConsultationPayload = {
-      patient_visit_id: visit.id,
       chief_complaint: chiefComplaint,
       clinical_data: { notes: clinicalNotes },
       prescriptions: prescriptions,
@@ -262,19 +180,32 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
       medical_acts: performedActs,
     };
 
+    // Assignation dynamique de la clé correcte selon le contexte
+    if (isHospitalization) {
+      payload.admission_id = visit.id;
+    } else {
+      payload.patient_visit_id = visit.id;
+    }
+
     const res = await createConsultation(payload);
+    
+    // Si la création réussit, on affiche l'écran de succès de votre collègue
     if (res && res.id) {
       setSuccessConsultationId(res.id);
+    } else if (res) {
+      // Fallback au cas où l'API renvoie juste 'true' au lieu de l'objet
+      onClose(true);
     }
   };
 
+  // Fonction de téléchargement des PDF ajoutée par votre collègue
   const handleDownloadPdf = async (type: "prescription" | "exam-request") => {
     if (!successConsultationId) return;
     try {
       const toastId = toast.loading("Génération du document...");
       const response = await api.get(
         `/doctor/consultations/${successConsultationId}/${type}-pdf`,
-        { responseType: "blob" },
+        { responseType: "blob" }
       );
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
@@ -289,25 +220,22 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
     }
   };
 
-  const removePrescription = (index: number) =>
-    setPrescriptions((prev) => prev.filter((_, i) => i !== index));
-  const removeExam = (index: number) =>
-    setExams((prev) => prev.filter((_, i) => i !== index));
-  const removeAct = (index: number) =>
-    setPerformedActs((prev) => prev.filter((_, i) => i !== index));
+  const removePrescription = (index: number) => setPrescriptions((prev) => prev.filter((_, i) => i !== index));
+  const removeExam = (index: number) => setExams((prev) => prev.filter((_, i) => i !== index));
+  const removeAct = (index: number) => setPerformedActs((prev) => prev.filter((_, i) => i !== index));
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-[#faf8f1] dark:bg-gray-900 w-full max-w-[95vw] h-[95vh] rounded-2xl shadow-2xl flex flex-col border border-gray-200 dark:border-gray-800 overflow-hidden">
+      {/* On ajoute 'relative' au parent pour que l'overlay de succès puisse s'afficher par-dessus */}
+      <div className="bg-[#faf8f1] dark:bg-gray-900 w-full max-w-[95vw] h-[95vh] rounded-2xl shadow-2xl flex flex-col border border-gray-200 dark:border-gray-800 overflow-hidden relative">
+        
         {/* --- HEADER GLOBAL --- */}
         <div className="flex items-center justify-between p-4 bg-[#003366] text-white shrink-0">
           <div className="flex items-center gap-3">
             <Stethoscope size={24} className="text-[#00a896]" />
             <div>
               <h2 className="text-xl font-bold font-brand leading-tight">
-                {isHospitalization
-                  ? "Visite d'hospitalisation"
-                  : "Consultation en cours"}
+                {isHospitalization ? "Visite d'hospitalisation" : "Consultation en cours"}
               </h2>
               <div className="flex items-center gap-2 mt-0.5">
                 <p className="text-sm text-blue-100 font-medium">
@@ -335,41 +263,11 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
           </div>
         </div>
 
-    // =====================================================================
-    // 👉 SOUMISSION DE LA CONSULTATION (Prise en charge de l'Hospitalisation)
-    // =====================================================================
-    const handleSubmitConsultation = async () => {
-        if (!chiefComplaint.trim()) {
-            toast.error("Le motif de consultation est obligatoire.");
-            return;
-        }
-
-        // Création du Payload (sans l'ID de visite dans un premier temps)
-        const payload: CreateConsultationPayload = {
-            chief_complaint: chiefComplaint,
-            clinical_data: { notes: clinicalNotes },
-            prescriptions: prescriptions,
-            exams: exams,
-            medical_acts: performedActs 
-        };
-
-        // Assignation dynamique de la clé correcte selon le contexte
-        if (isHospitalization) {
-            payload.admission_id = visit.id; 
-        } else {
-            payload.patient_visit_id = visit.id;
-        }
-
-        const success = await createConsultation(payload);
-        if (success) {
-            onClose(true);
-        }
-    };
         {/* --- CORPS DE LA MODALE --- */}
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+          
           {/* COLONNE GAUCHE : DOSSIER PATIENT COMPLET */}
           <div className="w-full lg:w-[400px] border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800/50 flex flex-col overflow-y-auto custom-scrollbar">
-            {/* Info Basique */}
             <div className="p-5 border-b border-gray-100 dark:border-gray-700 bg-slate-50 dark:bg-gray-800">
               <div className="flex items-center gap-4">
                 <div className="h-14 w-14 rounded-full bg-[#00a896]/10 flex items-center justify-center text-[#00a896]">
@@ -380,8 +278,7 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
                     {patient.first_name} {patient.last_name}
                   </h3>
                   <p className="text-sm text-gray-500">
-                    {patient.gender === "M" ? "Homme" : "Femme"} • Né(e) le{" "}
-                    {patient.bith_date || "N/A"}
+                    {patient.gender === "M" ? "Homme" : "Femme"} • Né(e) le {patient.bith_date || "N/A"}
                   </p>
                 </div>
               </div>
@@ -391,24 +288,19 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
             <div className="p-5 flex-1">
               <div className="flex items-center justify-between mb-4 border-b border-gray-100 dark:border-gray-700 pb-2">
                 <h4 className="flex items-center gap-2 font-bold text-gray-700 dark:text-gray-300 font-brand uppercase tracking-wider text-xs">
-                  <Activity size={14} className="text-[#00a896]" /> Dossier
-                  Médical
+                  <Activity size={14} className="text-[#00a896]" /> Dossier Médical
                 </h4>
                 <button
                   onClick={() => setIsMedicalBgModalOpen(true)}
                   className="flex items-center gap-1 text-xs font-bold text-[#003366] dark:text-blue-400 hover:underline bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded"
                 >
-                  <Edit size={12} />{" "}
-                  {localMedicalBg ? "Mettre à jour" : "Créer"}
+                  <Edit size={12} /> {localMedicalBg ? "Mettre à jour" : "Créer"}
                 </button>
               </div>
 
               {!localMedicalBg ? (
                 <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4 text-center mt-4">
-                  <AlertTriangle
-                    size={24}
-                    className="text-orange-500 mx-auto mb-2"
-                  />
+                  <AlertTriangle size={24} className="text-orange-500 mx-auto mb-2" />
                   <p className="text-sm text-orange-700 dark:text-orange-400 font-medium">
                     Le carnet médical est vide.
                   </p>
@@ -418,21 +310,13 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
                   {/* Groupe sanguin & Allergies */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-red-50 dark:bg-red-900/10 p-3 rounded-lg border border-red-100 dark:border-red-900/50">
-                      <span className="block text-xs text-red-400 uppercase tracking-wide font-bold mb-1">
-                        Groupe Sanguin
-                      </span>
-                      <span className="font-black text-red-600 dark:text-red-400 text-lg">
-                        {localMedicalBg.blood_type || "Inconnu"}
-                      </span>
+                      <span className="block text-xs text-red-400 uppercase tracking-wide font-bold mb-1">Groupe Sanguin</span>
+                      <span className="font-black text-red-600 dark:text-red-400 text-lg">{localMedicalBg.blood_type || "Inconnu"}</span>
                     </div>
                     <div className="bg-orange-50 dark:bg-orange-900/10 p-3 rounded-lg border border-orange-100 dark:border-orange-900/50">
-                      <span className="block text-xs text-orange-500 uppercase tracking-wide font-bold mb-1">
-                        Allergies
-                      </span>
+                      <span className="block text-xs text-orange-500 uppercase tracking-wide font-bold mb-1">Allergies</span>
                       <span className="font-bold text-orange-700 dark:text-orange-400 leading-tight block">
-                        {localMedicalBg.allergies?.length
-                          ? localMedicalBg.allergies.join(", ")
-                          : "Aucune"}
+                        {localMedicalBg.allergies?.length ? localMedicalBg.allergies.join(", ") : "Aucune"}
                       </span>
                     </div>
                   </div>
@@ -445,15 +329,11 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
                     <div className="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg border border-gray-100 dark:border-gray-600 text-gray-800 dark:text-gray-200 font-medium">
                       {localMedicalBg.chronic_conditions?.length ? (
                         <ul className="list-disc pl-4 space-y-1">
-                          {localMedicalBg.chronic_conditions.map(
-                            (cond: string, i: number) => (
-                              <li key={i}>{cond}</li>
-                            ),
-                          )}
+                          {localMedicalBg.chronic_conditions.map((cond: string, i: number) => (
+                            <li key={i}>{cond}</li>
+                          ))}
                         </ul>
-                      ) : (
-                        "Néant"
-                      )}
+                      ) : ("Néant")}
                     </div>
                   </div>
 
@@ -465,15 +345,11 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
                     <div className="bg-blue-50 dark:bg-blue-900/10 p-3 rounded-lg border border-blue-100 dark:border-blue-900/30 text-blue-900 dark:text-blue-200 font-medium">
                       {localMedicalBg.current_medications?.length ? (
                         <ul className="list-disc pl-4 space-y-1">
-                          {localMedicalBg.current_medications.map(
-                            (med: string, i: number) => (
-                              <li key={i}>{med}</li>
-                            ),
-                          )}
+                          {localMedicalBg.current_medications.map((med: string, i: number) => (
+                            <li key={i}>{med}</li>
+                          ))}
                         </ul>
-                      ) : (
-                        "Aucun traitement signalé"
-                      )}
+                      ) : ("Aucun traitement signalé")}
                     </div>
                   </div>
 
@@ -485,31 +361,16 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
                     <div className="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-lg border border-gray-100 dark:border-gray-600">
                       {localMedicalBg.past_surgeries?.length ? (
                         <ul className="space-y-2">
-                          {localMedicalBg.past_surgeries.map(
-                            (surg: any, i: number) => (
-                              <li
-                                key={i}
-                                className="text-gray-800 dark:text-gray-200"
-                              >
-                                <span className="font-bold">{surg.name}</span>
-                                {surg.year && (
-                                  <span className="text-gray-500 ml-2">
-                                    ({surg.year})
-                                  </span>
-                                )}
-                                {surg.notes && (
-                                  <p className="text-xs text-gray-500 mt-0.5">
-                                    {surg.notes}
-                                  </p>
-                                )}
-                              </li>
-                            ),
-                          )}
+                          {localMedicalBg.past_surgeries.map((surg: any, i: number) => (
+                            <li key={i} className="text-gray-800 dark:text-gray-200">
+                              <span className="font-bold">{surg.name}</span>
+                              {surg.year && <span className="text-gray-500 ml-2">({surg.year})</span>}
+                              {surg.notes && <p className="text-xs text-gray-500 mt-0.5">{surg.notes}</p>}
+                            </li>
+                          ))}
                         </ul>
                       ) : (
-                        <span className="text-gray-500 font-medium">
-                          Aucune intervention signalée
-                        </span>
+                        <span className="text-gray-500 font-medium">Aucune intervention signalée</span>
                       )}
                     </div>
                   </div>
@@ -553,6 +414,7 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
           {/* COLONNE DROITE : ESPACE DE TRAVAIL (Consultation) */}
           <div className="flex-1 flex flex-col bg-[#faf8f1] dark:bg-gray-900">
             <div className="flex-1 p-6 overflow-y-auto space-y-6 custom-scrollbar">
+              
               {/* Bloc 1 : Motif et Notes */}
               <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
                 <h3 className="font-bold text-[#003366] dark:text-blue-400 mb-4 font-brand border-b border-gray-100 dark:border-gray-700 pb-2">
@@ -561,8 +423,7 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">
-                      Motif principal de la visite{" "}
-                      <span className="text-red-500">*</span>
+                      Motif principal de la visite <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -605,29 +466,19 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
                 ) : (
                   <div className="space-y-2">
                     {performedActs.map((act, idx) => (
-                      <div
-                        key={idx}
-                        className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700"
-                      >
+                      <div key={idx} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700">
                         <div className="flex items-center gap-3">
                           <Syringe size={18} className="text-indigo-500" />
                           <div>
                             <p className="text-sm font-bold text-gray-800 dark:text-gray-200">
-                              {sharedMedicalActs.find(
-                                (a) => a.id === act.medical_act_catalog_id,
-                              )?.name || "Acte inconnu"}
+                              {sharedMedicalActs.find((a) => a.id === act.medical_act_catalog_id)?.name || "Acte inconnu"}
                             </p>
                             <p className="text-xs text-gray-500">
-                              Tarif: {act.applied_price} FCFA{" "}
-                              {act.equipment_id &&
-                                `(Équipement #${act.equipment_id})`}
+                              Tarif: {act.applied_price} FCFA {act.equipment_id && `(Équipement #${act.equipment_id})`}
                             </p>
                           </div>
                         </div>
-                        <button
-                          onClick={() => removeAct(idx)}
-                          className="text-red-400 hover:text-red-600"
-                        >
+                        <button onClick={() => removeAct(idx)} className="text-red-400 hover:text-red-600">
                           <X size={16} />
                         </button>
                       </div>
@@ -656,28 +507,19 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
                 ) : (
                   <ul className="space-y-2">
                     {prescriptions.map((med, idx) => (
-                      <li
-                        key={idx}
-                        className="flex justify-between p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg"
-                      >
+                      <li key={idx} className="flex justify-between p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg">
                         <div className="flex items-start gap-3">
                           <Pill size={18} className="text-gray-400 mt-0.5" />
                           <div>
                             <p className="font-bold text-sm text-gray-800 dark:text-gray-200">
-                              {med.custom_medication_name ||
-                                allArticles.find((a) => a.id === med.article_id)
-                                  ?.name ||
-                                `Article #${med.article_id}`}
+                              {med.custom_medication_name || allArticles.find((a) => a.id === med.article_id)?.name || `Article #${med.article_id}`}
                             </p>
                             <p className="text-xs text-gray-500 mt-0.5 whitespace-pre-wrap">
                               {med.dosage}
                             </p>
                           </div>
                         </div>
-                        <button
-                          onClick={() => removePrescription(idx)}
-                          className="text-red-400 hover:text-red-600"
-                        >
+                        <button onClick={() => removePrescription(idx)} className="text-red-400 hover:text-red-600">
                           <X size={16} />
                         </button>
                       </li>
@@ -706,16 +548,9 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
                 ) : (
                   <div className="flex flex-wrap gap-3">
                     {exams.map((exam, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center gap-2 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 px-3 py-2 rounded-lg border border-purple-100 dark:border-purple-800 text-sm"
-                      >
-                        <TestTube size={16} />{" "}
-                        <span className="font-bold">{exam.exam_name}</span>
-                        <button
-                          onClick={() => removeExam(idx)}
-                          className="text-purple-400 hover:text-purple-600 ml-2"
-                        >
+                      <div key={idx} className="flex items-center gap-2 bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 px-3 py-2 rounded-lg border border-purple-100 dark:border-purple-800 text-sm">
+                        <TestTube size={16} /> <span className="font-bold">{exam.exam_name}</span>
+                        <button onClick={() => removeExam(idx)} className="text-purple-400 hover:text-purple-600 ml-2">
                           <X size={16} />
                         </button>
                       </div>
@@ -725,7 +560,7 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
               </div>
             </div>
 
-            {/* --- FOOTER --- */}
+            {/* --- FOOTER (Masqué si succès) --- */}
             {!successConsultationId && (
               <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-800 flex justify-end gap-3 shrink-0">
                 <button
@@ -742,8 +577,7 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
                 >
                   {isConsultingLoading ? (
                     <>
-                      <Loader2 size={20} className="animate-spin" />{" "}
-                      Enregistrement...
+                      <Loader2 size={20} className="animate-spin" /> Enregistrement...
                     </>
                   ) : (
                     <>
@@ -756,7 +590,7 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
           </div>
         </div>
 
-        {/* --- ÉCRAN DE SUCCÈS (OVERLAY) --- */}
+        {/* --- ÉCRAN DE SUCCÈS (OVERLAY DE VOTRE COLLÈGUE) --- */}
         {successConsultationId && (
           <div className="absolute inset-0 z-[55] bg-[#faf8f1] dark:bg-gray-900 flex flex-col items-center justify-center p-6 animate-fadeIn">
             <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl max-w-lg w-full text-center border border-gray-200 dark:border-gray-700">

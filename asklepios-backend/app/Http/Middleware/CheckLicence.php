@@ -15,8 +15,13 @@ class CheckLicence
     {
         $user = $request->user();
 
-        // 1. Le Super Admin global passe partout
-        if ($user->role->name === 'super_admin') {
+        // 0. Sécurité : Vérifier que l'utilisateur est bien authentifié
+        if (!$user) {
+            return response()->json(['message' => 'Non authentifié.'], 401);
+        }
+
+        // 1. Le Super Admin global passe partout (Utilisation de ?-> pour éviter les erreurs null)
+        if ($user->role?->name === 'super_admin') {
             return $next($request);
         }
 
@@ -42,16 +47,16 @@ class CheckLicence
             return response()->json(['message' => 'Accès refusé : Aucun abonnement trouvé pour cet établissement.'], 403);
         }
 
-        // 4. Vérification dynamique des dates (calculée à la seconde près, indépendamment du cache)
+        // 4. Vérification dynamique des dates (Ajustement avec startOfDay et endOfDay)
         $now = now();
-        $startingDate = Carbon::parse($subscription->starting_date);
-        $endingDate = Carbon::parse($subscription->ending_date);
+        $startingDate = Carbon::parse($subscription->starting_date)->startOfDay();
+        $endingDate = Carbon::parse($subscription->ending_date)->endOfDay(); // Valide jusqu'à 23h59 le dernier jour
 
         // Bloquer si la date du jour a dépassé la date de fin
         if ($now->isAfter($endingDate)) {
             return response()->json([
                 'message' => "Accès refusé : Votre abonnement a expiré le {$endingDate->format('d/m/Y')}. Veuillez le renouveler."
-            ], 403); // Optionnel : utiliser 402 Payment Required
+            ], 402); // 402 Payment Required est sémantiquement parfait ici
         }
 
         // Bloquer si l'abonnement n'a pas encore commencé
@@ -61,25 +66,28 @@ class CheckLicence
             ], 403);
         }
 
-        // 5. On vérifie si l'abonnement contient AU MOINS UNE des licences demandées
-        $hasRequiredLicence = $subscription->licences->whereIn('name', $licences)->isNotEmpty();
+        // 5. On vérifie les licences UNIQUEMENT si la route en exige une
+        if (!empty($licences)) {
+            $hasRequiredLicence = $subscription->licences->whereIn('name', $licences)->isNotEmpty();
 
-        if (!$hasRequiredLicence) {
-            $required = implode(' ou ', $licences);
-            return response()->json([
-                'message' => "Accès restreint : Votre établissement n'a pas souscrit à la licence requise ({$required})."
-            ], 403);
+            if (!$hasRequiredLicence) {
+                $required = implode(' ou ', $licences);
+                return response()->json([
+                    'message' => "Accès restreint : Votre établissement n'a pas souscrit à la licence requise ({$required})."
+                ], 403);
+            }
         }
 
         return $next($request);
     }
 
     /**
-     * Méthode utilitaire OPTIMISÉE (0 requête SQL inutile)
+     * Méthode utilitaire OPTIMISÉE
      */
     private function resolveHospitalId($user)
     {
-        $role = $user->role->name ?? '';
+        // Utilisation du Nullsafe operator (?->) pour éviter les crashs si le rôle n'est pas chargé
+        $role = $user->role?->name ?? '';
 
         return match($role) {
             'admin'     => $user->profile_admin->hospital_id ?? null,
