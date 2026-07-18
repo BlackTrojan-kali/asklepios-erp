@@ -5,31 +5,33 @@
 import type { CenterDto, HospitalDto } from "./types";
 import type { UserDto } from "./PharmTypes";
 
-export interface LabTechnicianDto {
+export interface LabPersonnelDto {
     id: number;
     user_id: number;
     hospital_id: number;
-    center_id: number;
+    laboratory_id: number;
+    lab_roles: string[];
     speciality: string;
     specifications: string | null;
     
     // Relations
     user?: UserDto;
-    center?: CenterDto;
+    laboratory?: any;
     hospital?: HospitalDto;
     
     created_at?: string;
     updated_at?: string;
 }
 
-export interface LabTechnicianPayload {
+export interface LabPersonnelPayload {
     first_name: string;
     last_name?: string | null;
     phone: string | number;
     email: string;
     password?: string;
     
-    center_id: number | '';
+    laboratory_id: number | string;
+    lab_roles: string[];
     speciality: string;
     specifications?: string | null;
 }

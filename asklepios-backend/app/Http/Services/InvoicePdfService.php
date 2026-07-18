@@ -19,6 +19,7 @@ class InvoicePdfService
             'performedMedicalActs.medicalActCatalog',
             'performedMedicalActs.equipment', 
             'admissions.bed.facilityRoom.category',
+            'labRequests.lines.test',
             'payments.reception.user'
         ])->findOrFail($invoiceId);
 

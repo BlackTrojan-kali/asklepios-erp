@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('lab_categories', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('center_id')->nullable()->constrained('centers')->onDelete('cascade');
+            $table->foreignId('hospital_id')->constrained('hospitals')->onDelete('cascade');
             $table->string('name');
             $table->timestamps();
         });

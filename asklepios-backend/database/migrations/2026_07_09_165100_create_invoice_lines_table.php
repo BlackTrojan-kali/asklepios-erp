@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId("invoice_id")->constrained("invoices")->onDelete("cascade");
             $table->foreignId("consultation_id")->nullable()->constrained("consultations");
             $table->foreignId("admission_id")->nullable()->constrained("admissions");
+            $table->foreignId("lab_request_id")->nullable()->constrained("lab_requests")->onDelete("cascade");
             $table->float("unit_price");
             $table->timestamps();
         });

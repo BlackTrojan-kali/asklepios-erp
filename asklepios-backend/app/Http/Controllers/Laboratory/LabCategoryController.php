@@ -11,13 +11,13 @@ use OpenApi\Attributes as OA;
 class LabCategoryController extends Controller
 {
     #[OA\Get(path: "/api/lab/categories", summary: "Lister les catégories", security: [["bearerAuth" => []]], tags: ["Catégories Laboratoire"])]
-    #[OA\Parameter(name: "center_id", in: "query", required: false, description: "Filtrer par centre", schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "hospital_id", in: "query", required: false, description: "Filtrer par hôpital", schema: new OA\Schema(type: "integer"))]
     #[OA\Response(response: 200, description: "Liste des catégories récupérée")]
     public function index(Request $request)
     {
         $query = LabCategory::query();
-        if ($request->has('center_id')) {
-            $query->where('center_id', $request->center_id);
+        if ($request->has('hospital_id')) {
+            $query->where('hospital_id', $request->hospital_id);
         }
         
         $categories = $query->with('tests')->latest()->get();
@@ -30,7 +30,7 @@ class LabCategoryController extends Controller
         content: new OA\JsonContent(
             required: ["name"],
             properties: [
-                new OA\Property(property: "center_id", type: "integer", nullable: true),
+                new OA\Property(property: "hospital_id", type: "integer", nullable: true),
                 new OA\Property(property: "name", type: "string")
             ]
         )
@@ -39,7 +39,7 @@ class LabCategoryController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'center_id' => 'nullable|exists:centers,id',
+            'hospital_id' => 'required|exists:hospitals,id',
             'name' => 'required|string|max:255',
         ]);
 

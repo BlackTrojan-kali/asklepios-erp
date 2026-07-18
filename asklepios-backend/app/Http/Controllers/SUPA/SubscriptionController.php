@@ -416,7 +416,7 @@ class SubscriptionController extends Controller
         return $user->profile_admin->hospital_id 
             ?? $user->profile_pharm->hospital_id 
             ?? $user->profile_doctor->hospital_id 
-            ?? $user->profile_lab->hospital_id 
+            ?? $user->profile_lab?->laboratory->hospital_id 
             ?? $user->profile_reception->hospital_id 
             ?? null;
     }

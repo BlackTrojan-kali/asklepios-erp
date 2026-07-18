@@ -4286,7 +4286,7 @@
                     "Stocks"
                 ],
                 "summary": "Voir les stocks globaux paginés (Toutes succursales)",
-                "description": "1. VUE GLOBALE PAGINÉE (Pour les Administrateurs ou Superviseurs)\r\nListe tous les stocks de l'hôpital, avec possibilité de filtrer par succursale.",
+                "description": "1. VUE GLOBALE PAGINÉE (Pour les Administrateurs ou Superviseurs)\nListe tous les stocks de l'hôpital, avec possibilité de filtrer par succursale.",
                 "operationId": "getGlobalStocks",
                 "parameters": [
                     {
@@ -4355,7 +4355,7 @@
                     "Stocks"
                 ],
                 "summary": "Voir les stocks paginés de ma succursale",
-                "description": "2. VUE LOCALE PAGINÉE (Pour les Pharmaciens / Vendeurs)\r\nListe uniquement les stocks de la succursale du pharmacien connecté.",
+                "description": "2. VUE LOCALE PAGINÉE (Pour les Pharmaciens / Vendeurs)\nListe uniquement les stocks de la succursale du pharmacien connecté.",
                 "operationId": "getMyBranchStocks",
                 "parameters": [
                     {
@@ -5664,6 +5664,56 @@
                     },
                     "404": {
                         "description": "Patient introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/doctor/consultations/{id}/prescription-pdf": {
+            "get": {
+                "tags": [
+                    "Consultations Médicales"
+                ],
+                "summary": "Télécharger l'ordonnance en PDF",
+                "operationId": "c8d857bc9bf2da316d1db7aac5e41521",
+                "responses": {
+                    "200": {
+                        "description": "Succès : Retourne le fichier PDF"
+                    },
+                    "404": {
+                        "description": "Non trouvé : Aucune ordonnance"
+                    },
+                    "401": {
+                        "description": "Non autorisé"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/doctor/consultations/{id}/exam-request-pdf": {
+            "get": {
+                "tags": [
+                    "Consultations Médicales"
+                ],
+                "summary": "Télécharger la demande d'examens en PDF",
+                "operationId": "5b62529411d376caa6c3b73e0365d539",
+                "responses": {
+                    "200": {
+                        "description": "Succès : Retourne le fichier PDF"
+                    },
+                    "404": {
+                        "description": "Non trouvé : Aucune demande"
+                    },
+                    "401": {
+                        "description": "Non autorisé"
                     }
                 },
                 "security": [

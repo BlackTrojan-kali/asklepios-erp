@@ -1,34 +1,47 @@
 import React, { useState, useEffect } from "react";
-import { X, User, Phone, Mail, Stethoscope, Building2, Lock, ShieldCheck } from "lucide-react";
-import type { LabTechnicianDto, LabTechnicianPayload } from "../../../../types/LabTechnicianTypes";
-import type { CenterDto } from "../../../../types/types";
+import {
+  X,
+  User,
+  Phone,
+  Mail,
+  Stethoscope,
+  Building2,
+  Lock,
+  ShieldCheck,
+} from "lucide-react";
+import type {
+  LabPersonnelDto,
+  LabPersonnelPayload,
+} from "../../../types/LabPersonnelTypes";
+import type { LaboratoryDto } from "../../../types/types";
+
+import { useUpdateLabPersonnel } from "../../../hooks/laboratory/useLabPersonnel";
+import toast from "react-hot-toast";
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (id: number, payload: LabTechnicianPayload) => Promise<any>;
-  technician: LabTechnicianDto | null;
-  centers: CenterDto[];
-  loading?: boolean;
+  technician: LabPersonnelDto | null;
+  laboratories: LaboratoryDto[];
 }
 
-export const UpdateLabTechnicianModal: React.FC<Props> = ({
+export const UpdateLabPersonnelModal: React.FC<Props> = ({
   isOpen,
   onClose,
-  onSubmit,
   technician,
-  centers,
-  loading = false,
+  laboratories,
 }) => {
-  const [formData, setFormData] = useState<LabTechnicianPayload>({
+  const updateMutation = useUpdateLabPersonnel();
+  const [formData, setFormData] = useState<LabPersonnelPayload>({
     first_name: "",
     last_name: "",
     phone: "",
     email: "",
     password: "",
-    center_id: "",
+    laboratory_id: "",
     speciality: "",
     specifications: "",
+    lab_roles: [],
   });
 
   useEffect(() => {
@@ -39,9 +52,10 @@ export const UpdateLabTechnicianModal: React.FC<Props> = ({
         phone: technician.user?.phone || "",
         email: technician.user?.email || "",
         password: "", // Leave blank for update
-        center_id: technician.center_id || "",
+        laboratory_id: technician.laboratory_id || "",
         speciality: technician.speciality || "",
         specifications: technician.specifications || "",
+        lab_roles: technician.lab_roles || [],
       });
     }
   }, [technician]);
@@ -49,7 +63,9 @@ export const UpdateLabTechnicianModal: React.FC<Props> = ({
   if (!isOpen || !technician) return null;
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -58,12 +74,25 @@ export const UpdateLabTechnicianModal: React.FC<Props> = ({
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const success = await onSubmit(technician.id, formData);
-    if (success) {
-      onClose();
+    if (!technician?.id) return;
+
+    // Ne pas envoyer le mot de passe s'il est vide
+    const payload = { ...formData };
+    if (!payload.password) {
+      delete payload.password;
     }
+
+    updateMutation.mutate({ id: technician.id, payload }, {
+      onSuccess: () => {
+        toast.success("Personnel mis à jour avec succès");
+        onClose();
+      },
+      onError: (error: any) => {
+        toast.error(error?.response?.data?.message || "Une erreur est survenue");
+      }
+    });
   };
 
   return (
@@ -77,7 +106,7 @@ export const UpdateLabTechnicianModal: React.FC<Props> = ({
             </div>
             <div>
               <h2 className="text-xl font-bold text-slate-800 dark:text-white">
-                Modifier le Technicien
+                Modifier le Profil Personnel
               </h2>
               <p className="text-sm text-gray-500">
                 Mise à jour des informations du profil
@@ -144,7 +173,10 @@ export const UpdateLabTechnicianModal: React.FC<Props> = ({
                     Téléphone *
                   </label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <Phone
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                      size={18}
+                    />
                     <input
                       type="tel"
                       name="phone"
@@ -161,7 +193,10 @@ export const UpdateLabTechnicianModal: React.FC<Props> = ({
                     Email (Identifiant) *
                   </label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <Mail
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                      size={18}
+                    />
                     <input
                       type="email"
                       name="email"
@@ -178,7 +213,10 @@ export const UpdateLabTechnicianModal: React.FC<Props> = ({
                     Nouveau Mot de passe (optionnel)
                   </label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <Lock
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                      size={18}
+                    />
                     <input
                       type="password"
                       name="password"
@@ -202,36 +240,71 @@ export const UpdateLabTechnicianModal: React.FC<Props> = ({
               <div className="grid grid-cols-1 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Centre d'affectation *
+                    Laboratoire d'affectation *
                   </label>
                   <select
-                    name="center_id"
+                    name="laboratory_id"
                     required
-                    value={formData.center_id}
+                    value={formData.laboratory_id}
                     onChange={handleChange}
                     className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-900"
                   >
-                    <option value="">Sélectionner un centre...</option>
-                    {centers.map((center) => (
-                      <option key={center.id} value={center.id}>
-                        {center.name}
+                    <option value="">Sélectionner un laboratoire...</option>
+                    {laboratories.map((lab) => (
+                      <option key={lab.id} value={lab.id}>
+                        {lab.name}
                       </option>
                     ))}
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Spécialité / Rôle *
+                    Rôles assignés (Sélection multiple) *
+                  </label>
+                  <div className="space-y-3 mt-2 bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
+                    {[
+                      { id: "lab_receptionist", label: "Réceptionniste", desc: "Accueil, facturation, encaissement." },
+                      { id: "lab_technician", label: "Technicien", desc: "Prélèvement et exécution des analyses." },
+                      { id: "lab_biologist", label: "Biologiste", desc: "Validation médicale des résultats." },
+                      { id: "lab_manager", label: "Manager", desc: "Configuration du catalogue et supervision." },
+                    ].map((role) => (
+                      <label key={role.id} className="flex items-start gap-3 cursor-pointer group">
+                        <input
+                          type="checkbox"
+                          checked={formData.lab_roles?.includes(role.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormData({ ...formData, lab_roles: [...(formData.lab_roles || []), role.id] });
+                            } else {
+                              setFormData({ ...formData, lab_roles: formData.lab_roles?.filter(r => r !== role.id) || [] });
+                            }
+                          }}
+                          className="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                        <div>
+                          <p className="font-medium text-gray-800 dark:text-gray-200 group-hover:text-blue-600 transition-colors">{role.label}</p>
+                          <p className="text-xs text-gray-500">{role.desc}</p>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Titre / Fonction affichée (Optionnel)
                   </label>
                   <div className="relative">
-                    <Stethoscope className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <Stethoscope
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                      size={18}
+                    />
                     <input
                       type="text"
                       name="speciality"
-                      required
                       value={formData.speciality}
                       onChange={handleChange}
                       className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-900"
+                      placeholder="ex: Hématologue, Phlébotomiste..."
                     />
                   </div>
                 </div>
@@ -245,6 +318,7 @@ export const UpdateLabTechnicianModal: React.FC<Props> = ({
                     onChange={handleChange}
                     rows={2}
                     className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-900"
+                    placeholder="Informations complémentaires, diplômes..."
                   />
                 </div>
               </div>
@@ -255,20 +329,20 @@ export const UpdateLabTechnicianModal: React.FC<Props> = ({
             <button
               type="button"
               onClick={onClose}
-              disabled={loading}
-              className="px-6 py-2 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+              disabled={updateMutation.isPending}
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
             >
               Annuler
             </button>
             <button
               type="submit"
-              disabled={loading}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+              disabled={updateMutation.isPending}
+              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
             >
-              {loading && (
+              {updateMutation.isPending && (
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               )}
-              Enregistrer les modifications
+              Mettre à jour le personnel
             </button>
           </div>
         </form>

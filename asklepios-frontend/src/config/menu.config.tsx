@@ -33,7 +33,9 @@ export type MenuItemType = {
   path?: string;
   roles?: string[];
   positions?: ("magasin" | "vente")[];
+  labRoles?: string[];
   requiredLicence?: string;
+  excludedLicence?: string;
   subItems?: MenuItemType[];
 };
 
@@ -98,7 +100,6 @@ export const MENU_CONFIG: MenuItemType[] = [
     subItems: [
       { title: "Docteurs", path: "/admin/doctors" },
       { title: "Réceptionnistes", path: "/admin/receptionists" },
-      { title: "Laborantins", path: "/admin/lab-technicians" },
     ],
   },
 
@@ -333,21 +334,53 @@ export const MENU_CONFIG: MenuItemType[] = [
   // H. MENUS LABORATOIRE (SIL)
   // ==========================================
   {
+    title: "Laboratoires",
+    icon: <Database size={20} />,
+    roles: ["admin"],
+    requiredLicence: "laboratory",
+    subItems: [
+      { title: "Laboratoires", path: "/admin/laboratories" },
+      { title: "Personnels de Laboratoire", path: "/admin/lab-personnel" },
+    ],
+  },
+  {
+    title: "Mon Équipe",
+    icon: <Users size={20} />,
+    roles: ["laboratory"], // Manager du labo indépendant
+    requiredLicence: "laboratory",
+    labRoles: ["lab_manager"],
+    path: "/laboratory/personnel",
+  },
+  {
+    title: "Comptoir Labo",
+    icon: <Users size={20} />,
+    roles: ["laboratory", "admin"],
+    requiredLicence: "laboratory",
+    labRoles: ["lab_manager", "lab_receptionist"],
+    subItems: [
+      { title: "Dossiers Patients", path: "/laboratory/patients" },
+      { title: "Facturation", path: "/laboratory/invoices" },
+    ],
+  },
+  {
     title: "Configuration Labo",
     icon: <Database size={20} />,
     roles: ["admin", "laboratory"],
     requiredLicence: "laboratory",
+    labRoles: ["lab_manager", "lab_biologist"],
     subItems: [
       { title: "Catégories", path: "/laboratory/catalogue/categories" },
       { title: "Examens", path: "/laboratory/catalogue/tests" },
       { title: "Paramètres", path: "/laboratory/catalogue/parameters" },
     ],
   },
+
   {
     title: "Prélèvements",
     icon: <TestTubes size={20} />,
-    roles: ["laboratory", "nurse", "admin"],
+    roles: ["laboratory", "admin"],
     requiredLicence: "laboratory",
+    labRoles: ["lab_manager", "lab_technician", "lab_biologist"],
     path: "/laboratory/sampling",
   },
   {
@@ -355,6 +388,7 @@ export const MENU_CONFIG: MenuItemType[] = [
     icon: <Microscope size={20} />,
     roles: ["laboratory", "admin"],
     requiredLicence: "laboratory",
+    labRoles: ["lab_manager", "lab_technician", "lab_biologist"],
     subItems: [
       { title: "Saisie des Résultats", path: "/laboratory/results" },
       { title: "Validation Biologiste", path: "/laboratory/validation" },

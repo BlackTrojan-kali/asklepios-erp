@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('invoices', function (Blueprint $table) {
             $table->id();
             $table->foreignId("patient_id")->constrained("patients")->onDelete("cascade");
-            $table->foreignId("center_id")->constrained("centers")->onDelete("cascade");
+            $table->foreignId("center_id")->nullable()->constrained("centers")->onDelete("cascade");
             $table->foreignId("patient_visit_id")->nullable()->constrained("patient_visits");
             $table->float("total_amount");
             $table->enum("status",["UNPAID","PAID"]);

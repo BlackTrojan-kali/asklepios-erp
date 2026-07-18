@@ -78,7 +78,7 @@ class FacilityRoomController extends Controller
     public function index(Request $request, $departmentId)
     {
         $hospitalId = $this->getHospitalId();
-
+        
         // 1. Vérification de sécurité : Le département appartient-il bien à cet hôpital ?
         $department = Department::whereHas('center', function($q) use ($hospitalId) {
             $q->where('hospital_id', $hospitalId);
