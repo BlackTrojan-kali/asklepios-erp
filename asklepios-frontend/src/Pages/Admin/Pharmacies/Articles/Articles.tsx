@@ -29,6 +29,8 @@ import type { ArticleDto } from '../../../../types/PharmTypes';
 // Modales
 import { CreateArticleModal } from '../../../../components/modals/Pharmacy/Article/CreateArticleModal';
 import { UpdateArticleModal } from '../../../../components/modals/Pharmacy/Article/UpdateArticleModal';
+import { ExportArticleModal } from '../../../../components/modals/Pharmacy/Article/ExportArticleModal';
+import { Download } from 'lucide-react';
 
 const Articles = () => {
     // Hooks des stores
@@ -54,6 +56,7 @@ const Articles = () => {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [selectedArticle, setSelectedArticle] = useState<ArticleDto | null>(null);
     const [autoRefreshPage, setAutoRefreshPage] = useState<boolean>(false);
+    const [isExportOpen, setIsExportOpen] = useState(false);
 
     // URL de base pour afficher les images
     const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -137,6 +140,16 @@ const Articles = () => {
                     >
                         <RefreshCw size={18} className={loading ? "animate-spin text-[#00a896]" : ""} />
                         <span className="hidden sm:inline">Rafraîchir</span>
+                    </button>
+
+                    
+                    <button 
+                        onClick={() => setIsExportOpen(true)}
+                        className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-900 dark:bg-gray-700 dark:hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm flex-1 sm:flex-none"
+                        title="Exporter en PDF"
+                    >
+                        <Download size={18} />
+                        <span className="hidden sm:inline">Exporter</span>
                     </button>
 
                     <button 
@@ -416,6 +429,13 @@ const Articles = () => {
                 categories={allCategories}
                 AutoRefreshPage={handleAutoRefresh}
             />
+
+            <ExportArticleModal 
+                isOpen={isExportOpen} 
+                onClose={() => setIsExportOpen(false)} 
+                categories={allCategories}
+            />
+
 
         </div>
     );

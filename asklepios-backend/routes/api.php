@@ -170,6 +170,7 @@ Route::middleware('auth:sanctum')->group(function () {
             // Catalogue
             Route::get('/article-categories/all', [ArticleCategoryController::class, 'all']);
             Route::apiResource('article-categories', ArticleCategoryController::class);
+            Route::get('/articles/export/pdf', [ArticleController::class, 'exportPdf']);
             Route::post('/articles', [ArticleController::class, 'store']);
             Route::put('/articles/{id}', [ArticleController::class, 'update']);
             Route::delete('/articles/{id}', [ArticleController::class, 'destroy']);

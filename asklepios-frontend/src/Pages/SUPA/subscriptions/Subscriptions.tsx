@@ -40,6 +40,18 @@ const Subscriptions = () => {
     const handleAutoRefresh = ()=>{
         SetAutoRefreshPage(!autoRefreshPage)
     }
+    const getCount = (lic) =>{
+        switch(lic.licence_name){
+            case "laboratory":
+                return  lic.lab_count;
+            case "pharmacy":
+                return lic.pharmacy_count;
+            case "base_hospital":
+                return lic.center_count;
+            default:
+                return lic.center_count;
+        }
+    }
     // États pour les Modales
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [selectedSub, setSelectedSub] = useState<SubscriptionDto | null>(null);
@@ -403,7 +415,7 @@ const Subscriptions = () => {
                                     {previewData.licences.map((lic, i) => (
                                         <tr key={i} className="border-b border-gray-50 dark:border-gray-700/50 text-slate-800 dark:text-gray-200">
                                             <td className="py-2">{lic.licence_name}</td>
-                                            <td className="py-2 text-center">{lic.licence_name == "pharmacy" ? lic.pharmacy_count : lic.center_count}</td>
+                                            <td className="py-2 text-center">{getCount(lic)}</td>
                                             <td className="py-2 text-right">{lic.sub_total.toLocaleString()} {previewData.currency}</td>
                                         </tr>
                                     ))}
