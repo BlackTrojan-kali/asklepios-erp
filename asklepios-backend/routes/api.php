@@ -51,6 +51,7 @@ use App\Http\Controllers\SUPA\AdminController;
 use App\Http\Controllers\SUPA\CountryController;
 use App\Http\Controllers\SUPA\HospitalController;
 use App\Http\Controllers\SUPA\LicenceController;
+use App\Http\Controllers\SUPA\ProfileCeoController;
 use App\Http\Controllers\SUPA\SubscriptionController;
 use GuzzleHttp\Middleware;
 
@@ -66,7 +67,13 @@ Route::prefix("auth")->group(function(){
 // 2. ROUTES AUTHENTIFIÉES (GLOBALES)
 // ==========================================================
 Route::middleware('auth:sanctum')->group(function () {
+
+Route::middleware(['role:super_admin'])->prefix('superadmin')->group(function () {
     
+    // Vous pouvez utiliser apiResource pour générer automatiquement index, store, update, destroy
+    Route::apiResource('ceos', ProfileCeoController::class)->except(['show']);
+    
+});
     // Profil utilisateur
     Route::get('/user', function (Request $request) {
         return $request->user();

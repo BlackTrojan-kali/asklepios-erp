@@ -120,6 +120,7 @@ import LaboratoriesAdmin from "./Pages/Admin/laboratory/LaboratoriesAdmin";
 // Import Comptoir Laboratoire
 import LabPatients from "./Pages/Laboratory/Patients/LabPatients";
 import LabInvoices from "./Pages/Laboratory/Billing/LabInvoices";
+import CeoManagement from "./Pages/SUPA/ceo/CeoManagement";
 
 // ============================================================================
 // CONFIGURATION DES ROUTES
@@ -159,11 +160,24 @@ const routes = createBrowserRouter([
           { path: "countries", element: <Countries /> },
           { path: "hospitals", element: <Hospitals /> },
           { path: "admins", element: <Admins /> },
+          { path: "ceos", element: <CeoManagement /> },
           { path: "licences", element: <Licences /> },
           { path: "subscriptions", element: <Subscriptions /> },
         ],
       },
-
+//BI AND REPORTING
+  // ====================================================
+      {
+        path:"bi",
+        element: (
+          <CheckRole roles={["ceo"]}>
+            <Outlet />
+          </CheckRole>
+        ),
+        children: [
+          { path: "dashboard", element: <b>hi</b> },
+        ],
+      },
       // ====================================================
       // B. ESPACE ADMINISTRATEUR (Base Hôpital & Paramétrages)
       // ====================================================
