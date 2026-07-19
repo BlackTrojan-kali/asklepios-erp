@@ -25,7 +25,9 @@ const Login = () => {
         navigate("/reception/patients", { replace: true });
       } else if (profile?.role == "doctor") {
         navigate("/doctor/home", { replace: true });
-      } else if (profile?.role == "laboratory") {
+      } else if(profile?.role == "ceo"){
+          navigate("/bi",{replace:true})
+      }else if (profile?.role == "laboratory") {
         const labRoles = profile?.profile_lab?.lab_roles || [];
         const roles =
           typeof labRoles === "string" ? JSON.parse(labRoles) : labRoles;

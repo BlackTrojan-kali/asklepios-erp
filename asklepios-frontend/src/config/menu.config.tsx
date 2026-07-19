@@ -24,6 +24,8 @@ import {
   Microscope,
   TestTubes,
   Database,
+  Command,
+  Star,
 } from "lucide-react";
 
 // --- 1. DÉFINITION DES TYPES ---
@@ -60,6 +62,12 @@ export const MENU_CONFIG: MenuItemType[] = [
     title: "Administrateurs",
     icon: <Shield size={20} />,
     path: "/admins",
+    roles: ["super_admin"],
+  },
+  {
+    title: "Ceos",
+    icon: <Star size={20} />,
+    path: "/ceos",
     roles: ["super_admin"],
   },
   {

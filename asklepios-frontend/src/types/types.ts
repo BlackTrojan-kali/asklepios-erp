@@ -7,7 +7,7 @@
 export interface ProfileDto {
     first_name: string;
     last_name: string | null;
-    role: "super_admin" | "admin" | "doctor" | "pharmacy" | "reception" | "laboratory";
+    role: "super_admin" | "admin" | "doctor" | "pharmacy" | "reception" | "laboratory" | "ceo";
     email: string;
     
 }

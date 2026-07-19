@@ -47,8 +47,8 @@ export interface StockTransferDto {
     updated_at?: string;
 
     // Relations optionnelles chargées par le backend (via with())
-    sourcePharmacy?: any;      // Remplace `any` par `PharmacyBranchDto`
-    destinationPharmacy?: any; // Remplace `any` par `PharmacyBranchDto`
+    source_pharmacy?: any;      // Remplace `any` par `PharmacyBranchDto`
+    destination_pharmacy?: any; // Remplace `any` par `PharmacyBranchDto`
     driver?: DriverDto;
     vehicule?: VehiculeDto;
     lines?: StockTransferLineDto[];

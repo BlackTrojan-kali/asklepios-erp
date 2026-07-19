@@ -139,10 +139,36 @@ export const MultiPatientSchedulingModal: React.FC<Props> = ({
         label: `Dr. ${d.user?.first_name || ''} ${d.user?.last_name || ''} (${d.department?.name || 'Généraliste'})` 
     }));
 
+    // --- STYLES FORCÉS (BLANC & NOIR) POUR REACT-SELECT ---
     const selectStyles = { 
-        menuPortal: (b: any) => ({ ...b, zIndex: 9999 }), 
-        singleValue: (b: any) => ({ ...b, color: '#000' }),
-        input: (b: any) => ({ ...b, color: '#000' }) 
+        menuPortal: (base: any) => ({ ...base, zIndex: 9999 }),
+        control: (base: any, state: any) => ({
+            ...base,
+            backgroundColor: '#ffffff', // Fond toujours blanc
+            borderColor: state.isFocused ? '#4f46e5' : '#d1d5db',
+            boxShadow: state.isFocused ? '0 0 0 1px #4f46e5' : 'none',
+            borderRadius: '0.5rem',
+            minHeight: '42px',
+        }),
+        menu: (base: any) => ({
+            ...base,
+            backgroundColor: '#ffffff', // Fond du menu déroulant toujours blanc
+            borderRadius: '0.5rem',
+        }),
+        option: (base: any, state: any) => ({
+            ...base,
+            backgroundColor: state.isSelected 
+                ? '#e0e7ff' // Fond bleuté si sélectionné
+                : state.isFocused 
+                    ? '#f3f4f6' // Fond gris clair au survol
+                    : '#ffffff', // Fond blanc par défaut
+            color: state.isSelected ? '#4f46e5' : '#000000', // Texte noir ou bleu
+            cursor: 'pointer',
+        }),
+        singleValue: (base: any) => ({ ...base, color: '#000000' }), // Texte de l'option choisie en noir
+        input: (base: any) => ({ ...base, color: '#000000' }), // Texte tapé au clavier en noir
+        placeholder: (base: any) => ({ ...base, color: '#6b7280' }), // Placeholder en gris moyen
+        indicatorSeparator: (base: any) => ({ ...base, backgroundColor: '#e5e7eb' }),
     };
 
     if (!isOpen) return null;
@@ -267,7 +293,7 @@ export const MultiPatientSchedulingModal: React.FC<Props> = ({
                 {/* ========================================= */}
                 <div className="w-full md:w-1/2 p-6 flex flex-col bg-slate-50 dark:bg-gray-800/50 relative h-full overflow-hidden">
                     
-                    <button onClick={onClose} className="absolute top-4 right-4 p-2 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors">
+                    <button onClick={onClose} className="absolute top-4 right-4 p-2 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors z-10">
                         <X size={20} />
                     </button>
 
@@ -292,7 +318,7 @@ export const MultiPatientSchedulingModal: React.FC<Props> = ({
                                     selectedPatients.map(p => (
                                         <div key={p.id} className="flex items-center gap-1.5 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-300 px-2.5 py-1 rounded-md text-xs font-semibold border border-indigo-200 dark:border-indigo-800/50">
                                             <span>{p.first_name}</span>
-                                            <button onClick={() => removePatient(p.id)} className="hover:text-red-500 focus:outline-none ml-1">
+                                            <button type="button" onClick={() => removePatient(p.id)} className="hover:text-red-500 focus:outline-none ml-1">
                                                 <X size={14} />
                                             </button>
                                         </div>
@@ -335,6 +361,7 @@ export const MultiPatientSchedulingModal: React.FC<Props> = ({
                     {/* Bouton de soumission */}
                     <div className="pt-6 mt-auto border-t border-gray-200 dark:border-gray-700 shrink-0">
                         <button 
+                            type="button"
                             onClick={handleSubmit} 
                             disabled={selectedPatients.length === 0 || !formDate || !formTime || !doctorId || actionLoading} 
                             className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold disabled:opacity-50 transition-colors shadow-lg flex justify-center items-center gap-2"

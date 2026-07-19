@@ -60,7 +60,7 @@ const Inventories = () => {
             confirmButtonColor: '#ef4444',
             cancelButtonText: 'Annuler',
             confirmButtonText: 'Oui, supprimer',
-            customClass: { popup: 'rounded-2xl dark:bg-gray-800 dark:text-gray-200' }
+            customClass: { popup: 'rounded-2xl dark:bg-gray-800 dark:text-gray-400' }
         });
         
         if (result.isConfirmed) {
@@ -75,7 +75,7 @@ const Inventories = () => {
             html: `
                 <div class="text-left mt-2">
                     <p class="mb-3">En validant cet inventaire :</p>
-                    <ul class="list-disc list-inside text-sm text-gray-600 dark:text-gray-300 space-y-1 mb-4">
+                    <ul class="list-disc list-inside text-sm text-gray-600  space-y-1 mb-4">
                         <li>Le brouillon deviendra immuable (lecture seule).</li>
                         <li>Des <b>mouvements de stock (entrées/sorties)</b> seront générés automatiquement pour corriger les écarts constatés.</li>
                     </ul>

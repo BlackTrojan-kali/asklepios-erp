@@ -71,6 +71,7 @@ const ReceptionistAppointments = () => {
       ? Number(selectedCenter.value)
       : 0;
   const [autoRefreshPage, setAutoRefreshPage] = useState<boolean>(false);
+  
   // --- HELPERS DE DATES ---
   const getLocalYYYYMMDD = (date: Date) => {
     const year = date.getFullYear();
@@ -87,6 +88,7 @@ const ReceptionistAppointments = () => {
   const handleAutoRefresh = () => {
     setAutoRefreshPage(!autoRefreshPage);
   };
+  
   // --- CHARGEMENT INITIAL ---
   const fetchAppointments = useCallback(() => {
     const filterParams = currentCenterId ? { center_id: currentCenterId } : {};
@@ -468,7 +470,8 @@ const ReceptionistAppointments = () => {
                         </span>
                       </div>
 
-                      {isScheduled && !isCancelled && (
+                      {/* 👉 CORRECTION ICI : Permettre d'annuler si Prévu OU En attente */}
+                      {(isScheduled || isWaiting) && !isCancelled && (
                         <button
                           onClick={() => setApptToCancel(app)}
                           className="text-gray-300 hover:text-red-500 dark:text-gray-600 dark:hover:text-red-400 transition-colors p-1"

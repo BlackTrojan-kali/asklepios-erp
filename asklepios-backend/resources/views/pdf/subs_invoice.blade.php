@@ -228,7 +228,8 @@
                     Période du : <strong>{{ $starting_date }}</strong><br>
                     Au : <strong>{{ $ending_date }}</strong><br><br>
                     Nombre de centres actifs : <strong>{{ $center_count }}</strong> <br>
-                    Nombre de pharmacies actives : <strong>{{ $pharmacy_count }}</strong>
+                    Nombre de pharmacies actives : <strong>{{ $pharmacy_count }}</strong> <br>
+                    Nombre de laboratoires actifs : <strong>{{ $lab_count }}</strong>
                 </div>
             </td>
         </tr>

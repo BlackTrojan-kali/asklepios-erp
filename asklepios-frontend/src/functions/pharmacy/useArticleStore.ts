@@ -31,9 +31,14 @@ const useArticleStore = () => {
         formData.append('category_id', String(payload.category_id));
         formData.append('name', payload.name);
         
+        // Ajout du prix de vente par défaut
+        if (payload.default_selling_price !== "" && payload.default_selling_price !== undefined && payload.default_selling_price !== null) {
+            formData.append('default_selling_price', String(payload.default_selling_price));
+        }
+        
         // Conversion des booléens en chaînes de caractères ('true'/'false') pour le FormData
         formData.append('track_batches', payload.track_batches ? 'true' : 'false');
-        formData.append('is_prescripted', payload.is_prescripted ? 'true' : 'false'); // <-- LIGNE AJOUTÉE ICI
+        formData.append('is_prescripted', payload.is_prescripted ? 'true' : 'false');
         
         if (payload.barcode) {
             formData.append('barcode', payload.barcode);
@@ -126,7 +131,6 @@ const useArticleStore = () => {
             setActionLoading(true);
             const formData = createFormData(payload, true);
             
-            // ⚠️ Attention : On utilise POST ici à cause du multipart/form-data
             await api.post(`/admin/articles/${id}`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
@@ -168,6 +172,33 @@ const useArticleStore = () => {
         }
     };
 
+    // --- 5. EXPORTER LES ARTICLES EN PDF ---
+    const exportArticlesPdf = async (filters: { search?: string, category_id?: number | string, track_batches?: string, is_prescripted?: string } = {}) => {
+        try {
+            setActionLoading(true);
+            const res = await api.get("/admin/articles/export/pdf", {
+                params: filters,
+                responseType: 'blob', // IMPORTANT : Indique qu'on attend un fichier
+            });
+            
+            // Création d'un lien virtuel pour forcer le téléchargement
+            const url = window.URL.createObjectURL(new Blob([res.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Catalogue_Articles_${new Date().getTime()}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove(); // Nettoyage
+
+            toast.success("Téléchargement du PDF réussi !");
+            return true;
+        } catch (error) {
+            toast.error("Erreur lors de la génération du PDF.");
+            return false;
+        } finally {
+            setActionLoading(false);
+        }
+    };
     return {
         articles,
         allArticles, // Liste complète pour les futurs formulaires (entrées de stock, etc.)
@@ -178,7 +209,8 @@ const useArticleStore = () => {
         getAllArticles,
         createArticle,
         updateArticle,
-        deleteArticle
+        deleteArticle,
+        exportArticlesPdf // Ajout de la fonction d'export
     };
 };
 
