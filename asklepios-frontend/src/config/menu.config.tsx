@@ -1,4 +1,5 @@
 import React from "react";
+import { ShieldPlus } from 'lucide-react';
 import {
   Globe,
   Hospital,
@@ -52,6 +53,7 @@ export const MENU_CONFIG: MenuItemType[] = [
     path: "/countries",
     roles: ["super_admin"],
   },
+  
   {
     title: "Hôpitaux",
     icon: <Hospital size={20} />,
@@ -99,6 +101,18 @@ export const MENU_CONFIG: MenuItemType[] = [
       { title: "Départements", path: "/admin/departments" },
       { title: "Catégories Chambres", path: "/admin/room_categories" },
     ],
+  },
+  {
+    title:"Assurances",
+    icon:<ShieldPlus size={20}/>,
+    roles:["admin"],
+    subItems:[
+      {
+        title:"Assurances",
+        path:"/admin/insurances"
+      }
+    ]
+
   },
   {
     title: "Équipe Médicale",

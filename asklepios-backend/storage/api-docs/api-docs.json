@@ -416,6 +416,63 @@
                 ]
             }
         },
+        "/api/admin/articles/export/pdf": {
+            "get": {
+                "tags": [
+                    "Articles (Admin)"
+                ],
+                "summary": "Exporter le catalogue des articles en PDF (Tâche en arrière-plan)",
+                "description": "Exporter la liste des articles en PDF",
+                "operationId": "exportAdminArticlesPdf",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Nom ou Code-barres",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "category_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "track_batches",
+                        "in": "query",
+                        "description": "Filtrer par suivi de lots (true/false)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "is_prescripted",
+                        "in": "query",
+                        "description": "Filtrer par prescription obligatoire (true/false)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "L'exportation PDF a démarré avec succès. Une notification sera envoyée à la fin."
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/admin/batches": {
             "get": {
                 "tags": [
@@ -2188,6 +2245,295 @@
                 "responses": {
                     "200": {
                         "description": "Salle supprimée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/insurance-companies": {
+            "get": {
+                "tags": [
+                    "Admin - Assurances"
+                ],
+                "summary": "Lister et filtrer les assurances",
+                "description": "Récupère la liste des compagnies d'assurance. Permet de filtrer par hôpital ou d'effectuer une recherche par nom/email.",
+                "operationId": "getInsuranceCompanies",
+                "parameters": [
+                    {
+                        "name": "hospital_id",
+                        "in": "query",
+                        "description": "Filtrer par ID de l'hôpital",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Recherche par nom ou email",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste récupérée avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "hospital_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "AXA Assurance"
+                                                    },
+                                                    "email": {
+                                                        "type": "string",
+                                                        "example": "contact@axa.cm"
+                                                    },
+                                                    "contact": {
+                                                        "type": "string",
+                                                        "example": "+237 600000000"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Admin - Assurances"
+                ],
+                "summary": "Ajouter une compagnie d'assurance",
+                "description": "Crée une nouvelle assurance rattachée à un hôpital.",
+                "operationId": "storeInsuranceCompany",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "hospital_id",
+                                    "name"
+                                ],
+                                "properties": {
+                                    "hospital_id": {
+                                        "description": "ID de l'hôpital",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "name": {
+                                        "description": "Nom de l'assurance",
+                                        "type": "string",
+                                        "example": "Sanlam"
+                                    },
+                                    "email": {
+                                        "description": "Email de contact",
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "contact@sanlam.com"
+                                    },
+                                    "contact": {
+                                        "description": "Numéro de téléphone",
+                                        "type": "string",
+                                        "example": "+237 699999999"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Assurance créée avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Compagnie d'assurance ajoutée avec succès."
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erreur de validation"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/insurance-companies/{id}": {
+            "put": {
+                "tags": [
+                    "Admin - Assurances"
+                ],
+                "summary": "Modifier une assurance",
+                "description": "Met à jour les informations d'une compagnie d'assurance existante.",
+                "operationId": "updateInsuranceCompany",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de l'assurance",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Sanlam Cameroun"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "nouveau@sanlam.cm"
+                                    },
+                                    "contact": {
+                                        "type": "string",
+                                        "example": "600000000"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Assurance mise à jour",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Informations mises à jour avec succès."
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Assurance introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Admin - Assurances"
+                ],
+                "summary": "Supprimer une assurance",
+                "description": "Supprime définitivement une compagnie d'assurance de la base de données.",
+                "operationId": "destroyInsuranceCompany",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de l'assurance à supprimer",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Suppression réussie",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Compagnie d'assurance supprimée avec succès."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Assurance introuvable"
                     }
                 },
                 "security": [
@@ -4286,7 +4632,7 @@
                     "Stocks"
                 ],
                 "summary": "Voir les stocks globaux paginés (Toutes succursales)",
-                "description": "1. VUE GLOBALE PAGINÉE (Pour les Administrateurs ou Superviseurs)\nListe tous les stocks de l'hôpital, avec possibilité de filtrer par succursale.",
+                "description": "1. VUE GLOBALE PAGINÉE (Pour les Administrateurs ou Superviseurs)\r\nListe tous les stocks de l'hôpital, avec possibilité de filtrer par succursale.",
                 "operationId": "getGlobalStocks",
                 "parameters": [
                     {
@@ -4355,7 +4701,7 @@
                     "Stocks"
                 ],
                 "summary": "Voir les stocks paginés de ma succursale",
-                "description": "2. VUE LOCALE PAGINÉE (Pour les Pharmaciens / Vendeurs)\nListe uniquement les stocks de la succursale du pharmacien connecté.",
+                "description": "2. VUE LOCALE PAGINÉE (Pour les Pharmaciens / Vendeurs)\r\nListe uniquement les stocks de la succursale du pharmacien connecté.",
                 "operationId": "getMyBranchStocks",
                 "parameters": [
                     {
@@ -4648,8 +4994,29 @@
                     "Consultations Médicales"
                 ],
                 "summary": "Lister les consultations du médecin",
-                "description": "Récupère l'historique des consultations effectuées par le médecin connecté.",
+                "description": "Récupère l'historique des consultations effectuées par le médecin connecté (inclut les visites classiques et les hospitalisations).",
                 "operationId": "6e1a57b51ca9232d4ed3bfcc267616aa",
+                "parameters": [
+                    {
+                        "name": "date",
+                        "in": "query",
+                        "description": "Filtrer par date (ex: 2026-07-17)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "patient_id",
+                        "in": "query",
+                        "description": "Filtrer par patient",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Liste récupérée avec succès"
@@ -4765,7 +5132,7 @@
                     "Consultations Médicales"
                 ],
                 "summary": "Supprimer une consultation",
-                "description": "Annule et supprime une consultation si elle n'est pas encore facturée, et replace le patient en salle de consultation.",
+                "description": "Annule et supprime une consultation si elle n'est pas encore facturée.",
                 "operationId": "067d99aaaa5080a4ae6796367c493b60",
                 "responses": {
                     "200": {
@@ -5867,6 +6234,15 @@
                         }
                     },
                     {
+                        "name": "patient_code",
+                        "in": "query",
+                        "description": "Filtrer par code patient (ex: H1-0001)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
                         "name": "status",
                         "in": "query",
                         "description": "Filtrer par statut (UNPAID, PAID)",
@@ -5955,16 +6331,16 @@
                 ]
             }
         },
-        "/api/shared/visits/{visitId}/unbilled-preview": {
+        "/api/shared/patients/{patientId}/unbilled-preview": {
             "get": {
                 "tags": [
                     "Facturation"
                 ],
-                "summary": "Prévisualiser les éléments non facturés d'une visite",
-                "operationId": "9f1e6baedae6af0c1c28e85870218b7b",
+                "summary": "Prévisualiser les éléments non facturés d'un patient",
+                "operationId": "d989464ce62f586f41cc40db21669469",
                 "responses": {
                     "200": {
-                        "description": "element récupérée avec succès"
+                        "description": "Eléments récupérés avec succès"
                     }
                 },
                 "security": [
@@ -5972,16 +6348,6 @@
                         "sanctum": []
                     }
                 ]
-            }
-        },
-        "/api/shared/patients/{patientId}/unbilled-preview": {
-            "get": {
-                "operationId": "d989464ce62f586f41cc40db21669469",
-                "responses": {
-                    "200": {
-                        "description": "element récupérée avec succès"
-                    }
-                }
             }
         },
         "/api/shared/patients/{patientId}/generate-invoice": {
@@ -6076,9 +6442,9 @@
                 "operationId": "283562eb2998a4f4d979c7f1cbceffcc",
                 "parameters": [
                     {
-                        "name": "center_id",
+                        "name": "hospital_id",
                         "in": "query",
-                        "description": "Filtrer par centre",
+                        "description": "Filtrer par hôpital",
                         "required": false,
                         "schema": {
                             "type": "integer"
@@ -6111,7 +6477,7 @@
                                     "name"
                                 ],
                                 "properties": {
-                                    "center_id": {
+                                    "hospital_id": {
                                         "type": "integer",
                                         "nullable": true
                                     },
@@ -6479,6 +6845,75 @@
                 "responses": {
                     "200": {
                         "description": "Liste des requêtes récupérée"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Requêtes Laboratoire"
+                ],
+                "summary": "Créer une demande d'examen",
+                "description": "Créer une nouvelle requête de laboratoire avec facturation.",
+                "operationId": "9126fd50c1342e18cbbb839cb46f8d30",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "patient_id",
+                                    "test_ids"
+                                ],
+                                "properties": {
+                                    "patient_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "test_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            1,
+                                            2
+                                        ]
+                                    },
+                                    "external_prescriber_name": {
+                                        "type": "string",
+                                        "example": "Dr. Dupont",
+                                        "nullable": true
+                                    },
+                                    "profile_doctor_id": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    },
+                                    "patient_visit_id": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    },
+                                    "priority": {
+                                        "type": "string",
+                                        "default": "ROUTINE",
+                                        "enum": [
+                                            "ROUTINE",
+                                            "URGENT"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Requête et facture créées avec succès"
                     }
                 },
                 "security": [
@@ -6885,6 +7320,140 @@
                 "responses": {
                     "200": {
                         "description": "Examen supprimé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/laboratories": {
+            "get": {
+                "tags": [
+                    "Laboratoires"
+                ],
+                "summary": "Lister les laboratoires",
+                "operationId": "f8ee78d280793d36997808078ed41d0e",
+                "parameters": [
+                    {
+                        "name": "hospital_id",
+                        "in": "query",
+                        "description": "Filtrer par hôpital (Tenant)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste des laboratoires"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Laboratoires"
+                ],
+                "summary": "Créer un laboratoire",
+                "operationId": "485471948f7694f4c00a1282677a14a8",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "hospital_id"
+                                ],
+                                "properties": {
+                                    "hospital_id": {
+                                        "type": "integer"
+                                    },
+                                    "center_id": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    },
+                                    "country_id": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Laboratoire créé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/laboratories/{id}": {
+            "get": {
+                "tags": [
+                    "Laboratoires"
+                ],
+                "summary": "Voir un laboratoire",
+                "operationId": "641928de560ed7eb6923a38d4fe01e06",
+                "responses": {
+                    "200": {
+                        "description": "Détails du laboratoire"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Laboratoires"
+                ],
+                "summary": "Modifier un laboratoire",
+                "operationId": "637924f0f454be67828994ec3bf739ff",
+                "responses": {
+                    "200": {
+                        "description": "Laboratoire mis à jour"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Laboratoires"
+                ],
+                "summary": "Supprimer un laboratoire",
+                "operationId": "8720446f73e5a228098b1a85bcfa08cf",
+                "responses": {
+                    "200": {
+                        "description": "Laboratoire supprimé"
                     }
                 },
                 "security": [
@@ -8396,6 +8965,15 @@
                         "required": false,
                         "schema": {
                             "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "patient_code",
+                        "in": "query",
+                        "description": "Filtrer par code patient (ex: H1-0001)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
                         }
                     }
                 ],
@@ -9934,6 +10512,420 @@
                 ]
             }
         },
+        "/api/superadmin/ceos": {
+            "get": {
+                "tags": [
+                    "SuperAdmin - Direction (CEO/DSI/DAF)"
+                ],
+                "summary": "Liste tous les profils (CEO, DSI, DAF)",
+                "description": "Récupère la liste complète des profils de direction avec les informations de l'utilisateur et de l'hôpital associés.",
+                "operationId": "getSuperAdminCeos",
+                "responses": {
+                    "200": {
+                        "description": "Liste récupérée avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "user_id": {
+                                                        "type": "integer",
+                                                        "example": 5
+                                                    },
+                                                    "hospital_id": {
+                                                        "type": "integer",
+                                                        "example": 2
+                                                    },
+                                                    "type": {
+                                                        "type": "string",
+                                                        "example": "ceo"
+                                                    },
+                                                    "user": {
+                                                        "type": "object"
+                                                    },
+                                                    "hospital": {
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "SuperAdmin - Direction (CEO/DSI/DAF)"
+                ],
+                "summary": "Créer un nouveau profil (CEO, DSI, DAF)",
+                "description": "Crée un nouvel utilisateur et l'associe automatiquement à un profil de direction pour un hôpital donné.",
+                "operationId": "storeSuperAdminCeo",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "first_name",
+                                    "phone",
+                                    "email",
+                                    "password",
+                                    "hospital_id",
+                                    "type"
+                                ],
+                                "properties": {
+                                    "first_name": {
+                                        "description": "Prénom",
+                                        "type": "string",
+                                        "example": "Jean"
+                                    },
+                                    "last_name": {
+                                        "description": "Nom de famille",
+                                        "type": "string",
+                                        "example": "Dupont"
+                                    },
+                                    "phone": {
+                                        "description": "Numéro de téléphone",
+                                        "type": "integer",
+                                        "example": 690000000
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "directeur@hopital.com"
+                                    },
+                                    "password": {
+                                        "description": "Minimum 8 caractères",
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "MotDePasseSecurise123"
+                                    },
+                                    "hospital_id": {
+                                        "description": "ID de l'hôpital existant",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "type": {
+                                        "description": "Rôle dans la direction",
+                                        "type": "string",
+                                        "example": "ceo",
+                                        "enum": [
+                                            "ceo",
+                                            "dsi",
+                                            "daf"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Profil créé avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Profil créé avec succès."
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erreur de validation des données",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Erreur interne du serveur",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Erreur lors de la création."
+                                        },
+                                        "error": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/superadmin/ceos/{id}": {
+            "put": {
+                "tags": [
+                    "SuperAdmin - Direction (CEO/DSI/DAF)"
+                ],
+                "summary": "Mettre à jour un profil existant",
+                "description": "Met à jour les informations de l'utilisateur et/ou du profil CEO/DSI/DAF.",
+                "operationId": "updateSuperAdminCeo",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID du profil (ProfileCeo)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "first_name": {
+                                        "type": "string",
+                                        "example": "Jean-Marc"
+                                    },
+                                    "last_name": {
+                                        "type": "string",
+                                        "example": "Dupont"
+                                    },
+                                    "phone": {
+                                        "type": "integer",
+                                        "example": 690000001
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "jm.dupont@hopital.com"
+                                    },
+                                    "password": {
+                                        "description": "Laisser vide pour ne pas modifier",
+                                        "type": "string",
+                                        "format": "password"
+                                    },
+                                    "hospital_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "dsi",
+                                        "enum": [
+                                            "ceo",
+                                            "dsi",
+                                            "daf"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Profil mis à jour avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Profil mis à jour avec succès."
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Profil introuvable",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No query results for model [App\\Models\\ProfileCeo]."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erreur de validation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The email has already been taken."
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Erreur interne du serveur"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "SuperAdmin - Direction (CEO/DSI/DAF)"
+                ],
+                "summary": "Supprimer un profil",
+                "description": "Supprime définitivement le profil directeur ainsi que le compte utilisateur associé.",
+                "operationId": "destroySuperAdminCeo",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID du profil à supprimer",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Suppression réussie",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Profil et compte utilisateur supprimés avec succès."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Profil introuvable"
+                    },
+                    "500": {
+                        "description": "Erreur interne du serveur",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Erreur lors de la suppression."
+                                        },
+                                        "error": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/supa/subscriptions": {
             "get": {
                 "tags": [
@@ -10352,6 +11344,10 @@
             "description": "Gestion des salles, bureaux et chambres d'hospitalisation"
         },
         {
+            "name": "Admin - Assurances",
+            "description": "Gestion des compagnies d'assurance par l'administrateur de l'hôpital"
+        },
+        {
             "name": "Comptes de Trésorerie (Admin)",
             "description": "Gestion des comptes de paiement, banques et caisses de la pharmacie"
         },
@@ -10444,6 +11440,10 @@
             "description": "Gestion du catalogue des examens de laboratoire"
         },
         {
+            "name": "Laboratoires",
+            "description": "Gestion des laboratoires (Entité)"
+        },
+        {
             "name": "Notifications",
             "description": "Gestion des notifications utilisateur"
         },
@@ -10506,6 +11506,10 @@
         {
             "name": "Licences (SUPA)",
             "description": "Gestion des licences du système par le Super Admin"
+        },
+        {
+            "name": "SuperAdmin - Direction (CEO/DSI/DAF)",
+            "description": "Gestion des profils directeurs des hôpitaux par le Super Admin"
         },
         {
             "name": "Souscriptions (SUPA)",

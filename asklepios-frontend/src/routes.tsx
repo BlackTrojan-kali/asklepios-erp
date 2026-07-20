@@ -121,6 +121,7 @@ import LaboratoriesAdmin from "./Pages/Admin/laboratory/LaboratoriesAdmin";
 import LabPatients from "./Pages/Laboratory/Patients/LabPatients";
 import LabInvoices from "./Pages/Laboratory/Billing/LabInvoices";
 import CeoManagement from "./Pages/SUPA/ceo/CeoManagement";
+import InsuranceManagement from "./Pages/Admin/InsuranceManagement";
 
 // ============================================================================
 // CONFIGURATION DES ROUTES
@@ -194,7 +195,7 @@ const routes = createBrowserRouter([
           { path: "doctors", element: <Doctors /> },
           { path: "pharmaciens", element: <Pharmaciens /> },
           { path: "lab-personnel", element: <LabPersonnel /> },
-
+          { path: "insurances", element: <InsuranceManagement/>},
           // -- Structure de l'Hôpital --
           { path: "laboratories", element: <LaboratoriesAdmin /> },
           { path: "centers", element: <Centers /> },

@@ -11,11 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('profile_ceos', function (Blueprint $table) {
+        Schema::create('guarantor_claims', function (Blueprint $table) {
             $table->id();
             $table->foreignId("hospital_id")->constrained("hospitals")->onDelete("cascade");
-            $table->foreignId("user_id")->constrained("users")->onDelete("cascade");
-            $table->enum("type",["ceo","dsi","daf"]);
+            $table->foreignId("insurance_company_id")->constrained("insurance_companies")->onDelete("cascade");
+            $table->date("claim_month");
+            $table->float("total_claim_amount");
+            $table->enum("status",["DRAFT","SUBMITTED","PAID","DISPUTED"]);
             $table->timestamps();
         });
     }
@@ -25,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('profile_ceos');
+        Schema::dropIfExists('guarantor_claims');
     }
 };

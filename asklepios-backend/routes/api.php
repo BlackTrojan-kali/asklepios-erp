@@ -15,6 +15,8 @@ use App\Http\Controllers\Admin\DoctorController;
 use App\Http\Controllers\Admin\DriverController;
 use App\Http\Controllers\Admin\FacilityRoomController;
 use App\Http\Controllers\Admin\CashRegisterController;
+use App\Http\Controllers\Admin\InsuranceCompanyController;
+use App\Http\Controllers\Admin\PatientCoverageController;
 use App\Http\Controllers\Admin\PaymentAccountController;
 use App\Http\Controllers\Admin\PaymentTransactionController;
 use App\Http\Controllers\Admin\PosSaleController as AdminPosSaleController;
@@ -67,6 +69,19 @@ Route::prefix("auth")->group(function(){
 // 2. ROUTES AUTHENTIFIÉES (GLOBALES)
 // ==========================================================
 Route::middleware('auth:sanctum')->group(function () {
+Route::get('insurance-coverages/patient/{patient_id}', [PatientCoverageController::class, 'getPatientCoverages']);
+
+Route::middleware(['role:admin,reception'])->group(function () {
+// Création, modification et suppression des couvertures patients
+    Route::post('insurance-coverages', [PatientCoverageController::class, 'store']);
+    Route::put('insurance-coverages/{id}', [PatientCoverageController::class, 'update']);
+    Route::delete('insurance-coverages/{id}', [PatientCoverageController::class, 'destroy']);
+    
+    });
+Route::middleware(['role:admin,reception'])->prefix('admin')->group(function () {
+    
+    Route::apiResource('insurance-companies', InsuranceCompanyController::class)->except(['show']);
+});
 
 Route::middleware(['role:super_admin'])->prefix('superadmin')->group(function () {
     
