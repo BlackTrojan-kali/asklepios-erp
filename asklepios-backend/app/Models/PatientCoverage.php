@@ -18,7 +18,9 @@ class PatientCoverage extends Model
         'is_active',
         'policy_number',
         'coverage_rate',
-        'priority_order', // <-- NOUVEAU CHAMP
+        'priority_order',
+        'coverage_scope', // <-- NOUVEAU CHAMP
+        
     ];
 
     protected $casts = [
@@ -26,6 +28,7 @@ class PatientCoverage extends Model
         'is_active' => 'boolean',
         'coverage_rate' => 'float',
         'priority_order' => 'integer', // <-- NOUVEAU CHAMP
+        'coverage_scope' => 'array', // <-- Convertit automatiquement le JSON en tableau PHP
     ];
 
     /**

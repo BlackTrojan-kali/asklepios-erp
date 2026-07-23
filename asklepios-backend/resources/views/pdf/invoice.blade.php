@@ -32,10 +32,13 @@
 
         /* --- TOTAUX --- */
         .totals-wrapper { width: 100%; margin-top: 10px; }
-        .totals-table { width: 40%; float: right; border-collapse: collapse; font-size: 12px; }
+        .totals-table { width: 50%; float: right; border-collapse: collapse; font-size: 12px; }
         .totals-table td { padding: 6px 8px; border-bottom: 1px solid #e2e8f0; }
         .total-final { background-color: #00a896; color: white; font-weight: bold; font-size: 14px; }
         .total-final td { border: none; }
+        .text-insurance { color: #0284c7; }
+        .text-payment { color: #10b981; }
+        .font-bold { font-weight: bold; }
 
         /* --- PIED DE PAGE --- */
         .footer { position: fixed; bottom: -20px; left: 0; right: 0; text-align: center; font-size: 9px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 5px; }
@@ -45,7 +48,7 @@
 
     @if($asklepiosLogoBase64)
         <div class="watermark">
-            <img src="{{ $asklepiosLogoBase64 }}" alt="Asklepios">
+            <img src="{{ $asklepiosLogoBase64 }}" alt="Asklepios Logo">
         </div>
     @endif
 
@@ -53,7 +56,7 @@
         <tr>
             <td style="width: 60%; vertical-align: top;">
                 @if($hospitalLogoBase64)
-                    <img src="{{ $hospitalLogoBase64 }}" style="max-height: 60px; margin-bottom: 5px;" alt="Logo Hopital">
+                    <img src="{{ $hospitalLogoBase64 }}" style="max-height: 60px; margin-bottom: 5px;" alt="Logo Hôpital">
                 @else
                     <div class="hospital-name">{{ $hospital->name ?? 'HÔPITAL' }}</div>
                 @endif
@@ -83,11 +86,14 @@
                         <tr>
                             <td style="width: 50%;">
                                 <strong>Nom complet :</strong> {{ $patient->first_name }} {{ $patient->last_name }}<br>
-                                <strong>Code Patient :</strong> {{ $patient->patient_code }}
+                                <strong>Code Patient :</strong> {{ $patient->patient_code }}<br>
+                                @if(isset($invoice->insurance_part) && $invoice->insurance_part > 0)
+                                    <strong style="color: #0284c7;">Statut :</strong> Patient Assuré (Tiers Payant)
+                                @endif
                             </td>
                             <td style="width: 50%; text-align: right;">
                                 <strong>Téléphone :</strong> {{ $patient->contact_phone ?? 'N/A' }}<br>
-                                <strong>Âge :</strong> {{ \Carbon\Carbon::parse($patient->bith_date)->age }} ans
+                                <strong>Âge :</strong> {{ $patient->birth_date ? \Carbon\Carbon::parse($patient->birth_date)->age . ' ans' : 'N/A' }}
                             </td>
                         </tr>
                     </table>
@@ -105,42 +111,50 @@
         </thead>
         <tbody>
             {{-- 1. CONSULTATIONS --}}
-            @foreach($invoice->consultations as $consultation)
-                @if($consultation->consultation_price > 0)
-                <tr>
-                    <td>Consultation Médicale - Dr. {{ $consultation->profileDoctor->user->first_name ?? '' }}</td>
-                    <td class="text-right font-mono">{{ number_format($consultation->consultation_price, 0, ',', ' ') }}</td>
-                </tr>
-                @endif
-            @endforeach
+            @if(isset($invoice->consultations))
+                @foreach($invoice->consultations as $consultation)
+                    @if($consultation->consultation_price > 0)
+                    <tr>
+                        <td>Consultation Médicale - Dr. {{ $consultation->profileDoctor->user->first_name ?? '' }}</td>
+                        <td class="text-right font-mono">{{ number_format($consultation->consultation_price, 0, ',', ' ') }}</td>
+                    </tr>
+                    @endif
+                @endforeach
+            @endif
 
             {{-- 2. ACTES MÉDICAUX --}}
-            @foreach($invoice->performedMedicalActs as $act)
-                <tr>
-                    <td>Acte Médical : {{ $act->medicalActCatalog->name ?? 'Soin' }}</td>
-                    <td class="text-right font-mono">{{ number_format($act->applied_price, 0, ',', ' ') }}</td>
-                </tr>
-            @endforeach
+            @if(isset($invoice->performedMedicalActs))
+                @foreach($invoice->performedMedicalActs as $act)
+                    <tr>
+                        <td>Acte Médical : {{ $act->medicalActCatalog->name ?? 'Soin' }}</td>
+                        <td class="text-right font-mono">{{ number_format($act->applied_price, 0, ',', ' ') }}</td>
+                    </tr>
+                @endforeach
+            @endif
 
-            {{-- 3. ADMISSIONS (Hospitalisations calculées dans InvoicePdfService) --}}
-            @foreach($admissions as $adm)
-                <tr>
-                    <td>{{ $adm['description'] }}</td>
-                    <td class="text-right font-mono">{{ number_format($adm['subtotal'], 0, ',', ' ') }}</td>
-                </tr>
-            @endforeach
+            {{-- 3. ADMISSIONS (Hospitalisations) --}}
+            @if(isset($admissions))
+                @foreach($admissions as $adm)
+                    <tr>
+                        <td>{{ $adm['description'] }}</td>
+                        <td class="text-right font-mono">{{ number_format($adm['subtotal'], 0, ',', ' ') }}</td>
+                    </tr>
+                @endforeach
+            @endif
 
-            {{-- 4. EXAMENS DE LABORATOIRE --}}
+            {{-- 4. EXAMENS DE LABORATOIRE (Si module Labo actif) --}}
             @if(isset($invoice->labRequests))
                 @foreach($invoice->labRequests as $labReq)
-                    @foreach($labReq->lines as $line)
-                        @if($line->test)
-                        <tr>
-                            <td>Examen : {{ $line->test->name }}</td>
-                            <td class="text-right font-mono">{{ number_format($line->test->price, 0, ',', ' ') }}</td>
-                        </tr>
-                        @endif
-                    @endforeach
+                    @if(isset($labReq->lines))
+                        @foreach($labReq->lines as $line)
+                            @if($line->test)
+                            <tr>
+                                <td>Examen Labo : {{ $line->test->name }}</td>
+                                <td class="text-right font-mono">{{ number_format($line->test->price, 0, ',', ' ') }}</td>
+                            </tr>
+                            @endif
+                        @endforeach
+                    @endif
                 @endforeach
             @endif
 
@@ -150,29 +164,53 @@
     <div class="totals-wrapper">
         <table class="totals-table">
             <tr>
-                <td>Total Facturé</td>
+                <td>Total Général (Brut)</td>
                 <td class="text-right font-mono">{{ number_format($invoice->total_amount, 0, ',', ' ') }}</td>
             </tr>
             
+            {{-- AFFICHAGE DE LA PRISE EN CHARGE ASSURANCE --}}
             @php
-                $totalPaid = $invoice->payments->sum('amount');
+                $insurancePart = $invoice->insurance_part ?? 0;
+                $patientPart = $invoice->patient_part ?? $invoice->total_amount;
+            @endphp
+
+            @if($insurancePart > 0)
+            <tr>
+                <td class="text-insurance font-bold">Prise en charge Assurance</td>
+                <td class="text-right font-mono text-insurance font-bold">- {{ number_format($insurancePart, 0, ',', ' ') }}</td>
+            </tr>
+            @endif
+
+            {{-- PART PATIENT RÉELLE --}}
+            <tr>
+                <td class="font-bold" style="font-size: 13px;">Part Patient</td>
+                <td class="text-right font-mono font-bold" style="font-size: 13px;">{{ number_format($patientPart, 0, ',', ' ') }}</td>
+            </tr>
+
+            @php
+                $totalPaid = isset($invoice->payments) ? $invoice->payments->sum('amount') : 0;
             @endphp
             
+            {{-- ACOMPTES / DÉJÀ VERSÉ --}}
+            @if($totalPaid > 0)
             <tr>
-                <td style="color: #10b981;">Déjà Versé (Acomptes)</td>
-                <td class="text-right font-mono" style="color: #10b981;">{{ number_format($totalPaid, 0, ',', ' ') }}</td>
+                <td class="text-payment">Déjà Versé (Acomptes)</td>
+                <td class="text-right font-mono text-payment">- {{ number_format($totalPaid, 0, ',', ' ') }}</td>
             </tr>
+            @endif
+
+            {{-- NET À PAYER (Ce qu'il reste à payer de la poche du patient) --}}
             <tr class="total-final">
-                <td>RESTE À PAYER</td>
-                <td class="text-right font-mono">{{ number_format(max(0, $invoice->total_amount - $totalPaid), 0, ',', ' ') }} FCFA</td>
+                <td>NET À PAYER (Patient)</td>
+                <td class="text-right font-mono">{{ number_format(max(0, $patientPart - $totalPaid), 0, ',', ' ') }} FCFA</td>
             </tr>
         </table>
         <div style="clear: both;"></div>
     </div>
 
-    @if($invoice->payments->count() > 0)
+    @if(isset($invoice->payments) && $invoice->payments->count() > 0)
     <div style="margin-top: 30px;">
-        <p style="font-size: 10px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 5px;">Historique des paiements sur cette facture</p>
+        <p style="font-size: 10px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 5px;">Historique des paiements du patient</p>
         <table style="width: 100%; border-collapse: collapse; font-size: 9px; color: #64748b;">
             <tr style="border-bottom: 1px solid #e2e8f0;">
                 <th style="text-align: left; padding: 4px 0;">Date</th>

@@ -18,8 +18,6 @@ return new class extends Migration
             $table->foreignId("patient_visit_id")->nullable()->constrained("patient_visits");
             $table->float("total_amount");
             $table->enum("status",["UNPAID","PAID"]);
-            $table->float("patient_share")->nullable(); //ce que le patient paie
-            $table->float("guarantor_share")->nullable();//ce que l'assurance paie
             $table->timestamps();
         });
     }

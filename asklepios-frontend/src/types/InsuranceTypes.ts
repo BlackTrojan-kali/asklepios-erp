@@ -21,7 +21,7 @@ export interface InsuranceCompanyPayload {
 }
 
 // À ajouter dans types/InsuranceTypes.ts
-
+export type CoverageScopeType = 'consultation' | 'pharmacy' | 'lab';
 export interface PatientCoverageDto {
     id: number;
     patient_id: number;
@@ -32,7 +32,7 @@ export interface PatientCoverageDto {
     coverage_rate: number;
     created_at?: string;
     updated_at?: string;
-    
+    coverage_scope: CoverageScopeType[]; // <-- DEVIENT UN TABLEA // <-- NOUVEAU CHAMP
     // Relations optionnelles (à typer selon vos autres DTOs si disponibles)
     insurance_company?: InsuranceCompanyDto; 
     patient?: any;
@@ -47,4 +47,5 @@ export interface PatientCoveragePayload {
     policy_number?: string;
     coverage_rate?: number;
     priority_order?: number; // <-- NOUVEAU CHAMP
+   coverage_scope: CoverageScopeType[]; // <-- DEVIENT UN TABLEA// <-- NOUVEAU CHAMP
 }

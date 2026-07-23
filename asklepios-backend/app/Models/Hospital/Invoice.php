@@ -24,10 +24,10 @@ class Invoice extends Model
 
     /**
      * 👉 AJOUT TRÈS UTILE : 
-     * Cette ligne force Laravel à toujours inclure ces deux champs virtuels
-     * dans tes réponses JSON (API) envoyées à ton frontend React.
+     * On ajoute les parts patient et assurance pour qu'elles soient
+     * automatiquement calculées et envoyées au frontend React.
      */
-    protected $appends = ['total_paid', 'remaining_debt'];
+    protected $appends = ['total_paid', 'remaining_debt', 'patient_part', 'insurance_part'];
 
     // ==========================================
     // RELATIONS
@@ -64,32 +64,52 @@ class Invoice extends Model
     public function admissions() {
         return $this->hasMany(Admission::class);
     }
-    public function labRequests(){
+    
+    public function labRequests() {
         return $this->hasMany(LabRequest::class);
     }
+
+    /**
+     * NOUVELLE RELATION : Les divisions de paiement de cette facture
+     */
+    public function splits(): HasMany {
+        return $this->hasMany(InvoiceSplit::class);
+    }
+
     // ==========================================
     // ATTRIBUTS VIRTUELS (ACCESSEURS)
     // ==========================================
 
-    /**
-     * Calcule la somme totale des paiements déjà effectués pour cette facture.
-     * Accessible en PHP via : $invoice->total_paid
-     */
     public function getTotalPaidAttribute()
     {
-        // On appelle $this->payments (sans les parenthèses) pour utiliser la collection. 
-        // Cela évite de refaire une requête SQL (N+1) si la relation 'payments' a déjà été chargée via un `with('payments')`.
         return $this->payments->sum('amount');
     }
 
-    /**
-     * Calcule la dette restante (le reste à payer).
-     * Accessible en PHP via : $invoice->remaining_debt
-     */
     public function getRemainingDebtAttribute()
     {
-        // On utilise la valeur totale moins la somme des paiements.
-        // Le max(0, ...) permet de s'assurer qu'on n'a pas une dette négative en cas de trop-perçu.
         return max(0, $this->total_amount - $this->total_paid);
+    }
+
+    /**
+     * Calcule la somme exacte que le patient doit payer de sa poche.
+     * Accessible via : $invoice->patient_part
+     */
+    public function getPatientPartAttribute()
+    {
+        // Si aucune division n'existe, on suppose par défaut que le patient paie tout
+        if ($this->splits->isEmpty()) {
+            return (float) $this->total_amount;
+        }
+
+        return $this->splits->where('type', 'PATIENT')->sum('amount_to_pay');
+    }
+
+    /**
+     * Calcule la somme prise en charge par la ou les assurance(s).
+     * Accessible via : $invoice->insurance_part
+     */
+    public function getInsurancePartAttribute()
+    {
+        return $this->splits->where('type', 'INSURANCE')->sum('amount_to_pay');
     }
 }

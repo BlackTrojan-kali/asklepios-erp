@@ -13,11 +13,12 @@ return new class extends Migration
     {
         Schema::create('guarantor_claims', function (Blueprint $table) {
             $table->id();
-            $table->foreignId("hospital_id")->constrained("hospitals")->onDelete("cascade");
+            $table->foreignId("center_id")->constrained("centers")->onDelete("cascade");
             $table->foreignId("insurance_company_id")->constrained("insurance_companies")->onDelete("cascade");
             $table->date("claim_month");
             $table->float("total_claim_amount");
             $table->enum("status",["DRAFT","SUBMITTED","PAID","DISPUTED"]);
+            $table->string("claim_refence")->nullable();
             $table->timestamps();
         });
     }

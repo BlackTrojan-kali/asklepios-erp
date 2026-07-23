@@ -107,19 +107,21 @@ class PatientCoverageController extends Controller
     )]
     public function store(Request $request)
     {
-        $validated = $request->validate([
+      $validated = $request->validate([
             'patient_id' => 'required|exists:patients,id',
             'insurance_company_id' => 'required|exists:insurance_companies,id',
             'valid_until' => 'required|date|after_or_equal:today',
             'is_active' => 'boolean',
             'policy_number' => 'required|string|max:255',
             'coverage_rate' => 'required|numeric|min:0|max:100',
-            'priority_order' => 'nullable|integer|min:1', 
+            'priority_order' => 'nullable|integer|min:1',
+            // NOUVELLES RÈGLES POUR LE TABLEAU :
+            'coverage_scope' => 'required|array|min:1', 
+            'coverage_scope.*' => 'required|string|in:consultation,pharmacy,lab',
         ]);
         
         $validated['priority_order'] = $validated['priority_order'] ?? 1;
         
-        // Utilisation correcte du service via $this
         $coverage = $this->coverageService->createCoverage($validated);
 
         return response()->json([
@@ -159,12 +161,15 @@ class PatientCoverageController extends Controller
     #[OA\Response(response: 200, description: "Mise à jour réussie")]
     public function update(Request $request, $id)
     {
-        $validated = $request->validate([
+      $validated = $request->validate([
             'valid_until' => 'sometimes|required|date',
             'is_active' => 'sometimes|boolean',
             'policy_number' => 'sometimes|required|string|max:255',
             'coverage_rate' => 'sometimes|required|numeric|min:0|max:100',
             'priority_order' => 'sometimes|integer|min:1', 
+            // NOUVELLES RÈGLES POUR LE TABLEAU :
+            'coverage_scope' => 'sometimes|required|array|min:1',
+            'coverage_scope.*' => 'required|string|in:consultation,pharmacy,lab',
         ]);
 
         $coverage = $this->coverageService->updateCoverage($id, $validated);

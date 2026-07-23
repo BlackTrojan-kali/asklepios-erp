@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string("policy_number");//matricule assure ou numero de police
             $table->float("coverage_rate");
             $table->integer("priority_order")->default(1); //1 pour principale 2 pour complementaire si j'ai plusieurs assurances
+            $table->json("coverage_scope");//["consultation","pharmacy","lab"]
             $table->timestamps();
         });
     }

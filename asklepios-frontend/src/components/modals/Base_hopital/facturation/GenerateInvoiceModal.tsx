@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
     X, Search, User, FileText, Calculator, 
-    ArrowRightCircle, Loader2, Receipt, ChevronLeft, ChevronRight, BedDouble, Stethoscope, Syringe
+    ArrowRightCircle, Loader2, Receipt, ChevronLeft, ChevronRight, BedDouble, Stethoscope, Syringe, ShieldCheck
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import usePatientStore from '../../../../functions/base_hospital/usePatientStore';
@@ -14,11 +14,21 @@ interface GenerateInvoiceModalProps {
     onClose: () => void;
 }
 
+// Typage minimal pour l'affichage de l'assurance dans la modale
+interface ActiveCoverageMini {
+    insurance_company?: { name: string };
+    policy_number: string;
+    coverage_rate: number;
+    priority_order: number;
+    coverage_scope: string[];
+}
+
 interface UnbilledPreview {
     unbilled_consultations_count: number;
     unbilled_acts_total: number;
     unbilled_admissions_total: number;
     total_without_consultation: number;
+    active_coverages?: ActiveCoverageMini[]; // 👉 NOUVEAU : Récupération des assurances actives
 }
 
 export const GenerateInvoiceModal: React.FC<GenerateInvoiceModalProps> = ({ isOpen, onClose }) => {
@@ -74,11 +84,23 @@ export const GenerateInvoiceModal: React.FC<GenerateInvoiceModalProps> = ({ isOp
         }
     };
 
-    // 3. Calcul dynamique
+    // 3. Calcul dynamique (Montant BRUT avant division assurance)
     const calculateDynamicTotal = () => {
         if (!previewData) return 0;
         const consultTotal = (previewData.unbilled_consultations_count || 0) * (consultationPrice || 0);
         return previewData.total_without_consultation + consultTotal;
+    };
+
+    // Helper : Traduction des périmètres d'assurance pour l'affichage
+    const getScopeLabels = (scopes: string[]) => {
+        if (!Array.isArray(scopes)) return '';
+        return scopes.map(s => {
+            // 👉 MISE À JOUR : On englobe tout le bloc Hôpital sous une même appellation visuelle
+            if (s === 'consultation') return 'Consultations, Actes & Séjours';
+            if (s === 'pharmacy') return 'Pharmacie';
+            if (s === 'lab') return 'Laboratoire';
+            return s;
+        }).join(' | ');
     };
 
     // 4. Génération de la facture globale
@@ -220,10 +242,43 @@ export const GenerateInvoiceModal: React.FC<GenerateInvoiceModalProps> = ({ isOp
                                         </div>
                                     </div>
 
+                                    {/* 👉 NOUVEAU : ALERTE TIERS PAYANT (ASSURANCES) */}
+                                    {previewData?.active_coverages && previewData.active_coverages.length > 0 && (
+                                        <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-xl border border-indigo-200 dark:border-indigo-800/50">
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <ShieldCheck size={18} className="text-indigo-600 dark:text-indigo-400" />
+                                                <h4 className="font-bold text-indigo-900 dark:text-indigo-300 text-sm">Prise en charge (Tiers Payant)</h4>
+                                            </div>
+                                            <div className="space-y-2">
+                                                {previewData.active_coverages.map((cov, idx) => (
+                                                    <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between text-sm bg-white dark:bg-gray-800 p-2.5 rounded-lg border border-indigo-100 dark:border-indigo-900/50 shadow-sm">
+                                                        <div className="mb-1 sm:mb-0">
+                                                            <span className="font-bold text-gray-800 dark:text-gray-200">{cov.insurance_company?.name || 'Assurance'}</span>
+                                                            <span className="text-xs text-gray-500 ml-2">({cov.policy_number})</span>
+                                                            <p className="text-[10px] text-gray-400 uppercase mt-0.5">Couvre : {getScopeLabels(cov.coverage_scope)}</p>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-xs font-bold bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 px-2.5 py-1 rounded-md">
+                                                                Taux: {cov.coverage_rate}%
+                                                            </span>
+                                                            <span className="text-[10px] text-gray-500 uppercase font-medium bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-md">
+                                                                Ordre: {cov.priority_order}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <p className="text-xs text-indigo-700/80 dark:text-indigo-300/80 mt-3 font-medium flex items-center gap-1.5">
+                                                <ArrowRightCircle size={14} />
+                                                Le système déduira automatiquement la part assurance lors de la génération.
+                                            </p>
+                                        </div>
+                                    )}
+
                                     {/* CONFIGURATION DU PRIX DE CONSULTATION */}
                                     <div className="bg-emerald-50/50 dark:bg-emerald-900/10 p-5 rounded-xl border border-emerald-100 dark:border-emerald-900/30">
                                         <label className="block text-sm font-bold text-emerald-800 dark:text-emerald-300 mb-1.5">
-                                            Prix de la consultation (Appliqué à chaque consultation non facturée)
+                                            Prix unitaire de la consultation (Appliqué aux consultations non facturées)
                                         </label>
                                         <div className="relative">
                                             <Calculator size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-600" />
@@ -244,7 +299,7 @@ export const GenerateInvoiceModal: React.FC<GenerateInvoiceModalProps> = ({ isOp
                                     ) : previewData ? (
                                         <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
                                             <div className="bg-gray-100 dark:bg-gray-800 px-4 py-2 border-b border-gray-200 dark:border-gray-700 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                                Synthèse des impayés du patient
+                                                Synthèse des impayés du patient (Valeur Brute)
                                             </div>
                                             <div className="p-4 space-y-4">
                                                 
@@ -287,7 +342,10 @@ export const GenerateInvoiceModal: React.FC<GenerateInvoiceModalProps> = ({ isOp
                                                 <hr className="border-gray-200 dark:border-gray-700 my-2" />
                                                 
                                                 <div className="flex justify-between items-center pt-2">
-                                                    <span className="font-bold text-[#003366] dark:text-white text-lg">TOTAL À FACTURER</span>
+                                                    <div>
+                                                        <span className="font-bold text-[#003366] dark:text-white text-lg block">TOTAL BRUT À FACTURER</span>
+                                                        <span className="text-[10px] text-gray-500">(Avant déduction éventuelle de l'assurance)</span>
+                                                    </div>
                                                     <span className="font-bold text-[#00a896] text-2xl font-mono">{calculateDynamicTotal().toLocaleString()} FCFA</span>
                                                 </div>
 

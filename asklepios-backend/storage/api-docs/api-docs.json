@@ -2401,9 +2401,6 @@
                                 }
                             }
                         }
-                    },
-                    "422": {
-                        "description": "Erreur de validation"
                     }
                 },
                 "security": [
@@ -2481,9 +2478,6 @@
                                 }
                             }
                         }
-                    },
-                    "404": {
-                        "description": "Assurance introuvable"
                     }
                 },
                 "security": [
@@ -2531,9 +2525,262 @@
                                 }
                             }
                         }
-                    },
-                    "404": {
-                        "description": "Assurance introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/insurance-coverages/patient/{patient_id}": {
+            "get": {
+                "tags": [
+                    "Assurances & Couvertures Patients"
+                ],
+                "summary": "Lister les assurances d'un patient",
+                "description": "Récupère toutes les couvertures d'assurance d'un patient spécifique, triées par ordre de priorité.",
+                "operationId": "getPatientCoverages",
+                "parameters": [
+                    {
+                        "name": "patient_id",
+                        "in": "path",
+                        "description": "ID du patient",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste récupérée avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "insurance_company_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "policy_number": {
+                                                        "type": "string"
+                                                    },
+                                                    "coverage_rate": {
+                                                        "type": "number"
+                                                    },
+                                                    "priority_order": {
+                                                        "type": "integer"
+                                                    },
+                                                    "insurance_company": {
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/insurance-coverages": {
+            "post": {
+                "tags": [
+                    "Assurances & Couvertures Patients"
+                ],
+                "summary": "Ajouter une couverture d'assurance à un patient",
+                "description": "Assigne une assurance à un patient avec un matricule et un taux de couverture.",
+                "operationId": "storePatientCoverage",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "patient_id",
+                                    "insurance_company_id",
+                                    "valid_until",
+                                    "policy_number",
+                                    "coverage_rate"
+                                ],
+                                "properties": {
+                                    "patient_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "insurance_company_id": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "valid_until": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2027-12-31"
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "policy_number": {
+                                        "type": "string",
+                                        "example": "MAT-2026-X89"
+                                    },
+                                    "coverage_rate": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 80.5
+                                    },
+                                    "priority_order": {
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Couverture ajoutée avec succès",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Couverture patient enregistrée avec succès."
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/insurance-coverages/{id}": {
+            "put": {
+                "tags": [
+                    "Assurances & Couvertures Patients"
+                ],
+                "summary": "Mettre à jour la couverture d'un patient",
+                "description": "Modifie les détails d'une couverture d'assurance existante.",
+                "operationId": "updatePatientCoverage",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la couverture",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "valid_until": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2028-01-01"
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "policy_number": {
+                                        "type": "string",
+                                        "example": "MAT-NEW-123"
+                                    },
+                                    "coverage_rate": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 100
+                                    },
+                                    "priority_order": {
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Mise à jour réussie"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Assurances & Couvertures Patients"
+                ],
+                "summary": "Supprimer une couverture d'assurance",
+                "description": "Retire la couverture d'assurance d'un patient.",
+                "operationId": "removePatientCoverage",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la couverture à supprimer",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Suppression réussie"
                     }
                 },
                 "security": [
@@ -11346,6 +11593,10 @@
         {
             "name": "Admin - Assurances",
             "description": "Gestion des compagnies d'assurance par l'administrateur de l'hôpital"
+        },
+        {
+            "name": "Assurances & Couvertures Patients",
+            "description": "Gestion des prises en charge et couvertures d'assurances des patients"
         },
         {
             "name": "Comptes de Trésorerie (Admin)",

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { X, Printer, XCircle, Loader2, Receipt, CheckCircle } from 'lucide-react';
+import { X, Printer, XCircle, Loader2, Receipt, CheckCircle, ShieldCheck } from 'lucide-react';
 import Swal from 'sweetalert2';
 import useInvoiceStore from '../../../../functions/base_hospital/useInvoiceStore';
 
@@ -11,7 +11,7 @@ interface InvoicePreviewModalProps {
 
 export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen, onClose, invoiceId }) => {
     const { currentInvoice, getInvoiceById, loading, actionLoading, downloadInvoicePdf, cancelInvoice } = useInvoiceStore();
-    console.log(currentInvoice)
+    
     useEffect(() => {
         if (isOpen && invoiceId) {
             getInvoiceById(invoiceId);
@@ -45,10 +45,16 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen
         return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XAF' }).format(amount).replace('XAF', 'FCFA');
     };
 
-    // Calcul du total déjà versé
+    // --- CALCULS SÉCURISÉS (Tiers Payant Intégré) ---
+    const totalAmount = currentInvoice?.total_amount || 0;
+    const insurancePart = currentInvoice?.insurance_part || 0;
+    // Si la propriété patient_part n'existe pas (anciennes factures), le patient paie la totalité
+    const patientPart = currentInvoice?.patient_part ?? totalAmount; 
+    
     const totalPaid = currentInvoice?.payments?.reduce((acc, curr) => acc + curr.amount, 0) || 0;
-    // Reste à payer sécurisé (jamais en dessous de 0)
-    const remainingAmount = Math.max(0, (currentInvoice?.total_amount || 0) - totalPaid);
+    
+    // Le reste à payer est calculé sur la PART PATIENT uniquement
+    const remainingAmount = Math.max(0, patientPart - totalPaid);
 
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
@@ -126,18 +132,14 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen
                                         {/* Actes Médicaux */}
                                         {currentInvoice.performed_medical_acts?.map(act => (
                                             <tr key={`act-${act.id}`}>
-                                                {/* On gère le nom peu importe la façon dont l'ORM Laravel a nommé la relation */}
                                                 <td className="py-3 px-3 dark:text-gray-300">Acte: {act.medical_act_catalog?.name || act.medicalActCatalog?.name || 'Soin'}</td>
                                                 <td className="py-3 px-3 text-right font-mono dark:text-gray-300">{formatCurrency(act.applied_price || 0)}</td>
                                             </tr>
                                         ))}
 
-                                        {/* Lits / Admissions (Calculé avec price_per_night) */}
+                                        {/* Lits / Admissions */}
                                         {currentInvoice.admissions?.map(adm => {
-                                            // Différence en jours, minimum 1
                                             const days = Math.max(1, Math.ceil((new Date(adm.actual_discharge_date || new Date()).getTime() - new Date(adm.admission_date).getTime()) / (1000 * 3600 * 24)));
-                                            
-                                            // 👉 CORRECTION MAJEURE ICI : On utilise `price_per_night` et on vérifie si la catégorie existe
                                             const price = adm.bed?.facility_room?.category?.price_per_night || 0;
                                             return (
                                                 <tr key={`adm-${adm.id}`}>
@@ -152,22 +154,44 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen
                                 </table>
                             </div>
 
-                            {/* Total & Paiements */}
+                            {/* Total & Paiements (Refonte Tiers Payant) */}
                             <div className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+                                
                                 <div className="flex justify-between items-center mb-2">
-                                    <span className="font-bold text-gray-600 dark:text-gray-400">Total Facturé :</span>
-                                    <span className="font-bold text-lg font-mono dark:text-white">{formatCurrency(currentInvoice.total_amount)}</span>
+                                    <span className="font-medium text-gray-500 dark:text-gray-400">Total Général (Brut) :</span>
+                                    <span className="font-mono text-gray-700 dark:text-gray-300">{formatCurrency(totalAmount)}</span>
                                 </div>
+
+                                {/* Affichage de la Prise en Charge si elle existe */}
+                                {insurancePart > 0 && (
+                                    <div className="flex justify-between items-center mb-2 text-indigo-600 dark:text-indigo-400">
+                                        <span className="font-bold flex items-center gap-1.5">
+                                            <ShieldCheck size={16} /> Prise en charge Assurance :
+                                        </span>
+                                        <span className="font-bold font-mono">- {formatCurrency(insurancePart)}</span>
+                                    </div>
+                                )}
+
+                                {/* Part Patient Réelle */}
                                 <div className="flex justify-between items-center mb-2">
-                                    <span className="text-gray-500">Déjà versé :</span>
-                                    <span className="font-mono text-emerald-600 dark:text-emerald-400">
-                                        {formatCurrency(totalPaid)}
-                                    </span>
+                                    <span className="font-bold text-gray-700 dark:text-gray-200">Part Patient :</span>
+                                    <span className="font-bold text-lg font-mono dark:text-white">{formatCurrency(patientPart)}</span>
                                 </div>
+
+                                {/* Acomptes */}
+                                {totalPaid > 0 && (
+                                    <div className="flex justify-between items-center mb-2 text-emerald-600 dark:text-emerald-400">
+                                        <span className="text-sm font-medium">Déjà versé (Acomptes) :</span>
+                                        <span className="font-mono text-sm">- {formatCurrency(totalPaid)}</span>
+                                    </div>
+                                )}
+                                
                                 <hr className="border-gray-200 dark:border-gray-700 my-2" />
+                                
+                                {/* Reste à Payer Net */}
                                 <div className="flex justify-between items-center">
-                                    <span className="font-bold text-[#003366] dark:text-blue-400 uppercase">Reste à payer :</span>
-                                    <span className={`font-bold text-xl font-mono ${currentInvoice.status === 'PAID' ? 'text-emerald-500' : 'text-red-500'}`}>
+                                    <span className="font-bold text-[#003366] dark:text-blue-400 uppercase">Net à payer (Patient) :</span>
+                                    <span className={`font-bold text-xl font-mono ${remainingAmount === 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                                         {formatCurrency(remainingAmount)}
                                     </span>
                                 </div>

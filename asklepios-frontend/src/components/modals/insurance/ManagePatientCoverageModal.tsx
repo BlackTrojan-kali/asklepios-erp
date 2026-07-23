@@ -5,13 +5,13 @@ import {
     Activity, Edit2, Trash2, Plus, ShieldAlert 
 } from 'lucide-react';
 import useCoveragesStore from '../../../functions/insurance/useCoveragesStore';
-import type { PatientCoverageDto, InsuranceCompanyDto } from '../../../types/InsuranceTypes';
+import type { PatientCoverageDto, InsuranceCompanyDto, CoverageScopeType } from '../../../types/InsuranceTypes';
 
 interface Props {
     isOpen: boolean;
     onClose: () => void;
-    patientId: number; // L'ID du patient concerné
-    insurances: InsuranceCompanyDto[]; // Liste des assurances
+    patientId: number; 
+    insurances: InsuranceCompanyDto[]; 
     AutoRefreshPage: () => void;
 }
 
@@ -22,7 +22,6 @@ export const ManagePatientCoverageModal: React.FC<Props> = ({
     insurances,
     AutoRefreshPage 
 }) => {
-    // Utilisation du store avec les méthodes de lecture et d'écriture
     const { 
         coverages, 
         loading, 
@@ -41,10 +40,11 @@ export const ManagePatientCoverageModal: React.FC<Props> = ({
     const [validUntil, setValidUntil] = useState('');
     const [isActive, setIsActive] = useState<boolean>(true);
     const [priorityOrder, setPriorityOrder] = useState<number>(1);
+    // L'ÉTAT EST MAINTENANT UN TABLEAU
+    const [coverageScope, setCoverageScope] = useState<string[]>(['consultation']);
 
     const isEditMode = editingId !== null;
 
-    // Charger les couvertures à l'ouverture de la modale
     useEffect(() => {
         if (isOpen && patientId) {
             getPatientCoverages(patientId);
@@ -52,7 +52,6 @@ export const ManagePatientCoverageModal: React.FC<Props> = ({
         }
     }, [isOpen, patientId, getPatientCoverages]);
 
-    // Réinitialiser le formulaire (Mode Création)
     const resetForm = () => {
         setEditingId(null);
         setInsuranceId('');
@@ -61,15 +60,18 @@ export const ManagePatientCoverageModal: React.FC<Props> = ({
         setValidUntil('');
         setIsActive(true);
         setPriorityOrder(1);
+        setCoverageScope(['consultation']); // Réinitialisation avec un tableau
     };
 
-    // Pré-remplir le formulaire (Mode Édition)
     const handleEditClick = (cov: PatientCoverageDto) => {
         setEditingId(cov.id);
         setInsuranceId(cov.insurance_company_id || '');
         setPolicyNumber(cov.policy_number || '');
         setCoverageRate(cov.coverage_rate || '');
         setPriorityOrder(cov.priority_order || 1);
+        
+        // S'assurer qu'on reçoit bien un tableau (sécurité supplémentaire)
+        setCoverageScope(Array.isArray(cov.coverage_scope) ? cov.coverage_scope : ['consultation']);
         
         if (cov.valid_until) {
             const dateObj = new Date(cov.valid_until);
@@ -81,7 +83,6 @@ export const ManagePatientCoverageModal: React.FC<Props> = ({
         setIsActive(cov.is_active ?? true);
     };
 
-    // Supprimer une couverture
     const handleDeleteClick = async (id: number) => {
         if (window.confirm("Êtes-vous sûr de vouloir retirer cette assurance pour ce patient ?")) {
             const success = await deleteCoverage(id);
@@ -93,11 +94,11 @@ export const ManagePatientCoverageModal: React.FC<Props> = ({
         }
     };
 
-    // Soumettre le formulaire
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!insuranceId || !policyNumber.trim() || coverageRate === '' || !validUntil) return;
+        // Validation basique (au moins un périmètre doit être sélectionné)
+        if (!insuranceId || !policyNumber.trim() || coverageRate === '' || !validUntil || coverageScope.length === 0) return;
 
         const payload: any = {
             valid_until: validUntil,
@@ -105,6 +106,7 @@ export const ManagePatientCoverageModal: React.FC<Props> = ({
             policy_number: policyNumber.trim(),
             coverage_rate: Number(coverageRate),
             priority_order: priorityOrder,
+            coverage_scope: coverageScope, // On envoie le tableau directement
         };
 
         let success = false;
@@ -118,13 +120,13 @@ export const ManagePatientCoverageModal: React.FC<Props> = ({
         }
 
         if (success) {
-            getPatientCoverages(patientId); // Rafraîchir la liste
-            resetForm(); // Repasser en mode création
+            getPatientCoverages(patientId); 
+            resetForm(); 
             AutoRefreshPage();
         }
     };
 
-    // Options pour les Selects
+    // --- Options pour les Selects ---
     const insuranceOptions = insurances.map(ins => ({
         value: ins.id,
         label: ins.name
@@ -136,7 +138,13 @@ export const ManagePatientCoverageModal: React.FC<Props> = ({
         { value: 3, label: '3 - Tertiaire' },
     ];
 
-    // --- STYLES FORCÉS (BLANC & NOIR) POUR REACT-SELECT ---
+    const scopeOptions = [
+        { value: 'consultation', label: 'Consultations Médicales' },
+        { value: 'pharmacy', label: 'Pharmacie' },
+        { value: 'lab', label: 'Laboratoire (Examens)' },
+    ];
+
+    // --- STYLES FORCÉS POUR REACT-SELECT (Support Multi-Select) ---
     const selectStyles = { 
         menuPortal: (base: any) => ({ ...base, zIndex: 9999 }),
         control: (base: any, state: any) => ({
@@ -157,6 +165,18 @@ export const ManagePatientCoverageModal: React.FC<Props> = ({
         singleValue: (base: any) => ({ ...base, color: '#000000' }),
         input: (base: any) => ({ ...base, color: '#000000' }),
         placeholder: (base: any) => ({ ...base, color: '#6b7280' }),
+        // Styles spécifiques au multi-select
+        multiValue: (base: any) => ({ ...base, backgroundColor: '#e0e7ff', borderRadius: '0.375rem' }),
+        multiValueLabel: (base: any) => ({ ...base, color: '#3730a3', fontWeight: 'bold', fontSize: '0.75rem' }),
+        multiValueRemove: (base: any) => ({ ...base, color: '#4f46e5', ':hover': { backgroundColor: '#c7d2fe', color: '#312e81' } }),
+    };
+
+    // Helper pour afficher le bon nom du périmètre dans les badges
+    const getScopeLabel = (val: string) => {
+        if (val === 'consultation') return 'Consultation';
+        if (val === 'pharmacy') return 'Pharmacie';
+        if (val === 'lab') return 'Labo';
+        return val;
     };
 
     if (!isOpen) return null;
@@ -185,7 +205,7 @@ export const ManagePatientCoverageModal: React.FC<Props> = ({
                     </button>
                 </div>
 
-                {/* CORPS : DEUX COMPARTIMENTS */}
+                {/* CORPS */}
                 <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
                     
                     {/* GAUCHE : LISTE DES COUVERTURES */}
@@ -212,16 +232,23 @@ export const ManagePatientCoverageModal: React.FC<Props> = ({
                                 coverages.map((cov) => (
                                     <div key={cov.id} className={`p-4 rounded-xl border transition-all ${editingId === cov.id ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800' : 'bg-white border-gray-200 dark:bg-gray-800 dark:border-gray-700'} shadow-sm relative group`}>
                                         <div className="flex justify-between items-start mb-2">
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-2 flex-wrap">
                                                 <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${cov.priority_order === 1 ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
                                                     Ordre {cov.priority_order}
                                                 </span>
+                                                
+                                                {/* AFFICHAGE MULTIPLE DES BADGES DE PÉRIMÈTRES */}
+                                                {Array.isArray(cov.coverage_scope) && cov.coverage_scope.map((scope) => (
+                                                    <span key={scope} className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800 text-[10px] font-black uppercase">
+                                                        {getScopeLabel(scope)}
+                                                    </span>
+                                                ))}
+
                                                 {!cov.is_active && (
                                                     <span className="px-2 py-0.5 rounded bg-red-100 text-red-700 text-[10px] font-black uppercase">Inactif</span>
                                                 )}
                                             </div>
                                             
-                                            {/* Boutons d'action (affichés au survol) */}
                                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <button onClick={() => handleEditClick(cov)} className="p-1.5 text-amber-600 hover:bg-amber-100 rounded-md transition-colors">
                                                     <Edit2 size={14} />
@@ -253,7 +280,7 @@ export const ManagePatientCoverageModal: React.FC<Props> = ({
                                 {isEditMode ? <><Edit2 size={18}/> Mode Édition</> : <><ShieldPlus size={18}/> Nouvelle Couverture</>}
                             </h3>
                             {isEditMode && (
-                                <button onClick={resetForm} className="text-xs text-blue-600 hover:underline flex items-center gap-1 font-medium">
+                                <button type="button" onClick={resetForm} className="text-xs text-blue-600 hover:underline flex items-center gap-1 font-medium">
                                     <Plus size={14}/> Basculer en création
                                 </button>
                             )}
@@ -274,7 +301,27 @@ export const ManagePatientCoverageModal: React.FC<Props> = ({
                                     styles={selectStyles}
                                     isDisabled={isEditMode}
                                 />
-                                {isEditMode && <p className="text-xs text-amber-500 mt-1">L'assurance ne peut être modifiée. Créez-en une nouvelle si nécessaire.</p>}
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-gray-300 mb-1.5 flex items-center gap-1.5">
+                                    <Activity size={16} className="text-blue-500"/> Périmètre de couverture <span className="text-red-500">*</span>
+                                </label>
+                                <Select
+                                    isMulti // ACTIVER LA SÉLECTION MULTIPLE ICI
+                                    options={scopeOptions}
+                                    // Filtrer pour retrouver les objets correspondants au tableau de strings actuel
+                                    value={scopeOptions.filter(opt => coverageScope.includes(opt.value))}
+                                    // Extraire les valeurs (strings) des objets sélectionnés et les mettre dans le state
+                                    onChange={(selectedOptions) => {
+                                        setCoverageScope(selectedOptions ? selectedOptions.map(opt => opt.value) : []);
+                                    }}
+                                    placeholder="Sélectionner un ou plusieurs périmètres..."
+                                    menuPortalTarget={document.body}
+                                    styles={selectStyles}
+                                    closeMenuOnSelect={false} // Garder le menu ouvert pour sélectionner plusieurs options
+                                />
+                                {coverageScope.length === 0 && <p className="text-xs text-red-500 mt-1 font-medium">Veuillez sélectionner au moins un périmètre.</p>}
                             </div>
 
                             <div>
@@ -289,7 +336,6 @@ export const ManagePatientCoverageModal: React.FC<Props> = ({
                                     menuPortalTarget={document.body}
                                     styles={selectStyles}
                                 />
-                                <p className="text-xs text-gray-400 mt-1">Détermine l'ordre de facturation si le patient a plusieurs assurances.</p>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -357,7 +403,7 @@ export const ManagePatientCoverageModal: React.FC<Props> = ({
                         <div className="p-4 border-t border-gray-100 dark:border-gray-800 shrink-0 bg-slate-50 dark:bg-gray-900/50 flex justify-end">
                             <button 
                                 onClick={handleSubmit}
-                                disabled={actionLoading || !insuranceId || !policyNumber.trim() || coverageRate === '' || !validUntil}
+                                disabled={actionLoading || !insuranceId || !policyNumber.trim() || coverageRate === '' || !validUntil || coverageScope.length === 0}
                                 className={`px-6 py-2.5 text-white rounded-xl font-bold flex items-center gap-2 shadow-md transition-colors disabled:opacity-50 ${isEditMode ? 'bg-amber-600 hover:bg-amber-700' : 'bg-blue-600 hover:bg-blue-700'}`}
                             >
                                 {actionLoading ? (
