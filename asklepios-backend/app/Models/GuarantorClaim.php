@@ -1,8 +1,9 @@
 <?php
 
-namespace App\Models\Hospital;
+namespace App\Models;
 
 use App\Models\Center;
+use App\Models\Hospital\InvoiceSplit;
 use App\Models\InsuranceCompany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

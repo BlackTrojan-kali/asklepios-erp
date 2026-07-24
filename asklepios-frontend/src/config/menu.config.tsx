@@ -110,6 +110,10 @@ export const MENU_CONFIG: MenuItemType[] = [
       {
         title:"Assurances",
         path:"/admin/insurances"
+      },
+      {
+        title:"Demande de Paiement",
+        path:"/admin/guarantor_claims"
       }
     ]
 

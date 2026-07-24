@@ -20,7 +20,7 @@
         /* --- TABLEAU DES IMPAYÉS --- */
         .items-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 10px; }
         .items-table th { background-color: #003366; color: #ffffff; padding: 8px; text-align: left; text-transform: uppercase; border: 1px solid #002244; }
-        .items-table td { padding: 6px 8px; border: 1px solid #cbd5e1; }
+        .items-table td { padding: 8px; border: 1px solid #cbd5e1; vertical-align: top; }
         
         /* Zébrage pour faciliter la lecture */
         .items-table tbody tr:nth-child(even) { background-color: #f8fafc; }
@@ -29,6 +29,8 @@
         .text-center { text-align: center; }
         .font-mono { font-family: monospace; font-size: 11px; }
         .font-bold { font-weight: bold; }
+        
+        .prestation-details { color: #475569; font-size: 9px; margin-top: 3px; display: block; line-height: 1.3;}
 
         /* --- TOTAUX ET SIGNATURES --- */
         .summary-section { width: 100%; margin-top: 20px; }
@@ -80,22 +82,53 @@
         <thead>
             <tr>
                 <th style="width: 5%; text-align: center;">N°</th>
-                <th style="width: 12%;">Date de Soins</th>
-                <th style="width: 15%;">N° Facture</th>
-                <th style="width: 15%;">Code Patient</th>
-                <th style="width: 38%;">Nom du Patient</th>
+                <th style="width: 10%;">Date de Soins</th>
+                <th style="width: 10%;">N° Facture</th>
+                <th style="width: 25%;">Patient & N° Assuré</th>
+                <th style="width: 35%;">Détails des Prestations</th>
                 <th style="width: 15%; text-align: right;">Montant Réclamé</th>
             </tr>
         </thead>
         <tbody>
             @forelse($splits as $index => $split)
+                @php
+                    // Recherche du Numéro de Police (Policy Number)
+                    $policyNumber = 'N/A';
+                    if ($split->invoice->patient && $split->invoice->patient->coverages) {
+                        $coverage = $split->invoice->patient->coverages->where('insurance_company_id', $claim->insurance_company_id)->first();
+                        if ($coverage) $policyNumber = $coverage->policy_number;
+                    }
+
+                    // Construction du détail des soins
+                    $details = [];
+                    if ($split->invoice->consultations && $split->invoice->consultations->count() > 0) {
+                        $details[] = $split->invoice->consultations->count() . ' Consultation(s)';
+                    }
+                    if ($split->invoice->performedMedicalActs) {
+                        foreach ($split->invoice->performedMedicalActs as $act) {
+                            $details[] = $act->medicalActCatalog->name ?? 'Acte médical';
+                        }
+                    }
+                    if ($split->invoice->admissions && $split->invoice->admissions->count() > 0) {
+                        $details[] = 'Hospitalisation';
+                    }
+                    $detailsStr = !empty($details) ? implode(', ', $details) : 'Soins divers';
+                @endphp
+
                 <tr>
                     <td class="text-center">{{ $index + 1 }}</td>
                     <td>{{ \Carbon\Carbon::parse($split->invoice->created_at)->format('d/m/Y') }}</td>
                     <td class="font-mono font-bold">INV-{{ str_pad($split->invoice->id, 5, '0', STR_PAD_LEFT) }}</td>
-                    <td class="font-mono">{{ $split->invoice->patient->patient_code ?? 'N/A' }}</td>
-                    <td class="font-bold">{{ $split->invoice->patient->first_name }} {{ $split->invoice->patient->last_name }}</td>
-                    <td class="text-right font-mono font-bold">{{ number_format($split->amount_to_pay, 0, ',', ' ') }} FCFA</td>
+                    <td>
+                        <span class="font-bold">{{ $split->invoice->patient->first_name }} {{ $split->invoice->patient->last_name }}</span><br>
+                        <span style="font-size: 9px; color: #003366;">N° Police : <span class="font-mono">{{ $policyNumber }}</span></span>
+                    </td>
+                    <td>
+                        <span class="prestation-details">{{ $detailsStr }}</span>
+                    </td>
+                    <td class="text-right font-mono font-bold" style="color: #003366; font-size: 11px;">
+                        {{ number_format($split->amount_to_pay, 0, ',', ' ') }} FCFA
+                    </td>
                 </tr>
             @empty
                 <tr>
@@ -113,7 +146,6 @@
         <div style="clear: both;"></div>
     </div>
 
-    <!-- Convertisseur du montant en lettres (facultatif mais pro) -->
     <div style="margin-top: 15px; padding: 10px; border-left: 3px solid #003366; background-color: #f1f5f9; font-size: 11px;">
         Arrêté le présent bordereau à la somme totale de : <strong>{{ number_format($claim->total_claim_amount, 0, ',', ' ') }} Francs CFA</strong>.
     </div>

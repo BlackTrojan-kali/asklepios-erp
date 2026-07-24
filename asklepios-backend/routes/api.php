@@ -38,6 +38,7 @@ use App\Http\Controllers\Doctor\MedicalActCatalogController;
 use App\Http\Controllers\Doctor\MedicalBackgroundController;
 use App\Http\Controllers\Hospital\AdmissionController;
 use App\Http\Controllers\Hospital\FinancialReportController;
+use App\Http\Controllers\Hospital\GuarantorClaimController;
 use App\Http\Controllers\Hospital\InvoiceController;
 use App\Http\Controllers\Hospital\PaymentController;
 use App\Http\Controllers\Laboratory\LabRequestController;
@@ -78,6 +79,19 @@ Route::middleware(['role:admin,reception'])->group(function () {
     Route::delete('insurance-coverages/{id}', [PatientCoverageController::class, 'destroy']);
     
     });
+    
+    Route::middleware(['role:admin'])->prefix('shared')->group(function () {
+    
+    // Gestion des bordereaux de réclamation assurance (Tiers Payant)
+    Route::get('/guarantor-claims', [GuarantorClaimController::class, 'index']);
+    Route::post('/guarantor-claims', [GuarantorClaimController::class, 'store']);
+    Route::get('/guarantor-claims/{id}', [GuarantorClaimController::class, 'show']);
+    Route::put('/guarantor-claims/{id}', [GuarantorClaimController::class, 'update']);
+    Route::delete('/guarantor-claims/{id}', [GuarantorClaimController::class, 'destroy']);
+    Route::get('/guarantor-claims/{id}/download', [GuarantorClaimController::class, 'downloadPdf']);
+    Route::get('/invoice-splits/unclaimed', [GuarantorClaimController::class, 'getUnclaimedSplits']);
+
+});
 Route::middleware(['role:admin,reception'])->prefix('admin')->group(function () {
     
     Route::apiResource('insurance-companies', InsuranceCompanyController::class)->except(['show']);

@@ -8,6 +8,7 @@ import type { InsuranceCompanyDto, InsuranceCompanyPayload } from '../../types/I
 interface FetchInsuranceParams {
     hospital_id?: number;
     search?: string;
+    [key: string]: any; // Permet d'ajouter d'autres filtres si besoin
 }
 
 export default function useInsuranceStore() {
@@ -15,12 +16,22 @@ export default function useInsuranceStore() {
     const [loading, setLoading] = useState<boolean>(false);
     const [actionLoading, setActionLoading] = useState<boolean>(false);
 
-    // 1. Lister les assurances (avec filtres optionnels)
-    const getInsurances = useCallback(async (params?: FetchInsuranceParams) => {
+    // 1. Lister les assurances (CORRIGÉ : Accepte page, filtres et perPage)
+    const getInsurances = useCallback(async (
+        page: number = 1, 
+        filters: FetchInsuranceParams = {}, 
+        perPage: number = 15
+    ) => {
         setLoading(true);
         try {
-            const res = await api.get('/admin/insurance-companies', { params });
-            setInsurances(res.data.data);
+            const res = await api.get('/admin/insurance-companies', { 
+                params: { page, per_page: perPage, ...filters } 
+            });
+            
+            // Supporte à la fois une réponse paginée Laravel (res.data.data) ou un tableau direct (res.data)
+            const data = res.data.data ? res.data.data : res.data;
+            setInsurances(data);
+            
         } catch (error: any) {
             toast.error(error.response?.data?.message || "Erreur lors de la récupération des assurances.");
         } finally {
