@@ -9,7 +9,11 @@ class LabParameter extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['lab_test_id', 'name', 'unit', 'reference_min_male', 'reference_max_male', 'reference_min_female', 'reference_max_female', 'reference_text'];
+    protected $fillable = ['lab_test_id', 'name', 'unit', 'value_type', 'options', 'reference_min_male', 'reference_max_male', 'reference_min_female', 'reference_max_female', 'reference_text'];
+
+    protected $casts = [
+        'options' => 'array',
+    ];
 
     public function test()
     {

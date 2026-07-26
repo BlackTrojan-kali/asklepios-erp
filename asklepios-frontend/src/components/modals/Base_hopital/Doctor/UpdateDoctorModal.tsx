@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import useDoctorStore from '../../../../functions/base_hospital/useDoctorStore'; // Ajuste le chemin
+import useDoctorStore from '../../../../functions/base_hospital/useDoctorStore';
+import useDepartmentStore from '../../../../functions/departments/useDepartmentStore';
 import { DoctorForm } from './DoctorForm';
 import type { DoctorDto, DoctorPayload } from '../../../../types/DoctorTypes';
 import type { CenterDto, DepartmentDto } from '../../../../types/types';
@@ -9,28 +10,32 @@ interface Props {
     onClose: () => void;
     doctor: DoctorDto | null;
     centers: CenterDto[];
-    departments: DepartmentDto[];
+    departments?: DepartmentDto[];
     AutoRefreshPage: () => void;
 }
 
-export const UpdateDoctorModal: React.FC<Props> = ({ isOpen, onClose, doctor, centers, departments,AutoRefreshPage }) => {
+export const UpdateDoctorModal: React.FC<Props> = ({ isOpen, onClose, doctor, centers, departments = [], AutoRefreshPage }) => {
     const { updateDoctor, actionLoading } = useDoctorStore();
+    const { departments: fetchedDepartments, getDepartments } = useDepartmentStore();
     
     const [payload, setPayload] = useState<DoctorPayload>({
         first_name: '',
         last_name: '',
         phone: '',
         email: '',
-        password: '', // Toujours vide au montage
+        password: '',
         speciality: '',
         specifications: '',
         center_id: '',
         department_id: null
     });
 
-    // Remplissage du formulaire avec les données de l'API
+    // Remplissage du formulaire avec les données du médecin
     useEffect(() => {
         if (doctor && doctor.user) {
+            const centerId = doctor.center_id;
+            const deptId = doctor.department_id ? Number(doctor.department_id) : (doctor.department?.id ? Number(doctor.department.id) : null);
+            
             setPayload({
                 first_name: doctor.user.first_name,
                 last_name: doctor.user.last_name || '',
@@ -39,11 +44,25 @@ export const UpdateDoctorModal: React.FC<Props> = ({ isOpen, onClose, doctor, ce
                 password: '', 
                 speciality: doctor.speciality,
                 specifications: doctor.specifications || '',
-                center_id: doctor.center_id,
-                department_id: doctor.department_id || null
+                center_id: centerId,
+                department_id: deptId
             });
+
+            if (centerId) {
+                getDepartments(Number(centerId));
+            }
         }
-    }, [doctor]);
+    }, [doctor, getDepartments]);
+
+    // Récupération dynamique des départements si le centre change
+    useEffect(() => {
+        if (isOpen && payload.center_id) {
+            getDepartments(Number(payload.center_id));
+        }
+    }, [isOpen, payload.center_id, getDepartments]);
+
+    // Fusion des départements récupérés dynamiquement et transmis par props
+    const activeDepartments = fetchedDepartments.length > 0 ? fetchedDepartments : departments;
 
     // Le mot de passe n'est pas requis pour la validation de la mise à jour
     const isFormValid = payload.first_name && payload.phone && payload.email && payload.speciality && payload.center_id !== '';
@@ -53,8 +72,9 @@ export const UpdateDoctorModal: React.FC<Props> = ({ isOpen, onClose, doctor, ce
 
         const success = await updateDoctor(doctor.id, payload);
         if (success) {
-            AutoRefreshPage()
-            onClose();}
+            AutoRefreshPage();
+            onClose();
+        }
     };
 
     if (!isOpen || !doctor) return null;
@@ -68,9 +88,25 @@ export const UpdateDoctorModal: React.FC<Props> = ({ isOpen, onClose, doctor, ce
                 
                 <DoctorForm 
                     payload={payload} 
-                    setPayload={setPayload} 
+                    setPayload={(newPayload) => {
+                        if (typeof newPayload === 'function') {
+                            setPayload(prev => {
+                                const next = newPayload(prev);
+                                if (prev.center_id !== next.center_id && prev.center_id !== '') {
+                                    return { ...next, department_id: null };
+                                }
+                                return next;
+                            });
+                        } else {
+                            if (payload.center_id !== newPayload.center_id && payload.center_id !== '') {
+                                setPayload({ ...newPayload, department_id: null });
+                            } else {
+                                setPayload(newPayload);
+                            }
+                        }
+                    }} 
                     centers={centers}
-                    departments={departments}
+                    departments={activeDepartments}
                     isUpdate={true} 
                 />
 

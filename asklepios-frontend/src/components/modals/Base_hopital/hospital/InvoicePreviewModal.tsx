@@ -150,6 +150,29 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen
                                                 </tr>
                                             );
                                         })}
+
+                                        {/* Examens de Laboratoire */}
+                                        {((currentInvoice as any).lab_requests || (currentInvoice as any).labRequests)?.map((labReq: any) => (
+                                            <React.Fragment key={`labReq-${labReq.id}`}>
+                                                {labReq.lines?.map((line: any) => (
+                                                    <tr key={`labLine-${line.id}`}>
+                                                        <td className="py-3 px-3 dark:text-gray-300">
+                                                            <div className="flex items-center gap-2">
+                                                                <span>Examen Labo : <strong>{line.test?.name || 'Analyse'}</strong></span>
+                                                                {line.test?.category && (
+                                                                    <span className="text-[10px] bg-teal-50 dark:bg-teal-900/30 text-[#00a896] font-bold px-2 py-0.5 rounded border border-teal-200 dark:border-teal-800">
+                                                                        {line.test.category.name}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-3 px-3 text-right font-mono dark:text-gray-300">
+                                                            {formatCurrency(Number(line.test?.price || 0))}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </React.Fragment>
+                                        ))}
                                     </tbody>
                                 </table>
                             </div>

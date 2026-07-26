@@ -84,13 +84,13 @@ export default function SaleDetailModal({
             </span>
             <div className="border border-slate-150 dark:border-gray-700 rounded-xl overflow-hidden">
               <table className="w-full text-left text-xs border-collapse">
-                <thead className="bg-slate-50 dark:bg-gray-850 text-slate-400 dark:text-gray-450 uppercase font-bold tracking-wider border-b border-slate-150 dark:border-gray-700">
+                <thead className="bg-slate-50 dark:bg-gray-900 text-slate-400 dark:text-gray-450 uppercase font-bold tracking-wider border-b border-slate-150 dark:border-gray-700">
                   <tr>
                     <th className="p-3">Article</th>
                     <th className="p-3 text-center">Qté</th>
-                    <th className="p-3 text-right">Prix Unit.</th>
+                    <th className="p-3 text-right">Prix Unit. (XAF)</th>
                     <th className="p-3 text-right">Remise</th>
-                    <th className="p-3 text-right">Total</th>
+                    <th className="p-3 text-right">Total (XAF)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-gray-700 text-slate-700 dark:text-gray-300">
@@ -125,7 +125,7 @@ export default function SaleDetailModal({
           </div>
         </div>
 
-        <div className="p-5 bg-slate-50 dark:bg-gray-850 border-t border-slate-150 dark:border-gray-700 flex justify-between items-center">
+        <div className="p-5 bg-slate-50 dark:bg-gray-900 border-t border-slate-150 dark:border-gray-700 flex justify-between items-center">
           <div>
             <span className="text-[10px] text-slate-450 dark:text-gray-500 font-bold uppercase tracking-wider block">
               Montant total

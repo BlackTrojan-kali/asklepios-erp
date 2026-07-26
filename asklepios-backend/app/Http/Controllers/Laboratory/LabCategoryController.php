@@ -20,7 +20,7 @@ class LabCategoryController extends Controller
             $query->where('hospital_id', $request->hospital_id);
         }
         
-        $categories = $query->with('tests')->latest()->get();
+        $categories = $query->with('tests')->orderBy('name', 'asc')->get();
         return response()->json($categories, 200);
     }
 

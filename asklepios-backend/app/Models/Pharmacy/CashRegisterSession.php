@@ -18,7 +18,18 @@ class CashRegisterSession extends Model
         'closing_card' => 'float',
     ];
 
-    protected $appends = ['sales_totals', 'treasury_totals'];
+    protected $appends = ['sales_totals', 'treasury_totals', 'current_balance'];
+
+    public function getCurrentBalanceAttribute()
+    {
+        if ($this->closed_at !== null) {
+            return (float) ($this->closing_balance ?? 0.0);
+        }
+        $cashSales = (float) $this->sales()->where('payment_method', 'CASH')->sum('total_amount');
+        $treasury = $this->treasury_totals;
+        $cashNet = (float) ($treasury['cash']['net'] ?? 0.0);
+        return (float) ($this->opening_balance + $cashSales + $cashNet);
+    }
 
     public function getSalesTotalsAttribute()
     {

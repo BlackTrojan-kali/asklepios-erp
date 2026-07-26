@@ -7,7 +7,6 @@ import {
   Unlock,
   AlertTriangle,
   Calendar,
-  Loader2,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useCashRegisters } from "../../hooks/pharmacy/useCashRegister";
@@ -22,7 +21,7 @@ export default function OpenSession({ onSessionOpened }: SessionOpeningProps) {
   const navigate = useNavigate();
 
   const branchId = profile?.profile_pharm?.branch_id;
-  const { data: registers, isLoading } = useCashRegisters(branchId);
+  const { data: registers } = useCashRegisters(branchId);
   const openSessionMutation = useOpenCashRegisterSession();
 
   // --- ÉTATS ---
@@ -69,7 +68,8 @@ export default function OpenSession({ onSessionOpened }: SessionOpeningProps) {
       return;
     }
 
-    const balanceValue = typeof openingBalance === "number" ? openingBalance : 0;
+    const balanceValue =
+      typeof openingBalance === "number" ? openingBalance : 0;
 
     if (balanceValue < 0) {
       Swal.fire({
@@ -128,16 +128,8 @@ export default function OpenSession({ onSessionOpened }: SessionOpeningProps) {
     });
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-slate-50 dark:bg-gray-900">
-        <Loader2 size={40} className="animate-spin text-teal-600" />
-      </div>
-    );
-  }
-
   return (
-    <div className="p-6 bg-slate-50 dark:bg-gray-900 min-h-screen font-sans text-slate-800 dark:text-white flex flex-col justify-center items-center">
+    <div className="bg-slate-50 dark:bg-gray-950  font-sans text-slate-800 dark:text-white flex flex-col justify-center items-center">
       {/* Conteneur Principal */}
       <div className="w-full max-w-xl bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-slate-200 dark:border-gray-700 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
         {/* En-tête coloré */}

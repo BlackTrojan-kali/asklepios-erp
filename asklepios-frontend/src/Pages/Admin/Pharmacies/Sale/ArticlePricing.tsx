@@ -23,6 +23,7 @@ import {
   useExportBranchArticlesExcel,
   useExportBranchArticlesPdf,
 } from "../../../../hooks/pharmacy/useBrancheArticle";
+import ExportPricingModal from "../../../../components/modals/Pharmacy/Admin/ExportPricingModal";
 import { useBranches } from "../../../../hooks/pharmacy/useBranche";
 
 function BranchesSkeleton() {
@@ -66,9 +67,6 @@ function BranchArticlesSkeleton() {
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Article
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Stock
-              </th>
               <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Prix de Vente
               </th>
@@ -86,9 +84,6 @@ function BranchArticlesSkeleton() {
                 <td className="px-4 py-4">
                   <div className="h-4 bg-slate-200 dark:bg-gray-750 rounded w-2/3 mb-2" />
                   <div className="h-3 bg-slate-100 dark:bg-gray-800 rounded w-1/3" />
-                </td>
-                <td className="px-4 py-4">
-                  <div className="h-4 bg-slate-200 dark:bg-gray-750 rounded w-8" />
                 </td>
                 <td className="px-4 py-4">
                   <div className="h-6 bg-slate-200 dark:bg-gray-750 rounded w-20 ml-auto" />
@@ -169,6 +164,9 @@ function BranchArticlesList({ branchId, currency }: BranchArticlesListProps) {
       return;
     }
 
+    // Réactivité instantanée à 0ms : Quitter le mode édition immédiatement
+    setEditingArticleId(null);
+
     updatePriceMutation.mutate(
       {
         branch_id: branchId,
@@ -177,11 +175,7 @@ function BranchArticlesList({ branchId, currency }: BranchArticlesListProps) {
       },
       {
         onSuccess: () => {
-          setEditingArticleId(null);
           toast.success("Prix de vente mis à jour avec succès");
-        },
-        onError: () => {
-          toast.error("Erreur lors de la mise à jour du prix");
         },
       },
     );
@@ -251,13 +245,10 @@ function BranchArticlesList({ branchId, currency }: BranchArticlesListProps) {
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Article
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Stock
-                  </th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     <span className="flex justify-end items-center gap-1">
                       Prix de Vente{" "}
-                      <Edit3 className="w-3.5 h-3.5 text-gray-450" />
+                      <Edit3 className="w-3.5 h-3.5 text-gray-455" />
                     </span>
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -290,9 +281,6 @@ function BranchArticlesList({ branchId, currency }: BranchArticlesListProps) {
                               `${article.default_storage_location.aisle} - ${article.default_storage_location.shelf}`}
                           </span>
                         )}
-                      </td>
-                      <td className="px-4 py-3 text-slate-700 dark:text-gray-300 font-medium">
-                        {article.stock_qty.toLocaleString()}
                       </td>
                       <td className="px-4 py-3 text-right">
                         {isEditing ? (
@@ -695,130 +683,21 @@ export default function ArticlePricing() {
         </div>
       )}
 
-      {/* MODAL D'EXPORTATION */}
-      {isExportModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-150 dark:border-gray-700 shadow-xl max-w-md w-full overflow-hidden animate-in fade-in zoom-in duration-200">
-            {/* Header */}
-            <div className="p-5 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
-              <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                {exportFormat === "excel" ? (
-                  <FileSpreadsheet className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                ) : (
-                  <FileText className="h-5 w-5 text-rose-600 dark:text-rose-400" />
-                )}
-                Exporter la Tarification ({exportFormat === "excel" ? "Excel" : "PDF"})
-              </h3>
-              <button
-                onClick={() => setIsExportModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-250 transition-colors text-xl font-bold"
-              >
-                &times;
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="p-5 space-y-4">
-              <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                Générez une fiche tarifaire au format {exportFormat === "excel" ? "Excel" : "PDF"} propre et allégée (contenant
-                uniquement le nom des articles et leurs prix de vente finaux) prête à
-                être imprimée ou affichée pour les clients.
-              </p>
-
-              <div className="space-y-3">
-                <label className="text-xs font-semibold text-gray-600 dark:text-gray-300 block">
-                  Périmètre de l'exportation :
-                </label>
-
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-gray-300 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="exportTarget"
-                      checked={exportTarget === "all"}
-                      onChange={() => setExportTarget("all")}
-                      className="text-teal-600 focus:ring-teal-500 h-4 w-4"
-                    />
-                    Toutes les succursales de pharmacie
-                  </label>
-
-                  <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-gray-300 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="exportTarget"
-                      checked={exportTarget === "single"}
-                      onChange={() => setExportTarget("single")}
-                      className="text-teal-600 focus:ring-teal-500 h-4 w-4"
-                    />
-                    Une succursale spécifique
-                  </label>
-                </div>
-              </div>
-
-              {exportTarget === "single" && (
-                <div className="space-y-1.5 animate-in slide-in-from-top-2 duration-200">
-                  <label className="text-xs font-semibold text-gray-600 dark:text-gray-300 block">
-                    Sélectionner la pharmacie :
-                  </label>
-                  <select
-                    value={selectedExportBranchId || ""}
-                    onChange={(e) =>
-                      setSelectedExportBranchId(Number(e.target.value))
-                    }
-                    className="w-full px-3 py-2 bg-slate-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:ring-2 focus:ring-teal-500 text-sm text-slate-800 dark:text-white"
-                  >
-                    {branches?.map((branch) => (
-                      <option key={branch.id} value={branch.id}>
-                        {branch.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="p-5 bg-slate-50 dark:bg-gray-850 border-t border-gray-100 dark:border-gray-700 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setIsExportModalOpen(false)}
-                className="px-4 py-2 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-750 text-xs font-semibold rounded-lg transition-colors"
-                disabled={exportMutation.isPending || exportPdfMutation.isPending}
-              >
-                Annuler
-              </button>
-              <button
-                type="button"
-                onClick={exportFormat === "excel" ? handleExportExcel : handleExportPdf}
-                className={`flex items-center gap-2 px-4 py-2 text-white text-xs font-semibold rounded-lg transition-colors shadow-sm disabled:opacity-50 ${
-                  exportFormat === "excel" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"
-                }`}
-                disabled={
-                  exportMutation.isPending ||
-                  exportPdfMutation.isPending ||
-                  (exportTarget === "single" && !selectedExportBranchId)
-                }
-              >
-                {exportMutation.isPending || exportPdfMutation.isPending ? (
-                  <>
-                    <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Génération...
-                  </>
-                ) : (
-                  <>
-                    {exportFormat === "excel" ? (
-                      <FileSpreadsheet className="h-3.5 w-3.5" />
-                    ) : (
-                      <FileText className="h-3.5 w-3.5" />
-                    )}
-                    Exporter
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* MODALE AUTONOME D'EXPORTATION DE LA TARIFICATION */}
+      <ExportPricingModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        exportFormat={exportFormat}
+        exportTarget={exportTarget}
+        setExportTarget={setExportTarget}
+        selectedExportBranchId={selectedExportBranchId}
+        setSelectedExportBranchId={setSelectedExportBranchId}
+        branches={branches}
+        onConfirmExport={
+          exportFormat === "excel" ? handleExportExcel : handleExportPdf
+        }
+        isExporting={exportMutation.isPending || exportPdfMutation.isPending}
+      />
     </div>
   );
 }

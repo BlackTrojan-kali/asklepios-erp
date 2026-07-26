@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Loader2, X } from "lucide-react";
 import Swal from "sweetalert2";
+import { useBranches } from "../../../../hooks/pharmacy/useBranche";
 import {
   useCreatePaymentAccount,
   useUpdatePaymentAccount,
@@ -23,13 +24,21 @@ export default function CreateOrUpdateAccountModal({
   onSuccess,
 }: CreateOrUpdateAccountModalProps) {
   // --- ÉTATS ---
+  const [modalBranchId, setModalBranchId] = useState<number | undefined>(
+    selectedBranchId,
+  );
   const [accountName, setAccountName] = useState("");
-  const [accountType, setAccountType] = useState<"bank" | "mobile_money" | "safe" | "cash_register" | "owner">("bank");
+  const [accountType, setAccountType] = useState<
+    "bank" | "mobile_money" | "safe" | "cash_register" | "owner"
+  >("bank");
   const [accountNumber, setAccountNumber] = useState("");
   const [initialBalance, setInitialBalance] = useState("0");
-  const [accountStatus, setAccountStatus] = useState<"active" | "inactive">("active");
+  const [accountStatus, setAccountStatus] = useState<"active" | "inactive">(
+    "active",
+  );
 
   // --- HOOKS ---
+  const { data: branches = [] } = useBranches();
   const createAccountMutation = useCreatePaymentAccount();
   const updateAccountMutation = useUpdatePaymentAccount();
 
@@ -37,12 +46,14 @@ export default function CreateOrUpdateAccountModal({
   useEffect(() => {
     if (isOpen) {
       if (editingAccount) {
+        setModalBranchId(editingAccount.pharmacy_branch_id);
         setAccountName(editingAccount.name);
         setAccountType(editingAccount.type);
         setAccountNumber(editingAccount.account_number || "");
         setInitialBalance(editingAccount.balance.toString());
         setAccountStatus(editingAccount.status);
       } else {
+        setModalBranchId(selectedBranchId || branches[0]?.id);
         setAccountName("");
         setAccountType("bank");
         setAccountNumber("");
@@ -50,17 +61,18 @@ export default function CreateOrUpdateAccountModal({
         setAccountStatus("active");
       }
     }
-  }, [isOpen, editingAccount]);
+  }, [isOpen, editingAccount, selectedBranchId, branches]);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedBranchId) {
+    const finalBranchId = modalBranchId || selectedBranchId;
+    if (!finalBranchId) {
       Swal.fire({
         icon: "warning",
         title: "Sélectionnez une succursale",
-        text: "Veuillez choisir une succursale avant de créer un compte.",
+        text: "Veuillez choisir la succursale rattachée à ce compte.",
         confirmButtonColor: "#10b981",
       });
       return;
@@ -69,7 +81,7 @@ export default function CreateOrUpdateAccountModal({
     const payload = {
       name: accountName,
       type: accountType,
-      pharmacy_branch_id: selectedBranchId,
+      pharmacy_branch_id: finalBranchId,
       account_number: accountNumber || null,
       balance: parseFloat(initialBalance) || 0,
       status: accountStatus,
@@ -93,11 +105,13 @@ export default function CreateOrUpdateAccountModal({
             Swal.fire({
               icon: "error",
               title: "Erreur",
-              text: err.response?.data?.message || "Impossible de modifier le compte.",
+              text:
+                err.response?.data?.message ||
+                "Impossible de modifier le compte.",
               confirmButtonColor: "#ef4444",
             });
           },
-        }
+        },
       );
     } else {
       createAccountMutation.mutate(payload, {
@@ -115,7 +129,8 @@ export default function CreateOrUpdateAccountModal({
           Swal.fire({
             icon: "error",
             title: "Erreur",
-            text: err.response?.data?.message || "Impossible de créer le compte.",
+            text:
+              err.response?.data?.message || "Impossible de créer le compte.",
             confirmButtonColor: "#ef4444",
           });
         },
@@ -128,17 +143,47 @@ export default function CreateOrUpdateAccountModal({
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-slate-200 dark:border-gray-800 shadow-2xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-200">
         <div className="px-6 py-4 border-b border-slate-100 dark:border-gray-800 flex justify-between items-center bg-slate-50 dark:bg-gray-900/60 text-slate-900 dark:text-white">
           <h3 className="font-bold">
-            {editingAccount ? "Modifier le compte" : "Ajouter un compte financier"}
+            {editingAccount
+              ? "Modifier le compte"
+              : "Ajouter un compte financier"}
           </h3>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 hover:bg-slate-200 dark:hover:bg-gray-850 rounded-lg text-slate-400 dark:text-gray-500 transition-colors cursor-pointer"
+            className="p-1.5 hover:bg-slate-200 dark:hover:bg-gray-800 rounded-lg text-slate-400 dark:text-gray-500 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 text-slate-800 dark:text-gray-200">
+        <form
+          onSubmit={handleSubmit}
+          className="p-6 space-y-4 text-slate-800 dark:text-gray-200"
+        >
+          {/* Succursale rattachée */}
+          <div>
+            <label className="block text-xs font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">
+              Succursale *
+            </label>
+            <select
+              value={modalBranchId || ""}
+              onChange={(e) =>
+                setModalBranchId(
+                  e.target.value ? parseInt(e.target.value) : undefined,
+                )
+              }
+              required
+              className="w-full bg-slate-50 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-800 dark:text-white font-semibold"
+            >
+              <option value="">Sélectionnez la succursale...</option>
+              {branches.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div>
             <label className="block text-xs font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">
               Type de compte
@@ -146,12 +191,14 @@ export default function CreateOrUpdateAccountModal({
             <select
               value={accountType}
               onChange={(e) => setAccountType(e.target.value as any)}
-              className="w-full bg-slate-50 dark:bg-gray-800 border border-slate-350 dark:border-gray-700 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-800 dark:text-white font-semibold"
+              className="w-full bg-slate-50 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-800 dark:text-white font-semibold"
             >
               <option value="bank">Banque (Afriland, SG...)</option>
               <option value="mobile_money">Mobile Money (MTN MoMo, OM)</option>
               <option value="safe">Coffre-fort Interne</option>
-              <option value="owner">Compte Propriétaire / Administrateur</option>
+              <option value="owner">
+                Compte Propriétaire / Administrateur
+              </option>
             </select>
           </div>
 
@@ -165,7 +212,7 @@ export default function CreateOrUpdateAccountModal({
               placeholder="Nom (ex: Afriland First Bank, Caisse Principale...)"
               value={accountName}
               onChange={(e) => setAccountName(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-gray-800 border border-slate-350 dark:border-gray-700 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-850 dark:text-white font-semibold"
+              className="w-full bg-slate-50 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-800 dark:text-white font-semibold"
             />
           </div>
 
@@ -178,21 +225,21 @@ export default function CreateOrUpdateAccountModal({
               placeholder="N° de compte ou n° de téléphone MoMo (facultatif)"
               value={accountNumber}
               onChange={(e) => setAccountNumber(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-gray-800 border border-slate-350 dark:border-gray-700 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-800 dark:text-white font-mono"
+              className="w-full bg-slate-50 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-800 dark:text-white font-mono"
             />
           </div>
 
           {!editingAccount && (
             <div>
               <label className="block text-xs font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">
-                Solde Initial (XAF)
+                Solde Théorique Initial (XAF)
               </label>
               <input
                 type="number"
                 placeholder="0"
                 value={initialBalance}
                 onChange={(e) => setInitialBalance(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-gray-800 border border-slate-350 dark:border-gray-700 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-800 dark:text-white font-mono font-bold"
+                className="w-full bg-slate-50 dark:bg-gray-800 border border-slate-300 dark:border-gray-700 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-800 dark:text-white font-mono font-bold"
               />
             </div>
           )}
@@ -221,7 +268,9 @@ export default function CreateOrUpdateAccountModal({
                     onChange={() => setAccountStatus("inactive")}
                     className="text-emerald-600 focus:ring-emerald-500"
                   />
-                  <span className="text-sm font-semibold text-slate-500">Inactif</span>
+                  <span className="text-sm font-semibold text-slate-500">
+                    Inactif
+                  </span>
                 </label>
               </div>
             </div>
@@ -231,16 +280,20 @@ export default function CreateOrUpdateAccountModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-slate-300 dark:border-gray-700 hover:bg-slate-150 dark:hover:bg-gray-850 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+              className="px-4 py-2 border border-slate-300 dark:border-gray-700 hover:bg-slate-100 dark:hover:bg-gray-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-colors cursor-pointer"
             >
               Annuler
             </button>
             <button
               type="submit"
-              disabled={createAccountMutation.isPending || updateAccountMutation.isPending}
+              disabled={
+                createAccountMutation.isPending ||
+                updateAccountMutation.isPending
+              }
               className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-350 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1"
             >
-              {(createAccountMutation.isPending || updateAccountMutation.isPending) && (
+              {(createAccountMutation.isPending ||
+                updateAccountMutation.isPending) && (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
               )}
               Enregistrer

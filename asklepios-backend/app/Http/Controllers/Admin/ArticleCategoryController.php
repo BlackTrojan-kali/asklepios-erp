@@ -51,8 +51,8 @@ class ArticleCategoryController extends Controller
             });
         }
 
-        // Retourne le résultat paginé
-        return response()->json($query->latest()->paginate($perPage), 200);
+        // Retourne le résultat paginé trié par ordre alphabétique
+        return response()->json($query->orderBy('name', 'asc')->paginate($perPage), 200);
     }
 
     /**
@@ -71,7 +71,7 @@ class ArticleCategoryController extends Controller
         $hospitalId = $this->getHospitalId();
 
         $categories = ArticleCategory::where('hospital_id', $hospitalId)
-            ->latest()
+            ->orderBy('name', 'asc')
             ->get();
 
         return response()->json($categories, 200);

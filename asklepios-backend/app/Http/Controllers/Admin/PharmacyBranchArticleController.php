@@ -79,15 +79,16 @@ class PharmacyBranchArticleController extends Controller
             });
         }
 
-        // Chargement des relations
-        $query->with([
+        // Chargement des relations et tri par ordre alphabétique
+        $query->orderBy('name', 'asc')->with([
             'category',
             'branchArticles' => function ($q) use ($branch_id) {
                 $q->where('pharmacy_branch_id', $branch_id)
                   ->with('defaultStorageLocation');
             },
             'batches.stocks' => function ($q) use ($branch_id) {
-                $q->where('pharmacy_branch_id', $branch_id);
+                $q->where('pharmacy_branch_id', $branch_id)
+                  ->with('storageLocation');
             }
         ]);
 
@@ -100,18 +101,26 @@ class PharmacyBranchArticleController extends Controller
             // Configuration spécifique de la succursale (si existante)
             $branchConfig = $article->branchArticles->first();
             
-            // Détermination du prix final :
-            // Si une configuration de succursale existe ET que le prix spécial n'est pas nul, on l'utilise.
-            // Sinon, on prend le prix global par défaut de l'article.
             $sellingPrice = ($branchConfig && $branchConfig->special_selling_price !== null)
                 ? $branchConfig->special_selling_price
                 : $article->default_selling_price;
                 
-            // Statut de disponibilité : Actif par défaut si aucune configuration locale n'existe
             $isActive = $branchConfig ? (bool) $branchConfig->is_active : true;
             
-            // Emplacement par défaut : Null par défaut si aucune configuration locale n'existe
-            $defaultStorageLocation = $branchConfig ? $branchConfig->defaultStorageLocation : null;
+            // Emplacement : vérifier d'abord la config succursale, puis le premier stock renseigné
+            $stockLocation = null;
+            foreach ($article->batches as $b) {
+                foreach ($b->stocks as $st) {
+                    if ($st->storageLocation) {
+                        $stockLocation = $st->storageLocation;
+                        break 2;
+                    }
+                }
+            }
+
+            $defaultStorageLocation = ($branchConfig && $branchConfig->defaultStorageLocation) 
+                ? $branchConfig->defaultStorageLocation 
+                : $stockLocation;
 
             // Calcul de la quantité physique cumulée en stock pour cette succursale
             $stockQty = $article->batches->flatMap(function ($batch) {
@@ -126,16 +135,13 @@ class PharmacyBranchArticleController extends Controller
                 'track_batches' => $article->track_batches,
                 'is_prescripted' => $article->is_prescripted,
                 'category' => $article->category,                
-                // Prix global d'origine
                 'default_selling_price' => $article->default_selling_price,
-                // Détail de la configuration locale brute (pour information)
                 'branch_config' => $branchConfig ? [
                     'id' => $branchConfig->id,
                     'special_selling_price' => $branchConfig->special_selling_price,
                     'is_active' => $branchConfig->is_active,
                     'default_storage_location_id' => $branchConfig->default_storage_location_id,
                 ] : null,
-                // Valeurs finales consolidées pour la vente / l'affichage
                 'selling_price' => $sellingPrice,
                 'is_active' => $isActive,
                 'default_storage_location' => $defaultStorageLocation,
@@ -168,6 +174,7 @@ class PharmacyBranchArticleController extends Controller
         $hospitalId = $this->getHospitalId();
         
         $articles = Article::where('hospital_id', $hospitalId)
+            ->orderBy('name', 'asc')
             ->with([
                 'category',
                 'branchArticles' => function ($q) use ($branch_id) {
@@ -176,7 +183,8 @@ class PharmacyBranchArticleController extends Controller
                 },
                 'batches' => function ($q) use ($branch_id) {
                     $q->with(['stocks' => function ($sq) use ($branch_id) {
-                        $sq->where('pharmacy_branch_id', $branch_id);
+                        $sq->where('pharmacy_branch_id', $branch_id)
+                           ->with('storageLocation');
                     }]);
                 }
             ])
@@ -190,12 +198,27 @@ class PharmacyBranchArticleController extends Controller
                 : $article->default_selling_price;
                 
             $isActive = $branchConfig ? (bool) $branchConfig->is_active : true;
-            $defaultStorageLocation = $branchConfig ? $branchConfig->defaultStorageLocation : null;
 
-            // Formater les lots avec le stock de cette succursale
+            // Récupérer l'emplacement du premier stock disponible si pas d'emplacement par défaut
+            $stockLocation = null;
+            foreach ($article->batches as $b) {
+                foreach ($b->stocks as $st) {
+                    if ($st->storageLocation) {
+                        $stockLocation = $st->storageLocation;
+                        break 2;
+                    }
+                }
+            }
+
+            $defaultStorageLocation = ($branchConfig && $branchConfig->defaultStorageLocation) 
+                ? $branchConfig->defaultStorageLocation 
+                : $stockLocation;
+
+            // Formater les lots avec le stock et l'emplacement de cette succursale
             $formattedBatches = $article->batches->map(function ($batch) {
                 $stock = $batch->stocks->first();
                 $qty = $stock ? (float)$stock->qty : 0.0;
+                $batchLoc = $stock ? $stock->storageLocation : null;
                 
                 return [
                     'id' => $batch->id,
@@ -203,6 +226,7 @@ class PharmacyBranchArticleController extends Controller
                     'expire_date' => $batch->expire_date ? $batch->expire_date->format('Y-m-d') : null,
                     'purchase_price' => (float)$batch->purchase_price,
                     'qty' => $qty,
+                    'storage_location' => $batchLoc,
                 ];
             });
 

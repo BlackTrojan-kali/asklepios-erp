@@ -15,12 +15,12 @@ class LabTestController extends Controller
     #[OA\Response(response: 200, description: "Liste des examens récupérée")]
     public function index(Request $request)
     {
-        $query = LabTest::with('category');
+        $query = LabTest::with(['category', 'parameters']);
         if ($request->has('lab_category_id')) {
             $query->where('lab_category_id', $request->lab_category_id);
         }
         
-        $tests = $query->latest()->get();
+        $tests = $query->orderBy('name', 'asc')->get();
         return response()->json($tests, 200);
     }
 

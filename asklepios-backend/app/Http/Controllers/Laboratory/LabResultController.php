@@ -48,6 +48,8 @@ class LabResultController extends Controller
             'results.*.lab_parameter_id' => 'required|exists:lab_parameters,id',
             'results.*.value_numeric' => 'nullable|numeric',
             'results.*.value_string' => 'nullable|string',
+            'results.*.value_text' => 'nullable|string',
+            'results.*.file' => 'nullable|file|max:10240', // 10MB max
         ]);
 
         $labRequest = LabRequest::with('patient', 'lines.test.parameters')->findOrFail($id);
@@ -80,8 +82,13 @@ class LabResultController extends Controller
                     if ($max !== null && $val > $max) $isAbnormal = true;
                 }
 
+                $filePath = null;
+                if (isset($resData['file']) && $resData['file'] instanceof \Illuminate\Http\UploadedFile) {
+                    $filePath = $resData['file']->store('lab_results', 'public');
+                }
+
                 // Trouver ou créer le résultat
-                LabResult::updateOrCreate(
+                $result = LabResult::updateOrCreate(
                     [
                         'lab_request_line_id' => $resData['lab_request_line_id'],
                         'lab_parameter_id' => $resData['lab_parameter_id'],
@@ -89,11 +96,17 @@ class LabResultController extends Controller
                     [
                         'value_numeric' => $resData['value_numeric'] ?? null,
                         'value_string' => $resData['value_string'] ?? null,
+                        'value_text' => $resData['value_text'] ?? null,
                         'is_abnormal' => $isAbnormal,
                         'status' => 'DRAFT',
                         'technician_id' => $technicianId,
                     ]
                 );
+
+                if ($filePath) {
+                    $result->file_path = $filePath;
+                    $result->save();
+                }
             }
 
             // Vérifier si toutes les lignes ont tous leurs paramètres remplis
@@ -172,7 +185,7 @@ class LabResultController extends Controller
     public function generatePdf($id)
     {
         $labRequest = LabRequest::with([
-            'patient',
+            'patient.hospital',
             'lines.test.category',
             'lines.test.parameters',
             'lines.results',
@@ -187,11 +200,30 @@ class LabResultController extends Controller
         $firstResult = LabResult::whereIn('lab_request_line_id', $labRequest->lines->pluck('id'))->first();
         $validator = $firstResult && $firstResult->validator_id ? \App\Models\User::find($firstResult->validator_id) : null;
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.lab_results', [
-            'request' => $labRequest,
-            'validator' => $validator
-        ]);
+        // Encodage Base64 du logo Hôpital
+        $hospitalLogoBase64 = null;
+        if ($labRequest->patient && $labRequest->patient->hospital && $labRequest->patient->hospital->logo_url) {
+            $hospitalLogoPath = public_path($labRequest->patient->hospital->logo_url);
+            if (file_exists($hospitalLogoPath)) {
+                $hospitalLogoBase64 = 'data:image/' . pathinfo($hospitalLogoPath, PATHINFO_EXTENSION) . ';base64,' . base64_encode(file_get_contents($hospitalLogoPath));
+            }
+        }
 
-        return $pdf->download("resultats_labo_REQ-{$labRequest->id}.pdf");
+        // Logo Asclépios filigrane
+        $asklepiosLogoBase64 = null;
+        $asklepiosLogoPath = public_path('images/asklepios_logo.png');
+        if (file_exists($asklepiosLogoPath)) {
+            $asklepiosLogoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($asklepiosLogoPath));
+        }
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.lab_results', [
+            'request'             => $labRequest,
+            'validator'           => $validator,
+            'hospitalLogoBase64'  => $hospitalLogoBase64,
+            'asklepiosLogoBase64' => $asklepiosLogoBase64
+        ])->setPaper('a4', 'portrait');
+
+        $patientName = preg_replace('/[^A-Za-z0-9\-]/', '_', $labRequest->patient->first_name . '_' . ($labRequest->patient->last_name ?? ''));
+        return $pdf->download("Bulletin_Analyses_{$patientName}_REQ-{$labRequest->id}.pdf");
     }
 }

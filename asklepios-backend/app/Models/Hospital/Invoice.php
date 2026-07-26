@@ -24,10 +24,10 @@ class Invoice extends Model
 
     /**
      * 👉 AJOUT TRÈS UTILE : 
-     * On ajoute les parts patient et assurance pour qu'elles soient
-     * automatiquement calculées et envoyées au frontend React.
+     * On ajoute les parts patient et assurance, ainsi que le type,
+     * pour qu'ils soient automatiquement calculés et envoyés au frontend React.
      */
-    protected $appends = ['total_paid', 'remaining_debt', 'patient_part', 'insurance_part'];
+    protected $appends = ['total_paid', 'remaining_debt', 'type', 'patient_part', 'insurance_part'];
 
     // ==========================================
     // RELATIONS
@@ -53,26 +53,33 @@ class Invoice extends Model
         return $this->hasMany(PaymentInvoice::class);
     }
 
-    public function consultations() {
+    public function consultations(): HasMany {
         return $this->hasMany(Consultation::class);
     }
 
-    public function performedMedicalActs() {
+    public function performedMedicalActs(): HasMany {
         return $this->hasMany(PerformedMedicalAct::class);
     }
 
-    public function admissions() {
+    public function admissions(): HasMany {
         return $this->hasMany(Admission::class);
     }
     
-    public function labRequests() {
+    public function labRequests(): HasMany {
         return $this->hasMany(LabRequest::class);
     }
 
     /**
-     * NOUVELLE RELATION : Les divisions de paiement de cette facture
+     * NOUVELLE RELATION : Les divisions de paiement de cette facture (Tiers Payant)
      */
     public function splits(): HasMany {
+        return $this->hasMany(InvoiceSplit::class);
+    }
+
+    /**
+     * Alias de la relation pour maintenir la compatibilité avec le reste de l'application
+     */
+    public function invoiceSplits(): HasMany {
         return $this->hasMany(InvoiceSplit::class);
     }
 
@@ -80,6 +87,21 @@ class Invoice extends Model
     // ATTRIBUTS VIRTUELS (ACCESSEURS)
     // ==========================================
 
+    /**
+     * Détermine le type de la facture (LABORATORY ou CONSULTATION)
+     */
+    public function getTypeAttribute()
+    {
+        if ($this->relationLoaded('labRequests')) {
+            return $this->labRequests->count() > 0 ? 'LABORATORY' : 'CONSULTATION';
+        }
+        return LabRequest::where('invoice_id', $this->id)->exists() ? 'LABORATORY' : 'CONSULTATION';
+    }
+
+    /**
+     * Calcule la somme totale des paiements déjà effectués pour cette facture.
+     * Accessible en PHP via : $invoice->total_paid
+     */
     public function getTotalPaidAttribute()
     {
         return $this->payments->sum('amount');

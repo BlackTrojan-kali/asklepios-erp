@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { X, BedDouble, ArrowRightCircle, Search, User, Loader2 } from 'lucide-react';
+import Select from 'react-select';
 import toast from 'react-hot-toast';
 import useAdmissionStore from '../../functions/base_hospital/useAdmissionStore';
 import api from '../../api/api';
-import type { BedDto} from '../../types/BedTypes';
+import type { BedDto } from '../../types/BedTypes';
 
 interface AdmitToBedModalProps {
     isOpen: boolean;
@@ -20,7 +21,7 @@ export const AdmitToBedModal: React.FC<AdmitToBedModalProps> = ({
     onClose,
     patientId,
     patientName,
-    availableBeds,
+    availableBeds = [],
     patientVisitId,
     profileDoctorId
 }) => {
@@ -48,6 +49,55 @@ export const AdmitToBedModal: React.FC<AdmitToBedModalProps> = ({
             setSearchResults([]);
         }
     }, [isOpen, patientId, availableBeds]);
+
+    const bedOptions = useMemo(() => {
+        return availableBeds.map(bed => ({
+            value: bed.id,
+            label: `Chambre ${bed.facilityRoom?.name || '?'} - Lit ${bed.bed_number}`
+        }));
+    }, [availableBeds]);
+
+    const selectStyles = {
+        control: (base: any, state: any) => ({
+            ...base,
+            backgroundColor: document.documentElement.classList.contains("dark") ? "#1f2937" : "#f9fafb",
+            borderColor: state.isFocused ? "#00a896" : document.documentElement.classList.contains("dark") ? "#374151" : "#d1d5db",
+            borderRadius: "0.5rem",
+            padding: "2px",
+            boxShadow: state.isFocused ? "0 0 0 2px rgba(0, 168, 150, 0.2)" : "none",
+            "&:hover": { borderColor: "#00a896" },
+        }),
+        menu: (base: any) => ({
+            ...base,
+            backgroundColor: document.documentElement.classList.contains("dark") ? "#1f2937" : "#ffffff",
+            borderRadius: "0.5rem",
+            zIndex: 9999,
+        }),
+        option: (base: any, state: any) => ({
+            ...base,
+            backgroundColor: state.isSelected
+                ? "#00a896"
+                : state.isFocused
+                ? document.documentElement.classList.contains("dark") ? "#374151" : "#f3f4f6"
+                : "transparent",
+            color: state.isSelected
+                ? "#ffffff"
+                : document.documentElement.classList.contains("dark") ? "#f3f4f6" : "#1f2937",
+            cursor: "pointer",
+        }),
+        singleValue: (base: any) => ({
+            ...base,
+            color: document.documentElement.classList.contains("dark") ? "#f3f4f6" : "#1f2937",
+        }),
+        input: (base: any) => ({
+            ...base,
+            color: document.documentElement.classList.contains("dark") ? "#f3f4f6" : "#1f2937",
+        }),
+        placeholder: (base: any) => ({
+            ...base,
+            color: "#9ca3af",
+        }),
+    };
 
     // Recherche asynchrone des patients (déclenchée par la saisie)
     useEffect(() => {
@@ -164,21 +214,20 @@ export const AdmitToBedModal: React.FC<AdmitToBedModalProps> = ({
                         </div>
                     )}
 
-                    {/* ENTRÉE 2 : SELECTION DU LIT (Bloqué si un seul lit passé en paramètre) */}
+                    {/* ENTRÉE 2 : SELECTION DU LIT */}
                     <div>
                         <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">Lit d'hospitalisation <span className="text-red-500">*</span></label>
-                        <select 
-                            value={bedId} 
-                            onChange={(e) => setBedId(e.target.value ? Number(e.target.value) : '')}
-                            disabled={availableBeds.length === 1}
-                            className="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#00a896] outline-none transition-colors dark:text-white text-sm disabled:opacity-80 font-medium"
-                        >
-                            {availableBeds.map(bed => (
-                                <option key={bed.id} value={bed.id}>
-                                    Chambre {bed.facilityRoom?.name || room?.name || '?'} - Lit {bed.bed_number}
-                                </option>
-                            ))}
-                        </select>
+                        <Select
+                            options={bedOptions}
+                            value={bedOptions.find(opt => opt.value === bedId) || null}
+                            onChange={(selected) => setBedId(selected ? selected.value : '')}
+                            isDisabled={availableBeds.length === 1}
+                            placeholder="Sélectionner un lit..."
+                            isSearchable
+                            styles={selectStyles}
+                            className="text-sm"
+                            noOptionsMessage={() => "Aucun lit disponible"}
+                        />
                     </div>
 
                     {/* ENTRÉE 3 : MOTIF */}

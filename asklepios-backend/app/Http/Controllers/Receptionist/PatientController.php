@@ -61,6 +61,39 @@ class PatientController extends Controller
     public function index(Request $request)
     {
         $hospitalId = $this->getHospitalId();
+        $user = auth()->user();
+
+        // CAS : Laboratoire autonome (pas rattaché à un hôpital)
+        // On cherche les patients via les demandes d'examens liées à ce laboratoire
+        if ($hospitalId === null && $user->profile_lab) {
+            $laboratoryId = $user->profile_lab->laboratory_id;
+
+            $patientIdsQuery = \App\Models\Laboratory\LabRequest::where('laboratory_id', $laboratoryId)
+                ->pluck('patient_id')
+                ->unique();
+
+            $query = Patient::whereIn('id', $patientIdsQuery)->with(['medicalBackground']);
+
+            if ($request->filled('search')) {
+                $search = $request->query('search');
+                $query->where(function ($q) use ($search) {
+                    $q->where('patient_code', 'like', "%{$search}%")
+                      ->orWhere('first_name', 'like', "%{$search}%")
+                      ->orWhere('last_name', 'like', "%{$search}%")
+                      ->orWhere('contact_phone', 'like', "%{$search}%");
+                });
+            }
+
+            $query->latest();
+
+            if ($request->query('paginated') === 'false') {
+                return response()->json($query->get(), 200);
+            }
+
+            $perPage = $request->query('per_page', 15);
+            return response()->json($query->paginate($perPage), 200);
+        }
+
         $query = Patient::where('hospital_id', $hospitalId)->with(["medicalBackground","coverages"]);
         
         // Filtre de recherche (Code, Nom, Prénom, Téléphone)

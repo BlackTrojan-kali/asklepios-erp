@@ -59,10 +59,15 @@ export default function CloseSession() {
     const momoNet = myActiveSession?.treasury_totals?.mobile_money?.net || 0;
     const cardNet = myActiveSession?.treasury_totals?.card?.net || 0;
 
-    // Le cash attendu = Fond de caisse initial + Ventes cash + Mouvements nets de trésorerie (apports - retraits - transferts)
+    // CASH : Aucun PaymentTransaction n'est créé pour les ventes en espèces,
+    // donc on cumule : fond de caisse + ventes cash + mouvements de trésorerie nets
     const expectedCash = initialBalance + theoreticalSales.cash + cashNet;
-    const expectedMomo = theoreticalSales.mobileMoney + momoNet;
-    const expectedCard = theoreticalSales.card + cardNet;
+
+    // MOBILE_MONEY & CARD : Chaque vente dématérialisée crée déjà un PaymentTransaction (cash_in),
+    // donc treasury_totals.net inclut déjà le montant des ventes. On ne rajoute PAS sales_totals
+    // pour éviter le double-comptage.
+    const expectedMomo = momoNet;
+    const expectedCard = cardNet;
 
     // Calcul des écarts (Compté - Attendu)
     const gapCash = countedCash - expectedCash;
@@ -164,15 +169,7 @@ export default function CloseSession() {
     });
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-slate-50 dark:bg-gray-900">
-        <Loader2 size={40} className="animate-spin text-teal-600" />
-      </div>
-    );
-  }
-
-  if (error || !myActiveSession || !myActiveSession.id) {
+  if (!isLoading && (error || !myActiveSession || !myActiveSession.id)) {
     return (
       <div className="p-6 bg-slate-50 dark:bg-gray-900 min-h-screen flex flex-col justify-center items-center">
         <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md border border-slate-200 dark:border-gray-700 text-center max-w-sm">
@@ -208,7 +205,7 @@ export default function CloseSession() {
               </h1>
               <p className="text-xs text-slate-500 dark:text-gray-400 flex items-center gap-3 mt-0.5">
                 <span className="flex items-center gap-1 font-medium text-slate-700 dark:text-gray-300">
-                  <User className="w-3.5 h-3.5" /> Caissier : {cashierName}
+                  <User className="w-3.5 h-3.5" /> Caissier : {cashierName} {tillNumber && `(${tillNumber})`}
                 </span>
                 <span className="flex items-center gap-1 font-mono bg-slate-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-slate-600 dark:text-gray-300">
                   <Clock className="w-3.5 h-3.5" /> Depuis le : {openedAt}

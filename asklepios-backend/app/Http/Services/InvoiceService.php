@@ -24,7 +24,7 @@ class InvoiceService
      * @param int|null $centerId L'ID du centre
      * @return Invoice
      */
-    public function generateInvoiceForPatient(int $patientId, ?float $consultationPrice = 0.0, ?int $centerId)
+    public function generateInvoiceForPatient(int $patientId, ?float $consultationPrice = 0.0, ?int $centerId = null)
     {
         $patient = Patient::findOrFail($patientId);
         $consultationPrice = $consultationPrice ?? 0.0;
@@ -38,7 +38,7 @@ class InvoiceService
                 })->orWhereHas('admission', function($q) use ($patient) {
                     $q->where('patient_id', $patient->id);
                 });
-            })->where('is_billed', false)->get();
+            })->where('is_billed', false)->whereNull('invoice_id')->get();
 
             $unbilledActs = PerformedMedicalAct::where(function($query) use ($patient) {
                 $query->whereHas('patientVisit', function($q) use ($patient) {
@@ -46,11 +46,12 @@ class InvoiceService
                 })->orWhereHas('admission', function($q) use ($patient) {
                     $q->where('patient_id', $patient->id);
                 });
-            })->where('is_billed', false)->get();
+            })->where('is_billed', false)->whereNull('invoice_id')->get();
 
             $unbilledAdmissions = Admission::with('bed.facilityRoom.category')
                 ->where('patient_id', $patient->id)
                 ->where('is_billed', false)
+                ->whereNull('invoice_id')
                 ->get();
 
             if ($unbilledConsultations->isEmpty() && $unbilledActs->isEmpty() && $unbilledAdmissions->isEmpty()) {
@@ -59,10 +60,19 @@ class InvoiceService
 
             // 2. Calcul des sous-totaux par périmètre
             $sumConsultations = 0.0;
-            foreach ($unbilledConsultations as $consultation) {
-                $consultation->consultation_price = $consultationPrice;
+
+            // --- A. Calcul des consultations
+            foreach ($unbilledConsultations as $index => $consultation) {
+                if ($consultationPrice !== null && (float)$consultationPrice > 0) {
+                    // Si la réceptionniste applique un tarif de consultation, il s'applique à la 1ère consultation
+                    $appliedPrice = ($index === 0) ? (float)$consultationPrice : 0.0;
+                } else {
+                    $appliedPrice = $consultation->consultation_price ?? 0.0;
+                }
+                $consultation->consultation_price = $appliedPrice;
                 $consultation->save();
-                $sumConsultations += $consultationPrice;
+                
+                $sumConsultations += $appliedPrice;
             }
 
             $sumActs = 0.0;
@@ -82,25 +92,28 @@ class InvoiceService
                 $sumAdmissions += ($nightPrice * $nights);
             }
 
+            // 3. Calcul du montant total
             $totalAmount = $sumConsultations + $sumActs + $sumAdmissions;
 
+            // On utilise le centre spécifié (ex: centre de la réceptionniste) ou à défaut celui de la dernière visite
             $lastVisit = PatientVisit::where('patient_id', $patient->id)->latest('id')->first();
+            $assignedCenterId = $centerId ?? ($lastVisit ? $lastVisit->center_id : null);
             
-            // 3. Création de la facture principale
+            // 4. Création de la facture principale
             $invoice = Invoice::create([
                 'patient_id'       => $patient->id,
-                'center_id'        => $lastVisit ? $lastVisit->center_id : $centerId,
+                'center_id'        => $assignedCenterId,
                 'patient_visit_id' => $lastVisit ? $lastVisit->id : null,
                 'total_amount'     => $totalAmount,
                 'status'           => 'UNPAID',
             ]);
 
-            // 4. Mise à jour de tous les éléments liés
+            // 5. Mise à jour de tous les éléments liés
             Consultation::whereIn('id', $unbilledConsultations->pluck('id'))->update(['is_billed' => true, 'invoice_id' => $invoice->id]);
             PerformedMedicalAct::whereIn('id', $unbilledActs->pluck('id'))->update(['is_billed' => true, 'invoice_id' => $invoice->id]);
             Admission::whereIn('id', $unbilledAdmissions->pluck('id'))->update(['is_billed' => true, 'invoice_id' => $invoice->id]);
 
-            // 5. Génération des divisions (Tiers Payant vs Patient)
+            // 6. Génération des divisions (Tiers Payant vs Patient)
             $this->applyCoverageAndCreateSplits($invoice, $patient->id, [
                 'consultation' => $sumConsultations,
                 'act'          => $sumActs,
@@ -127,7 +140,7 @@ class InvoiceService
             $unbilledActs = PerformedMedicalAct::where('patient_visit_id', $visit->id)
                                                ->where('is_billed', false)->get();
             
-            // 👉 CORRECTION : Ajout du "with" pour charger la chambre et son prix (category)
+            // Chargement de la chambre et son prix (category)
             $unbilledAdmissions = Admission::with('bed.facilityRoom.category')
                                            ->where('patient_visit_id', $visit->id)
                                            ->where('is_billed', false)->get();
@@ -136,11 +149,20 @@ class InvoiceService
                 throw new Exception("Aucun élément non facturé trouvé pour cette visite.");
             }
 
+            // 1. Calcul des sous-totaux
             $sumConsultations = 0.0;
-            foreach ($unbilledConsultations as $consultation) {
-                $consultation->consultation_price = $consultationPrice;
+
+            // 1.a Calculer les consultations
+            foreach ($unbilledConsultations as $index => $consultation) {
+                if ($consultationPrice !== null && (float)$consultationPrice > 0) {
+                    $appliedPrice = ($index === 0) ? (float)$consultationPrice : 0.0;
+                } else {
+                    $appliedPrice = $consultation->consultation_price ?? 0.0;
+                }
+                $consultation->consultation_price = $appliedPrice;
                 $consultation->save();
-                $sumConsultations += $consultationPrice;
+                
+                $sumConsultations += $appliedPrice;
             }
 
             $sumActs = 0.0;
@@ -160,6 +182,7 @@ class InvoiceService
                 $sumAdmissions += ($nightPrice * $nights);
             }
 
+            // 2. Calcul du montant total
             $totalAmount = $sumConsultations + $sumActs + $sumAdmissions;
 
             $invoice = Invoice::create([
@@ -198,10 +221,29 @@ class InvoiceService
 
         return DB::transaction(function () use ($invoice) {
             
-            Consultation::where('invoice_id', $invoice->id)->update(['is_billed' => false, 'invoice_id' => null]);
-            PerformedMedicalAct::where('invoice_id', $invoice->id)->update(['is_billed' => false, 'invoice_id' => null]);
-            Admission::where('invoice_id', $invoice->id)->update(['is_billed' => false, 'invoice_id' => null]);
+            // 1. Libérer les consultations rattachées à cette facture et réinitialiser le prix temporaire
+            Consultation::where('invoice_id', $invoice->id)
+                        ->update([
+                            'is_billed' => false, 
+                            'invoice_id' => null,
+                            'consultation_price' => 0.0
+                        ]);
 
+            // 2. Libérer les actes médicaux pratiqués rattachés
+            PerformedMedicalAct::where('invoice_id', $invoice->id)
+                               ->update([
+                                   'is_billed' => false, 
+                                   'invoice_id' => null
+                               ]);
+
+            // 3. Libérer les séjours d'hospitalisation rattachés
+            Admission::where('invoice_id', $invoice->id)
+                     ->update([
+                         'is_billed' => false, 
+                         'invoice_id' => null
+                     ]);
+
+            // 4. Supprimer définitivement l'enregistrement de la facture proforma
             // La suppression de l'invoice supprimera automatiquement les InvoiceSplits 
             // grâce au 'onDelete("cascade")' configuré dans votre migration.
             return $invoice->delete();
@@ -218,10 +260,6 @@ class InvoiceService
      * Répartit le montant de la facture entre le patient et ses assurances.
      * Prend en compte la validité, l'activation, l'ordre de priorité et le périmètre.
      */
-/**
-     * Répartit le montant de la facture entre le patient et ses assurances.
-     * Prend en compte la validité, l'activation, l'ordre de priorité et le périmètre.
-     */
     private function applyCoverageAndCreateSplits(Invoice $invoice, int $patientId, array $totalsByScope)
     {
         // 1. Récupérer les assurances actives et valides du patient
@@ -233,7 +271,7 @@ class InvoiceService
 
         $patientPart = array_sum($totalsByScope); // Au départ, le patient paie tout
 
-        // 👉 NOUVEAU : Mapping des catégories de facture vers les périmètres de l'assurance
+        // Mapping des catégories de facture vers les périmètres de l'assurance
         // Tout ce qui est "consultation", "act", ou "admission" est couvert par le périmètre "consultation" (Bloc Hôpital)
         $scopeMapping = [
             'consultation' => 'consultation',

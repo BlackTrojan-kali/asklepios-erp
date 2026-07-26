@@ -413,5 +413,71 @@
         @endforelse
     </div>
 
+    <div class="section">
+        <div class="section-title">5. Examens & Analyses de Laboratoire Validés</div>
+        @forelse($patient->labRequests ?? [] as $labReq)
+            <div class="timeline-item">
+                <div class="timeline-header">
+                    Demande d'Analyse du {{ \Carbon\Carbon::parse($labReq->updated_at ?? $labReq->created_at)->format('d/m/Y à H:i') }} (REQ #{{ $labReq->id }})
+                    <span style="float: right; font-weight: normal; color: #00a896;">
+                        @if($labReq->profileDoctor && $labReq->profileDoctor->user)
+                            Prescrit par : Dr. {{ $labReq->profileDoctor->user->first_name }} {{ $labReq->profileDoctor->user->last_name ?? '' }}
+                        @else
+                            Laboratoire Central
+                        @endif
+                    </span>
+                </div>
+                @foreach($labReq->lines as $line)
+                    @if($line->test)
+                    <div style="margin-bottom: 12px;">
+                        <div style="font-weight: bold; color: #003366; font-size: 11px; margin-bottom: 4px;">
+                            • Examen : {{ $line->test->name }} <span class="text-muted">({{ $line->test->code }})</span>
+                        </div>
+                        @if($line->results && $line->results->count() > 0)
+                        <table class="inner-table">
+                            <thead>
+                                <tr>
+                                    <th width="40%">Paramètre</th>
+                                    <th width="35%">Résultat</th>
+                                    <th width="25%">Référence</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($line->results as $res)
+                                <tr>
+                                    <td><strong>{{ $res->parameter->name ?? 'Paramètre' }}</strong></td>
+                                    <td>
+                                        <span style="{{ $res->is_abnormal ? 'color: #b91c1c; font-weight: bold;' : 'color: #1f2937;' }}">
+                                            {{ $res->value_numeric ?? $res->value_string ?? $res->value_text ?? '-' }} {{ $res->parameter->unit ?? '' }}
+                                        </span>
+                                        @if($res->is_abnormal)
+                                            <span class="badge badge-red" style="font-size: 9px; margin-left: 5px;">ANOMALIE</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-muted">
+                                        @if($res->parameter && ($res->parameter->reference_min_male !== null || $res->parameter->reference_max_male !== null))
+                                            [{{ $res->parameter->reference_min_male ?? '-' }} - {{ $res->parameter->reference_max_male ?? '-' }}]
+                                        @elseif($res->parameter && $res->parameter->reference_text)
+                                            {{ $res->parameter->reference_text }}
+                                        @else
+                                            N/A
+                                        @endif
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                        @else
+                        <p class="text-muted" style="margin-left: 10px;"><em>Aucun résultat enregistré.</em></p>
+                        @endif
+                    </div>
+                    @endif
+                @endforeach
+            </div>
+        @empty
+            <p class="text-muted"><em>Aucun examen de laboratoire validé enregistré dans le carnet.</em></p>
+        @endforelse
+    </div>
+
 </body>
 </html>

@@ -10,7 +10,7 @@ class LabResult extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['lab_request_line_id', 'lab_parameter_id', 'lab_sample_id', 'value_numeric', 'value_string', 'is_abnormal', 'status', 'validated_at', 'technician_id', 'validator_id'];
+    protected $fillable = ['lab_request_line_id', 'lab_parameter_id', 'lab_sample_id', 'value_numeric', 'value_string', 'value_text', 'file_path', 'is_abnormal', 'status', 'validated_at', 'technician_id', 'validator_id'];
 
     protected $casts = [
         'validated_at' => 'datetime',
