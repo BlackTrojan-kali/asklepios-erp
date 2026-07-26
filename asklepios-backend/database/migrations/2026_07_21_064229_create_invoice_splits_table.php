@@ -11,14 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('payment_invoices', function (Blueprint $table) {
+        Schema::create('invoice_splits', function (Blueprint $table) {
             $table->id();
             $table->foreignId("invoice_id")->constrained("invoices")->onDelete("cascade");
-            // CE QU'IL FAUT ÉCRIRE (nullable corrigé, et la table cible est profile_receptions) :
-            $table->foreignId("reception_id")->nullable()->constrained("profile_receptions");
-            $table->float("amount");
-            $table->string("payment_method");
-    
+            $table->enum("type",["PATIENT","INSURANCE"]);
+            $table->foreignId("guarantor_claim_id")->nullable()->constrained("guarantor_claims")->onDelete("cascade");
+            $table->float("amount_to_pay");
+            $table->enum("status",["PAID","UNPAID"]);
             $table->timestamps();
         });
     }
@@ -28,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('payment_invoices');
+        Schema::dropIfExists('invoice_splits');
     }
 };

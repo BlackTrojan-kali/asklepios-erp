@@ -6,7 +6,8 @@ import type { PaginatedResponse } from "../../types/types";
 import type { 
     InvoiceDto, 
     GenerateInvoicePayload, 
-    InvoiceReportFilters 
+    InvoiceReportFilters,
+    UnbilledPreviewDto // Nouvel import
 } from "../../types/InvoiceTypes";
 
 export interface PaginationData {
@@ -25,7 +26,6 @@ const useInvoiceStore = () => {
     // --- GET /shared/invoices ---
     const getInvoices = useCallback(async (
         page: number = 1,
-        // 👉 AJOUT DE patient_code ICI
         filters: { center_id?: number; patient_id?: number; patient_code?: string; status?: string } = {},
         perPage: number = 15
     ) => {
@@ -65,7 +65,21 @@ const useInvoiceStore = () => {
         }
     }, []);
 
-    // --- POST /shared/visits/{visitId}/generate-invoice (Ancienne méthode si encore utilisée) ---
+    // --- 👉 NOUVEAU : GET /shared/patients/{patientId}/unbilled-preview ---
+    const previewUnbilledForPatient = async (patientId: number): Promise<UnbilledPreviewDto | null> => {
+        try {
+            setLoading(true);
+            const res = await api.get<UnbilledPreviewDto>(`/shared/patients/${patientId}/unbilled-preview`);
+            return res.data;
+        } catch (error) {
+            toast.error("Impossible de charger l'aperçu des soins non facturés.");
+            return null;
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // --- POST /shared/visits/{visitId}/generate-invoice ---
     const generateInvoice = async (visitId: number, payload: GenerateInvoicePayload) => {
         try {
             setActionLoading(true);
@@ -183,6 +197,7 @@ const useInvoiceStore = () => {
         actionLoading,
         getInvoices,
         getInvoiceById,
+        previewUnbilledForPatient, // 👉 NOUVEAU EXPORTÉ
         generateInvoice,
         cancelInvoice,
         downloadInvoicePdf,

@@ -438,7 +438,7 @@ const StockTransfers = () => {
                                 onClick={() =>
                                   handleReceive(
                                     transfer.id,
-                                    transfer.sourcePharmacy?.name || "",
+                                    transfer.source_pharmacy?.name || "",
                                   )
                                 }
                                 className="flex items-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-900/40 rounded-lg text-xs font-bold transition-colors"

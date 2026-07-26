@@ -12,17 +12,16 @@ import {
     Calendar,
     Phone,
     Fingerprint,
-    CalendarClock,
-    Receipt,
-    FileDown // 👉 Nouvel icône pour le téléchargement
+    FileDown,
+    ShieldPlus // 👉 Nouvel icône pour les assurances
 } from 'lucide-react';
 import Swal from 'sweetalert2';
-import toast from 'react-hot-toast'; // 👉 Import de toast pour le feedback visuel
+import toast from 'react-hot-toast';
 
 // --- STORES ---
 import usePatientStore from '../../../../functions/base_hospital/usePatientStore';
-import useDoctorStore from '../../../../functions/base_hospital/useDoctorStore'; 
-import useMedicalBgStore from '../../../../functions/base_hospital/useMedicalBgStore'; // 👉 Import du store du dossier médical
+import useMedicalBgStore from '../../../../functions/base_hospital/useMedicalBgStore';
+import useInsuranceStore from '../../../../functions/insurance/useInsuranceStore'; // 👉 Ajout du store d'assurances
 
 // --- TYPES ---
 import { PatientGender } from '../../../../types/PatientTypes';
@@ -31,8 +30,8 @@ import type { PatientDto } from '../../../../types/PatientTypes';
 // --- MODALES ---
 import { CreatePatientModal } from '../../../../components/modals/Base_hopital/Patient/CreatePatientModal';
 import { UpdatePatientModal } from '../../../../components/modals/Base_hopital/Patient/UpdatePatientModal';
-import { PatientAppointmentManagerModal } from '../../../../components/modals/Base_hopital/Appointment/PatientAppointmentManagerModal';
-import { GenerateInvoiceModal } from '../../../../components/modals/Base_hopital/facturation/GenerateInvoiceModal';
+// 👉 Import de la nouvelle modale des assurances (Ajustez le chemin si nécessaire)
+import { ManagePatientCoverageModal } from '../../../../components/modals/insurance/ManagePatientCoverageModal'; 
 
 const Patients = () => {
     // --- STORES ---
@@ -41,8 +40,8 @@ const Patients = () => {
         getPatients, deletePatient 
     } = usePatientStore();
     
-    const { allDoctors, getAllDoctors } = useDoctorStore();
-    const { downloadMedicalRecord } = useMedicalBgStore(); // 👉 Récupération de la fonction de téléchargement
+    const { downloadMedicalRecord } = useMedicalBgStore();
+    const { insurances, getInsurances } = useInsuranceStore(); // 👉 Store pour charger les assurances pour le menu déroulant
 
     // --- ÉTATS ---
     const [page, setPage] = useState(1);
@@ -50,20 +49,20 @@ const Patients = () => {
 
     // États pour l'ouverture des modales
     const [isCreateOpen, setIsCreateOpen] = useState(false);
-    const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
     const [selectedPatient, setSelectedPatient] = useState<PatientDto | null>(null);
-    const [appointmentPatient, setAppointmentPatient] = useState<PatientDto | null>(null);
+    const [coveragePatientId, setCoveragePatientId] = useState<number | null>(null); // 👉 État pour la modale d'assurance
+    
     const [autoRefreshPage, setAutoRefreshPage] = useState<boolean>(false);
-    const currentCenterId = 1; 
 
     // --- CHARGEMENT INITIAL ---
     useEffect(() => {
         getPatients(page, { search: searchQuery });
-    }, [getPatients, page,autoRefreshPage]);
+    }, [getPatients, page, autoRefreshPage]);
 
+    // 👉 Charger la liste des assurances disponibles une seule fois
     useEffect(() => {
-        getAllDoctors(); 
-    }, [getAllDoctors,autoRefreshPage]);
+        getInsurances(); 
+    }, [getInsurances]);
 
     // --- ACTIONS ---
     const handleRefresh = () => {
@@ -75,7 +74,8 @@ const Patients = () => {
         setPage(1); 
         getPatients(1, { search: searchQuery });
     };
-    const handleAutoRefresh = ()=>{
+
+    const handleAutoRefresh = () => {
         setAutoRefreshPage(!autoRefreshPage);
     }
 
@@ -119,7 +119,6 @@ const Patients = () => {
         }
     };
 
-    // 👉 NOUVEAU : Fonction pour gérer le téléchargement du carnet
     const handleDownloadRecord = async (patientId: number) => {
         toast.promise(
             downloadMedicalRecord(patientId, 'download'),
@@ -136,7 +135,7 @@ const Patients = () => {
         const date = new Date(dateString);
         return date.toLocaleDateString('fr-FR');
     };
-
+console.log(insurances);
     const getGenderLabel = (gender: PatientGender) => {
         switch(gender) {
             case PatientGender.MALE: return "Homme";
@@ -176,14 +175,6 @@ const Patients = () => {
                     >
                         <RefreshCw size={18} className={loading ? "animate-spin text-indigo-600" : ""} />
                         <span className="hidden sm:inline">Rafraîchir</span>
-                    </button>
-
-                    <button 
-                        onClick={() => setIsInvoiceModalOpen(true)}
-                        className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm flex-1 sm:flex-none"
-                    >
-                        <Receipt size={18} />
-                        Facturer un dossier
                     </button>
 
                     <button 
@@ -301,7 +292,7 @@ const Patients = () => {
                                         <td className="p-4 text-right">
                                             <div className="flex justify-end items-center gap-2">
                                                 
-                                                {/* 👉 BOUTON TÉLÉCHARGER LE CARNET MÉDICAL */}
+                                                {/* BOUTON TÉLÉCHARGER LE CARNET MÉDICAL */}
                                                 <button 
                                                     onClick={() => handleDownloadRecord(item.id)} 
                                                     title="Télécharger le carnet médical" 
@@ -310,12 +301,13 @@ const Patients = () => {
                                                     <FileDown size={16} />
                                                 </button>
 
+                                                {/* 👉 NOUVEAU BOUTON : GESTION DES ASSURANCES */}
                                                 <button 
-                                                    onClick={() => setAppointmentPatient(item)} 
-                                                    title="Gérer les rendez-vous et admissions" 
-                                                    className="p-2 text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"
+                                                    onClick={() => setCoveragePatientId(item.id)} 
+                                                    title="Gérer les assurances du patient" 
+                                                    className="p-2 text-purple-600 hover:bg-purple-50 dark:text-purple-400 dark:hover:bg-purple-900/30 rounded-lg transition-colors"
                                                 >
-                                                    <CalendarClock size={16} />
+                                                    <ShieldPlus size={16} />
                                                 </button>
 
                                                 <button 
@@ -384,19 +376,16 @@ const Patients = () => {
                 AutoRefreshPage={handleAutoRefresh}
             />
 
-            <PatientAppointmentManagerModal
-                isOpen={!!appointmentPatient}
-                onClose={() => setAppointmentPatient(null)}
-                patient={appointmentPatient}
-                currentCenterId={currentCenterId}
-                doctors={allDoctors}
-            />
-
-            {/* MODALE DE FACTURATION */}
-            <GenerateInvoiceModal
-                isOpen={isInvoiceModalOpen}
-                onClose={() => setIsInvoiceModalOpen(false)}
-            />
+            {/* 👉 NOUVELLE MODALE : GESTION DES ASSURANCES */}
+            {coveragePatientId && (
+                <ManagePatientCoverageModal
+                    isOpen={!!coveragePatientId}
+                    onClose={() => setCoveragePatientId(null)}
+                    patientId={coveragePatientId}
+                    insurances={insurances}
+                    AutoRefreshPage={handleAutoRefresh}
+                />
+            )}
 
         </div>
     );
