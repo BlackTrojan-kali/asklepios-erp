@@ -148,7 +148,7 @@ class InvoiceController extends Controller
             'performedMedicalActs.equipment',
             'admissions.bed.facilityRoom.category',
             'labRequests.lines.test.category',
-            'payments.reception.user' // Historique des encaissements sur cette facture
+            'payments.reception.user', // Historique des encaissements sur cette facture
             'splits.guarantorClaim' // Chargement des divisions (Tiers payant)
         ])->findOrFail($id);
 
