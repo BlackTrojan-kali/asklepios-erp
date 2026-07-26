@@ -21,6 +21,7 @@ class FinancialReportController extends Controller
         $user = auth()->user();
         if ($user->profile_admin) return $user->profile_admin->hospital_id;
         if ($user->profile_reception) return $user->profile_reception->hospital_id;
+        if ($user->profile_lab) return $user->profile_lab->hospital_id;
         abort(403, "Accès refusé.");
     }
 

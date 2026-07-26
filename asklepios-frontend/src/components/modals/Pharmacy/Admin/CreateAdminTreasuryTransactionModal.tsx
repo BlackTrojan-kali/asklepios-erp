@@ -1,6 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Swal from "sweetalert2";
-import { X, Loader2, ArrowRightLeft, TrendingDown, TrendingUp } from "lucide-react";
+import {
+  X,
+  Loader2,
+  ArrowRightLeft,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
 import { useCreatePaymentTransaction } from "../../../../hooks/pharmacy/usePaymentTransaction";
 import { type PaymentAccountDto } from "../../../../services/pharmacy/paymentAccountService";
 
@@ -20,17 +26,75 @@ export default function CreateAdminTreasuryTransactionModal({
   onSuccess,
 }: CreateAdminTreasuryTransactionModalProps) {
   // --- ÉTATS ---
-  const [manualTxType, setManualTxType] = useState<"cash_in" | "cash_out" | "transfer">("transfer");
+  const [manualTxType, setManualTxType] = useState<
+    "cash_in" | "cash_out" | "transfer"
+  >("transfer");
   const [manualSourceId, setManualSourceId] = useState<string>("");
   const [manualDestId, setManualDestId] = useState<string>("");
-  const [manualAmount, setManualAmount] = useState("");
-  const [manualMethod, setManualMethod] = useState<"CASH" | "MOBILE_MONEY" | "CARD">("CASH");
+  const [manualAmount, setManualAmount] = useState<string>("");
+  const [manualMethod, setManualMethod] = useState<
+    "CASH" | "MOBILE_MONEY" | "CARD"
+  >("CASH");
   const [manualRef, setManualRef] = useState("");
   const [manualDesc, setManualDesc] = useState("");
   const [showOptional, setShowOptional] = useState(false);
 
   // --- HOOKS ---
   const createTxMutation = useCreatePaymentTransaction(true); // true = admin mode (validated immediately)
+
+  // --- COMPTES GROUPÉS PAR TYPE ET TRIÉS ALPHABÉTIQUEMENT ---
+  const groupedAccounts = useMemo(() => {
+    const typeLabels: Record<string, string> = {
+      mobile_money: "Mobile Money",
+      bank: "Comptes Bancaires",
+      safe: "Coffres-forts",
+      cash_register: "Caisses POS",
+      owner: "Comptes Propriétaire / Admin",
+    };
+
+    const groups: Record<string, PaymentAccountDto[]> = {};
+
+    accounts.forEach((acc) => {
+      const typeKey = acc.type || "other";
+      const label = typeLabels[typeKey] || "Autres comptes";
+      if (!groups[label]) {
+        groups[label] = [];
+      }
+      groups[label].push(acc);
+    });
+
+    // Tri des comptes par ordre alphabétique au sein de chaque groupe
+    Object.keys(groups).forEach((label) => {
+      groups[label].sort((a, b) =>
+        a.name.localeCompare(b.name, "fr", { sensitivity: "base" }),
+      );
+    });
+
+    // Tri des groupes par ordre alphabétique
+    const sortedGroupLabels = Object.keys(groups).sort((a, b) =>
+      a.localeCompare(b, "fr", { sensitivity: "base" }),
+    );
+
+    return sortedGroupLabels.map((label) => ({
+      label,
+      items: groups[label],
+    }));
+  }, [accounts]);
+
+  const renderAccountOptions = (placeholder: string) => (
+    <>
+      <option value="">{placeholder}</option>
+      {groupedAccounts.map((group) => (
+        <optgroup key={group.label} label={group.label}>
+          {group.items.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.name} ({a.balance.toLocaleString()} XAF)
+            </option>
+          ))}
+        </optgroup>
+      ))}
+    </>
+  );
 
   // Reset states on open/close
   useEffect(() => {
@@ -83,66 +147,89 @@ export default function CreateAdminTreasuryTransactionModal({
       return;
     }
 
-    const payload = {
-      pharmacy_branch_id: selectedBranchId,
-      type: manualTxType,
-      payment_method: manualMethod,
-      amount,
-      source_account_id: manualTxType !== "cash_in" ? parseInt(manualSourceId) : null,
-      destination_account_id: manualTxType !== "cash_out" ? parseInt(manualDestId) : null,
-      reference: manualRef || null,
-      description: manualDesc || null,
-      status: "completed" as const,
-    };
+    if (manualTxType === "transfer" && manualSourceId === manualDestId) {
+      Swal.fire({
+        icon: "warning",
+        title: "Comptes identiques",
+        text: "Le compte source et le compte destination doivent être différents.",
+        confirmButtonColor: "#f59e0b",
+      });
+      return;
+    }
 
     createTxMutation.mutate(
-      { payload },
+      {
+        payload: {
+          pharmacy_branch_id: selectedBranchId,
+          type: manualTxType,
+          payment_method: manualMethod,
+          amount,
+          source_account_id:
+            manualTxType !== "cash_in" ? parseInt(manualSourceId) : null,
+          destination_account_id:
+            manualTxType !== "cash_out" ? parseInt(manualDestId) : null,
+          reference: manualRef || null,
+          description: manualDesc || null,
+          status: "completed" as const,
+        },
+      },
       {
         onSuccess: () => {
           Swal.fire({
+            toast: true,
+            position: "top-end",
             icon: "success",
-            title: "Mouvement enregistré",
-            text: "La transaction de trésorerie a été validée immédiatement.",
-            confirmButtonColor: "#10b981",
+            title: "Mouvement enregistré avec succès",
+            showConfirmButton: false,
+            timer: 2000,
           });
           onSuccess();
           onClose();
         },
         onError: (err: any) => {
+          console.error(err);
           Swal.fire({
             icon: "error",
             title: "Erreur",
-            text: err.response?.data?.message || "Erreur de validation de la transaction.",
+            text:
+              err.response?.data?.message ||
+              "Erreur de validation de la transaction.",
             confirmButtonColor: "#ef4444",
           });
         },
-      }
+      },
     );
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-slate-200 dark:border-gray-800 shadow-2xl max-w-xl w-full overflow-hidden animate-in zoom-in-95 duration-200">
-        
         {/* En-tête */}
         <div className="px-6 py-4 border-b border-slate-100 dark:border-gray-800 flex justify-between items-center bg-slate-50 dark:bg-gray-900/60">
           <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-sm md:text-base">
-            {manualTxType === "transfer" && <ArrowRightLeft className="w-5 h-5 text-blue-500" />}
-            {manualTxType === "cash_in" && <TrendingUp className="w-5 h-5 text-emerald-500" />}
-            {manualTxType === "cash_out" && <TrendingDown className="w-5 h-5 text-rose-500" />}
+            {manualTxType === "transfer" && (
+              <ArrowRightLeft className="w-5 h-5 text-blue-500" />
+            )}
+            {manualTxType === "cash_in" && (
+              <TrendingUp className="w-5 h-5 text-emerald-500" />
+            )}
+            {manualTxType === "cash_out" && (
+              <TrendingDown className="w-5 h-5 text-rose-500" />
+            )}
             Nouveau Mouvement Manuel
           </h3>
           <button
-            type="button"
             onClick={onClose}
-            className="p-1.5 hover:bg-slate-200 dark:hover:bg-gray-850 rounded-lg text-slate-400 dark:text-gray-500 transition-colors cursor-pointer"
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-gray-300 p-1 rounded-lg transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5 text-slate-800 dark:text-gray-200">
-          
+        <form
+          onSubmit={handleSubmit}
+          className="p-6 space-y-5 text-slate-800 dark:text-gray-200"
+        >
           {/* Sélecteur de type de mouvement */}
           <div>
             <label className="block text-xs font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider mb-2">
@@ -208,14 +295,9 @@ export default function CreateAdminTreasuryTransactionModal({
                   required
                   value={manualSourceId}
                   onChange={(e) => setManualSourceId(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-gray-955 border border-slate-350 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-800 dark:text-white font-semibold cursor-pointer"
+                  className="w-full bg-slate-50 dark:bg-gray-900 border border-slate-350 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-800 dark:text-white font-semibold cursor-pointer"
                 >
-                  <option value="">Sélectionnez la source...</option>
-                  {accounts.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name} ({a.balance.toLocaleString()} XAF)
-                    </option>
-                  ))}
+                  {renderAccountOptions("Sélectionnez la source...")}
                 </select>
               </div>
 
@@ -227,25 +309,24 @@ export default function CreateAdminTreasuryTransactionModal({
                   required
                   value={manualDestId}
                   onChange={(e) => setManualDestId(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-gray-955 border border-slate-350 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-800 dark:text-white font-semibold cursor-pointer"
+                  className="w-full bg-slate-50 dark:bg-gray-900 border border-slate-350 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-800 dark:text-white font-semibold cursor-pointer"
                 >
-                  <option value="">Sélectionnez la cible...</option>
-                  {accounts.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name} ({a.balance.toLocaleString()} XAF)
-                    </option>
-                  ))}
+                  {renderAccountOptions("Sélectionnez la cible...")}
                 </select>
               </div>
             </div>
           ) : (
             <div>
               <label className="block text-xs font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wider mb-1.5">
-                {manualTxType === "cash_in" ? "Compte de Destination" : "Compte de Source"}
+                {manualTxType === "cash_in"
+                  ? "Compte de Destination"
+                  : "Compte de Source"}
               </label>
               <select
                 required
-                value={manualTxType === "cash_in" ? manualDestId : manualSourceId}
+                value={
+                  manualTxType === "cash_in" ? manualDestId : manualSourceId
+                }
                 onChange={(e) => {
                   if (manualTxType === "cash_in") {
                     setManualDestId(e.target.value);
@@ -253,14 +334,9 @@ export default function CreateAdminTreasuryTransactionModal({
                     setManualSourceId(e.target.value);
                   }
                 }}
-                className="w-full bg-slate-50 dark:bg-gray-955 border border-slate-350 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-800 dark:text-white font-semibold cursor-pointer"
+                className="w-full bg-slate-50 dark:bg-gray-900 border border-slate-350 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-800 dark:text-white font-semibold cursor-pointer"
               >
-                <option value="">Sélectionnez le compte...</option>
-                {accounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name} ({a.balance.toLocaleString()} XAF)
-                  </option>
-                ))}
+                {renderAccountOptions("Sélectionnez le compte...")}
               </select>
             </div>
           )}
@@ -274,7 +350,7 @@ export default function CreateAdminTreasuryTransactionModal({
               <select
                 value={manualMethod}
                 onChange={(e) => setManualMethod(e.target.value as any)}
-                className="w-full bg-slate-50 dark:bg-gray-955 border border-slate-355 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-800 dark:text-white font-semibold cursor-pointer"
+                className="w-full bg-slate-50 dark:bg-gray-900 border border-slate-355 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-800 dark:text-white font-semibold cursor-pointer"
               >
                 <option value="CASH">Espèces (Cash)</option>
                 <option value="MOBILE_MONEY">Mobile Money</option>
@@ -292,8 +368,18 @@ export default function CreateAdminTreasuryTransactionModal({
                 min="1"
                 placeholder="Ex : 50000"
                 value={manualAmount}
-                onChange={(e) => setManualAmount(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-gray-955 border border-slate-350 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-800 dark:text-white font-mono font-bold"
+                onKeyDown={(e) => {
+                  if (["-", "+", "e", "E", "."].includes(e.key)) {
+                    e.preventDefault();
+                  }
+                }}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "" || (/^\d+$/.test(val) && parseInt(val, 10) >= 0)) {
+                    setManualAmount(val);
+                  }
+                }}
+                className="w-full bg-slate-50 dark:bg-gray-900 border border-slate-350 dark:border-gray-800 rounded-xl px-3 py-2.5 text-sm focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-800 dark:text-white font-mono font-bold"
               />
             </div>
           </div>
@@ -318,7 +404,7 @@ export default function CreateAdminTreasuryTransactionModal({
                   placeholder="N° de chèque, réf MoMo, n° de facture..."
                   value={manualRef}
                   onChange={(e) => setManualRef(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-gray-955 border border-slate-350 dark:border-gray-805 rounded-xl px-3 py-2.5 text-sm focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-800 dark:text-white font-mono"
+                  className="w-full bg-slate-50 dark:bg-gray-900 border border-slate-350 dark:border-gray-805 rounded-xl px-3 py-2.5 text-sm focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-800 dark:text-white font-mono"
                 />
               </div>
 
@@ -331,7 +417,7 @@ export default function CreateAdminTreasuryTransactionModal({
                   rows={2}
                   value={manualDesc}
                   onChange={(e) => setManualDesc(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-gray-955 border border-slate-350 dark:border-gray-805 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-800 dark:text-white"
+                  className="w-full bg-slate-50 dark:bg-gray-900 border border-slate-350 dark:border-gray-805 rounded-xl px-3 py-2 text-sm focus:outline-hidden focus:ring-1 focus:ring-emerald-500 text-slate-800 dark:text-white"
                 />
               </div>
             </div>
@@ -351,7 +437,9 @@ export default function CreateAdminTreasuryTransactionModal({
               disabled={createTxMutation.isPending}
               className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
             >
-              {createTxMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              {createTxMutation.isPending && (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              )}
               Valider le mouvement
             </button>
           </div>

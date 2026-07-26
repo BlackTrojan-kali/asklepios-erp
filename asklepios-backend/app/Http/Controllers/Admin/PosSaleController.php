@@ -76,6 +76,11 @@ class PosSaleController extends Controller
             });
         }
 
+        // Filtrage par mode de paiement (CASH, MOBILE_MONEY, CARD)
+        if ($request->filled('payment_method')) {
+            $query->where('payment_method', $request->query('payment_method'));
+        }
+
         // Filtrage par date de début
         if ($request->filled('start_date')) {
             $query->whereDate('created_at', '>=', $request->query('start_date'));
@@ -138,6 +143,7 @@ class PosSaleController extends Controller
     #[OA\Parameter(name: "pharmacy_branch_id", in: "query", required: false, description: "ID de la succursale", schema: new OA\Schema(type: "integer"))]
     #[OA\Parameter(name: "cash_register_id", in: "query", required: false, description: "ID de la caisse", schema: new OA\Schema(type: "integer"))]
     #[OA\Parameter(name: "user_id", in: "query", required: false, description: "ID du vendeur", schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "payment_method", in: "query", required: false, description: "Mode de paiement", schema: new OA\Schema(type: "string"))]
     #[OA\Parameter(name: "start_date", in: "query", required: false, description: "Date de début", schema: new OA\Schema(type: "string"))]
     #[OA\Parameter(name: "end_date", in: "query", required: false, description: "Date de fin", schema: new OA\Schema(type: "string"))]
     #[OA\Parameter(name: "search", in: "query", required: false, description: "Recherche", schema: new OA\Schema(type: "string"))]
@@ -189,6 +195,7 @@ class PosSaleController extends Controller
     #[OA\Parameter(name: "pharmacy_branch_id", in: "query", required: false, description: "ID de la succursale", schema: new OA\Schema(type: "integer"))]
     #[OA\Parameter(name: "cash_register_id", in: "query", required: false, description: "ID de la caisse", schema: new OA\Schema(type: "integer"))]
     #[OA\Parameter(name: "user_id", in: "query", required: false, description: "ID du vendeur", schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "payment_method", in: "query", required: false, description: "Mode de paiement", schema: new OA\Schema(type: "string"))]
     #[OA\Parameter(name: "start_date", in: "query", required: false, description: "Date de début", schema: new OA\Schema(type: "string"))]
     #[OA\Parameter(name: "end_date", in: "query", required: false, description: "Date de fin", schema: new OA\Schema(type: "string"))]
     #[OA\Parameter(name: "search", in: "query", required: false, description: "Recherche", schema: new OA\Schema(type: "string"))]
@@ -204,8 +211,53 @@ class PosSaleController extends Controller
         }
 
         $totalAmountSum = $sales->sum('total_amount');
+
+        // Métadonnées de filtres pour l'en-tête du PDF
+        $branchName = 'Toutes les succursales';
+        if ($request->filled('pharmacy_branch_id')) {
+            $b = PharmacyBranch::find($request->query('pharmacy_branch_id'));
+            if ($b) $branchName = $b->name;
+        }
+
+        $registerName = 'Toutes les caisses';
+        if ($request->filled('cash_register_id')) {
+            $r = \App\Models\Pharmacy\CashRegister::find($request->query('cash_register_id'));
+            if ($r) $registerName = $r->name;
+        }
+
+        $sellerName = 'Tous les vendeurs';
+        if ($request->filled('user_id')) {
+            $u = User::find($request->query('user_id'));
+            if ($u) $sellerName = $u->first_name . ' ' . $u->last_name;
+        }
+
+        $paymentMethodLabel = 'Tous les modes';
+        if ($request->filled('payment_method')) {
+            $pm = $request->query('payment_method');
+            if ($pm === 'CASH') $paymentMethodLabel = 'Espèces (CASH)';
+            elseif ($pm === 'MOBILE_MONEY') $paymentMethodLabel = 'Mobile Money (Momo)';
+            elseif ($pm === 'CARD') $paymentMethodLabel = 'Carte Bancaire';
+        }
+
+        $periodLabel = 'Toutes les dates';
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $periodLabel = 'Du ' . date('d/m/Y', strtotime($request->query('start_date'))) . ' au ' . date('d/m/Y', strtotime($request->query('end_date')));
+        } elseif ($request->filled('start_date')) {
+            $periodLabel = 'À partir du ' . date('d/m/Y', strtotime($request->query('start_date')));
+        } elseif ($request->filled('end_date')) {
+            $periodLabel = 'Jusqu\'au ' . date('d/m/Y', strtotime($request->query('end_date')));
+        }
+
+        $filterInfo = [
+            'branch' => $branchName,
+            'register' => $registerName,
+            'seller' => $sellerName,
+            'payment_method' => $paymentMethodLabel,
+            'period' => $periodLabel,
+            'search' => $request->query('search'),
+        ];
         
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.pdf.sales_list', compact('sales', 'totalAmountSum'))
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.pdf.sales_list', compact('sales', 'totalAmountSum', 'filterInfo'))
                   ->setPaper('a4', 'landscape');
 
         return $pdf->download("rapport_ventes_pos_" . date('Ymd_His') . ".pdf");

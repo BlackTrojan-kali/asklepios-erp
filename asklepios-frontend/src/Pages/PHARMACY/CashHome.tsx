@@ -10,6 +10,7 @@ import {
   ArrowRightLeft,
   TrendingDown,
   TrendingUp,
+  Package,
 } from "lucide-react";
 import { useMyActiveSession } from "../../hooks/pharmacy/useCashRegisterSession";
 import { useBranchArticlesAll } from "../../hooks/pharmacy/useBrancheArticle";
@@ -23,7 +24,9 @@ export default function CashHome() {
 
   // Modale trésorerie
   const [showTxModal, setShowTxModal] = useState(false);
-  const [txType, setTxType] = useState<"cash_in" | "cash_out" | "transfer">("transfer");
+  const [txType, setTxType] = useState<"cash_in" | "cash_out" | "transfer">(
+    "transfer",
+  );
 
   // Récupérer la session de caisse active du pharmacien
   const {
@@ -34,14 +37,14 @@ export default function CashHome() {
 
   // Récupérer les articles configurés pour cette succursale
   const currentBranchId = myActiveSession?.register?.pharmacy_branch_id;
-  
+
   const { data: branchArticles, isLoading: isLoadingArticles } =
     useBranchArticlesAll(currentBranchId || null);
 
   // Comptes disponibles pour les versements
   const { data: accounts = [] } = usePaymentAccounts(
     { pharmacy_branch_id: currentBranchId || undefined },
-    false
+    false,
   );
 
   const currency =
@@ -55,6 +58,25 @@ export default function CashHome() {
     return opening + salesCash + treasuryNet;
   }, [myActiveSession]);
 
+  // URL de base pour les médias / images
+  const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
+  const formatImageUrl = (url: string | null | undefined): string | null => {
+    if (!url) return null;
+    if (url.startsWith("http://") || url.startsWith("https://")) return url;
+    const cleanPath = url.startsWith("/") ? url : `/${url}`;
+    return `${baseUrl}${cleanPath}`;
+  };
+
+  const formatLocationDisplay = (loc: any) => {
+    if (!loc) return "Non classé";
+    const aisle = loc.aisle ? `Allée ${loc.aisle}` : "";
+    const shelf = loc.shelf ? `${loc.aisle ? " - " : ""}Étagère ${loc.shelf}` : "";
+    const code = loc.code ? ` (${loc.code})` : "";
+    const full = `${aisle}${shelf}${code}`.trim();
+    return full || "Non classé";
+  };
+
   // Formater les articles configurés au format produit simple pour la recherche
   const products = useMemo(() => {
     if (!branchArticles) return [];
@@ -63,9 +85,8 @@ export default function CashHome() {
     branchArticles.forEach((article: any) => {
       if (!article.is_active) return;
 
-      const locationStr = article.default_storage_location
-        ? `${article.default_storage_location.row}-${article.default_storage_location.shelf}`
-        : "N/A";
+      const defaultLocStr = formatLocationDisplay(article.default_storage_location);
+      const formattedImage = formatImageUrl(article.image_url);
 
       if (
         article.track_batches &&
@@ -73,6 +94,10 @@ export default function CashHome() {
         article.batches.length > 0
       ) {
         article.batches.forEach((batch: any) => {
+          const batchLocStr = formatLocationDisplay(batch.storage_location) !== "Non classé"
+            ? formatLocationDisplay(batch.storage_location)
+            : defaultLocStr;
+
           list.push({
             id: `${article.id}-${batch.id}`,
             articleId: article.id,
@@ -80,11 +105,12 @@ export default function CashHome() {
             batchNumber: batch.batch_number,
             name: `${article.name} [Lot: ${batch.batch_number}]`,
             code: article.barcode || `ART-${article.id}`,
-            price: article.selling_price,
-            stock: batch.qty,
-            requiresPrescription: article.is_prescripted,
+            price: typeof article.selling_price === "string" ? parseFloat(article.selling_price) : Number(article.selling_price || 0),
+            stock: Number(batch.qty || 0),
+            requiresPrescription: Boolean(article.is_prescripted),
             expiryDate: batch.expire_date || "Sans date",
-            location: locationStr,
+            location: batchLocStr,
+            imageUrl: formattedImage,
           });
         });
       } else {
@@ -93,11 +119,12 @@ export default function CashHome() {
           articleId: article.id,
           name: article.name,
           code: article.barcode || `ART-${article.id}`,
-          price: article.selling_price,
-          stock: article.stock_qty,
-          requiresPrescription: article.is_prescripted,
+          price: typeof article.selling_price === "string" ? parseFloat(article.selling_price) : Number(article.selling_price || 0),
+          stock: Number(article.stock_qty || 0),
+          requiresPrescription: Boolean(article.is_prescripted),
           expiryDate: "N/A",
-          location: locationStr,
+          location: defaultLocStr,
+          imageUrl: formattedImage,
         });
       }
     });
@@ -250,7 +277,8 @@ export default function CashHome() {
           {/* Actions de Trésorerie Rapides */}
           <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-slate-200 dark:border-gray-700 shadow-xs mb-8">
             <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-gray-500 mb-3 flex items-center gap-1.5">
-              <DollarSign className="w-4 h-4 text-emerald-600 dark:text-emerald-500" /> Actions rapides de Trésorerie
+              <DollarSign className="w-4 h-4 text-emerald-600 dark:text-emerald-500" />{" "}
+              Actions rapides de Trésorerie
             </h2>
             <div className="flex flex-wrap gap-3">
               <button
@@ -260,7 +288,8 @@ export default function CashHome() {
                 }}
                 className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
               >
-                <ArrowRightLeft className="w-4 h-4" /> Faire un versement (Dépôt)
+                <ArrowRightLeft className="w-4 h-4" /> Faire un versement
+                (Dépôt)
               </button>
               <button
                 onClick={() => {
@@ -269,7 +298,8 @@ export default function CashHome() {
                 }}
                 className="px-4 py-2.5 border border-slate-300 dark:border-gray-700 hover:bg-slate-100 dark:hover:bg-gray-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
               >
-                <TrendingDown className="w-4 h-4 text-rose-500" /> Déclarer une dépense (Retrait)
+                <TrendingDown className="w-4 h-4 text-rose-500" /> Déclarer une
+                dépense (Retrait)
               </button>
               <button
                 onClick={() => {
@@ -278,13 +308,152 @@ export default function CashHome() {
                 }}
                 className="px-4 py-2.5 border border-slate-300 dark:border-gray-700 hover:bg-slate-100 dark:hover:bg-gray-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
               >
-                <TrendingUp className="w-4 h-4 text-emerald-550" /> Apport de caisse (Alimentation)
+                <TrendingUp className="w-4 h-4 text-emerald-550" /> Apport de
+                caisse (Alimentation)
               </button>
             </div>
           </div>
 
+          {/* Moteur de Recherche Rapide */}
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-gray-700">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 dark:text-gray-400 mb-4 flex items-center gap-1.5">
+              <Layers className="w-4 h-4 text-slate-500 dark:text-gray-400" />{" "}
+              Vérification rapide de produit (Prix / Stock)
+            </h2>
+            <div className="relative max-w-xl">
+              <Search className="absolute left-3 top-3.5 w-4 h-4 text-slate-400 dark:text-gray-500" />
+              <input
+                type="text"
+                placeholder="Taper pour vérifier le prix ou le stock d'un médicament..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900 rounded-xl text-sm font-medium focus:outline-hidden focus:ring-2 focus:ring-emerald-500 dark:focus:ring-teal-500 focus:bg-white dark:focus:bg-gray-800 text-slate-900 dark:text-white transition-all"
+              />
+            </div>
+
+            {/* Résultats de recherche rapide */}
+            {searchQuery.trim() !== "" && (
+              <div className="mt-4 border border-slate-100 dark:border-gray-700 rounded-xl overflow-hidden shadow-xs bg-white dark:bg-gray-800 animate-in slide-in-from-top-2 duration-200">
+                {isLoadingArticles ? (
+                  <div className="divide-y divide-slate-100 dark:divide-gray-700">
+                    {[1, 2, 3].map((n) => (
+                      <div
+                        key={n}
+                        className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-pulse"
+                      >
+                        <div className="space-y-2">
+                          <div className="h-4 w-48 bg-slate-200 dark:bg-gray-700 rounded-md" />
+                          <div className="h-3.5 w-72 bg-slate-150 dark:bg-gray-750 rounded-md" />
+                        </div>
+                        <div className="flex items-center gap-6">
+                          <div className="space-y-1 text-right">
+                            <div className="h-3 w-14 bg-slate-200 dark:bg-gray-700 rounded-md ml-auto" />
+                            <div className="h-4 w-20 bg-slate-200 dark:bg-gray-700 rounded-md" />
+                          </div>
+                          <div className="space-y-1 text-right">
+                            <div className="h-3 w-12 bg-slate-200 dark:bg-gray-700 rounded-md ml-auto" />
+                            <div className="h-6 w-14 bg-slate-200 dark:bg-gray-700 rounded-full" />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : filteredProducts.length > 0 ? (
+                  <div className="divide-y divide-slate-100 dark:divide-gray-700">
+                    {filteredProducts.map((p) => {
+                      let stockColor =
+                        "text-emerald-600 bg-emerald-50 border-emerald-100 dark:text-emerald-400 dark:bg-emerald-950/20 dark:border-emerald-900/30";
+                      if (p.stock === 0)
+                        stockColor =
+                          "text-rose-600 bg-rose-50 border-rose-100 dark:text-rose-400 dark:bg-rose-955/20 dark:border-rose-900/30";
+                      else if (p.stock < 10)
+                        stockColor =
+                          "text-amber-600 bg-amber-50 border-amber-100 dark:text-amber-400 dark:bg-amber-955/20 dark:border-amber-900/30";
+
+                      return (
+                        <div
+                          key={p.id}
+                          className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/70 dark:hover:bg-gray-750/40 border-b border-slate-100 dark:border-gray-700 last:border-b-0 transition-colors"
+                        >
+                          <div className="flex items-center gap-3.5 min-w-0">
+                            {p.imageUrl ? (
+                              <img
+                                src={p.imageUrl}
+                                alt={p.name}
+                                className="w-14 h-14 rounded-xl object-cover border border-slate-200 dark:border-gray-700 bg-white shrink-0 shadow-xs"
+                                onError={(e) => {
+                                  (e.target as HTMLElement).style.display = "none";
+                                }}
+                              />
+                            ) : (
+                              <div className="w-14 h-14 rounded-xl bg-slate-100 dark:bg-gray-800 flex items-center justify-center border border-slate-200 dark:border-gray-700 shrink-0">
+                                <Package className="w-6 h-6 text-slate-400 dark:text-gray-500" />
+                              </div>
+                            )}
+
+                            <div className="min-w-0 flex-1">
+                              <h4 className="font-bold text-slate-800 dark:text-white text-sm truncate">
+                                {p.name}
+                              </h4>
+                              <div className="flex flex-wrap items-center gap-2 mt-1.5 text-xs text-slate-600 dark:text-gray-300 font-medium">
+                                <span className="bg-slate-100 dark:bg-gray-800 px-2 py-0.5 rounded font-mono text-[11px] text-slate-700 dark:text-gray-300 border border-slate-200 dark:border-gray-700">
+                                  Code: {p.code}
+                                </span>
+
+                                {p.batchNumber && (
+                                  <span className="bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 px-2 py-0.5 rounded font-mono text-[11px] border border-amber-200 dark:border-amber-800/40 font-semibold">
+                                    Lot: {p.batchNumber}
+                                  </span>
+                                )}
+
+                                <span className="bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded text-[11px] font-semibold border border-blue-200 dark:border-blue-800/40">
+                                  Emplacement: {p.location}
+                                </span>
+
+                                {p.expiryDate && p.expiryDate !== "N/A" && (
+                                  <span className="text-[11px] text-slate-500 dark:text-gray-400 font-medium">
+                                    Exp: {p.expiryDate}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between sm:justify-end gap-6 border-t sm:border-t-0 border-slate-100 dark:border-gray-700 pt-2 sm:pt-0 shrink-0">
+                            <div className="text-left sm:text-right">
+                              <span className="text-[9px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-wider block">
+                                Prix Unitaire
+                              </span>
+                              <span className="font-extrabold text-slate-900 dark:text-white text-base font-mono">
+                                {p.price.toLocaleString()} <span className="text-xs font-semibold">{currency}</span>
+                              </span>
+                            </div>
+                            <div className="text-left sm:text-right">
+                              <span className="text-[9px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-wider block">
+                                Stock Libre
+                              </span>
+                              <span
+                                className={`inline-block px-3 py-1 rounded-full text-xs font-extrabold border shadow-xs ${stockColor}`}
+                              >
+                                {p.stock} U
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-6 text-center text-slate-400 dark:text-gray-400 text-xs">
+                    Aucun produit ne correspond à "{searchQuery}".
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Détails des ventes du jour */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 mt-4 lg:grid-cols-3 gap-6 mb-8">
             {/* Répartition des encaissements */}
             <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-gray-700">
               <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-gray-400 mb-4">
@@ -401,135 +570,6 @@ export default function CashHome() {
           </div>
         </>
       )}
-
-      {/* Moteur de Recherche Rapide */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-xs border border-slate-200 dark:border-gray-700">
-        <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 dark:text-gray-400 mb-4 flex items-center gap-1.5">
-          <Layers className="w-4 h-4 text-slate-500 dark:text-gray-400" />{" "}
-          Vérification rapide de produit (Prix / Stock)
-        </h2>
-        <div className="relative max-w-xl">
-          <Search className="absolute left-3 top-3.5 w-4 h-4 text-slate-400 dark:text-gray-500" />
-          <input
-            type="text"
-            placeholder="Taper pour vérifier le prix ou le stock d'un médicament..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-gray-900 rounded-xl text-sm font-medium focus:outline-hidden focus:ring-2 focus:ring-emerald-500 dark:focus:ring-teal-500 focus:bg-white dark:focus:bg-gray-800 text-slate-900 dark:text-white transition-all"
-          />
-        </div>
-
-        {/* Résultats de recherche rapide */}
-        {searchQuery.trim() !== "" && (
-          <div className="mt-4 border border-slate-100 dark:border-gray-700 rounded-xl overflow-hidden shadow-xs bg-white dark:bg-gray-800 animate-in slide-in-from-top-2 duration-200">
-            {isLoadingArticles ? (
-              <div className="divide-y divide-slate-100 dark:divide-gray-700">
-                {[1, 2, 3].map((n) => (
-                  <div
-                    key={n}
-                    className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-pulse"
-                  >
-                    <div className="space-y-2">
-                      <div className="h-4 w-48 bg-slate-200 dark:bg-gray-700 rounded-md" />
-                      <div className="h-3.5 w-72 bg-slate-150 dark:bg-gray-750 rounded-md" />
-                    </div>
-                    <div className="flex items-center gap-6">
-                      <div className="space-y-1 text-right">
-                        <div className="h-3 w-14 bg-slate-200 dark:bg-gray-700 rounded-md ml-auto" />
-                        <div className="h-4 w-20 bg-slate-200 dark:bg-gray-700 rounded-md" />
-                      </div>
-                      <div className="space-y-1 text-right">
-                        <div className="h-3 w-12 bg-slate-200 dark:bg-gray-700 rounded-md ml-auto" />
-                        <div className="h-6 w-14 bg-slate-200 dark:bg-gray-700 rounded-full" />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : filteredProducts.length > 0 ? (
-              <div className="divide-y divide-slate-100 dark:divide-gray-700">
-                {filteredProducts.map((p) => {
-                  let stockColor =
-                    "text-emerald-600 bg-emerald-50 border-emerald-100 dark:text-emerald-400 dark:bg-emerald-950/20 dark:border-emerald-900/30";
-                  if (p.stock === 0)
-                    stockColor =
-                      "text-rose-600 bg-rose-50 border-rose-100 dark:text-rose-400 dark:bg-rose-955/20 dark:border-rose-900/30";
-                  else if (p.stock < 10)
-                    stockColor =
-                      "text-amber-600 bg-amber-50 border-amber-100 dark:text-amber-400 dark:bg-amber-955/20 dark:border-amber-900/30";
-
-                  return (
-                    <div
-                      key={p.id}
-                      className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/50 dark:hover:bg-gray-750/30 border-b border-slate-100 dark:border-gray-700 last:border-b-0 transition-colors"
-                    >
-                      <div>
-                        <h4 className="font-bold text-slate-800 dark:text-white text-sm">
-                          {p.name}
-                        </h4>
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-[11px] text-slate-500 dark:text-gray-400 font-medium">
-                          <span>
-                            Code :{" "}
-                            <span className="text-slate-700 dark:text-slate-300">
-                              {p.code}
-                            </span>
-                          </span>
-                          {p.batchNumber && (
-                            <span>
-                              Lot :{" "}
-                              <span className="text-slate-700 dark:text-slate-300">
-                                {p.batchNumber}
-                              </span>
-                            </span>
-                          )}
-                          <span>
-                            Emplacement :{" "}
-                            <span className="text-indigo-600 dark:text-teal-400 font-bold">
-                              {p.location}
-                            </span>
-                          </span>
-                          {p.expiryDate && p.expiryDate !== "N/A" && (
-                            <span>
-                              Exp :{" "}
-                              <span className="text-slate-700 dark:text-slate-300">
-                                {p.expiryDate}
-                              </span>
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between sm:justify-end gap-6 border-t sm:border-t-0 border-slate-100 dark:border-gray-700 pt-2 sm:pt-0">
-                        <div className="text-left sm:text-right">
-                           <span className="text-[9px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-wider block">
-                            Prix Unitaire
-                          </span>
-                          <span className="font-bold text-slate-800 dark:text-white text-sm">
-                            {p.price.toLocaleString()} {currency}
-                          </span>
-                        </div>
-                        <div className="text-left sm:text-right">
-                          <span className="text-[9px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-wider block">
-                            Stock Libre
-                          </span>
-                          <span
-                            className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold border ${stockColor}`}
-                          >
-                            {p.stock} U
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="p-6 text-center text-slate-400 dark:text-gray-400 text-xs">
-                Aucun produit ne correspond à "{searchQuery}".
-              </div>
-            )}
-          </div>
-        )}
-      </div>
 
       {/* Modale de Vente */}
       <CreateSaleModal

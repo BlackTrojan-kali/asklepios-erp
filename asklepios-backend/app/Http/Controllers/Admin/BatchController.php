@@ -48,20 +48,28 @@ class BatchController extends Controller
         $hospitalId = $this->getHospitalId();
         $perPage = $request->query('per_page', 10);
 
-        $query = Batch::with('article')->whereHas('article', function ($q) use ($hospitalId) {
-            $q->where('hospital_id', $hospitalId);
-        });
+        $query = Batch::with('article')
+            ->select('batches.*')
+            ->join('articles', 'articles.id', '=', 'batches.article_id')
+            ->where('articles.hospital_id', $hospitalId);
 
         if ($request->filled('search')) {
             $search = $request->query('search');
-            $query->where('batch_number', 'like', "%{$search}%");
+            $query->where(function ($q) use ($search) {
+                $q->where('batches.batch_number', 'like', "%{$search}%")
+                  ->orWhere('articles.name', 'like', "%{$search}%");
+            });
         }
 
         if ($request->filled('article_id')) {
-            $query->where('article_id', $request->query('article_id'));
+            $query->where('batches.article_id', $request->query('article_id'));
         }
 
-        return response()->json($query->orderBy('expire_date', 'asc')->paginate($perPage), 200);
+        // Tri : Ordre alphabétique par nom d'article (A-Z), puis date de péremption la plus proche (FEFO)
+        $query->orderBy('articles.name', 'asc')
+              ->orderByRaw('batches.expire_date IS NULL, batches.expire_date ASC');
+
+        return response()->json($query->paginate($perPage), 200);
     }
 
     /**
@@ -80,15 +88,20 @@ class BatchController extends Controller
     {
         $hospitalId = $this->getHospitalId();
 
-        $query = Batch::with('article')->whereHas('article', function ($q) use ($hospitalId) {
-            $q->where('hospital_id', $hospitalId);
-        });
+        $query = Batch::with('article')
+            ->select('batches.*')
+            ->join('articles', 'articles.id', '=', 'batches.article_id')
+            ->where('articles.hospital_id', $hospitalId);
 
         if ($request->filled('article_id')) {
-            $query->where('article_id', $request->query('article_id'));
+            $query->where('batches.article_id', $request->query('article_id'));
         }
 
-        return response()->json($query->orderBy('expire_date', 'asc')->get(), 200);
+        // Tri : Ordre alphabétique par nom d'article (A-Z), puis date de péremption la plus proche (FEFO)
+        $query->orderBy('articles.name', 'asc')
+              ->orderByRaw('batches.expire_date IS NULL, batches.expire_date ASC');
+
+        return response()->json($query->get(), 200);
     }
 
     /**

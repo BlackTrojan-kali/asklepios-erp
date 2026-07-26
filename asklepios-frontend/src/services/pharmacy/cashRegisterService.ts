@@ -33,6 +33,7 @@ export interface CashRegisterSessionDto {
     phone?: string;
     email?: string;
   };
+  register?: CashRegisterDto;
 }
 
 export interface CashRegisterDto {

@@ -54,6 +54,39 @@ export const AdmitToConsultationModal: React.FC<Props> = ({ isOpen, onClose, app
 
     const roomOptions = sharedFacilityRooms.map(room => ({ value: room.id, label: room.name }));
 
+    // --- STYLES FORCÉS (BLANC & NOIR) POUR REACT-SELECT ---
+    // Adapté avec la couleur principale "emerald" (#10b981 / #059669) de cette modale
+    const selectStyles = { 
+        menuPortal: (base: any) => ({ ...base, zIndex: 9999 }),
+        control: (base: any, state: any) => ({
+            ...base,
+            backgroundColor: '#ffffff', // Fond toujours blanc
+            borderColor: state.isFocused ? '#10b981' : '#d1d5db', // Bordure émeraude au focus
+            boxShadow: state.isFocused ? '0 0 0 1px #10b981' : 'none',
+            borderRadius: '0.5rem',
+            minHeight: '42px',
+        }),
+        menu: (base: any) => ({
+            ...base,
+            backgroundColor: '#ffffff', // Fond du menu déroulant toujours blanc
+            borderRadius: '0.5rem',
+        }),
+        option: (base: any, state: any) => ({
+            ...base,
+            backgroundColor: state.isSelected 
+                ? '#d1fae5' // Fond vert émeraude clair si sélectionné
+                : state.isFocused 
+                    ? '#f3f4f6' // Fond gris clair au survol
+                    : '#ffffff', // Fond blanc par défaut
+            color: state.isSelected ? '#059669' : '#000000', // Texte émeraude foncé ou noir
+            cursor: 'pointer',
+        }),
+        singleValue: (base: any) => ({ ...base, color: '#000000' }), // Texte de l'option choisie en noir
+        input: (base: any) => ({ ...base, color: '#000000' }), // Texte tapé au clavier en noir
+        placeholder: (base: any) => ({ ...base, color: '#6b7280' }), // Placeholder en gris moyen
+        indicatorSeparator: (base: any) => ({ ...base, backgroundColor: '#e5e7eb' }),
+    };
+
     return (
         <div className="fixed inset-0 bg-black/60 dark:bg-black/80 flex items-center justify-center z-50 p-4 animate-fadeIn">
             <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-md p-6 shadow-2xl border border-transparent dark:border-gray-800">
@@ -90,7 +123,7 @@ export const AdmitToConsultationModal: React.FC<Props> = ({ isOpen, onClose, app
                             onChange={(opt) => setRoomId(opt ? opt.value : '')}
                             placeholder="Choisir votre bureau..."
                             menuPortalTarget={document.body}
-                            styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }), singleValue: base => ({...base, color: '#000'}) }}
+                            styles={selectStyles}
                             className="text-sm"
                         />
                         <p className="text-xs text-gray-400 mt-1.5">Le statut du patient passera à "En consultation".</p>

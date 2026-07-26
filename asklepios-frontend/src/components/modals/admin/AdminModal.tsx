@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
+import Select from 'react-select';
 import FormInput from '../../ui/form/FormInput';
 import FormButton from '../../ui/form/FormButton';
 import type { AdminDto, AdminPayload } from '../../../types/types';
@@ -11,10 +12,10 @@ interface AdminModalProps {
     isOpen: boolean;
     onClose: () => void;
     adminToEdit?: AdminDto | null;
-    AutoRefreshPage: ()=>void; 
+    AutoRefreshPage: () => void; 
 }
 
-const AdminModal = ({ isOpen, onClose, adminToEdit,AutoRefreshPage }: AdminModalProps) => {
+const AdminModal = ({ isOpen, onClose, adminToEdit, AutoRefreshPage }: AdminModalProps) => {
     const { createAdmin, updateAdmin } = useAdminStore();
     const { hospitals, getHospitals } = useHospitalStore();
 
@@ -111,6 +112,69 @@ const AdminModal = ({ isOpen, onClose, adminToEdit,AutoRefreshPage }: AdminModal
 
     const isEditMode = !!adminToEdit;
 
+    // --- Configuration de React-Select ---
+    
+    // 1. Formatage des options pour react-select
+    const hospitalOptions = hospitals.map(hospital => ({
+        value: hospital.id,
+        label: `${hospital.name} ${hospital.niu ? `(${hospital.niu})` : ''}`
+    }));
+
+    // 2. Recherche de l'option actuellement sélectionnée
+    const selectedHospital = hospitalOptions.find(option => option.value === hospitalId) || null;
+
+    // 3. Styles personnalisés pour forcer le Light Mode (insensible au dark mode)
+    const customSelectStyles = {
+        control: (base: any, state: any) => ({
+            ...base,
+            backgroundColor: '#ffffff', // Fond toujours blanc
+            borderColor: state.isFocused ? '#00a896' : '#e5e7eb', // Focus couleur primaire ou gris clair
+            borderWidth: '2px',
+            borderRadius: '0.375rem',
+            boxShadow: 'none',
+            minHeight: '44px',
+            '&:hover': {
+                borderColor: state.isFocused ? '#00a896' : '#d1d5db',
+            },
+        }),
+        menu: (base: any) => ({
+            ...base,
+            backgroundColor: '#ffffff', // Fond du menu toujours blanc
+            border: '1px solid #e5e7eb',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        }),
+        menuPortal: (base: any) => ({
+            ...base,
+            zIndex: 9999, // Permet d'afficher au-dessus de la modale
+        }),
+        option: (base: any, state: any) => ({
+            ...base,
+            backgroundColor: state.isSelected 
+                ? '#00a896' // Couleur primaire si sélectionné
+                : state.isFocused 
+                    ? '#f0fdfa' // Hover (teal-50)
+                    : '#ffffff', // Blanc par défaut
+            color: state.isSelected ? '#ffffff' : '#0f172a', // Texte blanc si sélectionné, sinon noir/slate-800
+            cursor: 'pointer',
+            '&:active': {
+                backgroundColor: '#00a896',
+                color: '#ffffff',
+            }
+        }),
+        singleValue: (base: any) => ({
+            ...base,
+            color: '#0f172a', // Texte sélectionné toujours noir/slate-800
+        }),
+        input: (base: any) => ({
+            ...base,
+            color: '#0f172a', // Texte en cours de frappe toujours noir/slate-800
+        }),
+        placeholder: (base: any) => ({
+            ...base,
+            color: '#64748b', // Couleur du placeholder (slate-500)
+        }),
+    };
+
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex justify-center items-center p-4 transition-opacity">
             <div className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden transform transition-all">
@@ -169,23 +233,21 @@ const AdminModal = ({ isOpen, onClose, adminToEdit,AutoRefreshPage }: AdminModal
                         />
                     </div>
 
-                    {/* Sélection de l'hôpital (Design intégré pour correspondre à FormInput) */}
+                    {/* Sélection de l'hôpital via React-Select */}
                     <div className="p-2 text-start">
-                        <label className="pl-2 text-sm font-medium text-slate-700 dark:text-gray-300">
+                        <label className="pl-2 text-sm font-medium text-slate-700 dark:text-gray-300 mb-1 block">
                             Hôpital d'affectation *
                         </label>
-                        <select 
-                            value={hospitalId}
-                            onChange={(e) => setHospitalId(e.target.value ? Number(e.target.value) : '')}
-                            className="w-full p-2.5 mt-1 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-md outline-none focus:border-[#00a896] dark:focus:border-teal-500 text-slate-800 dark:text-gray-100 transition-colors"
-                        >
-                            <option value="" disabled>-- Sélectionner un hôpital --</option>
-                            {hospitals.map(hospital => (
-                                <option key={hospital.id} value={hospital.id}>
-                                    {hospital.name} {hospital.niu ? `(${hospital.niu})` : ''}
-                                </option>
-                            ))}
-                        </select>
+                        <Select
+                            options={hospitalOptions}
+                            value={selectedHospital}
+                            onChange={(option) => setHospitalId(option ? option.value : '')}
+                            placeholder="-- Rechercher et sélectionner un hôpital --"
+                            isClearable
+                            isSearchable
+                            styles={customSelectStyles}
+                            menuPortalTarget={document.body} // Empêche la coupure du menu par overflow-hidden
+                        />
                     </div>
 
                     {/* Champ Mot de passe (Uniquement à la création) */}

@@ -28,13 +28,19 @@ class CashRegister extends Model
     public function getBalanceAttribute()
     {
         $activeSession = $this->activeSession;
-        if (!$activeSession) {
-            return 0.0;
+        if ($activeSession) {
+            $cashSales = (float) $activeSession->sales()->where('payment_method', 'CASH')->sum('total_amount');
+            $treasury = $activeSession->treasury_totals;
+            $cashNet = (float) ($treasury['cash']['net'] ?? 0.0);
+            return (float) ($activeSession->opening_balance + $cashSales + $cashNet);
         }
-        $cashSales = (float) $activeSession->sales()->where('payment_method', 'CASH')->sum('total_amount');
-        $treasury = $activeSession->treasury_totals;
-        $cashNet = (float) ($treasury['cash']['net'] ?? 0.0);
-        return (float) ($activeSession->opening_balance + $cashSales + $cashNet);
+
+        $lastSession = $this->sessions()->whereNotNull('closed_at')->latest('closed_at')->first();
+        if ($lastSession) {
+            return (float) ($lastSession->closing_balance ?? 0.0);
+        }
+
+        return 0.0;
     }
 }
 

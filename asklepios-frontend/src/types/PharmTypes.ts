@@ -86,37 +86,9 @@ export interface ArticleCategoryPayload {
 /**
  * Représente un article tel qu'il est renvoyé par l'API (GET)
  */
-export interface ArticleDto {
-    id: number;
-    hospital_id: number;
-    category_id: number;
-    name: string;
-    barcode: string | null;
-    global_min_qty: number;
-    image_url: string | null;
-    track_batches: boolean;
-    
-    category?: ArticleCategoryDto; 
-    is_prescripted: boolean;
-    
-    // Nouveaux champs optionnels calculés par le Backend
-    stock_qty?: number; 
-    has_expiring_batches?: boolean;
-    
-    created_at?: string;
-    updated_at?: string;
-}
 
-export interface ArticlePayload {
-    category_id: number | ""; 
-    name: string;
-    barcode: string;
-    global_min_qty: number | ""; 
-    track_batches: boolean; 
-    image: File | null; 
-    
-    is_prescripted: boolean;
-}
+
+
 
 
 // ==========================================

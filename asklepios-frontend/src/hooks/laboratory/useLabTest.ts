@@ -22,10 +22,31 @@ export const useCreateLabTest = () => {
 export const useUpdateLabTest = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, payload }: { id: number; payload: LabTestPayload }) =>
+    mutationFn: ({ id, payload }: { id: number; payload: Partial<LabTestPayload> }) =>
       labTestService.updateLabTest(id, payload),
-    onSuccess: (_, variables) => {
+    onMutate: async ({ id, payload }) => {
+      await queryClient.cancelQueries({ queryKey: ["labTests"] });
+      const previousData = queryClient.getQueriesData({ queryKey: ["labTests"] });
+
+      queryClient.setQueriesData({ queryKey: ["labTests"] }, (old: any) => {
+        if (!Array.isArray(old)) return old;
+        return old.map((test: any) =>
+          test.id === id ? { ...test, ...payload } : test
+        );
+      });
+
+      return { previousData };
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousData) {
+        context.previousData.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["labTests"] });
+      queryClient.invalidateQueries({ queryKey: ["labCategories"] });
     },
   });
 };

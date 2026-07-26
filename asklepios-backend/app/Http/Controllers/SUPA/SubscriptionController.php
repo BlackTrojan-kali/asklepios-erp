@@ -251,14 +251,17 @@ class SubscriptionController extends Controller
         $hospital = $subscription->hospital;
         $centerCount = $hospital->centers->count();
         $pharmacyCount = $hospital->pharmacies->count();
+        $labCount = $hospital->laboratories->count();
         // Transformation des données pour la facture
-        $itemsPreview = $subscription->items->map(function ($item) use ($centerCount,$pharmacyCount) {
+        $itemsPreview = $subscription->items->map(function ($item) use ($centerCount,$pharmacyCount,$labCount) {
             $qty = 0;
             if($item->licence->name == "pharmacy"){
                 $qty = $pharmacyCount;
             }else if($item->licence->name == "base_hospital"){
                 $qty = $centerCount;
-            }
+            }else if($item->licence->name == "laboratory"){
+                $qty = $labCount;
+            }  
             $subTotal = $qty > 0 ? $item->unit_price * $qty : 0;
             
             return [
@@ -266,6 +269,7 @@ class SubscriptionController extends Controller
                 'unit_price' => $item->unit_price,
                 'center_count' => $centerCount,
                 "pharmacy_count" => $pharmacyCount,
+                "lab_count"=> $labCount,
                 'sub_total' => $subTotal,
             ];
         });
@@ -362,14 +366,16 @@ class SubscriptionController extends Controller
         $hospital = $subscription->hospital;
         $centerCount = $hospital->centers->count();
         $pharmacyCount = $hospital->pharmacies->count();
-
+        $labCount = $hospital->laboratories->count();
         // Transformation pour le tableau de la facture
-        $items = $subscription->items->map(function ($item) use ($centerCount,$pharmacyCount) {
+        $items = $subscription->items->map(function ($item) use ($centerCount,$pharmacyCount,$labCount) {
         $qty = 0;
         if ($item->licence->name == "pharmacy"){
             $qty = $pharmacyCount;
         }else if($item->licence->name == "base_hospital"){
             $qty = $centerCount;
+        }else if($item->licence->name == "laboratory"){
+            $qty = $labCount;
         }else{
             $qty = $centerCount;
         }
@@ -390,6 +396,7 @@ class SubscriptionController extends Controller
             'hospital' => $hospital,
             'center_count' => $centerCount,
             'pharmacy_count'=> $pharmacyCount,
+            "lab_count" => $labCount,
             'starting_date' => \Carbon\Carbon::parse($subscription->starting_date)->format('d/m/Y'),
             'ending_date' => \Carbon\Carbon::parse($subscription->ending_date)->format('d/m/Y'),
             'items' => $items,

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Services\BatchService;
 use App\Models\Pharmacy\Article;
 use App\Models\Pharmacy\Stock;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Storage;
@@ -103,8 +104,8 @@ class ArticleController extends Controller
             $query->where('category_id', $request->query('category_id'));
         }
 
-        // 4. Exécuter la requête avec pagination
-        $articles = $query->latest()->paginate($perPage);
+        // 4. Exécuter la requête avec tri par ordre alphabétique et pagination
+        $articles = $query->orderBy('name', 'asc')->paginate($perPage);
 
         // 5. Typer correctement les attributs virtuels pour React/TypeScript
         // On utilise getCollection() pour modifier les items à l'intérieur du paginateur Laravel
@@ -162,7 +163,7 @@ class ArticleController extends Controller
                 })
         ]);
 
-        $articles = $query->latest()->get();
+        $articles = $query->orderBy('name', 'asc')->get();
 
         $articles->transform(function ($article) {
             $article->stock_qty = (float) $article->stock_qty;
@@ -171,7 +172,9 @@ class ArticleController extends Controller
         });
 
         return response()->json($articles, 200);
-    }/**
+    }
+    
+    /**
      * Créer un nouvel article
      */
     #[OA\Post(
@@ -217,7 +220,7 @@ class ArticleController extends Controller
             'barcode' => 'nullable|string|max:100',
             'global_min_qty' => 'nullable|numeric|min:0',
             'track_batches' => 'required|string', 
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,svg|max:2048',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,svg,webp|max:2048',
             'is_prescripted' => 'nullable|string', 
         ]);
         
@@ -347,5 +350,58 @@ class ArticleController extends Controller
         return response()->json([
             'message' => 'Article supprimé avec succès'
         ], 200);
+    }
+
+    /**
+     * Exporter la liste des articles en PDF
+     */
+    #[OA\Get(
+        path: "/api/admin/articles/export/pdf",
+        operationId: "exportAdminArticlesPdf",
+        summary: "Exporter le catalogue des articles en PDF (Tâche en arrière-plan)",
+        security: [["bearerAuth" => []]],
+        tags: ["Articles (Admin)"]
+    )]
+    #[OA\Parameter(name: "search", in: "query", required: false, description: "Nom ou Code-barres", schema: new OA\Schema(type: "string"))]
+    #[OA\Parameter(name: "category_id", in: "query", required: false, schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "track_batches", in: "query", required: false, description: "Filtrer par suivi de lots (true/false)", schema: new OA\Schema(type: "string"))]
+    #[OA\Parameter(name: "is_prescripted", in: "query", required: false, description: "Filtrer par prescription obligatoire (true/false)", schema: new OA\Schema(type: "string"))]
+    #[OA\Response(response: 202, description: "L'exportation PDF a démarré avec succès. Une notification sera envoyée à la fin.")]
+   public function exportPdf(Request $request)
+    {
+        $hospitalId = $this->getHospitalId();
+
+        // 1. Construction de la requête avec les relations nécessaires
+        $query = Article::with(['category', 'batches'])->where('hospital_id', $hospitalId);
+
+        // 2. Application des filtres
+        if ($request->filled('search')) {
+            $search = $request->query('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('barcode', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->query('category_id'));
+        }
+
+        if ($request->filled('track_batches')) {
+            $query->where('track_batches', filter_var($request->query('track_batches'), FILTER_VALIDATE_BOOLEAN));
+        }
+
+        if ($request->filled('is_prescripted')) {
+            $query->where('is_prescripted', filter_var($request->query('is_prescripted'), FILTER_VALIDATE_BOOLEAN));
+        }
+
+        $articles = $query->get();
+
+        // 3. Génération du PDF avec DomPDF
+        $pdf = Pdf::loadView('pdf.articles_export', ['articles' => $articles])
+                  ->setPaper('a4', 'landscape');
+
+        // 4. Renvoi du fichier directement au navigateur
+        return $pdf->download('export_articles.pdf');
     }
 }

@@ -27,7 +27,7 @@ class Invoice extends Model
      * Cette ligne force Laravel à toujours inclure ces deux champs virtuels
      * dans tes réponses JSON (API) envoyées à ton frontend React.
      */
-    protected $appends = ['total_paid', 'remaining_debt'];
+    protected $appends = ['total_paid', 'remaining_debt', 'type'];
 
     // ==========================================
     // RELATIONS
@@ -67,9 +67,21 @@ class Invoice extends Model
     public function labRequests(){
         return $this->hasMany(LabRequest::class);
     }
+
     // ==========================================
     // ATTRIBUTS VIRTUELS (ACCESSEURS)
     // ==========================================
+
+    /**
+     * Détermine le type de la facture (LABORATORY ou CONSULTATION)
+     */
+    public function getTypeAttribute()
+    {
+        if ($this->relationLoaded('labRequests')) {
+            return $this->labRequests->count() > 0 ? 'LABORATORY' : 'CONSULTATION';
+        }
+        return LabRequest::where('invoice_id', $this->id)->exists() ? 'LABORATORY' : 'CONSULTATION';
+    }
 
     /**
      * Calcule la somme totale des paiements déjà effectués pour cette facture.
@@ -77,8 +89,6 @@ class Invoice extends Model
      */
     public function getTotalPaidAttribute()
     {
-        // On appelle $this->payments (sans les parenthèses) pour utiliser la collection. 
-        // Cela évite de refaire une requête SQL (N+1) si la relation 'payments' a déjà été chargée via un `with('payments')`.
         return $this->payments->sum('amount');
     }
 
@@ -88,8 +98,6 @@ class Invoice extends Model
      */
     public function getRemainingDebtAttribute()
     {
-        // On utilise la valeur totale moins la somme des paiements.
-        // Le max(0, ...) permet de s'assurer qu'on n'a pas une dette négative en cas de trop-perçu.
         return max(0, $this->total_amount - $this->total_paid);
     }
 }

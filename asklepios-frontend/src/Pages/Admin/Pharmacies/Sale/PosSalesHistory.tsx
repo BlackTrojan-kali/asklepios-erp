@@ -79,6 +79,8 @@ export default function PosSalesHistory() {
   const [selectedSellerId, setSelectedSellerId] = useState<number | undefined>(
     undefined,
   );
+  const [selectedPaymentMethod, setSelectedPaymentMethod] =
+    useState<string>("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [search, setSearch] = useState("");
@@ -104,6 +106,7 @@ export default function PosSalesHistory() {
     pharmacy_branch_id: selectedBranchId,
     cash_register_id: selectedRegisterId,
     user_id: selectedSellerId,
+    payment_method: selectedPaymentMethod || undefined,
     start_date: startDate || undefined,
     end_date: endDate || undefined,
     search: search || undefined,
@@ -123,6 +126,7 @@ export default function PosSalesHistory() {
     selectedBranchId,
     selectedRegisterId,
     selectedSellerId,
+    selectedPaymentMethod,
     startDate,
     endDate,
     search,
@@ -139,6 +143,7 @@ export default function PosSalesHistory() {
     setSelectedBranchId(undefined);
     setSelectedRegisterId(undefined);
     setSelectedSellerId(undefined);
+    setSelectedPaymentMethod("");
     setStartDate("");
     setEndDate("");
     setSearch("");
@@ -160,6 +165,7 @@ export default function PosSalesHistory() {
         pharmacy_branch_id: selectedBranchId,
         cash_register_id: selectedRegisterId,
         user_id: selectedSellerId,
+        payment_method: selectedPaymentMethod || undefined,
         start_date: startDate || undefined,
         end_date: endDate || undefined,
         search: search || undefined,
@@ -222,7 +228,7 @@ export default function PosSalesHistory() {
   }, [paginatedData, paginationData]);
 
   return (
-    <div className="p-6 bg-slate-50 dark:bg-gray-900 min-h-screen text-slate-800 dark:text-white transition-colors duration-200">
+    <div className="p-0 bg-slate-50 dark:bg-gray-900 min-h-screen text-slate-800 dark:text-white transition-colors duration-200">
       {/* En-tête de page */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
@@ -245,7 +251,7 @@ export default function PosSalesHistory() {
           </div>
           <div>
             <p className="text-xs text-slate-400 dark:text-gray-500 font-bold uppercase tracking-wider">
-              Total Transactions
+              Ventes
             </p>
             <h3 className="text-2xl font-black font-mono mt-0.5">
               {isLoading ? "---" : pageStats.totalCount}
@@ -278,6 +284,7 @@ export default function PosSalesHistory() {
         </div>
 
         <div className="space-y-4">
+          {/* Ligne 1 : Sélecteurs principaux */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
             {/* Succursale */}
             <div>
@@ -346,24 +353,25 @@ export default function PosSalesHistory() {
               </select>
             </div>
 
-            {/* Recherche textuelle */}
-            <div className="relative">
-              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-gray-455 mb-1.5">
-                Recherche rapide
+            {/* Mode de règlement (NOUVEAU) */}
+            <div>
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-gray-450 mb-1.5">
+                Mode de règlement
               </label>
-              <span className="absolute left-3.5 bottom-2.5 text-slate-400">
-                <Search className="w-4 h-4" />
-              </span>
-              <input
-                type="text"
-                placeholder="Ticket (ex: FA-000001), client..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-3 py-2 border border-slate-350 dark:border-gray-700 rounded-xl text-sm bg-slate-50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-900 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-white transition-colors"
-              />
+              <select
+                value={selectedPaymentMethod}
+                onChange={(e) => setSelectedPaymentMethod(e.target.value)}
+                className="w-full px-3 py-2 border border-slate-350 dark:border-gray-700 rounded-xl text-sm bg-slate-50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-900 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-white transition-colors cursor-pointer font-semibold"
+              >
+                <option value="">Tous les modes</option>
+                <option value="CASH">Espèces (Cash)</option>
+                <option value="MOBILE_MONEY">Mobile Money (Momo/OM)</option>
+                <option value="CARD">Carte Bancaire</option>
+              </select>
             </div>
           </div>
 
+          {/* Ligne 2 : Dates, Recherche rapide et Actions (Plus proche de la table) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
             {/* Du Date */}
             <div className="relative">
@@ -397,35 +405,59 @@ export default function PosSalesHistory() {
               />
             </div>
 
-            {/* Reset */}
-            <div>
+            {/* Recherche textuelle (Déplacée ici près de la table) */}
+            <div className="relative">
+              <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-gray-455 mb-1.5">
+                Recherche rapide
+              </label>
+              <span className="absolute left-3.5 bottom-2.5 text-slate-400">
+                <Search className="w-4 h-4" />
+              </span>
+              <input
+                type="text"
+                placeholder="Ticket (ex: FA-000001), client..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-10 pr-3 py-1.5 border border-slate-350 dark:border-gray-700 rounded-xl text-sm bg-slate-50 dark:bg-gray-900 focus:bg-white dark:focus:bg-gray-900 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 text-slate-800 dark:text-white transition-colors"
+              />
+            </div>
+
+            {/* Actions d'Export & Réinitialisation compactes */}
+            <div className="flex items-center gap-2 h-[38px]">
+              {/* Reset compact */}
               <button
                 type="button"
                 onClick={handleResetFilters}
-                className="w-full bg-slate-100 hover:bg-slate-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-slate-750 dark:text-gray-250 font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-colors text-xs cursor-pointer h-[38px]"
+                title="Réinitialiser tous les filtres"
+                className="bg-slate-100 hover:bg-slate-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-slate-700 dark:text-gray-200 font-bold px-3 py-2 rounded-xl flex items-center gap-1 transition-colors text-xs cursor-pointer h-full border border-slate-250 dark:border-gray-600 shrink-0"
               >
-                <RefreshCw className="w-4 h-4" /> Réinitialiser
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Raz</span>
               </button>
-            </div>
 
-            {/* Actions d'exportation */}
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => handleExport("excel")}
-                disabled={exporting}
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-colors text-xs cursor-pointer h-[38px] disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <FileSpreadsheet className="w-4 h-4" /> Excel
-              </button>
-              <button
-                type="button"
-                onClick={() => handleExport("pdf")}
-                disabled={exporting}
-                className="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 px-3 rounded-xl flex items-center justify-center gap-1.5 transition-colors text-xs cursor-pointer h-[38px] disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <FileText className="w-4 h-4" /> PDF
-              </button>
+              {/* Exports compacts (Excel & PDF) */}
+              <div className="flex-1 flex gap-1.5 h-full">
+                <button
+                  type="button"
+                  onClick={() => handleExport("excel")}
+                  disabled={exporting}
+                  title="Exporter en Excel"
+                  className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold px-2 py-1.5 rounded-xl flex items-center justify-center gap-1 transition-colors text-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5" />
+                  <span>Excel</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleExport("pdf")}
+                  disabled={exporting}
+                  title="Exporter en PDF"
+                  className="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold px-2 py-1.5 rounded-xl flex items-center justify-center gap-1 transition-colors text-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>PDF</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -585,7 +617,7 @@ export default function PosSalesHistory() {
           <div className="px-6 py-4 border-t border-slate-100 dark:border-gray-755 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/50 dark:bg-gray-850/30">
             <span className="text-xs text-slate-500 dark:text-gray-400">
               Affichage de {paginationData.from || 0} à {paginationData.to || 0}{" "}
-               sur {paginationData.total} ventes
+              sur {paginationData.total} ventes
             </span>
             <div className="flex items-center gap-2">
               <button

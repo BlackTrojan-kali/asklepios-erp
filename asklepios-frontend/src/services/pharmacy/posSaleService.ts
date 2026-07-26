@@ -1,4 +1,5 @@
 import api from "../../api/api";
+import type { CashRegisterSessionDto } from "./cashRegisterService";
 
 export interface PosSaleItemPayload {
   article_id: number;
@@ -60,6 +61,8 @@ export interface PosSaleDto {
   amount_received?: number;
   change_due?: number;
   created_at?: string;
+  receipt_number?: string;
+  session?: CashRegisterSessionDto;
   items?: PosSaleItemDto[];
 }
 
@@ -83,6 +86,7 @@ export interface AdminSalesFilterParams {
   pharmacy_branch_id?: number;
   cash_register_id?: number;
   user_id?: number;
+  payment_method?: string;
   start_date?: string;
   end_date?: string;
   search?: string;

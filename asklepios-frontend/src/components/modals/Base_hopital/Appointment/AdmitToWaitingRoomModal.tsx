@@ -26,8 +26,6 @@ export const AdmitToWaitingRoomModal: React.FC<Props> = ({
     getSharedFacilityRooms,
     loading: roomsLoading,
   } = useFacilityRoomStore();
-  //console.log("salles d'attentes", getSharedFacilityRooms);
-  //  console.log("departement id", currentDepartmentId);
 
   const [roomId, setRoomId] = useState<number | "">("");
   const [visitType, setVisitType] = useState<
@@ -63,11 +61,45 @@ export const AdmitToWaitingRoomModal: React.FC<Props> = ({
     value: room.id,
     label: room.name,
   }));
+  
   const visitTypeOptions = [
     { value: "ROUTINE", label: "Consultation de Routine" },
     { value: "FOLLOW_UP", label: "Visite de Suivi (Contrôle)" },
     { value: "EMERGENCY", label: "Urgence" },
   ];
+
+  // --- STYLES FORCÉS (BLANC & NOIR) POUR REACT-SELECT ---
+  // Adapté avec la couleur principale #00a896 de cette modale
+  const selectStyles = { 
+    menuPortal: (base: any) => ({ ...base, zIndex: 9999 }),
+    control: (base: any, state: any) => ({
+        ...base,
+        backgroundColor: '#ffffff', // Fond toujours blanc
+        borderColor: state.isFocused ? '#00a896' : '#d1d5db',
+        boxShadow: state.isFocused ? '0 0 0 1px #00a896' : 'none',
+        borderRadius: '0.5rem',
+        minHeight: '42px',
+    }),
+    menu: (base: any) => ({
+        ...base,
+        backgroundColor: '#ffffff', // Fond du menu déroulant toujours blanc
+        borderRadius: '0.5rem',
+    }),
+    option: (base: any, state: any) => ({
+        ...base,
+        backgroundColor: state.isSelected 
+            ? '#e6f6f4' // Fond vert clair si sélectionné
+            : state.isFocused 
+                ? '#f3f4f6' // Fond gris clair au survol
+                : '#ffffff', // Fond blanc par défaut
+        color: state.isSelected ? '#00a896' : '#000000', // Texte noir ou vert
+        cursor: 'pointer',
+    }),
+    singleValue: (base: any) => ({ ...base, color: '#000000' }), // Texte de l'option choisie en noir
+    input: (base: any) => ({ ...base, color: '#000000' }), // Texte tapé au clavier en noir
+    placeholder: (base: any) => ({ ...base, color: '#6b7280' }), // Placeholder en gris moyen
+    indicatorSeparator: (base: any) => ({ ...base, backgroundColor: '#e5e7eb' }),
+  };
 
   return (
     <div className="fixed inset-0 bg-black/60 dark:bg-black/80 flex items-center justify-center z-50 p-4 animate-fadeIn">
@@ -107,7 +139,7 @@ export const AdmitToWaitingRoomModal: React.FC<Props> = ({
                 setVisitType(opt ? (opt.value as any) : "ROUTINE")
               }
               menuPortalTarget={document.body}
-              styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+              styles={selectStyles}
             />
           </div>
           <div>
@@ -120,7 +152,7 @@ export const AdmitToWaitingRoomModal: React.FC<Props> = ({
               onChange={(opt) => setRoomId(opt ? opt.value : "")}
               placeholder="Choisir la salle..."
               menuPortalTarget={document.body}
-              styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+              styles={selectStyles}
             />
             {roomId && (
               <p className="text-xs text-[#00a896] mt-2 flex items-center gap-1 font-medium">

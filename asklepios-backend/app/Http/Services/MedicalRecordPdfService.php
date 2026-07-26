@@ -33,7 +33,15 @@ class MedicalRecordPdfService
             'patientVisits.consultations.prescriptions.prescriptionLines.article',
             'patientVisits.consultations.examRequests.examRequestLines',
             'patientVisits.performedMedicalActs.medicalActCatalog',
-            'patientVisits.performedMedicalActs.equipment'
+            'patientVisits.performedMedicalActs.equipment',
+
+            // --- CHARGEMENT DES EXAMENS DE LABORATOIRE VALIDÉS ---
+            'labRequests' => function($query) { 
+                $query->where('status', 'VALIDATED')->orderBy('updated_at', 'desc'); 
+            },
+            'labRequests.lines.test',
+            'labRequests.lines.results.parameter',
+            'labRequests.profileDoctor.user'
         ])->findOrFail($patientId);
         
         // 2. Gestion du Logo de l'Hôpital (En-tête)

@@ -638,7 +638,7 @@ export default function CashRegister() {
                   {/* Accordéon Header */}
                   <div
                     onClick={() => toggleBranch(branch.id)}
-                    className="flex justify-between items-center p-5 cursor-pointer hover:bg-slate-50/50 dark:hover:bg-gray-750/30 transition-colors"
+                    className="flex justify-between items-center p-5 cursor-pointer hover:bg-slate-600/50 dark:hover:bg-gray-750/30 transition-colors"
                   >
                     <div className="flex items-center gap-4">
                       <div

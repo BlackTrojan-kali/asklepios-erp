@@ -263,9 +263,9 @@ protected PatientAdmissionService $admissionService;
     {
         $appointment = Appointment::findOrFail($id);
         
-        if ($appointment->status === 'ARRIVED') {
+       /* if ($appointment->status === 'ARRIVED') {
             return response()->json(['message' => 'Impossible d\'annuler un rendez-vous pour un patient déjà sur place.'], 422);
-        }
+        }*/
 
         $appointment->update(['status' => 'CANCELLED']);
         return response()->json(['message' => 'Rendez-vous annulé.'], 200);

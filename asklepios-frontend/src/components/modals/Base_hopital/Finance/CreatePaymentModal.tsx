@@ -9,9 +9,10 @@ interface CreatePaymentModalProps {
     isOpen: boolean;
     onClose: () => void;
     invoice: InvoiceDto | null;
+    initialAmount?: number;
 }
 
-export const CreatePaymentModal: React.FC<CreatePaymentModalProps> = ({ isOpen, onClose, invoice }) => {
+export const CreatePaymentModal: React.FC<CreatePaymentModalProps> = ({ isOpen, onClose, invoice, initialAmount }) => {
     const { createPayment, actionLoading } = usePaymentStore();
 
     const [amount, setAmount] = useState<number | ''>('');
@@ -23,11 +24,12 @@ export const CreatePaymentModal: React.FC<CreatePaymentModalProps> = ({ isOpen, 
 
     useEffect(() => {
         if (isOpen && invoice) {
-            // Par défaut, on propose d'encaisser la totalité du reste à payer
-            setAmount(remainingAmount);
+            // Si un montant initial spécifique est fourni (ex: sélection partielle d'examens), on l'utilise
+            const defaultAmt = initialAmount !== undefined ? Math.min(initialAmount, remainingAmount) : remainingAmount;
+            setAmount(defaultAmt);
             setPaymentMethod(PaymentMethod.CASH);
         }
-    }, [isOpen, invoice, remainingAmount]);
+    }, [isOpen, invoice, remainingAmount, initialAmount]);
 
     if (!isOpen || !invoice) return null;
 

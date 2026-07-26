@@ -104,7 +104,17 @@ export const ViewInventoryModal: React.FC<Props> = ({ isOpen, onClose, inventory
                                                     </span>
                                                 </td>
                                                 <td className="p-3 text-center text-xs text-gray-500 dark:text-gray-400">
-                                                    {line.storage_location ? `${line.storage_location?.aisle}-${line?.storage_location.shelf}` : 'Non rangé'}
+                                                    {(() => {
+                                                        const loc = line.storage_location || (line as any).storageLocation;
+                                                        if (!loc) return <span className="text-gray-400">Non rangé</span>;
+                                                        const aisle = loc.aisle || "";
+                                                        const shelf = loc.shelf || "";
+                                                        const codeSuffix = loc.code ? ` (${loc.code})` : "";
+                                                        if (aisle && shelf) return <span className="font-semibold text-indigo-600 dark:text-indigo-400">{aisle}-{shelf}{codeSuffix}</span>;
+                                                        if (aisle) return <span className="font-semibold text-indigo-600 dark:text-indigo-400">Allée {aisle}{codeSuffix}</span>;
+                                                        if (shelf) return <span className="font-semibold text-indigo-600 dark:text-indigo-400">Étagère {shelf}{codeSuffix}</span>;
+                                                        return <span className="font-semibold text-indigo-600 dark:text-indigo-400">{loc.description || loc.name || loc.code ? `(${loc.code})` : "Non rangé"}</span>;
+                                                    })()}
                                                 </td>
                                                 <td className="p-3 text-center font-mono text-sm text-gray-500 dark:text-gray-400">
                                                     {line.system_qty}

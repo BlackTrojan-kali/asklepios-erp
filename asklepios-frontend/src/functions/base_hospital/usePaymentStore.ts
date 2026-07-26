@@ -35,7 +35,7 @@ const usePaymentStore = () => {
     // GET /shared/payments
     const getPayments = useCallback(async (
         page: number = 1,
-        filters: { invoice_id?: number; center_id?: number } = {},
+        filters: Record<string, any> = {},
         perPage: number = 15
     ) => {
         try {

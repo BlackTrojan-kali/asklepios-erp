@@ -20,7 +20,7 @@ class InvoiceService
      * @param float|null $consultationPrice Le prix appliqué à la consultation
      * @return Invoice
      */
-    public function generateInvoiceForPatient(int $patientId, ?float $consultationPrice = 0.0, ?int $centerId)
+    public function generateInvoiceForPatient(int $patientId, ?float $consultationPrice = 0.0, ?int $centerId = null)
     {
         $patient = Patient::findOrFail($patientId);
 
@@ -33,7 +33,7 @@ class InvoiceService
                 })->orWhereHas('admission', function($q) use ($patient) {
                     $q->where('patient_id', $patient->id);
                 });
-            })->where('is_billed', false)->get();
+            })->where('is_billed', false)->whereNull('invoice_id')->get();
 
             // 2. Récupérer les actes non facturés (liés à une Visite OU à une Admission)
             $unbilledActs = PerformedMedicalAct::where(function($query) use ($patient) {
@@ -42,12 +42,13 @@ class InvoiceService
                 })->orWhereHas('admission', function($q) use ($patient) {
                     $q->where('patient_id', $patient->id);
                 });
-            })->where('is_billed', false)->get();
+            })->where('is_billed', false)->whereNull('invoice_id')->get();
 
             // 3. Récupérer les séjours (hospitalisations) non facturés
             $unbilledAdmissions = Admission::with('bed.facilityRoom.category')
                 ->where('patient_id', $patient->id)
                 ->where('is_billed', false)
+                ->whereNull('invoice_id')
                 ->get();
 
             // S'il n'y a absolument rien à facturer
@@ -58,10 +59,16 @@ class InvoiceService
             $totalAmount = 0.0;
 
             // --- A. Calcul des consultations
-            foreach ($unbilledConsultations as $consultation) {
-                $consultation->consultation_price = $consultationPrice;
+            foreach ($unbilledConsultations as $index => $consultation) {
+                if ($consultationPrice !== null && (float)$consultationPrice > 0) {
+                    // Si la réceptionniste applique un tarif de consultation, il s'applique à la 1ère consultation
+                    $appliedPrice = ($index === 0) ? (float)$consultationPrice : 0.0;
+                } else {
+                    $appliedPrice = $consultation->consultation_price ?? 0.0;
+                }
+                $consultation->consultation_price = $appliedPrice;
                 $consultation->save();
-                $totalAmount += $consultationPrice;
+                $totalAmount += $appliedPrice;
             }
 
             // --- B. Calcul des actes médicaux
@@ -81,13 +88,14 @@ class InvoiceService
                 $totalAmount += ($nightPrice * $nights);
             }
 
-            // On utilise la dernière visite trouvée pour attacher la facture à un centre
+            // On utilise le centre spécifié (ex: centre de la réceptionniste) ou à défaut celui de la dernière visite
             $lastVisit = PatientVisit::where('patient_id', $patient->id)->latest('id')->first();
+            $assignedCenterId = $centerId ?? ($lastVisit ? $lastVisit->center_id : null);
             
             // Création de la facture
             $invoice = Invoice::create([
                 'patient_id'       => $patient->id,
-                'center_id'        => $lastVisit ? $lastVisit->center_id : $centerId,
+                'center_id'        => $assignedCenterId,
                 'patient_visit_id' => $lastVisit ? $lastVisit->id : null,
                 'total_amount'     => $totalAmount,
                 'status'           => 'UNPAID',
@@ -130,10 +138,15 @@ class InvoiceService
             $totalAmount = 0.0;
 
             // 3.a Calculer les consultations
-            foreach ($unbilledConsultations as $consultation) {
-                $consultation->consultation_price = $consultationPrice;
+            foreach ($unbilledConsultations as $index => $consultation) {
+                if ($consultationPrice !== null && (float)$consultationPrice > 0) {
+                    $appliedPrice = ($index === 0) ? (float)$consultationPrice : 0.0;
+                } else {
+                    $appliedPrice = $consultation->consultation_price ?? 0.0;
+                }
+                $consultation->consultation_price = $appliedPrice;
                 $consultation->save();
-                $totalAmount += $consultationPrice;
+                $totalAmount += $appliedPrice;
             }
 
             // 3.b Calculer les actes médicaux
@@ -189,11 +202,12 @@ class InvoiceService
 
         return DB::transaction(function () use ($invoice) {
             
-            // 1. Libérer les consultations rattachées à cette facture
+            // 1. Libérer les consultations rattachées à cette facture et réinitialiser le prix temporaire
             Consultation::where('invoice_id', $invoice->id)
                         ->update([
                             'is_billed' => false, 
-                            'invoice_id' => null
+                            'invoice_id' => null,
+                            'consultation_price' => 0.0
                         ]);
 
             // 2. Libérer les actes médicaux pratiqués rattachés

@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { X, Syringe, PlusCircle } from 'lucide-react';
+import Select from 'react-select';
 import type { PerformedMedicalActPayload } from '../../../../types/ConsultationTypes';
 
 interface AddMedicalActModalProps {
     isOpen: boolean;
     onClose: () => void;
     onAdd: (act: PerformedMedicalActPayload) => void;
-    medicalActs: any[]; // Remplacer par MedicalActDto[]
-    equipments: any[];  // Remplacer par EquipmentDto[]
+    medicalActs: any[];
+    equipments: any[];
     AutoRefreshPage: () => void;
 }
 
@@ -15,15 +16,14 @@ export const AddMedicalActModal: React.FC<AddMedicalActModalProps> = ({
     isOpen,
     onClose,
     onAdd,
-    medicalActs,
-    equipments,
+    medicalActs = [],
+    equipments = [],
     AutoRefreshPage
 }) => {
     const [selectedActId, setSelectedActId] = useState<number | ''>('');
     const [selectedEquipmentId, setSelectedEquipmentId] = useState<number | ''>('');
     const [appliedPrice, setAppliedPrice] = useState<number | ''>('');
 
-    // Quand on choisit un acte, on pré-remplit automatiquement le prix avec son tarif de base
     useEffect(() => {
         if (selectedActId) {
             const act = medicalActs.find(a => a.id === Number(selectedActId));
@@ -41,6 +41,62 @@ export const AddMedicalActModal: React.FC<AddMedicalActModalProps> = ({
         }
     }, [isOpen]);
 
+    const actOptions = useMemo(() => {
+        return medicalActs.map(act => ({
+            value: act.id,
+            label: `${act.name} (Tarif de base: ${act.base_price || 0} FCFA)`
+        }));
+    }, [medicalActs]);
+
+    const equipmentOptions = useMemo(() => {
+        return equipments.map(eq => ({
+            value: eq.id,
+            label: `${eq.name} (${eq.status || 'Disponible'})`
+        }));
+    }, [equipments]);
+
+    const selectStyles = {
+        control: (base: any, state: any) => ({
+            ...base,
+            backgroundColor: document.documentElement.classList.contains("dark") ? "#1f2937" : "#ffffff",
+            borderColor: state.isFocused ? "#00a896" : document.documentElement.classList.contains("dark") ? "#374151" : "#d1d5db",
+            borderRadius: "0.5rem",
+            padding: "2px",
+            boxShadow: state.isFocused ? "0 0 0 2px rgba(0, 168, 150, 0.2)" : "none",
+            "&:hover": { borderColor: "#00a896" },
+        }),
+        menu: (base: any) => ({
+            ...base,
+            backgroundColor: document.documentElement.classList.contains("dark") ? "#1f2937" : "#ffffff",
+            borderRadius: "0.5rem",
+            zIndex: 9999,
+        }),
+        option: (base: any, state: any) => ({
+            ...base,
+            backgroundColor: state.isSelected
+                ? "#00a896"
+                : state.isFocused
+                ? document.documentElement.classList.contains("dark") ? "#374151" : "#f3f4f6"
+                : "transparent",
+            color: state.isSelected
+                ? "#ffffff"
+                : document.documentElement.classList.contains("dark") ? "#f3f4f6" : "#1f2937",
+            cursor: "pointer",
+        }),
+        singleValue: (base: any) => ({
+            ...base,
+            color: document.documentElement.classList.contains("dark") ? "#f3f4f6" : "#1f2937",
+        }),
+        input: (base: any) => ({
+            ...base,
+            color: document.documentElement.classList.contains("dark") ? "#f3f4f6" : "#1f2937",
+        }),
+        placeholder: (base: any) => ({
+            ...base,
+            color: "#9ca3af",
+        }),
+    };
+
     if (!isOpen) return null;
 
     const handleSubmit = () => {
@@ -53,7 +109,6 @@ export const AddMedicalActModal: React.FC<AddMedicalActModalProps> = ({
         });
         AutoRefreshPage();
         onClose();
-
     };
 
     return (
@@ -75,16 +130,17 @@ export const AddMedicalActModal: React.FC<AddMedicalActModalProps> = ({
                 <div className="p-6 space-y-4">
                     <div>
                         <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5 font-lato">Acte réalisé <span className="text-red-500">*</span></label>
-                        <select 
-                            value={selectedActId} 
-                            onChange={(e) => setSelectedActId(e.target.value ? Number(e.target.value) : '')}
-                            className="w-full p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#00a896] outline-none transition-colors dark:text-white"
-                        >
-                            <option value="">-- Sélectionner l'acte --</option>
-                            {medicalActs.map(act => (
-                                <option key={act.id} value={act.id}>{act.name} (Base: {act.base_price} FCFA)</option>
-                            ))}
-                        </select>
+                        <Select
+                            options={actOptions}
+                            value={actOptions.find(opt => opt.value === selectedActId) || null}
+                            onChange={(selected) => setSelectedActId(selected ? selected.value : '')}
+                            placeholder="Rechercher un acte médical..."
+                            isClearable
+                            isSearchable
+                            styles={selectStyles}
+                            className="text-sm"
+                            noOptionsMessage={() => "Aucun acte disponible"}
+                        />
                     </div>
 
                     <div>
@@ -99,16 +155,17 @@ export const AddMedicalActModal: React.FC<AddMedicalActModalProps> = ({
 
                     <div>
                         <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5 font-lato">Équipement utilisé (Optionnel)</label>
-                        <select 
-                            value={selectedEquipmentId} 
-                            onChange={(e) => setSelectedEquipmentId(e.target.value ? Number(e.target.value) : '')}
-                            className="w-full p-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#00a896] outline-none transition-colors dark:text-white"
-                        >
-                            <option value="">-- Aucun équipement spécifique --</option>
-                            {equipments.map(eq => (
-                                <option key={eq.id} value={eq.id}>{eq.name} ({eq.status})</option>
-                            ))}
-                        </select>
+                        <Select
+                            options={equipmentOptions}
+                            value={equipmentOptions.find(opt => opt.value === selectedEquipmentId) || null}
+                            onChange={(selected) => setSelectedEquipmentId(selected ? selected.value : '')}
+                            placeholder="Sélectionner un équipement..."
+                            isClearable
+                            isSearchable
+                            styles={selectStyles}
+                            className="text-sm"
+                            noOptionsMessage={() => "Aucun équipement disponible"}
+                        />
                     </div>
                 </div>
 

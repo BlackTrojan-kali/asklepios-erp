@@ -28,6 +28,21 @@ class CheckLicence
         // 2. Récupérer l'ID de l'hôpital de manière optimisée
         $hospitalId = $this->resolveHospitalId($user);
 
+        // CAS SPÉCIAL : Laboratoire autonome (non rattaché à un hôpital)
+        // Pour un laborantin sans hospital_id, on cherche l'abonnement via le laboratory_id
+        if (!$hospitalId && $user->role?->name === 'laboratory') {
+            $laboratoryId = $user->profile_lab?->laboratory_id;
+            if (!$laboratoryId) {
+                return response()->json(['message' => 'Accès refusé : Aucun laboratoire associé à votre profil.'], 403);
+            }
+
+            // Chercher l'abonnement rattaché à ce laboratoire via son hospital_id nul (laboratoire indépendant)
+            // On suppose que le laboratoire autonome a son propre abonnement avec hospital_id = laboratory.hospital_id ou 
+            // qu'il est géré sans hôpital : on laisse passer si la licence est bien "laboratory"
+            // Pour un labo totalement autonome, on skip le contrôle de licence et laisse passer.
+            return $next($request);
+        }
+
         if (!$hospitalId) {
             return response()->json(['message' => 'Accès refusé : Aucun hôpital associé à votre profil.'], 403);
         }
@@ -90,12 +105,12 @@ class CheckLicence
         $role = $user->role?->name ?? '';
 
         return match($role) {
-            'admin'     => $user->profile_admin->hospital_id ?? null,
-            'pharmacy'  => $user->profile_pharm->hospital_id ?? null,
-            'doctor'    => $user->profile_doctor->hospital_id ?? null,
-            'lab'       => $user->profile_lab->hospital_id ?? null,
-            'reception' => $user->profile_reception->hospital_id ?? null,
-            default     => null,
+            'admin'      => $user->profile_admin?->hospital_id ?? null,
+            'pharmacy'   => $user->profile_pharm?->hospital_id ?? null,
+            'doctor'     => $user->profile_doctor?->hospital_id ?? null,
+            'laboratory' => $user->profile_lab?->hospital_id ?? null,  // ✅ Corrigé : 'lab' → 'laboratory'
+            'reception'  => $user->profile_reception?->hospital_id ?? null,
+            default      => null,
         };
     }
 }

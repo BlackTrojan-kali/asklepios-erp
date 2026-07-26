@@ -71,6 +71,14 @@ class PaymentTransactionController extends Controller
             $query->where('payment_method', $request->query('payment_method'));
         }
 
+        if ($request->filled('start_date')) {
+            $query->whereDate('created_at', '>=', $request->query('start_date'));
+        }
+
+        if ($request->filled('end_date')) {
+            $query->whereDate('created_at', '<=', $request->query('end_date'));
+        }
+
         $query->latest();
 
         if ($request->query('paginated') === 'true') {

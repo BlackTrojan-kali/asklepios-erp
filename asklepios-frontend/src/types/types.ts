@@ -7,9 +7,12 @@
 export interface ProfileDto {
     first_name: string;
     last_name: string | null;
-    role: "super_admin" | "admin" | "doctor" | "pharmacy" | "reception" | "laboratory";
+    role: "super_admin" | "admin" | "doctor" | "pharmacy" | "reception" | "laboratory" | "ceo";
     email: string;
-    
+    profile_pharm?: { id?: number; branch_id: number; hospital_id: number } | null;
+    profile_admin?: { id?: number; hospital_id: number } | null;
+    profile_reception?: { id?: number; center_id: number } | null;
+    branch_id?: number | null;
 }
 export  interface CountryDto{
     
@@ -290,7 +293,9 @@ export interface LabParameterDto {
     id: number;
     lab_test_id: number;
     name: string;
-    unit: string;
+    unit: string | null;
+    value_type: 'numeric' | 'string' | 'text' | 'options' | 'file';
+    options: string[] | null;
     reference_min_male: number | null;
     reference_max_male: number | null;
     reference_min_female: number | null;
@@ -302,7 +307,9 @@ export interface LabParameterDto {
 export interface LabParameterPayload {
     lab_test_id: number;
     name: string;
-    unit: string;
+    unit?: string | null;
+    value_type: 'numeric' | 'string' | 'text' | 'options' | 'file';
+    options?: string[] | null;
     reference_min_male?: number | null;
     reference_max_male?: number | null;
     reference_min_female?: number | null;
@@ -327,6 +334,9 @@ export interface LabResultDto {
     lab_parameter_id: number;
     value_numeric?: number;
     value_string?: string;
+    value_text?: string;
+    file_path?: string;
+    file?: File | null;
     is_abnormal?: boolean;
     status?: 'DRAFT' | 'VALIDATED';
 }
@@ -335,6 +345,7 @@ export interface LabRequestLineDto {
     id: number;
     lab_request_id: number;
     lab_test_id: number;
+    is_paid?: boolean;
     test?: LabTestDto;
 }
 

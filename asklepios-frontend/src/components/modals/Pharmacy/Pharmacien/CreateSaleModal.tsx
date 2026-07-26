@@ -72,21 +72,38 @@ export default function CreateSaleModal({
   const [selectedAccountId, setSelectedAccountId] = useState<
     number | undefined
   >(undefined);
-  
+
   // PATIENT SYSTEM
   const { allPatients, getAllPatients } = usePatientStore();
-  const [selectedPatient, setSelectedPatient] = useState<PatientDto | null>(null);
+  const [selectedPatient, setSelectedPatient] = useState<PatientDto | null>(
+    null,
+  );
 
   const searchSelectRef = useRef<any>(null);
 
-  // RÉCUPÉRATION DU BRANCH_ID ET DES PRODUITS DE LA BRANCHE
-  const { profile } = useAuth();
-  const currentBranchId = profile?.profile_pharm?.branch_id;
-  const { data: branchArticles, isLoading: loading } = useBranchArticlesAll(
-    currentBranchId || null,
-  );
+  // URL de base pour les médias / images
+  const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
+  const formatImageUrl = (url: string | null | undefined): string | null => {
+    if (!url) return null;
+    if (url.startsWith("http://") || url.startsWith("https://")) return url;
+    const cleanPath = url.startsWith("/") ? url : `/${url}`;
+    return `${baseUrl}${cleanPath}`;
+  };
+
+  // RÉCUPÉRATION ROBUSTE DU BRANCH_ID ET DES PRODUITS DE LA BRANCHE
+  const { profile } = useAuth();
   const { data: myActiveSession } = useMyActiveSession();
+
+  const currentBranchId =
+    profile?.profile_pharm?.branch_id ||
+    myActiveSession?.register?.pharmacy_branch_id ||
+    myActiveSession?.register?.branch_id ||
+    (profile as any)?.branch_id ||
+    null;
+
+  const { data: branchArticles, isLoading: loading } =
+    useBranchArticlesAll(currentBranchId);
 
   // Charger les comptes de trésorerie de la succursale (non-admin)
   const { data: paymentAccounts } = usePaymentAccounts(
@@ -145,7 +162,6 @@ export default function CreateSaleModal({
     if (onSaleSuccess) onSaleSuccess();
     onClose();
   };
-  console.log(branchArticles);
 
   // Conversion des articles de la succursale au format Product attendu par le panier, avec gestion et tri des lots (FEFO)
   const products = useMemo<Product[]>(() => {
@@ -153,19 +169,40 @@ export default function CreateSaleModal({
 
     const list: Product[] = [];
 
+    const formatLoc = (loc: any) => {
+      if (!loc) return null;
+      const code = loc.code ? `[${loc.code}] ` : "";
+      //   const aisle = loc.aisle ? `Allée ${loc.aisle}` : "";
+      // const shelf = loc.shelf ? `${loc.aisle ? " - " : ""}Étagère ${loc.shelf}` : "";
+      const full = `${code}`.trim();
+      return full || null;
+    };
+
     branchArticles.forEach((article) => {
-      const locationStr = article.default_storage_location
-        ? `${article.default_storage_location.aisle || ""} - ${article.default_storage_location.shelf || ""} (${article.default_storage_location.code || ""})`
-        : "Non classé";
+      const defaultLocStr =
+        formatLoc(article.default_storage_location) || "Non classé";
+
+      const finalPrice =
+        typeof article.selling_price === "string"
+          ? parseFloat(article.selling_price)
+          : Number(article.selling_price || 0);
+
+      const formattedImage = formatImageUrl(article.image_url);
 
       if (
         article.track_batches &&
         article.batches &&
         article.batches.length > 0
       ) {
+        let hasAvailableLot = false;
+
         // Pour les articles avec suivi des lots, on crée un produit distinct par lot disponible en stock
         article.batches.forEach((batch) => {
-          if (batch.qty > 0) {
+          const batchQty = Number(batch.qty || 0);
+          const batchLocStr =
+            formatLoc((batch as any).storage_location) || defaultLocStr;
+          if (batchQty > 0) {
+            hasAvailableLot = true;
             list.push({
               id: `${article.id}-${batch.id}`,
               articleId: article.id,
@@ -173,51 +210,50 @@ export default function CreateSaleModal({
               batchNumber: batch.batch_number,
               name: `${article.name} [Lot: ${batch.batch_number}]`,
               code: article.barcode || `ART-${article.id}`,
-              price: article.selling_price,
-              stock: batch.qty,
-              requiresPrescription: article.is_prescripted,
+              price: finalPrice,
+              stock: batchQty,
+              requiresPrescription: Boolean(article.is_prescripted),
               expiryDate: batch.expire_date || "Sans date",
-              location: locationStr,
-              imageUrl: article.image_url,
+              location: batchLocStr,
+              imageUrl: formattedImage,
             });
           }
         });
 
         // Si l'article n'a plus aucun stock de lot mais qu'il existe, on l'ajoute comme rupture
-        const totalStock = article.batches.reduce((sum, b) => sum + b.qty, 0);
-        if (totalStock === 0) {
+        if (!hasAvailableLot) {
           list.push({
             id: `${article.id}-rupture`,
             articleId: article.id,
             name: `${article.name} (Rupture)`,
             code: article.barcode || `ART-${article.id}`,
-            price: article.selling_price,
+            price: finalPrice,
             stock: 0,
-            requiresPrescription: article.is_prescripted,
+            requiresPrescription: Boolean(article.is_prescripted),
             expiryDate: "N/A",
-            location: locationStr,
-            imageUrl: article.image_url,
+            location: defaultLocStr,
+            imageUrl: formattedImage,
           });
         }
       } else {
-        // Articles sans lots
+        // Articles sans suivi de lots
+        const totalStock = Number(article.stock_qty || 0);
         list.push({
           id: article.id.toString(),
           articleId: article.id,
           name: article.name,
           code: article.barcode || `ART-${article.id}`,
-          price: article.selling_price,
-          stock: article.stock_qty,
-          requiresPrescription: article.is_prescripted,
+          price: finalPrice,
+          stock: totalStock,
+          requiresPrescription: Boolean(article.is_prescripted),
           expiryDate: "N/A",
-          location: locationStr,
-          imageUrl: article.image_url,
+          location: defaultLocStr,
+          imageUrl: formattedImage,
         });
       }
     });
 
     // Tri par date d'expiration (FEFO : First Expired First Out)
-    // Les produits périmant le plus tôt sont affichés en premier. Ceux sans date d'expiration (N/A) vont à la fin.
     return list.sort((a, b) => {
       const isANa = a.expiryDate === "N/A" || a.expiryDate === "Sans date";
       const isBNa = b.expiryDate === "N/A" || b.expiryDate === "Sans date";
@@ -441,33 +477,61 @@ export default function CreateSaleModal({
                   placeholder="Scanner ou taper le nom du produit..."
                   onChange={(option) => option && addToCart(option.product)}
                   isClearable
-                  formatOptionLabel={(data: any) => (
-                    <div className="flex items-center gap-2 py-0.5">
-                      {data.product.imageUrl ? (
-                        <img
-                          src={data.product.imageUrl}
-                          alt={data.product.name}
-                          className="w-7 h-7 rounded-md object-cover border border-slate-200 dark:border-gray-700 bg-white"
-                          onError={(e) => {
-                            (e.target as HTMLElement).style.display = "none";
-                          }}
-                        />
-                      ) : (
-                        <div className="w-7 h-7 rounded-md bg-slate-100 dark:bg-gray-800 flex items-center justify-center border border-slate-200 dark:border-gray-700">
-                          <Package className="w-4 h-4 text-slate-400" />
+                  formatOptionLabel={(data: any) => {
+                    const p = data.product;
+                    return (
+                      <div className="flex items-center gap-3 py-1.5 border-b border-slate-100 dark:border-gray-700/60 last:border-0">
+                        {p.imageUrl ? (
+                          <img
+                            src={p.imageUrl}
+                            alt={p.name}
+                            className="w-14 h-14 rounded-lg object-cover border border-slate-200 dark:border-gray-700 bg-white shrink-0 shadow-xs"
+                            onError={(e) => {
+                              (e.target as HTMLElement).style.display = "none";
+                            }}
+                          />
+                        ) : (
+                          <div className="w-14 h-14 rounded-lg bg-slate-100 dark:bg-gray-800 flex items-center justify-center border border-slate-200 dark:border-gray-700 shrink-0">
+                            <Package className="w-6 h-6 text-slate-400 dark:text-gray-500" />
+                          </div>
+                        )}
+                        <div className="flex flex-col min-w-0 flex-1 gap-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-bold text-sm text-slate-900 dark:text-gray-100 truncate">
+                              {p.name}
+                            </span>
+                            <span className="font-extrabold text-sm text-emerald-600 dark:text-emerald-400 shrink-0 font-mono">
+                              {p.price.toLocaleString()} XAF
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 flex-wrap text-xs text-slate-600 dark:text-gray-300">
+                            <span className="bg-slate-100 dark:bg-gray-800 px-1.5 py-0.5 rounded font-mono text-[11px] font-semibold text-slate-700 dark:text-gray-200 border border-slate-200 dark:border-gray-700">
+                              {p.code}
+                            </span>
+                            <span className="bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded text-[11px] font-semibold border border-blue-200 dark:border-blue-800/40">
+                              Emplacement: {p.location}
+                            </span>
+                            <span
+                              className={`px-1.5 py-0.5 rounded text-[11px] font-bold ${
+                                p.stock <= 0
+                                  ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300"
+                                  : p.stock <= 5
+                                    ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                                    : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
+                              }`}
+                            >
+                              Stock: {p.stock}
+                            </span>
+                            {p.expiryDate !== "N/A" && (
+                              <span className="text-[11px] text-amber-700 dark:text-amber-400 font-medium">
+                                Périm: {p.expiryDate}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      )}
-                      <div className="flex flex-col min-w-0">
-                        <span className="font-semibold truncate text-xs text-slate-900 dark:text-white">
-                          {data.product.name}
-                        </span>
-                        <span className="text-[10px] text-slate-400 dark:text-gray-500 font-mono">
-                          {data.product.code} • {data.product.price.toLocaleString()} XAF • Stock: {data.product.stock}
-                          {data.product.expiryDate !== "N/A" && ` • Exp: ${data.product.expiryDate}`}
-                        </span>
                       </div>
-                    </div>
-                  )}
+                    );
+                  }}
                   components={{
                     DropdownIndicator: () => (
                       <Search className="w-5 h-5 text-slate-400 mr-3" />
@@ -490,6 +554,19 @@ export default function CreateSaleModal({
                         ? "#ffffff"
                         : "#1e293b",
                     }),
+                    input: (base) => ({
+                      ...base,
+                      color: document.documentElement.classList.contains("dark")
+                        ? "#ffffff"
+                        : "#1e293b",
+                    }),
+                    placeholder: (base) => ({
+                      ...base,
+                      color: document.documentElement.classList.contains("dark")
+                        ? "#9ca3af"
+                        : "#64748b",
+                      fontSize: "0.875rem",
+                    }),
                     singleValue: (base) => ({
                       ...base,
                       color: document.documentElement.classList.contains("dark")
@@ -502,6 +579,12 @@ export default function CreateSaleModal({
                         document.documentElement.classList.contains("dark")
                           ? "#1f2937"
                           : "#ffffff",
+                      border: document.documentElement.classList.contains(
+                        "dark",
+                      )
+                        ? "1px solid #374151"
+                        : "1px solid #e2e8f0",
+                      zIndex: 9999,
                     }),
                     option: (base, state) => ({
                       ...base,
@@ -546,17 +629,33 @@ export default function CreateSaleModal({
                   control: (base) => ({
                     ...base,
                     borderRadius: "0.5rem",
-                    borderColor: document.documentElement.classList.contains("dark")
+                    borderColor: document.documentElement.classList.contains(
+                      "dark",
+                    )
                       ? "#4b5563"
                       : "#cbd5e1",
-                    backgroundColor: document.documentElement.classList.contains("dark")
-                      ? "#1f2937"
-                      : "#ffffff",
+                    backgroundColor:
+                      document.documentElement.classList.contains("dark")
+                        ? "#1f2937"
+                        : "#ffffff",
                     color: document.documentElement.classList.contains("dark")
                       ? "#ffffff"
                       : "#1e293b",
                     fontSize: "0.875rem",
                     minHeight: "38px",
+                  }),
+                  input: (base) => ({
+                    ...base,
+                    color: document.documentElement.classList.contains("dark")
+                      ? "#ffffff"
+                      : "#1e293b",
+                  }),
+                  placeholder: (base) => ({
+                    ...base,
+                    color: document.documentElement.classList.contains("dark")
+                      ? "#9ca3af"
+                      : "#64748b",
+                    fontSize: "0.875rem",
                   }),
                   singleValue: (base) => ({
                     ...base,
@@ -566,9 +665,14 @@ export default function CreateSaleModal({
                   }),
                   menu: (base) => ({
                     ...base,
-                    backgroundColor: document.documentElement.classList.contains("dark")
-                      ? "#1f2937"
-                      : "#ffffff",
+                    backgroundColor:
+                      document.documentElement.classList.contains("dark")
+                        ? "#1f2937"
+                        : "#ffffff",
+                    border: document.documentElement.classList.contains("dark")
+                      ? "1px solid #374151"
+                      : "1px solid #e2e8f0",
+                    zIndex: 9999,
                   }),
                   option: (base, state) => ({
                     ...base,
@@ -653,50 +757,53 @@ export default function CreateSaleModal({
                       key={item.product.id}
                       className={`grid grid-cols-12 items-center p-3 text-sm hover:bg-slate-50/80 dark:hover:bg-gray-750/30 transition-colors ${missingPrescription ? "bg-red-50/60 dark:bg-red-950/20" : ""}`}
                     >
-                      <div className="col-span-5 pr-2 flex items-center gap-2">
+                      <div className="col-span-5 pr-2 flex items-center gap-3">
                         {item.product.imageUrl ? (
                           <img
                             src={item.product.imageUrl}
                             alt={item.product.name}
-                            className="w-8 h-8 rounded-md object-cover border border-slate-200 dark:border-gray-700 bg-white"
+                            className="w-12 h-12 rounded-lg object-cover border border-slate-200 dark:border-gray-700 bg-white shrink-0 shadow-xs"
                             onError={(e) => {
                               (e.target as HTMLElement).style.display = "none";
                             }}
                           />
                         ) : (
-                          <div className="w-8 h-8 rounded-md bg-slate-100 dark:bg-gray-900 flex items-center justify-center border border-slate-200 dark:border-gray-700 shrink-0">
-                            <Package className="w-4 h-4 text-slate-400" />
+                          <div className="w-12 h-12 rounded-lg bg-slate-100 dark:bg-gray-800 flex items-center justify-center border border-slate-200 dark:border-gray-700 shrink-0">
+                            <Package className="w-5 h-5 text-slate-400 dark:text-gray-400" />
                           </div>
                         )}
-                        <div className="min-w-0 flex-1">
-                          <div className="font-semibold text-slate-900 dark:text-white flex items-center gap-1.5 flex-wrap">
+                        <div className="min-w-0 flex-1 flex flex-col gap-1">
+                          <div className="font-bold text-sm text-slate-900 dark:text-gray-100 flex items-center gap-1.5 flex-wrap">
                             {item.product.name}
                             {item.product.requiresPrescription && (
-                              <span className="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
+                              <span className="bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
                                 Ordonnance Obligatoire
                               </span>
                             )}
                           </div>
-                        </div>
-                        <div className="text-xs text-slate-500 dark:text-gray-400 flex items-center gap-3 mt-1">
-                          <span className="bg-slate-100 dark:bg-gray-900 px-1.5 py-0.5 rounded font-mono text-slate-600 dark:text-gray-300 font-medium">
-                            {item.product.location}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Package className="w-3.5 h-3.5" /> Stock:
-                            <strong
-                              className={
-                                isLowStock
-                                  ? "text-amber-600 dark:text-amber-400 font-bold"
-                                  : "text-slate-700 dark:text-gray-300"
-                              }
-                            >
-                              {item.product.stock}
-                            </strong>
-                          </span>
-                          <span className="text-slate-400 dark:text-gray-500">
-                            Périm: {item.product.expiryDate}
-                          </span>
+                          <div className="text-xs text-slate-600 dark:text-gray-300 flex items-center gap-2 flex-wrap">
+                            <span className="bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded font-mono text-[11px] font-semibold border border-blue-200 dark:border-blue-800/40">
+                              {item.product.location}
+                            </span>
+                            <span className="flex items-center gap-1 text-[11px]">
+                              <Package className="w-3.5 h-3.5 text-slate-400 dark:text-gray-400" />{" "}
+                              Stock:
+                              <strong
+                                className={
+                                  isLowStock
+                                    ? "text-amber-600 dark:text-amber-400 font-bold"
+                                    : "text-slate-800 dark:text-gray-200 font-semibold"
+                                }
+                              >
+                                {item.product.stock}
+                              </strong>
+                            </span>
+                            {item.product.expiryDate !== "N/A" && (
+                              <span className="text-[11px] text-slate-500 dark:text-gray-400 font-medium">
+                                Périm: {item.product.expiryDate}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
 

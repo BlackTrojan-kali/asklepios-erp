@@ -66,7 +66,13 @@ class InvoiceController extends Controller
         // 👉 AJOUT CRITIQUE : 'payments' est ajouté au with() pour optimiser les Accessors (total_paid, remaining_debt)
         $query = Invoice::whereHas('patient', function($q) use ($hospitalId) {
             $q->where('hospital_id', $hospitalId);
-        })->with(['patient', 'center', 'payments']);
+        })->with([
+            'patient',
+            'center',
+            'payments.reception.user',
+            'labRequests.profileDoctor.user',
+            'consultations.profileDoctor.user'
+        ]);
 
         // --- APPLICATION DES RESTRICTIONS DE RÔLES & FILTRES ---
 
@@ -92,10 +98,18 @@ class InvoiceController extends Controller
             $query->where('status', $request->status);
         }
 
+        // Filtre optionnel sur le type de facture (LABORATORY / CONSULTATION)
+        if ($request->filled('type')) {
+            if ($request->type === 'LABORATORY') {
+                $query->whereHas('labRequests');
+            } elseif ($request->type === 'CONSULTATION') {
+                $query->whereDoesntHave('labRequests');
+            }
+        }
+
         // 👉 NOUVEAU : Filtre par code patient (Recherche via la relation "patient")
         if ($request->filled('patient_code')) {
             $query->whereHas('patient', function($q) use ($request) {
-                // On utilise LIKE pour permettre une recherche partielle (ex: taper juste les chiffres)
                 $q->where('patient_code', 'like', '%' . $request->patient_code . '%');
             });
         }
@@ -130,6 +144,7 @@ class InvoiceController extends Controller
             'performedMedicalActs.medicalActCatalog', 
             'performedMedicalActs.equipment',
             'admissions.bed.facilityRoom.category',
+            'labRequests.lines.test.category',
             'payments.reception.user' // Historique des encaissements sur cette facture
         ])->findOrFail($id);
 
@@ -178,7 +193,7 @@ class InvoiceController extends Controller
             })->orWhereHas('admission', function($subQ) use ($patientId) {
                 $subQ->where('patient_id', $patientId);
             });
-        })->where('is_billed', false)->count();
+        })->where('is_billed', false)->whereNull('invoice_id')->count();
         
         // 2. Actes médicaux non facturés (Visites externes OU Hospitalisations)
         $actsTotal = PerformedMedicalAct::where(function($query) use ($patientId) {
@@ -187,12 +202,13 @@ class InvoiceController extends Controller
             })->orWhereHas('admission', function($subQ) use ($patientId) {
                 $subQ->where('patient_id', $patientId);
             });
-        })->where('is_billed', false)->sum('applied_price');
+        })->where('is_billed', false)->whereNull('invoice_id')->sum('applied_price');
 
         // 3. Admissions (frais de séjour / chambre) non facturées
         $admissions = Admission::with('bed.facilityRoom.category')
             ->where('patient_id', $patientId)
             ->where('is_billed', false)
+            ->whereNull('invoice_id')
             ->get();
         
         $admissionsTotal = 0;
@@ -249,6 +265,40 @@ class InvoiceController extends Controller
         tags: ["Facturation"]
     )]
     
+    #[OA\Put(
+        path: "/api/shared/invoices/{id}",
+        summary: "Mettre à jour une facture",
+        security: [["sanctum" => []]],
+        tags: ["Facturation"]
+    )]
+    public function update(Request $request, $id)
+    {
+        $invoice = Invoice::findOrFail($id);
+        
+        $validated = $request->validate([
+            'total_amount' => 'nullable|numeric|min:0',
+            'center_id'    => 'nullable|integer',
+        ]);
+
+        $user = auth()->user();
+        $centerId = $validated['center_id'] ?? $this->getCenterId() ?? $user->profile_reception?->center_id;
+
+        if ($centerId) {
+            $invoice->center_id = $centerId;
+        }
+
+        if (isset($validated['total_amount']) && $validated['total_amount'] > 0) {
+            $invoice->total_amount = $validated['total_amount'];
+        }
+
+        $invoice->save();
+
+        return response()->json([
+            'message' => 'Facture mise à jour avec succès.',
+            'data'    => $invoice
+        ], 200);
+    }
+
     #[OA\Response(response: 200, description: "élément supprimé avec succès")]
     public function destroy($id)
     {

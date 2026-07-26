@@ -28,12 +28,12 @@ class LabRequestController extends Controller
     #[OA\Response(response: 200, description: "Liste des requêtes récupérée")]
     public function index(Request $request)
     {
-        $status = $request->query('status'); // ex: 'PAID', 'SAMPLED'
+        $status = $request->query('status'); // ex: 'PAID', 'SAMPLED', 'PENDING_PAYMENT'
+        $patientId = $request->query('patient_id');
+        $patientCode = $request->query('patient_code');
 
         $user = auth()->user();
-        $laboratoryId = 1; // Default fallback for MVP
-
-        $laboratoryId = $user?->profile_lab?->laboratory_id ?? 1;
+        $laboratoryId = $user?->profile_lab?->laboratory_id;
 
         $query = LabRequest::with([
             'patient',
@@ -43,14 +43,61 @@ class LabRequestController extends Controller
             'samples',
             'profileDoctor.user',
             'invoice.payments'
-        ])
-        ->where('laboratory_id', $laboratoryId);
+        ]);
+
+        if ($laboratoryId) {
+            $query->where('laboratory_id', $laboratoryId);
+        }
 
         if ($status) {
             $query->where('status', $status);
         }
 
+        if ($patientId) {
+            $query->where('patient_id', $patientId);
+        }
+
+        if ($patientCode) {
+            $query->whereHas('patient', function ($q) use ($patientCode) {
+                $q->where('patient_code', 'like', "%{$patientCode}%");
+            });
+        }
+
         $requests = $query->orderBy('created_at', 'desc')->get();
+
+        // Garantir que toutes les demandes d'examens ont une facture rattachée pour le paiement
+        foreach ($requests as $req) {
+            if (!$req->invoice_id && $req->lines->count() > 0) {
+                $totalAmount = $req->lines->reduce(function ($sum, $line) {
+                    return $sum + ($line->test?->price ?? 0);
+                }, 0);
+
+                $centerId = $req->profileDoctor?->center_id ?? 1;
+
+                $invoice = \App\Models\Hospital\Invoice::create([
+                    'patient_id'       => $req->patient_id,
+                    'center_id'        => $centerId,
+                    'patient_visit_id' => $req->patient_visit_id,
+                    'total_amount'     => $totalAmount,
+                    'status'           => 'UNPAID'
+                ]);
+
+                $req->invoice_id = $invoice->id;
+                $req->save();
+                $req->load('invoice.payments');
+            }
+
+            // Calcul et synchronisation dynamique de is_paid sur les lignes
+            if ($req->invoice) {
+                $totalPaid = (float) $req->invoice->payments->sum('amount');
+                $running = 0.0;
+                foreach ($req->lines as $line) {
+                    $price = (float) ($line->test?->price ?? 0.0);
+                    $running += $price;
+                    $line->is_paid = ($req->status === 'PAID' || ($totalPaid > 0 && $running <= $totalPaid + 0.01));
+                }
+            }
+        }
 
         return response()->json($requests);
     }

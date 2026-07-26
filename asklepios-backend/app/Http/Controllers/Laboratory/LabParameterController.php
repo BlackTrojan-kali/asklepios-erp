@@ -47,12 +47,14 @@ class LabParameterController extends Controller
         $validated = $request->validate([
             'lab_test_id' => 'required|exists:lab_tests,id',
             'name' => 'required|string|max:255',
-            'unit' => 'required|string|max:50',
+            'unit' => 'nullable|string|max:50',
+            'value_type' => 'nullable|string|in:numeric,string,text,options,file',
+            'options' => 'nullable|array',
             'reference_min_male' => 'nullable|numeric',
             'reference_max_male' => 'nullable|numeric',
             'reference_min_female' => 'nullable|numeric',
             'reference_max_female' => 'nullable|numeric',
-            'reference_text' => 'nullable|string|max:255',
+            'reference_text' => 'nullable|string',
         ]);
 
         $parameter = LabParameter::create($validated);
@@ -97,7 +99,9 @@ class LabParameterController extends Controller
         $validated = $request->validate([
             'lab_test_id' => 'sometimes|required|exists:lab_tests,id',
             'name' => 'sometimes|required|string|max:255',
-            'unit' => 'sometimes|required|string|max:50',
+            'unit' => 'sometimes|nullable|string|max:50',
+            'value_type' => 'nullable|string|in:numeric,string,text,options,file',
+            'options' => 'nullable|array',
             'reference_min_male' => 'nullable|numeric',
             'reference_max_male' => 'nullable|numeric',
             'reference_min_female' => 'nullable|numeric',
