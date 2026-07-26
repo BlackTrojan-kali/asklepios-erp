@@ -23,36 +23,49 @@ export const MedicalBackgroundModal: React.FC<MedicalBackgroundModalProps> = ({
   existingData,
   AutoRefreshPage,
 }) => {
-  const { createOrUpdateBackground, actionLoading } = useMedicalBgStore();
+  const { createMedicalBackground, updateMedicalBackground, actionLoading } = useMedicalBgStore();
 
   const [bloodType, setBloodType] = useState<BloodType>("UNKNOWN");
   const [allergies, setAllergies] = useState("");
   const [chronicDiseases, setChronicDiseases] = useState("");
   const [surgicalHistory, setSurgicalHistory] = useState("");
-  const [familyHistory, setFamilyHistory] = useState("");
-  const [familyPathologyDetail, setFamilyPathologyDetail] = useState("");
   const [currentTreatments, setCurrentTreatments] = useState("");
+  const [immunizations, setImmunizations] = useState("");
+  
+  // Champs de type String (Textarea)
+  const [familyHistory, setFamilyHistory] = useState("");
   const [lifestyleHabits, setLifestyleHabits] = useState("");
+  const [generalNotes, setGeneralNotes] = useState("");
 
   useEffect(() => {
     if (existingData) {
       setBloodType(existingData.blood_type || "UNKNOWN");
+      
+      // Champs de type Array (Tableaux)
       setAllergies(existingData.allergies?.join(", ") || "");
       setChronicDiseases(existingData.chronic_diseases?.join(", ") || "");
       setSurgicalHistory(existingData.surgical_history?.join(", ") || "");
-      setFamilyHistory(existingData.family_history?.join(", ") || "");
-      setFamilyPathologyDetail(existingData.family_pathology_detail || "");
       setCurrentTreatments(existingData.current_treatments?.join(", ") || "");
-      setLifestyleHabits(existingData.lifestyle_habits?.join(", ") || "");
+      
+      // Sécurité pour le typage dynamique
+      const data: any = existingData;
+      setImmunizations(data.immunizations?.join(", ") || "");
+      
+      // 👉 CORRECTION ICI : Ce sont de simples chaînes de caractères (Strings), pas des tableaux
+      setFamilyHistory(data.family_history || "");
+      setLifestyleHabits(data.lifestyle_habits || "");
+      setGeneralNotes(data.general_notes || "");
+      
     } else {
       setBloodType("UNKNOWN");
       setAllergies("");
       setChronicDiseases("");
       setSurgicalHistory("");
-      setFamilyHistory("");
-      setFamilyPathologyDetail("");
       setCurrentTreatments("");
+      setImmunizations("");
+      setFamilyHistory("");
       setLifestyleHabits("");
+      setGeneralNotes("");
     }
   }, [existingData, isOpen]);
 
@@ -68,7 +81,7 @@ export const MedicalBackgroundModal: React.FC<MedicalBackgroundModalProps> = ({
       { value: "O+", label: "O+" },
       { value: "O-", label: "O-" },
     ],
-    [],
+    []
   );
 
   const selectStyles = {
@@ -132,36 +145,28 @@ export const MedicalBackgroundModal: React.FC<MedicalBackgroundModalProps> = ({
   if (!isOpen) return null;
 
   const handleSubmit = async () => {
-    const payload: MedicalBackgroundPayload = {
+    // Si votre interface (DTO) exige que family_history et lifestyle_habits soient des tableaux,
+    // il faudra corriger le type dans votre fichier medicalBGTypes.ts pour accepter des `string`.
+    const payload: any = {
       blood_type: bloodType,
-      allergies: allergies
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
-      chronic_diseases: chronicDiseases
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
-      surgical_history: surgicalHistory
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
-      family_history: familyHistory
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
-      family_pathology_detail: familyPathologyDetail.trim() || undefined,
-      current_treatments: currentTreatments
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
-      lifestyle_habits: lifestyleHabits
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
+      
+      // Ces champs sont des tableaux
+      allergies: allergies.split(",").map((s) => s.trim()).filter(Boolean),
+      chronic_diseases: chronicDiseases.split(",").map((s) => s.trim()).filter(Boolean),
+      surgical_history: surgicalHistory.split(",").map((s) => s.trim()).filter(Boolean),
+      current_treatments: currentTreatments.split(",").map((s) => s.trim()).filter(Boolean),
+      immunizations: immunizations.split(",").map((s) => s.trim()).filter(Boolean),
+      
+      // 👉 CORRECTION ICI : On envoie ces champs comme de simples chaînes de caractères (Strings)
+      family_history: familyHistory.trim(),
+      lifestyle_habits: lifestyleHabits.trim(),
+      general_notes: generalNotes.trim(),
     };
 
-    const result = await createOrUpdateBackground(patientId, payload);
+    const result = existingData
+      ? await updateMedicalBackground(patientId, payload)
+      : await createMedicalBackground(patientId, payload);
+
     if (result) {
       AutoRefreshPage();
       onClose();
@@ -169,10 +174,11 @@ export const MedicalBackgroundModal: React.FC<MedicalBackgroundModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-fadeIn">
       <div className="bg-[#faf8f1] dark:bg-gray-900 w-full max-w-3xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden border border-gray-200 dark:border-gray-800">
+        
         {/* HEADER */}
-        <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-800">
+        <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-800 shrink-0">
           <div className="flex items-center gap-3 text-[#003366] dark:text-blue-400">
             <div className="p-2 bg-[#00a896]/10 text-[#00a896] rounded-lg">
               <Activity size={22} />
@@ -182,8 +188,7 @@ export const MedicalBackgroundModal: React.FC<MedicalBackgroundModalProps> = ({
                 Antécédents Médicaux du Patient
               </h2>
               <p className="text-xs text-gray-500">
-                Renseignez le profil biologique, les allergies et les habitudes
-                du patient.
+                Renseignez le profil biologique, les allergies et les habitudes du patient.
               </p>
             </div>
           </div>
@@ -196,7 +201,8 @@ export const MedicalBackgroundModal: React.FC<MedicalBackgroundModalProps> = ({
         </div>
 
         {/* BODY */}
-        <div className="p-6 space-y-6 overflow-y-auto">
+        <div className="p-6 space-y-6 overflow-y-auto flex-1 min-h-0 custom-scrollbar">
+          
           {/* Groupe Sanguin */}
           <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
             <label className="flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-300 mb-2 font-lato">
@@ -240,8 +246,8 @@ export const MedicalBackgroundModal: React.FC<MedicalBackgroundModalProps> = ({
               </label>
               <input
                 type="text"
-                value={chronicConditions}
-                onChange={(e) => setChronicConditions(e.target.value)}
+                value={chronicDiseases}
+                onChange={(e) => setChronicDiseases(e.target.value)}
                 placeholder="Ex: Diabète type 2, Hypertension"
                 className="w-full p-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#00a896] outline-none dark:text-white"
               />
@@ -253,8 +259,8 @@ export const MedicalBackgroundModal: React.FC<MedicalBackgroundModalProps> = ({
               </label>
               <input
                 type="text"
-                value={pastSurgeries}
-                onChange={(e) => setPastSurgeries(e.target.value)}
+                value={surgicalHistory}
+                onChange={(e) => setSurgicalHistory(e.target.value)}
                 placeholder="Ex: Appendicectomie (2015), Césarienne (2020)"
                 className="w-full p-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#00a896] outline-none dark:text-white"
               />
@@ -266,8 +272,8 @@ export const MedicalBackgroundModal: React.FC<MedicalBackgroundModalProps> = ({
               </label>
               <input
                 type="text"
-                value={currentMedications}
-                onChange={(e) => setCurrentMedications(e.target.value)}
+                value={currentTreatments}
+                onChange={(e) => setCurrentTreatments(e.target.value)}
                 placeholder="Ex: Metformine 500mg, Lisinopril 10mg"
                 className="w-full p-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#00a896] outline-none dark:text-white"
               />
@@ -329,7 +335,7 @@ export const MedicalBackgroundModal: React.FC<MedicalBackgroundModalProps> = ({
         </div>
 
         {/* FOOTER */}
-        <div className="p-5 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-3 sticky bottom-0 bg-[#faf8f1] dark:bg-gray-900 rounded-b-2xl z-10">
+        <div className="p-5 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-3 bg-[#faf8f1] dark:bg-gray-900 shrink-0">
           <button
             onClick={onClose}
             disabled={actionLoading}
@@ -354,6 +360,7 @@ export const MedicalBackgroundModal: React.FC<MedicalBackgroundModalProps> = ({
             )}
           </button>
         </div>
+        
       </div>
     </div>
   );
