@@ -6,6 +6,7 @@ import {
     useUpdateLabCategory 
 } from '../../../hooks/laboratory/useLabCategory';
 import type { LabCategoryDto } from '../../../types/types';
+import { Button } from '../../common/Button';
 
 interface LabCategoryFormProps {
     isOpen: boolean;
@@ -54,6 +55,8 @@ const LabCategoryForm: React.FC<LabCategoryFormProps> = ({ isOpen, onClose, sele
 
     if (!isOpen) return null;
 
+    const isPending = createMutation.isPending || updateMutation.isPending;
+
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 overflow-y-auto">
             <div className="bg-white dark:bg-gray-800 p-6 rounded-xl w-full max-w-md my-8 transform transition-all">
@@ -74,24 +77,25 @@ const LabCategoryForm: React.FC<LabCategoryFormProps> = ({ isOpen, onClose, sele
                         />
                     </div>
                     <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
-                        <button 
+                        <Button 
                             type="button" 
+                            variant="outline"
                             onClick={onClose} 
-                            className="px-4 py-2 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 rounded text-slate-700 dark:text-gray-300 transition-colors"
-                            disabled={createMutation.isPending || updateMutation.isPending}
+                            disabled={isPending}
+                            tooltip="Fermer sans enregistrer"
+                            tooltipPosition="top"
                         >
                             Annuler
-                        </button>
-                        <button 
+                        </Button>
+                        <Button 
                             type="submit" 
-                            className="px-4 py-2 bg-[#00a896] hover:bg-[#008f7e] text-white rounded transition-colors disabled:opacity-50 flex items-center gap-2"
-                            disabled={createMutation.isPending || updateMutation.isPending}
+                            variant="primary"
+                            isLoading={isPending}
+                            tooltip="Enregistrer la catégorie d'examen"
+                            tooltipPosition="top"
                         >
-                            {(createMutation.isPending || updateMutation.isPending) && (
-                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            )}
                             Enregistrer
-                        </button>
+                        </Button>
                     </div>
                 </form>
             </div>

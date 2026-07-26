@@ -76,7 +76,6 @@ import StockTransfers from "./Pages/PHARMACY/StockTransfers";
 
 import CashHome from "./Pages/PHARMACY/CashHome";
 import SalesHistory from "./Pages/PHARMACY/SalesHistory";
-import DepositsHistory from "./Pages/PHARMACY/DepositsHistory";
 import CloseSession from "./Pages/PHARMACY/CloseSession";
 import OpenSession from "./Pages/PHARMACY/OpenSession";
 import CashSessionHistory from "./Pages/PHARMACY/CashSessionHistory";
@@ -101,7 +100,6 @@ import { SearchResults } from "./Pages/SearchResults";
 
 import LabCategories from "./Pages/Laboratory/Catalogue/LabCategories";
 import LabTests from "./Pages/Laboratory/Catalogue/LabTests";
-import LabParameters from "./Pages/Laboratory/Catalogue/LabParameters";
 import LabSampling from "./Pages/Laboratory/Execution/LabSampling";
 import LabResultsEntry from "./Pages/Laboratory/Execution/LabResultsEntry";
 import LabValidation from "./Pages/Laboratory/Execution/LabValidation";
@@ -120,6 +118,9 @@ import LaboratoriesAdmin from "./Pages/Admin/laboratory/LaboratoriesAdmin";
 // Import Comptoir Laboratoire
 import LabPatients from "./Pages/Laboratory/Patients/LabPatients";
 import LabInvoices from "./Pages/Laboratory/Billing/LabInvoices";
+import LabPayments from "./Pages/Laboratory/Billing/LabPayments";
+import CeoManagement from "./Pages/SUPA/ceo/CeoManagement";
+import CashMovementHistory from "./Pages/PHARMACY/CashMovementHistory";
 import CeoManagement from "./Pages/SUPA/ceo/CeoManagement";
 
 // ============================================================================
@@ -165,18 +166,16 @@ const routes = createBrowserRouter([
           { path: "subscriptions", element: <Subscriptions /> },
         ],
       },
-//BI AND REPORTING
-  // ====================================================
+      //BI AND REPORTING
+      // ====================================================
       {
-        path:"bi",
+        path: "bi",
         element: (
           <CheckRole roles={["ceo"]}>
             <Outlet />
           </CheckRole>
         ),
-        children: [
-          { path: "dashboard", element: <b>hi</b> },
-        ],
+        children: [{ path: "dashboard", element: <b>hi</b> }],
       },
       // ====================================================
       // B. ESPACE ADMINISTRATEUR (Base Hôpital & Paramétrages)
@@ -302,8 +301,8 @@ const routes = createBrowserRouter([
                 element: <SalesHistory />,
               },
               {
-                path: "pharmacy/cash/deposits-history",
-                element: <DepositsHistory />,
+                path: "/pharmacy/cash/movements-history",
+                element: <CashMovementHistory />,
               },
               { path: "pharmacy/cash/session/open", element: <OpenSession /> },
               {
@@ -377,23 +376,24 @@ const routes = createBrowserRouter([
           // { path: "dashboard", element: <LabDashboard /> },
 
           // -- Gestion du Labo (Lab Manager) --
-          { 
-            path: "personnel", 
+          {
+            path: "personnel",
             element: (
               <CheckRole roles={["admin", "laboratory"]}>
                 <LabPersonnel />
               </CheckRole>
-            ) 
+            ),
           },
 
           // -- Comptoir Labo --
           { path: "patients", element: <LabPatients /> },
           { path: "invoices", element: <LabInvoices /> },
+          { path: "payments", element: <LabPayments /> },
 
           // -- Configuration (Admin / Chef de Labo) --
           { path: "catalogue/categories", element: <LabCategories /> },
           { path: "catalogue/tests", element: <LabTests /> },
-          { path: "catalogue/parameters", element: <LabParameters /> },
+          { path: "catalogue/parameters", element: <LabTests /> },
 
           // -- Opérationnel --
           { path: "sampling", element: <LabSampling /> },

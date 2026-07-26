@@ -43,7 +43,7 @@ export const useSaveLabResults = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ id, data }: { id: number, data: { results: LabResultDto[] } }) => saveLabResults(id, data),
+        mutationFn: ({ id, data }: { id: number, data: { results: LabResultDto[] } | FormData }) => saveLabResults(id, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['labRequests'] });
             queryClient.invalidateQueries({ queryKey: ['labRequest'] });

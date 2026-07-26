@@ -67,6 +67,8 @@ class PdfController extends Controller
         $consultation = Consultation::with([
             'patientVisit.patient',
             'patientVisit.center',
+            'admission.patient',
+            'admission.center',
             'profileDoctor.user',
             'examRequests.examRequestLines'
         ])
@@ -78,13 +80,15 @@ class PdfController extends Controller
         }
 
         $examRequest = $consultation->examRequests->first(); 
-        
+        $patient = $consultation->patientVisit->patient ?? $consultation->admission->patient ?? null;
+        $center = $consultation->patientVisit->center ?? $consultation->admission->center ?? null;
+
         $pdf = Pdf::loadView('pdf.exam-request', [
             'consultation' => $consultation,
             'examRequest' => $examRequest,
             'doctor' => $consultation->profileDoctor,
-            'patient' => $consultation->patientVisit->patient,
-            'center' => $consultation->patientVisit->center,
+            'patient' => $patient,
+            'center' => $center,
         ]);
 
         return $pdf->download('demande_examens_' . $consultation->id . '.pdf');

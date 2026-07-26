@@ -1,24 +1,23 @@
 import React, { useState, useMemo, useEffect } from "react";
+import Swal from "sweetalert2";
 import {
   X,
-  Search,
   Calendar,
   Filter,
   ArrowUpRight,
   ArrowDownLeft,
   ArrowRightLeft,
-  TrendingUp,
-  TrendingDown,
   Inbox,
   Landmark,
   Smartphone,
   Coins,
   ChevronLeft,
   ChevronRight,
+  Scale,
+  Info,
 } from "lucide-react";
 import { usePaymentTransactions } from "../../../../hooks/pharmacy/usePaymentTransaction";
 import { type PaymentAccountDto } from "../../../../services/pharmacy/paymentAccountService";
-import { type PaymentTransactionDto } from "../../../../services/pharmacy/paymentTransactionService";
 
 interface PaymentAccountTransactionsModalProps {
   isOpen: boolean;
@@ -175,15 +174,32 @@ export default function PaymentAccountTransactionsModal({
       <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-2xl max-w-7xl w-full h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
         {/* En-tête */}
         <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-800/60">
-          <div>
-            <h3 className="font-black text-gray-900 dark:text-white flex items-center gap-2 text-base">
-              <Landmark className="w-5 h-5 text-emerald-600" /> Historique :{" "}
-              {account.name}
-            </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-              Consultez et filtrez tous les flux financiers de ce compte de
-              trésorerie
-            </p>
+          <div className="flex items-center gap-4">
+            <div>
+              <h3 className="font-black text-gray-900 dark:text-white flex items-center gap-2 text-base">
+                <Landmark className="w-5 h-5 text-emerald-600" /> Historique :{" "}
+                {account.name}
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Consultez et filtrez tous les flux financiers de ce compte de
+                trésorerie
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                Swal.fire({
+                  icon: "info",
+                  title: "Rapprochement Bancaire",
+                  text: `Le module de rapprochement bancaire pour "${account.name}" vous permettra de rapprocher le solde théorique de l'ERP avec votre relevé bancaire ou Mobile Money réels.`,
+                  confirmButtonColor: "#10b981",
+                  confirmButtonText: "Compris",
+                });
+              }}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:hover:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/40 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+            >
+              <Scale className="w-4 h-4" /> Rapprochement Bancaire
+            </button>
           </div>
           <button
             type="button"
@@ -198,10 +214,14 @@ export default function PaymentAccountTransactionsModal({
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Header Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Solde Actuel */}
+            {/* Solde Théorique */}
             <div className="bg-emerald-50/40 dark:bg-emerald-950/10 border border-emerald-100 dark:border-emerald-900/40 p-4 rounded-2xl">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                <Coins className="w-3.5 h-3.5" /> Solde Actuel (Réel)
+              <span
+                className="text-[10px] uppercase font-bold tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 cursor-help"
+                title="Solde calculé par l'ERP d'après tous les encaissements, décaissements et transferts enregistrés sur ce compte"
+              >
+                <Coins className="w-3.5 h-3.5" /> Solde Théorique (ERP){" "}
+                <Info className="w-3 h-3 text-emerald-500" />
               </span>
               <h4 className="text-2xl font-black font-mono text-emerald-700 dark:text-emerald-400 mt-1">
                 {account.balance.toLocaleString()}{" "}
@@ -211,12 +231,19 @@ export default function PaymentAccountTransactionsModal({
 
             {/* Total Entrées / Sorties */}
             <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-2xl flex flex-col justify-between">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 dark:text-gray-500">
-                Volume de Flux
+              <span
+                className="text-[10px] uppercase font-bold tracking-wider text-gray-400 dark:text-gray-500 flex items-center justify-between cursor-help"
+                title="Volume total cumulé des mouvements financiers entrants (+) et sortants (-) de ce compte sur la période"
+              >
+                <span>Volume de Flux</span>
+                <Info className="w-3 h-3 text-slate-400" />
               </span>
               <div className="grid grid-cols-2 gap-2 mt-2">
                 <div>
-                  <span className="text-[10px] text-gray-400 dark:text-gray-500 flex items-center gap-0.5">
+                  <span
+                    className="text-[10px] text-gray-400 dark:text-gray-500 flex items-center gap-0.5 cursor-help"
+                    title="Total des encaissements / versements reçus (+)"
+                  >
                     <ArrowUpRight className="w-3 h-3 text-emerald-500" /> In
                   </span>
                   <p className="text-xs font-bold text-gray-800 dark:text-white font-mono">
@@ -224,7 +251,10 @@ export default function PaymentAccountTransactionsModal({
                   </p>
                 </div>
                 <div>
-                  <span className="text-[10px] text-gray-400 dark:text-gray-500 flex items-center gap-0.5">
+                  <span
+                    className="text-[10px] text-gray-400 dark:text-gray-500 flex items-center gap-0.5 cursor-help"
+                    title="Total des décaissements / retraits effectués (-)"
+                  >
                     <ArrowDownLeft className="w-3 h-3 text-rose-500" /> Out
                   </span>
                   <p className="text-xs font-bold text-gray-800 dark:text-white font-mono">
@@ -236,19 +266,29 @@ export default function PaymentAccountTransactionsModal({
 
             {/* Flux Espèces */}
             <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-2xl flex flex-col justify-between">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 dark:text-gray-500 flex items-center gap-1">
-                <Coins className="w-3.5 h-3.5 text-amber-600" /> Flux Espèces
-                (CASH)
+              <span
+                className="text-[10px] uppercase font-bold tracking-wider text-gray-400 dark:text-gray-500 flex items-center justify-between cursor-help"
+                title="Mouvements financiers réalisés exclusivement en espèces physiques (cash)"
+              >
+                <span className="flex items-center gap-1">
+                  <Coins className="w-3.5 h-3.5 text-amber-600" /> Flux Espèces
+                  (CASH)
+                </span>
+                <Info className="w-3 h-3 text-amber-500" />
               </span>
               <div className="grid grid-cols-2 gap-2 mt-2">
                 <div>
-                  <span className="text-[10px] text-gray-400 dark:text-gray-500">Entrées</span>
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500">
+                    Entrées
+                  </span>
                   <p className="text-xs font-bold text-gray-800 dark:text-gray-200 font-mono">
                     +{stats.cashIn.toLocaleString()}
                   </p>
                 </div>
                 <div>
-                  <span className="text-[10px] text-gray-400 dark:text-gray-500">Sorties</span>
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500">
+                    Sorties
+                  </span>
                   <p className="text-xs font-bold text-gray-800 dark:text-gray-200 font-mono">
                     -{stats.cashOut.toLocaleString()}
                   </p>
@@ -258,19 +298,29 @@ export default function PaymentAccountTransactionsModal({
 
             {/* Flux Mobile Money */}
             <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-4 rounded-2xl flex flex-col justify-between">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-gray-400 dark:text-gray-500 flex items-center gap-1">
-                <Smartphone className="w-3.5 h-3.5 text-blue-500" /> Flux Mobile
-                Money
+              <span
+                className="text-[10px] uppercase font-bold tracking-wider text-gray-400 dark:text-gray-500 flex items-center justify-between cursor-help"
+                title="Mouvements financiers réalisés par paiement ou transfert Mobile Money (MTN MoMo, Orange Money)"
+              >
+                <span className="flex items-center gap-1">
+                  <Smartphone className="w-3.5 h-3.5 text-blue-500" /> Flux
+                  Mobile Money
+                </span>
+                <Info className="w-3 h-3 text-blue-400" />
               </span>
               <div className="grid grid-cols-2 gap-2 mt-2">
                 <div>
-                  <span className="text-[10px] text-gray-400 dark:text-gray-500">Entrées</span>
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500">
+                    Entrées
+                  </span>
                   <p className="text-xs font-bold text-gray-800 dark:text-gray-200 font-mono">
                     +{stats.momoIn.toLocaleString()}
                   </p>
                 </div>
                 <div>
-                  <span className="text-[10px] text-gray-400 dark:text-gray-500">Sorties</span>
+                  <span className="text-[10px] text-gray-400 dark:text-gray-500">
+                    Sorties
+                  </span>
                   <p className="text-xs font-bold text-gray-800 dark:text-gray-200 font-mono">
                     -{stats.momoOut.toLocaleString()}
                   </p>

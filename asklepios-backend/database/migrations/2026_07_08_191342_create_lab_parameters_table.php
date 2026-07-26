@@ -15,7 +15,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('lab_test_id')->constrained('lab_tests')->onDelete('cascade');
             $table->string('name');
-            $table->string('unit');
+            $table->string('unit')->nullable();
+            $table->string('value_type')->default('numeric');
+            $table->json('options')->nullable();
             $table->float('reference_min_male')->nullable();
             $table->float('reference_max_male')->nullable();
             $table->float('reference_min_female')->nullable();

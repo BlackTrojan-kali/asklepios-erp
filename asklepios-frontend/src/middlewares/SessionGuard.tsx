@@ -23,6 +23,7 @@ const SessionGuard = ({ children }: SessionGuardProps) => {
       const currentPath = location.pathname;
 
       if (!myActiveSession || !myActiveSession.id) {
+        // Aucune session active : rediriger vers l'ouverture de session si l'utilisateur essaie d'accéder au POS ou à la clôture
         if (
           currentPath !== "/pharmacy/cash/session/open" &&
           currentPath !== "/pharmacy/cash/session/history"
@@ -33,21 +34,14 @@ const SessionGuard = ({ children }: SessionGuardProps) => {
           navigate("/pharmacy/cash/session/open", { replace: true });
         }
       } else {
+        // Session active existante : si l'utilisateur est sur la page d'ouverture, le rediriger vers le Point de Vente (/pharmacy/cash)
         if (currentPath === "/pharmacy/cash/session/open") {
-          toast.error("Vous avez déjà une session active ouverte.");
-          navigate("/pharmacy/cash/session/close", { replace: true });
+          toast.success("Vous avez déjà une session active.");
+          navigate("/pharmacy/cash", { replace: true });
         }
       }
     }
   }, [myActiveSession, isLoading, isPharmacy, location.pathname, navigate]);
-
-  if (isPharmacy && isLoading) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-slate-50 dark:bg-gray-900">
-        <Loader2 size={40} className="animate-spin text-teal-600" />
-      </div>
-    );
-  }
 
   return <>{children}</>;
 };

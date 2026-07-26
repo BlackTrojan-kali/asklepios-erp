@@ -67,4 +67,9 @@ public function currentAdmission()
     // Permet de récupérer rapidement l'hospitalisation en cours du patient
     return $this->hasOne(\App\Models\Hospital\Admission::class)->where('status', 'ADMITTED');
 }
+
+public function labRequests()
+{
+    return $this->hasMany(\App\Models\Laboratory\LabRequest::class);
+}
 }

@@ -67,9 +67,42 @@ class PaymentController extends Controller
             }
         }
 
-        // 3. Filtre par facture précise (si on veut voir les versements d'une seule facture)
+        // 3. Filtres avancés
         if ($request->filled('invoice_id')) {
             $query->where('invoice_id', $request->invoice_id);
+        }
+
+        if ($request->filled('date')) {
+            $query->whereDate('created_at', $request->date);
+        }
+
+        if ($request->filled('start_date')) {
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+
+        if ($request->filled('end_date')) {
+            $query->whereDate('created_at', '<=', $request->end_date);
+        }
+
+        if ($request->filled('start_time')) {
+            $query->whereTime('created_at', '>=', $request->start_time);
+        }
+
+        if ($request->filled('end_time')) {
+            $query->whereTime('created_at', '<=', $request->end_time);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('id', 'LIKE', "%{$search}%")
+                  ->orWhere('invoice_id', 'LIKE', "%{$search}%")
+                  ->orWhereHas('invoice.patient', function($pq) use ($search) {
+                      $pq->where('first_name', 'LIKE', "%{$search}%")
+                        ->orWhere('last_name', 'LIKE', "%{$search}%")
+                        ->orWhere('patient_code', 'LIKE', "%{$search}%");
+                  });
+            });
         }
 
         $query->orderBy('created_at', 'desc');

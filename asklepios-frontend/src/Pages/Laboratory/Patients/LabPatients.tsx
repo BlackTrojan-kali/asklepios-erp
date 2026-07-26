@@ -20,11 +20,13 @@ import { CreateLabRequestModal } from "../../../components/modals/Laboratory/Com
 import { CreatePaymentModal } from "../../../components/modals/Base_hopital/Finance/CreatePaymentModal";
 import { useLabRequests } from "../../../hooks/laboratory/useLabRequest";
 import { useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "../../../contexts/AuthContext";
 import toast from "react-hot-toast";
 
 const LabPatients = () => {
   const { patients, loading, getPatients } = usePatientStore();
   const { downloadMedicalRecord } = useMedicalBgStore();
+  const { profile } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreatePatientOpen, setIsCreatePatientOpen] = useState(false);
   const [isCreateRequestOpen, setIsCreateRequestOpen] = useState(false);
@@ -36,6 +38,15 @@ const LabPatients = () => {
 
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+
+  // Résolution du lab_role depuis le profil connecté
+  const rawLabRoles = (profile as any)?.profile_lab?.lab_roles;
+  const userLabRoles: string[] = Array.isArray(rawLabRoles)
+    ? rawLabRoles
+    : typeof rawLabRoles === "string"
+      ? (() => { try { return JSON.parse(rawLabRoles); } catch { return []; } })()
+      : [];
+  const isLabReceptionist = userLabRoles.includes("lab_receptionist");
 
   const handlePay = (req: any) => {
     setSelectedInvoice(req.invoice);
@@ -198,6 +209,8 @@ const LabPatients = () => {
                     <td className="p-4 text-right">
                       <div className="flex justify-end items-center gap-2">
                         {(() => {
+                          // La réceptionniste labo ne gère pas la facturation
+                          if (isLabReceptionist) return null;
                           const pendingReq = pendingRequests?.find(req => req.patient_id === patient.id);
                           return pendingReq ? (
                             <button

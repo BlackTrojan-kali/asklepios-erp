@@ -9,7 +9,11 @@ class LabRequestLine extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['lab_request_id', 'lab_test_id', 'exam_request_line_id'];
+    protected $fillable = ['lab_request_id', 'lab_test_id', 'exam_request_line_id', 'is_paid'];
+
+    protected $casts = [
+        'is_paid' => 'boolean',
+    ];
 
     public function request()
     {

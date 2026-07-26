@@ -69,6 +69,8 @@ export interface PaymentTransactionFilterParams {
   type?: string;
   status?: string;
   payment_method?: string;
+  start_date?: string;
+  end_date?: string;
   paginated?: boolean;
   page?: number;
   per_page?: number;

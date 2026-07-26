@@ -67,10 +67,22 @@ class PaymentService
     private function recalculateInvoiceStatus(Invoice $invoice)
     {
         // Somme de tous les paiements enregistrés pour cette facture
-        $totalPaid = $invoice->payments()->sum('amount');
+        $totalPaid = (float) $invoice->payments()->sum('amount');
+
+        // Mettre à jour l'état is_paid de chaque ligne de laboratoire liée à cette facture
+        $running = 0.0;
+        $labRequests = \App\Models\Laboratory\LabRequest::where('invoice_id', $invoice->id)->with('lines.test')->get();
+
+        foreach ($labRequests as $labReq) {
+            foreach ($labReq->lines as $line) {
+                $price = (float) ($line->test?->price ?? 0.0);
+                $running += $price;
+                $line->update(['is_paid' => ($running <= $totalPaid + 0.01)]);
+            }
+        }
 
         // Si la somme payée est supérieure ou égale au total de la facture
-        if ($totalPaid >= $invoice->total_amount) {
+        if ($totalPaid >= $invoice->total_amount && $invoice->total_amount > 0) {
             $invoice->update(['status' => 'PAID']);
 
             // Marquer aussi la requête laboratoire comme PAID
@@ -81,7 +93,7 @@ class PaymentService
             // S'il manque de l'argent (paiement partiel ou suppression d'un paiement)
             $invoice->update(['status' => 'UNPAID']);
             
-            // Si on repasse en UNPAID, on pourrait vouloir repasser la LabRequest en PENDING_PAYMENT
+            // Si on repasse en UNPAID, on repasse la LabRequest en PENDING_PAYMENT
             \App\Models\Laboratory\LabRequest::where('invoice_id', $invoice->id)
                 ->where('status', 'PAID')
                 ->update(['status' => 'PENDING_PAYMENT']);

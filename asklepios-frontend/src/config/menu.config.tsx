@@ -274,7 +274,6 @@ export const MENU_CONFIG: MenuItemType[] = [
         title: "Historique des Sessions",
         path: "/pharmacy/cash/session/history",
       },
-      { title: "Mes Versements", path: "/pharmacy/cash/deposits-history" },
       {
         title: "Mouvements de Caisse",
         path: "/pharmacy/cash/movements-history",
@@ -299,7 +298,7 @@ export const MENU_CONFIG: MenuItemType[] = [
   {
     title: "Facturation et Paiement",
     icon: <Coins size={20} />,
-    roles: ["reception", "admin"],
+    roles: ["reception"],
     requiredLicence: "base_hospital",
     subItems: [
       { title: "Gestion Factures", path: "/reception/facturation" },
@@ -362,12 +361,13 @@ export const MENU_CONFIG: MenuItemType[] = [
   {
     title: "Comptoir Labo",
     icon: <Users size={20} />,
-    roles: ["laboratory", "admin"],
+    roles: ["admin", "laboratory"],
     requiredLicence: "laboratory",
-    labRoles: ["lab_manager", "lab_receptionist"],
+    labRoles: ["lab_receptionist", "lab_manager"],
     subItems: [
       { title: "Dossiers Patients", path: "/laboratory/patients" },
       { title: "Facturation", path: "/laboratory/invoices" },
+      { title: "Registre de Caisse", path: "/laboratory/payments" },
     ],
   },
   {
@@ -378,15 +378,14 @@ export const MENU_CONFIG: MenuItemType[] = [
     labRoles: ["lab_manager", "lab_biologist"],
     subItems: [
       { title: "Catégories", path: "/laboratory/catalogue/categories" },
-      { title: "Examens", path: "/laboratory/catalogue/tests" },
-      { title: "Paramètres", path: "/laboratory/catalogue/parameters" },
+      { title: "Examens & Paramètres", path: "/laboratory/catalogue/tests" },
     ],
   },
 
   {
     title: "Prélèvements",
     icon: <TestTubes size={20} />,
-    roles: ["laboratory", "admin"],
+    roles: ["laboratory"],
     requiredLicence: "laboratory",
     labRoles: ["lab_manager", "lab_technician", "lab_biologist"],
     path: "/laboratory/sampling",
@@ -394,7 +393,7 @@ export const MENU_CONFIG: MenuItemType[] = [
   {
     title: "Analyses & Résultats",
     icon: <Microscope size={20} />,
-    roles: ["laboratory", "admin"],
+    roles: ["laboratory"],
     requiredLicence: "laboratory",
     labRoles: ["lab_manager", "lab_technician", "lab_biologist"],
     subItems: [

@@ -32,8 +32,11 @@ export const markAsSampled = async (id: number): Promise<{ message: string, requ
     return response.data;
 };
 
-export const saveLabResults = async (id: number, data: { results: LabResultDto[] }): Promise<any> => {
-    const response = await api.post(`/laboratory/requests/${id}/results`, data);
+export const saveLabResults = async (id: number, data: { results: LabResultDto[] } | FormData): Promise<any> => {
+    const isFormData = data instanceof FormData;
+    const response = await api.post(`/laboratory/requests/${id}/results`, data, {
+        headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : undefined
+    });
     return response.data;
 };
 

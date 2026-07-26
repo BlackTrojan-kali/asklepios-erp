@@ -195,6 +195,11 @@ class FinancialReportPdfService
             $query->whereHas('invoice', function($q) use ($user) {
                 $q->where('center_id', $user->profile_reception->center_id);
             });
+        } elseif ($user->profile_lab) {
+            // Le laboratoire voit les paiements de son hôpital
+            $query->whereHas('invoice.patient', function($q) use ($user) {
+                $q->where('hospital_id', $user->profile_lab->hospital_id);
+            });
         } elseif ($user->profile_admin) {
             // L'admin voit tout l'hôpital
             $query->whereHas('invoice.center', function($q) use ($user) {

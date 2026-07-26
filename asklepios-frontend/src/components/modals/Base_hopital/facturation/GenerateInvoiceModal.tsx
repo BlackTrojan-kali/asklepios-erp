@@ -77,7 +77,7 @@ export const GenerateInvoiceModal: React.FC<GenerateInvoiceModalProps> = ({ isOp
     // 3. Calcul dynamique
     const calculateDynamicTotal = () => {
         if (!previewData) return 0;
-        const consultTotal = (previewData.unbilled_consultations_count || 0) * (consultationPrice || 0);
+        const consultTotal = (previewData.unbilled_consultations_count > 0 ? 1 : 0) * (consultationPrice || 0);
         return previewData.total_without_consultation + consultTotal;
     };
 

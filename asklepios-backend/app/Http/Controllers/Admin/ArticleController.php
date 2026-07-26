@@ -104,8 +104,8 @@ class ArticleController extends Controller
             $query->where('category_id', $request->query('category_id'));
         }
 
-        // 4. Exécuter la requête avec pagination
-        $articles = $query->latest()->paginate($perPage);
+        // 4. Exécuter la requête avec tri par ordre alphabétique et pagination
+        $articles = $query->orderBy('name', 'asc')->paginate($perPage);
 
         // 5. Typer correctement les attributs virtuels pour React/TypeScript
         // On utilise getCollection() pour modifier les items à l'intérieur du paginateur Laravel
@@ -163,7 +163,7 @@ class ArticleController extends Controller
                 })
         ]);
 
-        $articles = $query->latest()->get();
+        $articles = $query->orderBy('name', 'asc')->get();
 
         $articles->transform(function ($article) {
             $article->stock_qty = (float) $article->stock_qty;
@@ -220,7 +220,7 @@ class ArticleController extends Controller
             'barcode' => 'nullable|string|max:100',
             'global_min_qty' => 'nullable|numeric|min:0',
             'track_batches' => 'required|string', 
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,svg|max:2048',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,svg,webp|max:2048',
             'is_prescripted' => 'nullable|string', 
         ]);
         

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Activity, User, PlusCircle } from 'lucide-react';
+import { X, Save, Activity, User, PlusCircle, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Select from 'react-select';
 import type { PatientDto } from '../../../../types/PatientTypes';
 import { useLabTests } from '../../../../hooks/laboratory/useLabTest';
 import { useCreateLabRequest } from '../../../../hooks/laboratory/useLabRequest';
@@ -21,6 +22,19 @@ export const CreateLabRequestModal: React.FC<Props> = ({ isOpen, onClose, presel
     const [selectedTestIds, setSelectedTestIds] = useState<number[]>([]);
     const [priority, setPriority] = useState<'ROUTINE' | 'URGENT'>('ROUTINE');
     const [prescriber, setPrescriber] = useState('');
+    const [testSearchTerm, setTestSearchTerm] = useState('');
+
+    const normalizeStr = (str: string) =>
+        str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : "";
+
+    const filteredTests = labTests?.filter(test => 
+        normalizeStr(test.name).includes(normalizeStr(testSearchTerm))
+    );
+
+    const patientOptions = allPatients.map(p => ({
+        value: p.id,
+        label: `${p.patient_code} - ${p.first_name} ${p.last_name}`
+    }));
 
     useEffect(() => {
         if (isOpen) {
@@ -92,18 +106,74 @@ export const CreateLabRequestModal: React.FC<Props> = ({ isOpen, onClose, presel
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Patient *</label>
-                                    <select
-                                        value={patientId}
-                                        onChange={(e) => setPatientId(Number(e.target.value))}
-                                        className="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                                        required
-                                        disabled={!!preselectedPatient}
-                                    >
-                                        <option value="">Sélectionner un patient</option>
-                                        {allPatients.map(p => (
-                                            <option key={p.id} value={p.id}>{p.patient_code} - {p.first_name} {p.last_name}</option>
-                                        ))}
-                                    </select>
+                                    <Select
+                                        options={patientOptions}
+                                        value={patientOptions.find(o => o.value === patientId) || null}
+                                        onChange={(opt) => setPatientId(opt ? opt.value : '')}
+                                        placeholder="Sélectionner un patient..."
+                                        isSearchable
+                                        isDisabled={!!preselectedPatient}
+                                        menuPortalTarget={document.body}
+                                        styles={{
+                                            menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                                            control: (base, state) => {
+                                                const isDark = document.documentElement.classList.contains('dark');
+                                                return {
+                                                    ...base,
+                                                    minHeight: '40px',
+                                                    borderRadius: '0.5rem',
+                                                    backgroundColor: isDark ? '#334155' : '#ffffff',
+                                                    borderColor: isDark ? '#475569' : '#cbd5e1',
+                                                    color: isDark ? '#ffffff' : '#0f172a',
+                                                    boxShadow: state.isFocused ? '0 0 0 2px rgba(99, 102, 241, 0.5)' : 'none',
+                                                    '&:hover': {
+                                                        borderColor: '#6366f1'
+                                                    }
+                                                };
+                                            },
+                                            singleValue: (base) => {
+                                                const isDark = document.documentElement.classList.contains('dark');
+                                                return {
+                                                    ...base,
+                                                    color: isDark ? '#f8fafc' : '#0f172a',
+                                                };
+                                            },
+                                            input: (base) => {
+                                                const isDark = document.documentElement.classList.contains('dark');
+                                                return {
+                                                    ...base,
+                                                    color: isDark ? '#f8fafc' : '#0f172a',
+                                                };
+                                            },
+                                            menu: (base) => {
+                                                const isDark = document.documentElement.classList.contains('dark');
+                                                return {
+                                                    ...base,
+                                                    backgroundColor: isDark ? '#1e293b' : '#ffffff',
+                                                    borderColor: isDark ? '#334155' : '#e2e8f0',
+                                                    zIndex: 9999,
+                                                };
+                                            },
+                                            option: (base, state) => {
+                                                const isDark = document.documentElement.classList.contains('dark');
+                                                return {
+                                                    ...base,
+                                                    backgroundColor: state.isSelected
+                                                        ? '#4f46e5'
+                                                        : state.isFocused
+                                                        ? isDark ? '#334155' : '#f1f5f9'
+                                                        : 'transparent',
+                                                    color: state.isSelected
+                                                        ? '#ffffff'
+                                                        : isDark ? '#f1f5f9' : '#0f172a',
+                                                    cursor: 'pointer',
+                                                    '&:active': {
+                                                        backgroundColor: '#4338ca'
+                                                    }
+                                                };
+                                            }
+                                        }}
+                                    />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Prescripteur Externe</label>
@@ -137,10 +207,21 @@ export const CreateLabRequestModal: React.FC<Props> = ({ isOpen, onClose, presel
                             </div>
 
                             {loadingTests ? (
-                                <p className="text-slate-500 text-sm">Chargement des examens...</p>
+                                <p className="text-slate-500 text-sm p-4 text-center">Chargement des examens...</p>
                             ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto p-2">
-                                    {labTests?.map(test => (
+                                <>
+                                    <div className="mb-3 relative">
+                                        <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                                        <input
+                                            type="text"
+                                            placeholder="Rechercher un examen..."
+                                            value={testSearchTerm}
+                                            onChange={(e) => setTestSearchTerm(e.target.value)}
+                                            className="w-full pl-9 pr-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-72 overflow-y-auto p-1 pr-2 custom-scrollbar">
+                                        {filteredTests?.map(test => (
                                         <label key={test.id} className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${selectedTestIds.includes(test.id) ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600'}`}>
                                             <input
                                                 type="checkbox"
@@ -154,7 +235,13 @@ export const CreateLabRequestModal: React.FC<Props> = ({ isOpen, onClose, presel
                                             </div>
                                         </label>
                                     ))}
-                                </div>
+                                    {filteredTests?.length === 0 && (
+                                        <div className="col-span-1 md:col-span-2 p-4 text-center text-sm text-slate-500">
+                                            Aucun examen trouvé pour "{testSearchTerm}"
+                                        </div>
+                                    )}
+                                    </div>
+                                </>
                             )}
                         </div>
 

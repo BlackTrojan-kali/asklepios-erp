@@ -18,6 +18,8 @@ return new class extends Migration
             $table->foreignId('lab_sample_id')->nullable()->constrained('lab_samples')->onDelete('set null');
             $table->float('value_numeric')->nullable();
             $table->string('value_string')->nullable();
+            $table->text('value_text')->nullable();
+            $table->string('file_path')->nullable();
             $table->boolean('is_abnormal')->default(false);
             $table->enum('status', ['DRAFT', 'VALIDATED'])->default('DRAFT');
             $table->dateTime('validated_at')->nullable();

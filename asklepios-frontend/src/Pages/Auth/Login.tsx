@@ -4,6 +4,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import FormInput from "../../components/ui/form/FormInput";
 import FormButton from "../../components/ui/form/FormButton";
 import { login } from "../../functions/auth/AuthMethods";
+import type { ProfilePharmDto } from "../../types/types";
 
 const Login = () => {
   const [email, setEmail] = useState<string>("");
@@ -20,14 +21,20 @@ const Login = () => {
       } else if (profile?.role == "admin") {
         navigate("/admin/centers", { replace: true });
       } else if (profile?.role == "pharmacy") {
-        navigate("/pharmacy", { replace: true });
+        const position = (profile as any)?.profile_pharm?.position;
+
+        if (position === "vente") {
+          navigate("/pharmacy/cash/session/open", { replace: true });
+        } else {
+          navigate("/pharmacy", { replace: true });
+        }
       } else if (profile?.role == "reception") {
         navigate("/reception/patients", { replace: true });
       } else if (profile?.role == "doctor") {
         navigate("/doctor/home", { replace: true });
-      } else if(profile?.role == "ceo"){
-          navigate("/bi",{replace:true})
-      }else if (profile?.role == "laboratory") {
+      } else if (profile?.role == "ceo") {
+        navigate("/bi", { replace: true });
+      } else if (profile?.role == "laboratory") {
         const labRoles = profile?.profile_lab?.lab_roles || [];
         const roles =
           typeof labRoles === "string" ? JSON.parse(labRoles) : labRoles;

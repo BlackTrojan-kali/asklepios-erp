@@ -104,6 +104,21 @@
         </tr>
     </table>
 
+    @if(isset($filterInfo))
+    <table width="100%" style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 10px; margin-bottom: 12px; font-size: 8.5px; color: #334155;">
+        <tr>
+            <td width="33%"><strong>Succursale :</strong> {{ $filterInfo['branch'] }}</td>
+            <td width="33%"><strong>Caisse :</strong> {{ $filterInfo['register'] }}</td>
+            <td width="34%"><strong>Opérateur :</strong> {{ $filterInfo['seller'] }}</td>
+        </tr>
+        <tr>
+            <td width="33%"><strong>Règlement :</strong> {{ $filterInfo['payment_method'] }}</td>
+            <td width="33%"><strong>Période :</strong> {{ $filterInfo['period'] }}</td>
+            <td width="34%">@if(!empty($filterInfo['search'])) <strong>Recherche :</strong> "{{ $filterInfo['search'] }}" @else <strong>Recherche :</strong> Aucune @endif</td>
+        </tr>
+    </table>
+    @endif
+
     <table class="sales-table">
         <thead>
             <tr>

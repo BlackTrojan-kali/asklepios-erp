@@ -140,7 +140,7 @@ export const DoctorForm: React.FC<Props> = ({ payload, setPayload, centers, depa
                             onChange={(selected) => setPayload({ 
                                 ...payload, 
                                 center_id: selected ? selected.value : "",
-                                department_id: "" // Reset du département si on change de centre
+                                department_id: null
                             })}
                             placeholder="Choisir le centre..."
                             isClearable

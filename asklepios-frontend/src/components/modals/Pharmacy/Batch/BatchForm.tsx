@@ -11,10 +11,13 @@ interface Props {
 export const BatchForm: React.FC<Props> = ({ payload, setPayload, articles }) => {
 
     // Formatage des articles pour react-select (Affichage du nom + code-barres si dispo)
-    const articleOptions = articles.map(a => ({ 
-        value: a.id, 
-        label: a.barcode ? `${a.name} (Code: ${a.barcode})` : a.name 
-    }));
+    const articleOptions = articles
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map(a => ({ 
+            value: a.id, 
+            label: a.barcode ? `${a.name} (Code: ${a.barcode})` : a.name 
+        }));
 
     const selectStyles = {
         menuPortal: (base: any) => ({ ...base, zIndex: 9999 })
