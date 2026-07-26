@@ -14,7 +14,7 @@ class StockService
     public function initializeStockForBatch(Batch $batch, int $hospitalId)
     {
         $branches = PharmacyBranch::where('hospital_id', $hospitalId)->get();
-
+        
         foreach ($branches as $branch) {
             Stock::firstOrCreate(
                 [
@@ -42,7 +42,7 @@ class StockService
     public function initializeAllStocksForHospital(int $hospitalId)
     {
         $branches = PharmacyBranch::where('hospital_id', $hospitalId)->get();
-        
+     
         $batches = Batch::whereHas('article', function ($query) use ($hospitalId) {
             $query->where('hospital_id', $hospitalId);
         })->get();

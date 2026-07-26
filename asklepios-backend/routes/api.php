@@ -3,19 +3,45 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-// Imports de tes contrôleurs (Garde tes imports existants ici)
+// Imports de tes contrôleurs
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Admin\ArticleCategoryController;
 use App\Http\Controllers\Admin\ArticleController;
 use App\Http\Controllers\Admin\BatchController;
+use App\Http\Controllers\Admin\BedController;
 use App\Http\Controllers\Admin\CenterController;
 use App\Http\Controllers\Admin\DepartmentController;
+use App\Http\Controllers\Admin\DoctorController;
 use App\Http\Controllers\Admin\DriverController;
+use App\Http\Controllers\Admin\FacilityRoomController;
+use App\Http\Controllers\Admin\CashRegisterController;
+use App\Http\Controllers\Admin\InsuranceCompanyController;
+use App\Http\Controllers\Admin\PatientCoverageController;
+use App\Http\Controllers\Admin\PaymentAccountController;
+use App\Http\Controllers\Admin\PaymentTransactionController;
+use App\Http\Controllers\Admin\PosSaleController as AdminPosSaleController;
+use App\Http\Controllers\Pharmacien\CashRegisterSessionController;
+use App\Http\Controllers\Pharmacien\PosSaleController;
+use App\Http\Controllers\Pharmacien\PosSaleItemController;
+use App\Http\Controllers\Pharmacien\CashierController;
 use App\Http\Controllers\Admin\PharmacienController;
+use App\Http\Controllers\Admin\PharmacyBranchArticleController;
 use App\Http\Controllers\Admin\PharmacyBranchController;
 use App\Http\Controllers\Admin\ProviderController;
+use App\Http\Controllers\Admin\RoomCategoryController;
 use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Admin\VehiculeController;
+use App\Http\Controllers\Doctor\ConsultationController;
+use App\Http\Controllers\Doctor\PdfController as DoctorPdfController;
+use App\Http\Controllers\Doctor\EquipmentController;
+use App\Http\Controllers\Doctor\MedicalActCatalogController;
+use App\Http\Controllers\Doctor\MedicalBackgroundController;
+use App\Http\Controllers\Hospital\AdmissionController;
+use App\Http\Controllers\Hospital\FinancialReportController;
+use App\Http\Controllers\Hospital\GuarantorClaimController;
+use App\Http\Controllers\Hospital\InvoiceController;
+use App\Http\Controllers\Hospital\PaymentController;
+use App\Http\Controllers\Laboratory\LabRequestController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Pharmacien\InventoryController;
 use App\Http\Controllers\Pharmacien\PurchaseOrderController;
@@ -23,11 +49,14 @@ use App\Http\Controllers\Pharmacien\PurchaseReturnController;
 use App\Http\Controllers\Pharmacien\StockMovementController;
 use App\Http\Controllers\Pharmacien\StockTransferController;
 use App\Http\Controllers\Pharmacien\StorageLocationController;
+use App\Http\Controllers\Receptionist\AppointmentController;
 use App\Http\Controllers\SUPA\AdminController;
 use App\Http\Controllers\SUPA\CountryController;
 use App\Http\Controllers\SUPA\HospitalController;
 use App\Http\Controllers\SUPA\LicenceController;
+use App\Http\Controllers\SUPA\ProfileCeoController;
 use App\Http\Controllers\SUPA\SubscriptionController;
+use GuzzleHttp\Middleware;
 
 // ==========================================================
 // 1. AUTHENTIFICATION (PUBLIC)
@@ -41,13 +70,48 @@ Route::prefix("auth")->group(function(){
 // 2. ROUTES AUTHENTIFIÉES (GLOBALES)
 // ==========================================================
 Route::middleware('auth:sanctum')->group(function () {
+Route::get('insurance-coverages/patient/{patient_id}', [PatientCoverageController::class, 'getPatientCoverages']);
+
+Route::middleware(['role:admin,reception'])->group(function () {
+// Création, modification et suppression des couvertures patients
+    Route::post('insurance-coverages', [PatientCoverageController::class, 'store']);
+    Route::put('insurance-coverages/{id}', [PatientCoverageController::class, 'update']);
+    Route::delete('insurance-coverages/{id}', [PatientCoverageController::class, 'destroy']);
     
+    });
+    
+    Route::middleware(['role:admin'])->prefix('shared')->group(function () {
+    
+    // Gestion des bordereaux de réclamation assurance (Tiers Payant)
+    Route::get('/guarantor-claims', [GuarantorClaimController::class, 'index']);
+    Route::post('/guarantor-claims', [GuarantorClaimController::class, 'store']);
+    Route::get('/guarantor-claims/{id}', [GuarantorClaimController::class, 'show']);
+    Route::put('/guarantor-claims/{id}', [GuarantorClaimController::class, 'update']);
+    Route::delete('/guarantor-claims/{id}', [GuarantorClaimController::class, 'destroy']);
+    Route::get('/guarantor-claims/{id}/download', [GuarantorClaimController::class, 'downloadPdf']);
+    Route::get('/invoice-splits/unclaimed', [GuarantorClaimController::class, 'getUnclaimedSplits']);
+
+});
+Route::middleware(['role:admin,reception'])->prefix('admin')->group(function () {
+    
+    Route::apiResource('insurance-companies', InsuranceCompanyController::class)->except(['show']);
+});
+
+Route::middleware(['role:super_admin'])->prefix('superadmin')->group(function () {
+    
+    // Vous pouvez utiliser apiResource pour générer automatiquement index, store, update, destroy
+    Route::apiResource('ceos', ProfileCeoController::class)->except(['show']);
+    
+});
     // Profil utilisateur
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
-// LECTURE SEULE : Pays (Accessible à tous les connectés)
-        Route::get('/countries/all', [CountryController::class, 'all']); // <-- À PLACER EN PREMIER
+    // On garde le préfixe /admin/centers pour ne pas casser tes appels Axios côté frontend.
+        Route::get('admin/centers', [CenterController::class, 'index']);
+    // LECTURE SEULE : Pays (Accessible à tous les connectés)
+    Route::get('/countries/all', [CountryController::class, 'all']); 
+    
     // Configuration / Données publiques
     Route::get('/countries', [CountryController::class, 'index']);
     Route::get('/countries/{id}', [CountryController::class, 'show']);
@@ -67,7 +131,6 @@ Route::middleware('auth:sanctum')->group(function () {
     // 3. SUPER ADMIN (Gestion SaaS)
     // ==========================================================
     Route::middleware('role:super_admin')->prefix('supa')->group(function () {
-        
         // Configuration de base
         Route::post('/countries', [CountryController::class, 'store']);
         Route::put('/countries/{id}', [CountryController::class, 'update']);
@@ -90,9 +153,24 @@ Route::middleware('auth:sanctum')->group(function () {
     // ==========================================================
     // 4. MODULE DE BASE DE L'HÔPITAL (Hors Pharmacie)
     // ==========================================================
-    Route::middleware('role:admin')->prefix('admin')->group(function () {
-        Route::apiResource('centers', CenterController::class);
-        Route::apiResource('departments', DepartmentController::class);
+    Route::middleware(["licence:base_hospital"])->group(function(){
+        
+        // 👉 CORRECTION ICI : Rendre la liste des centres accessible à tout utilisateur authentifié.
+        
+        Route::get('admin/centers/{center}', [CenterController::class, 'show']);
+
+        Route::middleware('role:admin')->prefix('admin')->group(function () {
+            // L'admin garde les droits de création, modification, et suppression
+            Route::apiResource('centers', CenterController::class)->except(['index', 'show']);
+            Route::apiResource('departments', DepartmentController::class);
+            Route::apiResource('receptionists', \App\Http\Controllers\Admin\ReceptionistController::class);
+        });
+    });
+
+    Route::middleware(["licence:pharmacy,base_hospital"])->group(function(){
+        Route::middleware('role:admin,doctor,pharmacy')->prefix('admin')->group(function () {
+            Route::get('articles/all', [ArticleController::class, 'all']);
+        });
     });
 
     // ==========================================================
@@ -103,19 +181,36 @@ Route::middleware('auth:sanctum')->group(function () {
         // ------------------------------------------------------
         // 5.1. ACCÈS ADMINISTRATEUR EXCLUSIF (Configuration)
         // ------------------------------------------------------
+        Route::middleware(["role:admin,pharmacy"])->prefix("admin")->group(function(){
+                
+            Route::apiResource('drivers', DriverController::class);
+        });
         Route::middleware('role:admin')->prefix('admin')->group(function () {
+            // Gestion complète (CRUD) des médecins de l'hôpital
+            Route::apiResource('doctors', DoctorController::class);
             
             // Succursales
             Route::apiResource('pharmacy-branches', PharmacyBranchController::class);
 
+            // Caisses (CRUD Admin)
+            Route::apiResource('cash-registers', CashRegisterController::class)->only(['store', 'update', 'destroy']);
+
+            // Gestion de la trésorerie (Payment Accounts et Transactions)
+            Route::apiResource('payment-accounts', PaymentAccountController::class);
+            Route::prefix('payment-transactions')->group(function () {
+                Route::post('/{id}/confirm', [PaymentTransactionController::class, 'confirm']);
+                Route::post('/{id}/cancel', [PaymentTransactionController::class, 'cancel']);
+            });
+            Route::apiResource('payment-transactions', PaymentTransactionController::class);
+
             // Catalogue
             Route::get('/article-categories/all', [ArticleCategoryController::class, 'all']);
             Route::apiResource('article-categories', ArticleCategoryController::class);
-            Route::get('/articles/all', [ArticleController::class, 'all']);
+            Route::get('/articles/export/pdf', [ArticleController::class, 'exportPdf']);
             Route::post('/articles', [ArticleController::class, 'store']);
             Route::put('/articles/{id}', [ArticleController::class, 'update']);
             Route::delete('/articles/{id}', [ArticleController::class, 'destroy']);
-
+             
             // Gestion globale des lots
             Route::prefix('batches')->group(function () {
                 Route::get('/all', [BatchController::class, 'all']);
@@ -136,26 +231,25 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::get('/export/excel', [DriverController::class, 'exportExcel']);
                 Route::post('/import', [DriverController::class, 'importExcel']);
             });
-            Route::apiResource('drivers', DriverController::class);
 
             // Supervision des transferts (Lecture)
             Route::get('/stock-transfers', [StockTransferController::class, 'index']);
             Route::get('/stock-transfers/export/pdf', [StockTransferController::class, 'exportPdf']);
-        });
+        }
+        );
 
         // ------------------------------------------------------
         // 5.2. ACCÈS PARTAGÉ (Admin + Pharmacien)
         // ------------------------------------------------------
         Route::middleware('role:admin,pharmacy')->group(function () {
+            Route::get('/pharmacy/pos-sales/{id}/pdf', [PosSaleController::class, 'exportPdf']);
             
             Route::prefix('admin')->group(function () {
                 // Lecture Logistique & Succursales (utile au pharmacien)
                 Route::get('/pharmacy-branches', [PharmacyBranchController::class, 'index']);
                 Route::get('/pharmacy-branches/{id}', [PharmacyBranchController::class, 'show']);
                 Route::get('/vehicules', [VehiculeController::class, 'index']);
-                Route::get('/vehicules/{id}', [VehiculeController::class, 'show']);
-                Route::get('/drivers', [DriverController::class, 'index']);
-                Route::get('/drivers/{id}', [DriverController::class, 'show']);
+                Route::get('/requests/{id}', [LabRequestController::class, 'show']);
                 Route::get('/articles', [ArticleController::class, 'index']);
                 
                 // Mouvements de stock
@@ -198,7 +292,26 @@ Route::middleware('auth:sanctum')->group(function () {
 
                 // Document logistique
                 Route::get('/stock-transfers/{id}/waybill', [StockTransferController::class, 'downloadWaybill']);
-            });
+
+                // Articles d'une branche de pharmacie
+                Route::get('/branch/articles/export/excel', [PharmacyBranchArticleController::class, 'exportExcel']);
+                Route::get('/branch/articles/export/pdf', [PharmacyBranchArticleController::class, 'exportPdf']);
+                Route::get('/branch/articles', [PharmacyBranchArticleController::class, 'index']);
+                Route::get('/branch/{id}/articles/all', [PharmacyBranchArticleController::class, 'all']);
+                Route::get('/branch/{id}/articles/', [PharmacyBranchArticleController::class, 'show']); 
+                Route::post('/branch/articles/update-price', [PharmacyBranchArticleController::class, 'updatePrice']); 
+
+                // Caisses (Accès partagé)
+                Route::get('/cash-registers', [CashRegisterController::class, 'index']);
+                Route::get('/cash-registers/{id}', [CashRegisterController::class, 'show']);
+                Route::get('/cash-registers/sessions/history', [CashRegisterController::class, 'sessions']);
+
+                // Historique des Ventes (Admin)
+                Route::get('/pharmacy/pos-sales/export/pdf', [AdminPosSaleController::class, 'exportPdf']);
+                Route::get('/pharmacy/pos-sales/export/excel', [AdminPosSaleController::class, 'exportExcel']);
+                Route::get('/pharmacy/pos-sales', [AdminPosSaleController::class, 'index']);
+                Route::get('/pharmacy/pos-sales/sellers', [AdminPosSaleController::class, 'sellers']);
+            });           
 
             Route::prefix('pharmacy')->group(function () {
                 // Inventaires
@@ -215,7 +328,6 @@ Route::middleware('auth:sanctum')->group(function () {
         // 5.3. ACCÈS PHARMACIEN EXCLUSIF (Opérations locales)
         // ------------------------------------------------------
         Route::middleware('role:pharmacy')->prefix('pharmacy')->group(function () {
-            
             // Gestion du stock physique de la succursale
             Route::get('/stocks/my-branch', [StockController::class, 'getMyBranchStocks']);
             Route::post('/storage-locations/assign-stock', [StorageLocationController::class, 'assignToStock']);
@@ -229,7 +341,224 @@ Route::middleware('auth:sanctum')->group(function () {
                 Route::post('/{id}/cancel', [StockTransferController::class, 'cancel']);
                 Route::get('/export/pdf', [StockTransferController::class, 'exportPdf']);
             });
+
+            // Caisses Sessions (Pharmacien caissier exclusif)
+            Route::prefix('cash-registers')->group(function () {
+                Route::post('/{id}/sessions/open', [CashRegisterSessionController::class, 'openSession']);
+                Route::post('/sessions/{sessionId}/close', [CashRegisterSessionController::class, 'closeSession']);
+                Route::get('/active-session/me', [CashRegisterSessionController::class, 'myActiveSession']);
+                Route::get('/sessions/history', [CashRegisterSessionController::class, 'sessionHistory']);
+            });
+
+            // Point de Vente (Ventes POS)
+            Route::apiResource('pos-sales', PosSaleController::class)->only(['index', 'show']);
+            Route::apiResource('pos-sale-items', PosSaleItemController::class)->only(['index']);
+            Route::get('cashier/articles', [CashierController::class, 'getAllArticles']);
+
+            // Trésorerie Caissier (Lecture seule des comptes et de l'historique personnel)
+            Route::get('payment-accounts', [PaymentAccountController::class, 'index']);
+            Route::get('payment-transactions', [PaymentTransactionController::class, 'index']);
+
+            Route::middleware('active.session')->group(function () {
+                Route::post('pos-sales', [PosSaleController::class, 'store']);
+                Route::post('payment-transactions', [PaymentTransactionController::class, 'store']);
+            });
         });
 
     }); // Fin Middleware Licence Pharmacie
+
+    // ---------------------------------------------------------
+    // ACCÈS RÉCEPTIONNISTES ET MÉDECINS (Module Base Hôpital)
+    // ---------------------------------------------------------
+    Route::middleware(['licence:base_hospital'])->group(function () {
+
+        // ==========================================================
+        // ESPACE DOCTEUR
+        // ==========================================================
+        Route::middleware(['role:doctor'])->prefix('doctor')->group(function () {
+            // Consultations
+            Route::get('consultations', [ConsultationController::class, 'index']);
+            Route::post('consultations', [ConsultationController::class, 'store']);
+            Route::get('/consultations/{id}/prescription-pdf', [DoctorPdfController::class, 'downloadPrescriptionPdf']);
+            Route::get('/consultations/{id}/exam-request-pdf', [DoctorPdfController::class, 'downloadExamRequestPdf']);
+            Route::get('consultations/{id}', [ConsultationController::class, 'show']);
+            Route::put('consultations/{id}', [ConsultationController::class, 'update']);
+            Route::delete('consultations/{id}', [ConsultationController::class, 'destroy']);
+        });
+
+        // ==========================================================
+        // ESPACE PARTAGE ADMIN & DOCTEUR
+        // ==========================================================
+        Route::middleware(['role:admin,doctor'])->prefix('shared')->group(function () {
+            
+            Route::prefix('departments/{departmentId}')->group(function () {
+                // Seuls l'admin et le docteur peuvent créer, modifier ou supprimer
+                Route::post('medical-acts', [MedicalActCatalogController::class, 'store']);
+                Route::put('medical-acts/{actId}', [MedicalActCatalogController::class, 'update']);
+                Route::delete('medical-acts/{actId}', [MedicalActCatalogController::class, 'destroy']);
+            });
+            
+            Route::prefix('departments/{departmentId}')->group(function () {
+                // Dashboard / Alertes (Placé IMPÉRATIVEMENT avant les routes avec {equipmentId})
+                Route::get('equipment/maintenance-alerts', [EquipmentController::class, 'maintenanceAlerts']);
+                
+                // Gestion complète (CRUD) des équipements
+                Route::get('equipment', [EquipmentController::class, 'index']);
+                Route::post('equipment', [EquipmentController::class, 'store']);
+                Route::get('equipment/{equipmentId}', [EquipmentController::class, 'show']);
+                Route::put('equipment/{equipmentId}', [EquipmentController::class, 'update']);
+                Route::delete('equipment/{equipmentId}', [EquipmentController::class, 'destroy']);
+            });
+        });
+
+    }); // Fin Middleware Licence Base_Hospital
+
+    // ---------------------------------------------------------
+    // ACCÈS PARTAGÉ (Base Hospital ou Laboratoire)
+    // ---------------------------------------------------------
+    Route::middleware(['licence:base_hospital,laboratory'])->group(function () {
+
+        // ---------------------------------------------------------
+        // ACCÈS PARTAGÉ (Admin, Docteur, Réception, Laboratoire)
+        // ---------------------------------------------------------
+        Route::middleware(["role:admin,doctor,reception,laboratory"])->prefix('shared')->group(function () {
+            
+            Route::prefix('patients/{patientId}')->group(function () {
+                Route::get('medical-background', [MedicalBackgroundController::class, 'show']);
+                Route::post('medical-background', [MedicalBackgroundController::class, 'store']);
+                Route::put('medical-background', [MedicalBackgroundController::class, 'update']);
+                Route::delete('medical-background', [MedicalBackgroundController::class, 'destroy']);
+                
+                // Téléchargement du Carnet Médical Complet (PDF)
+                Route::get('medical-record/download', [MedicalBackgroundController::class, 'downloadMedicalRecord']);
+                Route::get('appointments', [AppointmentController::class, 'patientAppointments']);
+            });
+            
+            // Lecture des salles d'un département
+            Route::get('departments/{departmentId}/facility-rooms', [FacilityRoomController::class, 'index']);
+            
+            // 👉 RAPPORTS PDF (Finance & Caisse)
+            Route::get('/reports/payments-pdf', [FinancialReportController::class, 'exportPaymentsReport']);
+            Route::get('/reports/invoices-pdf', [FinancialReportController::class, 'exportInvoicesReport']);
+            Route::get('/reports/finance', [FinancialReportController::class, 'generateReport']);
+            
+            // Prévisualisation et Génération par Patient
+            Route::get('/patients/{patientId}/unbilled-preview', [InvoiceController::class, 'previewUnbilledForPatient']);
+            Route::post('/patients/{patientId}/generate-invoice', [InvoiceController::class, 'generateForPatient']);
+            Route::get('/visits/{visitId}/unbilled-preview', [InvoiceController::class, 'previewUnbilled']);
+            
+            // --- PAIEMENTS (Caissière & Admin) ---
+            Route::get('/payments', [PaymentController::class, 'index']);
+            Route::post('/payments', [PaymentController::class, 'store']);
+
+            // --- FACTURES ---
+            Route::get('/invoices', [InvoiceController::class, 'index']);
+            Route::get('/invoices/{id}', [InvoiceController::class, 'show']);
+            Route::put('/invoices/{id}', [InvoiceController::class, 'update']);
+            Route::get('/invoices/{id}/download', [InvoiceController::class, 'downloadPdf']);
+            Route::post('/visits/{visitId}/generate-invoice', [InvoiceController::class, 'generateForVisit']);
+            Route::delete('/invoices/{id}', [InvoiceController::class, 'destroy']);
+            
+            // --- ADMISSIONS ---
+            Route::get('admissions', [AdmissionController::class, 'index']);
+            Route::post('admissions', [AdmissionController::class, 'store']);
+            Route::patch('admissions/{id}/discharge', [AdmissionController::class, 'discharge']);
+            
+            // --- RENDEZ-VOUS (APPOINTMENTS) ---
+            // 1. Export PDF (À placer IMPÉRATIVEMENT avant les routes avec {id})
+            Route::get('appointments/export-pdf', [AppointmentController::class, 'exportPdf']);
+            // 👉 NOUVELLE ROUTE AJOUTÉE ICI :
+            Route::get('appointments/export-history-pdf', [AppointmentController::class, 'exportHistoryPdf']);
+
+            // 2. CRUD standard des rendez-vous
+            Route::apiResource('appointments', AppointmentController::class)->except(['destroy', 'show']);
+
+            // 3. Actions spécifiques sur un rendez-vous
+            Route::prefix('appointments/{appointment}')->group(function () {
+                Route::put('reschedule', [AppointmentController::class, 'reschedule']);
+                Route::patch('cancel', [AppointmentController::class, 'cancel']);
+                Route::post('admit', [AppointmentController::class, 'admitToWaitingRoom']);
+            });
+
+            // 4. Actions sur la visite en cours
+            Route::patch('visits/{visit}/consultation', [AppointmentController::class, 'admitToConsultation']);
+
+            // Lecture seule des catégories et lits
+            Route::get('room-categories', [RoomCategoryController::class, 'index']);
+            Route::get('rooms/{roomId}/beds', [BedController::class, 'index']);
+            
+            Route::prefix('departments/{departmentId}')->group(function () {
+                Route::get('medical-acts', [MedicalActCatalogController::class, 'index']);
+                Route::get('medical-acts/{actId}', [MedicalActCatalogController::class, 'show']);
+            });
+        });
+
+        // ---------------------------------------------------------
+        // ACCÈS RÉCEPTIONNISTE
+        // ---------------------------------------------------------
+        Route::middleware(["role:admin,reception,doctor,pharmacy,laboratory"])->prefix('receptionist')->group(function(){
+            Route::apiResource('patients', \App\Http\Controllers\Receptionist\PatientController::class);
+        });
+
+    }); // Fin Middleware Licence Base_Hospital, Laboratory
+
+    // ---------------------------------------------------------
+    // ACCÈS EXCLUSIF RÉCEPTIONNISTES ET MÉDECINS (Base Hospital)
+    // ---------------------------------------------------------
+    Route::middleware(['licence:base_hospital'])->group(function () {
+
+        Route::middleware(['role:reception'])->prefix('reception')->group(function () {
+            // Lecture seule : Liste des médecins
+            Route::get('doctors', [DoctorController::class, 'index']);
+        });
+
+        // ---------------------------------------------------------
+        // ACCÈS ADMINISTRATEUR EXCLUSIF (Base Hospital)
+        // ---------------------------------------------------------
+        Route::middleware(['role:admin,doctor'])->prefix('admin')->group(function () {
+            // Modification des paiements
+            Route::put('/payments/{id}', [PaymentController::class, 'update']);
+            Route::delete('/payments/{id}', [PaymentController::class, 'destroy']);
+        
+            // Gestion complète (CRUD) des catégories de chambres
+            Route::post('facility-rooms/sync-waiting-rooms', [FacilityRoomController::class, 'syncWaitingRooms']);
+            Route::apiResource('room-categories', RoomCategoryController::class);
+            Route::apiResource('beds', BedController::class)->except(['index', 'show']);
+        });
+        
+        Route::middleware(['role:admin'])->prefix('admin')->group(function () {
+            // Gestion CRUD des Salles (excepté l'index qui est géré dans "shared")
+            Route::apiResource('facility-rooms', FacilityRoomController::class)->except(['index', 'show']);
+        });
+
+    }); // Fin Middleware Licence Base_Hospital
+
+    // ==========================================================
+    // H. LABORATOIRE (SIL)
+    // ==========================================================
+    Route::middleware(['licence:laboratory'])->group(function () {
+        
+        // --- 0. Administration ---
+        Route::middleware(['role:admin'])->prefix('admin')->group(function () {
+            Route::apiResource('lab-personnel', App\Http\Controllers\Admin\LabPersonnelController::class);
+        });
+
+        // Gestion de l'entité Laboratoire
+        Route::apiResource('laboratories', App\Http\Controllers\Laboratory\LaboratoryController::class);
+
+        // --- 1. Catalogue ---
+        Route::apiResource('laboratory/categories', App\Http\Controllers\Laboratory\LabCategoryController::class);
+        Route::apiResource('laboratory/tests', App\Http\Controllers\Laboratory\LabTestController::class);
+        Route::apiResource('laboratory/parameters', App\Http\Controllers\Laboratory\LabParameterController::class);
+
+        // --- 2. Exécution (Prélèvements & Résultats) ---
+        Route::get('laboratory/requests', [App\Http\Controllers\Laboratory\LabRequestController::class, 'index']);
+        Route::post('laboratory/requests', [App\Http\Controllers\Laboratory\LabRequestController::class, 'store']);
+        Route::get('laboratory/requests/{id}', [App\Http\Controllers\Laboratory\LabRequestController::class, 'show']);
+        Route::post('laboratory/requests/{id}/sample', [App\Http\Controllers\Laboratory\LabRequestController::class, 'markAsSampled']);
+        Route::post('laboratory/requests/{id}/results', [\App\Http\Controllers\Laboratory\LabResultController::class, 'saveResults']);
+        Route::post('laboratory/requests/{id}/validate', [\App\Http\Controllers\Laboratory\LabResultController::class, 'validateResults']);
+        Route::get('laboratory/requests/{id}/pdf', [\App\Http\Controllers\Laboratory\LabResultController::class, 'generatePdf']);
+    });
+
 }); // Fin Middleware Auth:Sanctum

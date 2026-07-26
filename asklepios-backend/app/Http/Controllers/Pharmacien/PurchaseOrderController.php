@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Pharmacien;
 
 use App\Http\Controllers\Controller;
-use App\Models\Pharmacy\PurchaseOrder;
 use App\Models\Pharmacy\PurchaseOrderLine;
 use App\Models\Pharmacy\Batch;
 use App\Http\Services\StockMovementService;
+use App\Models\Pharmacy\PurchaseOrder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -26,9 +26,6 @@ class PurchaseOrderController extends Controller
         $this->movementService = $movementService;
     }
 
-    /**
-     * Helper : Obtenir le contexte de l'utilisateur (Admin ou Pharmacien)
-     */
     private function getContext()
     {
         $user = auth()->user();
@@ -55,28 +52,32 @@ class PurchaseOrderController extends Controller
     {
         $context = $this->getContext();
         $query = PurchaseOrder::with(['provider', 'destinationPharmacy', 'user', 'lines.article']);
-
         // Filtrage par rôle
         if ($context['role'] === 'admin') {
             $query->where('hospital_id', $context['hospital_id']);
-            // L'admin peut filtrer par succursale
-            if ($request->filled('branch_id')) {
-                $query->where('destination_pharmacy_id', $request->query('branch_id'));
+            // L'admin peut filtrer par succursale (standardisé avec pharmacy_branch_id)
+            if ($request->filled('pharmacy_branch_id')) {
+                $query->where('destination_pharmacy_id', $request->query('pharmacy_branch_id'));
             }
         } else {
             // Le pharmacien ne voit que sa succursale
             $query->where('destination_pharmacy_id', $context['branch_id']);
-        }
+            
+            }
 
-        // Filtres globaux (Période, Statut, Fournisseur)
+        // Filtres globaux (Statut, Fournisseur)
         if ($request->filled('status')) {
-            $query->where('status', $request->query('status'));
+            $query->where('status', $request->input('status'));
         }
         if ($request->filled('provider_id')) {
-            $query->where('provider_id', $request->query('provider_id'));
+            $query->where('provider_id', $request->input('provider_id'));
         }
-        if ($request->filled('start_date') && $request->filled('end_date')) {
-            $query->whereBetween('created_at', [$request->query('start_date') . ' 00:00:00', $request->query('end_date') . ' 23:59:59']);
+        // 🚨 CORRECTION DU FILTRE DE PÉRIODE 🚨
+        if ($request->filled('start_date')) {
+            $query->where('created_at', '>=', $request->input('start_date') . ' 00:00:00');
+        }
+        if ($request->filled('end_date')) {
+            $query->where('created_at', '<=', $request->input('end_date') . ' 23:59:59');
         }
 
         return $query->orderBy('created_at', 'desc');
@@ -85,25 +86,17 @@ class PurchaseOrderController extends Controller
     // ==========================================
     // 1. LISTER (INDEX AVEC PAGINATION)
     // ==========================================
-    #[OA\Get(
-        path: "/api/purchase-orders", 
-        summary: "Lister les commandes (Filtrable avec Pagination)", 
-        security: [["bearerAuth" => []]], 
-        tags: ["Commandes Fournisseurs"]
-    )]
-    #[OA\Parameter(name: "page", in: "query", description: "Numéro de la page", required: false, schema: new OA\Schema(type: "integer", default: 1))]
-    #[OA\Parameter(name: "per_page", in: "query", description: "Nombre d'éléments par page", required: false, schema: new OA\Schema(type: "integer", default: 15))]
-    #[OA\Parameter(name: "status", in: "query", description: "Filtrer par statut (ex: PENDING, RECEIVED)", required: false, schema: new OA\Schema(type: "string"))]
-    #[OA\Parameter(name: "provider_id", in: "query", description: "Filtrer par fournisseur", required: false, schema: new OA\Schema(type: "integer"))]
+    #[OA\Get(path: "/api/purchase-orders", summary: "Lister les commandes (Filtrable)", security: [["bearerAuth" => []]], tags: ["Commandes Fournisseurs"])]
+    #[OA\Parameter(name: "pharmacy_branch_id", in: "query", required: false, description: "Filtrer par succursale (Admin)", schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "status", in: "query", required: false, description: "Filtrer par statut", schema: new OA\Schema(type: "string"))]
+    #[OA\Parameter(name: "provider_id", in: "query", required: false, description: "Filtrer par fournisseur", schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "start_date", in: "query", required: false, description: "Date de début", schema: new OA\Schema(type: "string", format: "date"))]
+    #[OA\Parameter(name: "end_date", in: "query", required: false, description: "Date de fin", schema: new OA\Schema(type: "string", format: "date"))]
     #[OA\Response(response: 200, description: "Liste des commandes récupérée")]
     public function index(Request $request)
     {
-        // On récupère la valeur per_page dans la requête, avec une valeur par défaut à 15
         $perPage = $request->query('per_page', 15);
-        
-        // On utilise paginate() au lieu de get()
         $orders = $this->getBaseQuery($request)->paginate($perPage);
-        
         return response()->json($orders, 200);
     }
 
@@ -135,7 +128,7 @@ class PurchaseOrderController extends Controller
                 'destination_pharmacy_id' => $context['role'] === 'admin' ? $request->destination_pharmacy_id : $context['branch_id'],
                 'user_id' => auth()->id(),
                 'status' => 'PENDING',
-                'total_amount' => 0 // Sera mis à jour juste après
+                'total_amount' => 0 
             ]);
 
             foreach ($request->lines as $line) {
@@ -167,9 +160,9 @@ class PurchaseOrderController extends Controller
     #[OA\Put(path: "/api/purchase-orders/{id}", summary: "Modifier une commande en attente", security: [["bearerAuth" => []]], tags: ["Commandes Fournisseurs"])]
     #[OA\Response(response: 200, description: "Commande mise à jour")]
     public function update(Request $request, $id)
-    {
+    {   
         $order = $this->getBaseQuery($request)->where('id', $id)->firstOrFail();
-
+    
         if ($order->status !== 'PENDING') {
             return response()->json(['message' => 'Impossible de modifier une commande déjà traitée ou annulée.'], 400);
         }
@@ -218,7 +211,7 @@ class PurchaseOrderController extends Controller
             return response()->json(['message' => 'Impossible de supprimer une commande traitée.'], 400);
         }
 
-        $order->delete(); // Soft delete
+        $order->delete();
         return response()->json(['message' => 'Commande supprimée.'], 200);
     }
 
@@ -242,10 +235,9 @@ class PurchaseOrderController extends Controller
     // ==========================================
     // 6. VALIDER / RÉCEPTIONNER (Mouvement de Stock)
     // ==========================================
-  #[OA\Post(path: "/api/purchase-orders/{id}/validate", summary: "Réceptionner la commande (Entrée en stock)", security: [["bearerAuth" => []]], tags: ["Commandes Fournisseurs"])]
+    #[OA\Post(path: "/api/purchase-orders/{id}/validate", summary: "Réceptionner la commande (Entrée en stock)", security: [["bearerAuth" => []]], tags: ["Commandes Fournisseurs"])]
     #[OA\Response(response: 200, description: "Action effectuée avec succès")]
- 
-  public function validateOrder(Request $request, $id)
+    public function validateOrder(Request $request, $id)
     {
         $order = $this->getBaseQuery($request)->where('id', $id)->firstOrFail();
 
@@ -257,7 +249,6 @@ class PurchaseOrderController extends Controller
             'lines' => 'required|array',
             'lines.*.line_id' => 'required|exists:purchase_order_lines,id',
             'lines.*.qty_received' => 'required|numeric|min:0',
-            // Le lot et la date de péremption deviennent strictement optionnels (nullable)
             'lines.*.batch_number' => 'nullable|string',
             'lines.*.expire_date' => 'nullable|date',
             'lines.*.storage_location_id' => 'nullable|exists:storage_locations,id'
@@ -274,28 +265,25 @@ class PurchaseOrderController extends Controller
                     $line->qty_received += $receivedData['qty_received'];
                     $line->save();
 
-                   // 1. Lot par défaut (STANDARD pour la parapharmacie sans lot)
-$batchNumber = !empty($receivedData['batch_number']) ? $receivedData['batch_number'] : 'STANDARD';
+                    $batchNumber = !empty($receivedData['batch_number']) ? $receivedData['batch_number'] : 'STANDARD';
 
-// 2. Trouver ou Créer le Lot (Batch)
-$batch = Batch::firstOrCreate([
-    'article_id' => $line->article_id,
-    'batch_number' => $batchNumber
-], [
-    'expire_date' => $receivedData['expire_date'] ?? null,
-    'purchase_price' => $line->unit_cost ?? 0 // <-- LE FIX EST ICI : On injecte le prix d'achat
-]);
+                    $batch = Batch::firstOrCreate([
+                        'article_id' => $line->article_id,
+                        'batch_number' => $batchNumber
+                    ], [
+                        'expire_date' => $receivedData['expire_date'] ?? null,
+                        'purchase_price' => $line->unit_cost ?? 0 
+                    ]);
 
-// 3. Appel du Service pour l'entrée en stock
-$this->movementService->recordMovement(
-    'ENTRY', 
-    'PURCHASE', 
-    $order->id, 
-    $batch->id, 
-    $receivedData['qty_received'], 
-    $receivedData['storage_location_id'] ?? null, 
-    "Réception commande fournisseur #{$order->id}"
-);
+                    $this->movementService->recordMovement(
+                        'ENTRY', 
+                        'PURCHASE', 
+                        $order->id, 
+                        $batch->id, 
+                        $receivedData['qty_received'], 
+                        $receivedData['storage_location_id'] ?? null, 
+                        "Réception commande fournisseur #{$order->id}"
+                    );
                 }
 
                 if ($line->qty_received < $line->qty_ordered) {
@@ -314,38 +302,39 @@ $this->movementService->recordMovement(
             return response()->json(['message' => 'Erreur lors de la réception : ' . $e->getMessage()], 400);
         }
     }
+
     // ==========================================
-    // 7. EXPORTS (PDF & EXCEL)
-    // ==========================================
-   // ==========================================
     // 7. EXPORTS (PDF & EXCEL) DÉTAILLÉS
     // ==========================================
     #[OA\Get(path: "/api/purchase-orders/export/pdf", summary: "Exporter l'historique détaillé en PDF", security: [["bearerAuth" => []]], tags: ["Commandes Fournisseurs"])]
-   #[OA\Response(response: 200, description: "Fichier généré avec succès")]
- 
+    #[OA\Parameter(name: "pharmacy_branch_id", in: "query", required: false, description: "Succursale", schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "status", in: "query", required: false, description: "Statut", schema: new OA\Schema(type: "string"))]
+    #[OA\Parameter(name: "start_date", in: "query", required: false, description: "Début", schema: new OA\Schema(type: "string", format: "date"))]
+    #[OA\Parameter(name: "end_date", in: "query", required: false, description: "Fin", schema: new OA\Schema(type: "string", format: "date"))]
+    #[OA\Response(response: 200, description: "Fichier généré avec succès")]
     public function exportPdf(Request $request)
     {
-        // On s'assure de récupérer les commandes avec toutes les relations nécessaires (déjà géré par getBaseQuery)
         $orders = $this->getBaseQuery($request)->get();
         
-        // On charge une vue Blade et on lui passe les données
-        // L'orientation "paysage" (landscape) est souvent préférable pour les tableaux détaillés
-        $pdf = Pdf::loadView('exports.pdf.purchase_orders', compact('orders'))
+        $filters = $request->all();
+        $user = auth()->user();
+
+        $pdf = Pdf::loadView('exports.pdf.purchase_orders', compact('orders', 'filters', 'user'))
                   ->setPaper('a4', 'landscape');
 
         return $pdf->download("details_commandes_" . date('Ymd_His') . ".pdf");
     }
 
     #[OA\Get(path: "/api/purchase-orders/export/excel", summary: "Exporter l'historique détaillé en Excel", security: [["bearerAuth" => []]], tags: ["Commandes Fournisseurs"])]
+    #[OA\Parameter(name: "pharmacy_branch_id", in: "query", required: false, description: "Succursale", schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "start_date", in: "query", required: false, description: "Début", schema: new OA\Schema(type: "string", format: "date"))]
+    #[OA\Parameter(name: "end_date", in: "query", required: false, description: "Fin", schema: new OA\Schema(type: "string", format: "date"))]
     #[OA\Response(response: 200, description: "Fichier généré avec succès")]
- 
     public function exportExcel(Request $request)
     {
         $orders = $this->getBaseQuery($request)->get();
-        
         $exportData = [];
 
-        // On "aplatit" les données : 1 ligne de tableau Excel = 1 ligne de commande
         foreach ($orders as $order) {
             foreach ($order->lines as $line) {
                 $ecart = max(0, $line->qty_ordered - $line->qty_received);
@@ -354,7 +343,8 @@ $this->movementService->recordMovement(
                 $exportData[] = [
                     'Commande N°' => $order->id,
                     'Date' => $order->created_at->format('d/m/Y H:i'),
-                    'Fournisseur' => $order->provider->name,
+                    'Succursale' => $order->destinationPharmacy->name ?? 'N/A', // 👉 Ajout pour l'admin
+                    'Fournisseur' => $order->provider->name ?? 'Inconnu',
                     'Statut Commande' => $order->status,
                     'Article' => $line->article->name ?? 'Article Inconnu',
                     'Qté Commandée' => $line->qty_ordered,
@@ -373,13 +363,14 @@ $this->movementService->recordMovement(
             public function collection() { return $this->data; }
             public function headings(): array { 
                 return [
-                    'Commande N°', 'Date', 'Fournisseur', 'Statut Commande', 
+                    'Commande N°', 'Date', 'Succursale', 'Fournisseur', 'Statut Commande', 
                     'Article', 'Qté Commandée', 'Qté Reçue', 'Écart / Manquant', 
                     'État Livraison', 'Prix U. (FCFA)', 'Total Ligne (FCFA)'
                 ]; 
             }
         }, "details_commandes_" . date('Ymd_His') . ".xlsx");
     }
+
     // ==========================================
     // 8. TÉLÉCHARGER LE BON DE COMMANDE (PDF FOURNISSEUR)
     // ==========================================
@@ -389,11 +380,9 @@ $this->movementService->recordMovement(
     {
         $context = $this->getContext();
 
-        // Récupération de la commande avec toutes les relations utiles pour le bon
         $query = PurchaseOrder::with(['provider', 'destinationPharmacy', 'hospital', 'lines.article', 'user'])
                               ->where('id', $id);
 
-        // Sécurité : Vérifier que l'utilisateur a le droit d'accéder à cette commande
         if ($context['role'] === 'admin') {
             $query->where('hospital_id', $context['hospital_id']);
         } else {
@@ -402,7 +391,6 @@ $this->movementService->recordMovement(
 
         $order = $query->firstOrFail();
 
-        // Génération du PDF avec la vue dédiée (format A4 Portrait)
         $pdf = Pdf::loadView('exports.pdf.purchase_order_form', compact('order'))
                   ->setPaper('a4', 'portrait');
 

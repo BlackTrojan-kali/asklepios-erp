@@ -10,9 +10,10 @@ interface Props {
     branch: PharmacyBranchDto | null;
     centers: CenterDto[]; 
     countries: CountryDto[]; // <-- NOUVELLE PROP
+    AutoRefreshPage: ()=> void;
 }
 
-export const UpdatePharmacyBranchModal: React.FC<Props> = ({ isOpen, onClose, branch, centers, countries }) => {
+export const UpdatePharmacyBranchModal: React.FC<Props> = ({ isOpen, onClose, branch, centers, countries,AutoRefreshPage }) => {
     const { updatePharmacyBranch, actionLoading } = usePharmacyStore();
     
     const [payload, setPayload] = useState<PharmacyBranchPayload>({
@@ -40,7 +41,9 @@ export const UpdatePharmacyBranchModal: React.FC<Props> = ({ isOpen, onClose, br
         if (!branch || !payload.name || !payload.adress || !payload.type) return;
 
         const success = await updatePharmacyBranch(branch.id, payload);
-        if (success) onClose();
+        if (success){ 
+            AutoRefreshPage()
+            onClose();}
     };
 
     if (!isOpen || !branch) return null;

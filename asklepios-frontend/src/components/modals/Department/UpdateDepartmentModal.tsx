@@ -7,9 +7,10 @@ interface Props {
     isOpen: boolean;
     onClose: () => void;
     department: DepartmentDto | null;
+    AutoRefreshPage: () => void;
 }
 
-export const UpdateDepartmentModal: React.FC<Props> = ({ isOpen, onClose, department }) => {
+export const UpdateDepartmentModal: React.FC<Props> = ({ isOpen, onClose, department,AutoRefreshPage }) => {
     const { updateDepartment, loading } = useDepartmentStore();
     
     const [payload, setPayload] = useState({
@@ -31,7 +32,11 @@ export const UpdateDepartmentModal: React.FC<Props> = ({ isOpen, onClose, depart
     const handleSubmit = async () => {
         if (!department || !payload.name) return;
         const success = await updateDepartment(department.id, department.center_id, payload);
-        if (success) onClose();
+        if (success) {
+            
+            AutoRefreshPage();
+            onClose();}
+
     };
 
     if (!isOpen || !department) return null;

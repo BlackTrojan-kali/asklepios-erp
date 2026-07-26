@@ -4,6 +4,7 @@ import type { DepartmentPayload } from '../../../types/types';
 interface Props {
     payload: DepartmentPayload;
     setPayload: (p: DepartmentPayload) => void;
+    AutoRefreshPage: () => void;
 }
 
 export const DepartmentForm: React.FC<Props> = ({ payload, setPayload }) => {

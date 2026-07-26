@@ -28,6 +28,7 @@ const Drivers = () => {
     // États pour les modales
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedDriver, setSelectedDriver] = useState<DriverDto | null>(null);
+    const [autoRefreshPage,setAutoRefreshPage] = useState<boolean>();
 
     // Référence pour l'input file caché (Import Excel)
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -43,7 +44,11 @@ const Drivers = () => {
         }, 300); // Évite de surcharger l'API lors de la saisie au clavier
 
         return () => clearTimeout(delayDebounce);
-    }, [getDrivers, page, searchTerm, statusFilter]);
+    }, [getDrivers, page, searchTerm, statusFilter,autoRefreshPage]);
+    
+    const handleAutoRefresh = ()=>{
+        setAutoRefreshPage(!autoRefreshPage)
+    }
 
     const handleRefresh = () => {
         getDrivers({ page, search: searchTerm, is_active: statusFilter });
@@ -297,6 +302,7 @@ const Drivers = () => {
                 onClose={() => setIsModalOpen(false)}
                 existingDriver={selectedDriver}
                 onSuccess={handleRefresh}
+                AutoRefreshPage={handleAutoRefresh}
             />
 
         </div>

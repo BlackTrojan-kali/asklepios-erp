@@ -45,8 +45,7 @@ class PurchaseReturnController extends Controller
     }
 
     /**
-     * SÉCURITÉ : Retourne la requête de base restreinte à l'hôpital ou la succursale de l'utilisateur.
-     * Utilisé pour récupérer un modèle spécifique (Update, Delete, Validate).
+     * SÉCURITÉ : Restreint la requête de base à l'hôpital ou la succursale de l'utilisateur.
      */
     private function getScopedQuery()
     {
@@ -64,37 +63,50 @@ class PurchaseReturnController extends Controller
 
     /**
      * FILTRES : Applique les filtres de recherche (GET) sur une requête existante.
-     * Utilisé uniquement pour les listes (Index, Exports).
+     */
+   /**
+     * FILTRES : Applique les filtres de recherche (GET) sur une requête existante.
      */
     private function applyFilters($query, Request $request)
     {
         $context = $this->getContext();
 
-        if ($context['role'] === 'admin' && $request->filled('branch_id')) {
-            $query->where('source_pharmacy_id', $request->query('branch_id'));
+        // Seul l'admin peut filtrer par succursale spécifique
+        if ($context['role'] === 'admin' && $request->filled('pharmacy_branch_id')) {
+            $query->where('source_pharmacy_id', $request->query('pharmacy_branch_id'));
         }
+        
         if ($request->filled('status')) {
             $query->where('status', $request->query('status'));
         }
         if ($request->filled('provider_id')) {
             $query->where('provider_id', $request->query('provider_id'));
         }
-        if ($request->filled('start_date') && $request->filled('end_date')) {
-            $query->whereBetween('return_date', [$request->query('start_date'), $request->query('end_date')]);
+        
+        // 🚨 CORRECTION DU FILTRE DE PÉRIODE 🚨
+        // On utilise un simple "where" avec concaténation de l'heure. 
+        // C'est 100% compatible MySQL/PostgreSQL/SQLite et ça inclut toute la journée.
+        if ($request->filled('start_date')) {
+            $query->where('created_at', '>=', $request->query('start_date') . ' 00:00:00');
+        }
+        if ($request->filled('end_date')) {
+            $query->where('created_at', '<=', $request->query('end_date') . ' 23:59:59');
         }
 
         return $query->orderBy('created_at', 'desc');
     }
 
     #[OA\Get(path: "/api/purchase-returns", summary: "Lister les retours fournisseurs", security: [["bearerAuth" => []]], tags: ["Retours Fournisseurs"])]
+    #[OA\Parameter(name: "pharmacy_branch_id", in: "query", required: false, description: "Filtrer par succursale (Admin uniquement)", schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "status", in: "query", required: false, description: "Filtrer par statut", schema: new OA\Schema(type: "string", enum: ["PENDING", "SHIPPED", "CANCELLED"]))]
+    #[OA\Parameter(name: "provider_id", in: "query", required: false, description: "Filtrer par fournisseur", schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "start_date", in: "query", required: false, description: "Date de début (Y-m-d)", schema: new OA\Schema(type: "string", format: "date"))]
+    #[OA\Parameter(name: "end_date", in: "query", required: false, description: "Date de fin (Y-m-d)", schema: new OA\Schema(type: "string", format: "date"))]
     #[OA\Response(response: 200, description: "Liste des retours récupérée")]
     public function index(Request $request)
     {
         $perPage = $request->query('per_page', 15);
-        
-        // On sécurise PUIS on filtre
         $query = $this->applyFilters($this->getScopedQuery(), $request);
-        
         return response()->json($query->paginate($perPage), 200);
     }
 
@@ -150,7 +162,6 @@ class PurchaseReturnController extends Controller
     #[OA\Response(response: 200, description: "Retour mis à jour")]
     public function update(Request $request, $id)
     {
-        // On utilise UNIQUEMENT le scope de sécurité ici
         $return = $this->getScopedQuery()->where('id', $id)->firstOrFail();
 
         if ($return->status !== 'PENDING') {
@@ -249,19 +260,29 @@ class PurchaseReturnController extends Controller
     }
 
     #[OA\Get(path: "/api/purchase-returns/export/pdf", summary: "Exporter les retours détaillés en PDF", security: [["bearerAuth" => []]], tags: ["Retours Fournisseurs"])]
+    #[OA\Parameter(name: "pharmacy_branch_id", in: "query", required: false, description: "Filtrer par succursale (Admin uniquement)", schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "status", in: "query", required: false, description: "Filtrer par statut", schema: new OA\Schema(type: "string", enum: ["PENDING", "SHIPPED", "CANCELLED"]))]
+    #[OA\Parameter(name: "start_date", in: "query", required: false, description: "Date de début", schema: new OA\Schema(type: "string", format: "date"))]
+    #[OA\Parameter(name: "end_date", in: "query", required: false, description: "Date de fin", schema: new OA\Schema(type: "string", format: "date"))]
     #[OA\Response(response: 200, description: "Fichier PDF généré")]
     public function exportPdf(Request $request)
     {
         $query = $this->applyFilters($this->getScopedQuery(), $request);
         $returns = $query->get();
         
-        $pdf = Pdf::loadView('exports.pdf.purchase_returns', compact('returns'))
+        $filters = $request->all();
+        $user = auth()->user();
+
+        $pdf = Pdf::loadView('exports.pdf.purchase_returns', compact('returns', 'filters', 'user'))
                   ->setPaper('a4', 'landscape');
 
         return $pdf->download("details_retours_" . date('Ymd_His') . ".pdf");
     }
 
     #[OA\Get(path: "/api/purchase-returns/export/excel", summary: "Exporter les retours détaillés en Excel", security: [["bearerAuth" => []]], tags: ["Retours Fournisseurs"])]
+    #[OA\Parameter(name: "pharmacy_branch_id", in: "query", required: false, description: "Filtrer par succursale", schema: new OA\Schema(type: "integer"))]
+    #[OA\Parameter(name: "start_date", in: "query", required: false, description: "Date de début", schema: new OA\Schema(type: "string", format: "date"))]
+    #[OA\Parameter(name: "end_date", in: "query", required: false, description: "Date de fin", schema: new OA\Schema(type: "string", format: "date"))]
     #[OA\Response(response: 200, description: "Fichier Excel généré")]
     public function exportExcel(Request $request)
     {
@@ -275,6 +296,7 @@ class PurchaseReturnController extends Controller
                 $exportData[] = [
                     'Retour N°' => $r->id,
                     'Date de Retour' => $r->return_date->format('d/m/Y'),
+                    'Succursale' => $r->sourcePharmacy->name ?? 'N/A', // Pratique pour l'admin dans l'Excel
                     'Fournisseur' => $r->provider->name ?? 'Inconnu',
                     'Commande Réf' => $r->purchase_order_id ? '#' . $r->purchase_order_id : 'N/A',
                     'Statut' => $r->status,
@@ -292,7 +314,7 @@ class PurchaseReturnController extends Controller
             public function collection() { return $this->data; }
             public function headings(): array { 
                 return [
-                    'Retour N°', 'Date de Retour', 'Fournisseur', 'Commande Réf', 
+                    'Retour N°', 'Date de Retour', 'Succursale', 'Fournisseur', 'Commande Réf', 
                     'Statut', 'Article', 'Lot Renvoyé (Batch)', 'Qté Retournée', 'Motif'
                 ]; 
             }

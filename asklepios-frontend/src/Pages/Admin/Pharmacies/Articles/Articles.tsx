@@ -13,7 +13,8 @@ import {
     Layers,
     RefreshCw,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    FileText // <-- Ajouté pour l'icône d'ordonnance
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import Select from 'react-select';
@@ -28,6 +29,8 @@ import type { ArticleDto } from '../../../../types/PharmTypes';
 // Modales
 import { CreateArticleModal } from '../../../../components/modals/Pharmacy/Article/CreateArticleModal';
 import { UpdateArticleModal } from '../../../../components/modals/Pharmacy/Article/UpdateArticleModal';
+import { ExportArticleModal } from '../../../../components/modals/Pharmacy/Article/ExportArticleModal';
+import { Download } from 'lucide-react';
 
 const Articles = () => {
     // Hooks des stores
@@ -52,6 +55,8 @@ const Articles = () => {
     // États pour les modales
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [selectedArticle, setSelectedArticle] = useState<ArticleDto | null>(null);
+    const [autoRefreshPage, setAutoRefreshPage] = useState<boolean>(false);
+    const [isExportOpen, setIsExportOpen] = useState(false);
 
     // URL de base pour afficher les images
     const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -60,7 +65,11 @@ const Articles = () => {
     useEffect(() => {
         getArticles(1, {});
         getAllArticleCategories(); // On charge toutes les catégories pour le filtre et les modales
-    }, [getArticles, getAllArticleCategories]);
+    }, [getArticles, getAllArticleCategories, autoRefreshPage]);
+
+    const handleAutoRefresh = () => {
+        setAutoRefreshPage(!autoRefreshPage);
+    }
 
     // Rafraîchir la liste en conservant la page et la recherche
     const handleRefresh = () => {
@@ -131,6 +140,16 @@ const Articles = () => {
                     >
                         <RefreshCw size={18} className={loading ? "animate-spin text-[#00a896]" : ""} />
                         <span className="hidden sm:inline">Rafraîchir</span>
+                    </button>
+
+                    
+                    <button 
+                        onClick={() => setIsExportOpen(true)}
+                        className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-900 dark:bg-gray-700 dark:hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors shadow-sm flex-1 sm:flex-none"
+                        title="Exporter en PDF"
+                    >
+                        <Download size={18} />
+                        <span className="hidden sm:inline">Exporter</span>
                     </button>
 
                     <button 
@@ -242,6 +261,8 @@ const Articles = () => {
                             <tr className="bg-slate-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
                                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Article</th>
                                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Code-Barres</th>
+                                <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Prix de Vente</th>
+                                <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Ordonnance</th>
                                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Seuil d'Alerte</th>
                                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Actions</th>
                             </tr>
@@ -249,14 +270,16 @@ const Articles = () => {
                         <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                             {loading ? (
                                 <tr>
-                                    <td colSpan={4} className="p-8 text-center">
+                                    {/* Ajustement du colSpan à 6 suite à l'ajout de 2 colonnes */}
+                                    <td colSpan={6} className="p-8 text-center">
                                         <Loader2 size={32} className="animate-spin text-[#00a896] mx-auto mb-2" />
                                         <p className="text-sm text-gray-500 dark:text-gray-400">Chargement du catalogue...</p>
                                     </td>
                                 </tr>
                             ) : articles?.length === 0 ? (
                                 <tr>
-                                    <td colSpan={4} className="p-12 text-center">
+                                    {/* Ajustement du colSpan à 6 */}
+                                    <td colSpan={6} className="p-12 text-center">
                                         <div className="flex flex-col items-center justify-center text-gray-400 dark:text-gray-500">
                                             <Package size={48} className="mb-3 opacity-50" />
                                             <p>Aucun article trouvé.</p>
@@ -308,6 +331,24 @@ const Articles = () => {
                                                 </div>
                                             ) : (
                                                 <span className="text-gray-400 text-xs italic">N/A</span>
+                                            )}
+                                        </td>
+
+                                        {/* PRIX DE VENTE */}
+                                        <td className="p-4">
+                                            <span className="font-bold text-slate-700 dark:text-gray-300">
+                                                {article.default_selling_price > 0 ? `${article.default_selling_price} FCFA` : <span className="text-gray-400 text-xs italic">Non défini</span>}
+                                            </span>
+                                        </td>
+
+                                        {/* PRESCRIPTION (ORDONNANCE) */}
+                                        <td className="p-4">
+                                            {article.is_prescripted ? (
+                                                <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 border border-red-200 dark:border-red-800/50 rounded text-xs font-medium">
+                                                    <FileText size={12} /> Oui
+                                                </span>
+                                            ) : (
+                                                <span className="text-gray-400 dark:text-gray-500 text-xs font-medium">Non</span>
                                             )}
                                         </td>
 
@@ -378,6 +419,7 @@ const Articles = () => {
                 isOpen={isCreateOpen} 
                 onClose={() => setIsCreateOpen(false)} 
                 categories={allCategories}
+                AutoRefreshPage={handleAutoRefresh}
             />
 
             <UpdateArticleModal 
@@ -385,7 +427,15 @@ const Articles = () => {
                 onClose={() => setSelectedArticle(null)} 
                 article={selectedArticle}
                 categories={allCategories}
+                AutoRefreshPage={handleAutoRefresh}
             />
+
+            <ExportArticleModal 
+                isOpen={isExportOpen} 
+                onClose={() => setIsExportOpen(false)} 
+                categories={allCategories}
+            />
+
 
         </div>
     );

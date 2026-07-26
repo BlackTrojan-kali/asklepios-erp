@@ -5,12 +5,23 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Department;
 use App\Models\Center;
+use App\Http\Services\WaitingRoomService;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
 
 #[OA\Tag(name: "Départements (Admin)", description: "Gestion des départements par centre médical")]
 class DepartmentController extends Controller
 {
+    protected $waitingRoomService;
+
+    /**
+     * Injection du service pour automatiser la création des salles d'attente
+     */
+    public function __construct(WaitingRoomService $waitingRoomService)
+    {
+        $this->waitingRoomService = $waitingRoomService;
+    }
+
     /**
      * Sécurité : Vérifier que le centre appartient bien à l'hôpital de l'admin
      */
@@ -91,7 +102,11 @@ class DepartmentController extends Controller
             return response()->json(['message' => 'Action non autorisée.'], 403);
         }
 
+        // Création du département
         $department = Department::create($validated);
+
+        // Automatisation : Création immédiate de la salle d'attente pour ce nouveau département
+        $this->waitingRoomService->createForDepartment($department->id);
 
         return response()->json([
             'message' => 'Département créé avec succès',

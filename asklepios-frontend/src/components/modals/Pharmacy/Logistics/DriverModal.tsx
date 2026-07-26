@@ -8,10 +8,11 @@ interface Props {
     onClose: () => void;
     existingDriver: DriverDto | null;
     onSuccess: () => void;
+    AutoRefreshPage: () => void;
 }
 
 export const DriverModal: React.FC<Props> = ({ 
-    isOpen, onClose, existingDriver, onSuccess 
+    isOpen, onClose, existingDriver, onSuccess,AutoRefreshPage
 }) => {
     const { createDriver, updateDriver, actionLoading } = useDriverStore();
 
@@ -59,6 +60,7 @@ export const DriverModal: React.FC<Props> = ({
 
         if (success) {
             onSuccess();
+            AutoRefreshPage();
             onClose();
         }
     };

@@ -1,0 +1,51 @@
+<?php
+
+namespace App\Models\Pharmacy;
+
+use Illuminate\Database\Eloquent\Model;
+
+class PosSale extends Model
+{
+    protected $guarded = [];
+
+    protected $casts = [
+        'has_prescription' => 'boolean',
+        'total_amount' => 'float',
+        'amount_received' => 'float',
+        'change_due' => 'float',
+        'payment_account_id' => 'integer',
+        'patient_id' => 'integer',
+    ];
+
+    protected $appends = ['receipt_number'];
+
+    public function getReceiptNumberAttribute()
+    {
+        return 'FA-' . str_pad($this->id, 6, '0', STR_PAD_LEFT);
+    }
+
+    public function patient()
+    {
+        return $this->belongsTo(\App\Models\Patient::class, 'patient_id');
+    }
+
+    public function branch()
+    {
+        return $this->belongsTo(PharmacyBranch::class, 'pharmacy_branch_id');
+    }
+
+    public function session()
+    {
+        return $this->belongsTo(CashRegisterSession::class, 'cash_register_session_id');
+    }
+
+    public function paymentAccount()
+    {
+        return $this->belongsTo(PaymentAccount::class, 'payment_account_id');
+    }
+
+    public function items()
+    {
+        return $this->hasMany(PosSaleItem::class, 'pos_sale_id');
+    }
+}

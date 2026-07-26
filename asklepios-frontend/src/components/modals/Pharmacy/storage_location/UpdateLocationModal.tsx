@@ -7,9 +7,10 @@ interface Props {
     isOpen: boolean;
     onClose: () => void;
     location: StorageLocationDto | null;
+    AutoRefreshPage:()=>void;
 }
 
-export const UpdateLocationModal: React.FC<Props> = ({ isOpen, onClose, location }) => {
+export const UpdateLocationModal: React.FC<Props> = ({ isOpen, onClose, location,AutoRefreshPage }) => {
     const { updateLocation, actionLoading } = useStorageLocationStore();
     
     const [payload, setPayload] = useState<StorageLocationPayload>({ aisle: '', shelf: '', code: '' });
@@ -28,7 +29,9 @@ export const UpdateLocationModal: React.FC<Props> = ({ isOpen, onClose, location
         if (!location || (!payload.aisle.trim() && !payload.shelf.trim() && !payload.code.trim())) return;
 
         const success = await updateLocation(location.id, payload);
-        if (success) onClose();
+        if (success) {
+            AutoRefreshPage();
+            onClose();}
     };
 
     if (!isOpen || !location) return null;

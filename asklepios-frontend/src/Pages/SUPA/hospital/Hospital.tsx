@@ -7,7 +7,7 @@ import type { HospitalDto } from '../../../types/types';
 
 const Hospitals = () => {
     const { hospitals, loading, pagination, getHospitals, deleteHospital } = useHospitalStore();
-    
+    const [autoRefreshPage,SetAutoRefreshPage] = useState<boolean>(false);
     // États locaux
     const [searchInput, setSearchInput] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -16,8 +16,10 @@ const Hospitals = () => {
     // Chargement initial
     useEffect(() => {
         getHospitals(1, '');
-    }, [getHospitals]);
-
+    }, [getHospitals,autoRefreshPage]);
+    const handleAutoRefreshPage = ()=>{
+        SetAutoRefreshPage(!autoRefreshPage)
+    }
     // Gérer la recherche
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -262,6 +264,7 @@ const Hospitals = () => {
                 isOpen={isModalOpen} 
                 onClose={() => setIsModalOpen(false)} 
                 hospitalToEdit={selectedHospital} 
+                AutoRefreshedPage={handleAutoRefreshPage}
             />
 
         </div>

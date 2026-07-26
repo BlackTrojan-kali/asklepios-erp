@@ -14,11 +14,17 @@ return new class extends Migration
         Schema::create('patients', function (Blueprint $table) {
             $table->id();
             $table->foreignId("hospital_id")->constrained("hospitals")->onDelete("cascade");
+            $table->softDeletes(); // <-- À ajouter si ce n'est pas encore fait
             $table->string("patient_code");
             $table->string("first_name");
             $table->string("last_name")->nullable();
             $table->date("bith_date");
             $table->string("contact_phone");
+            $table->string("birth_place")->nullable();
+            $table->string("address")->nullable();
+            $table->string("emergency_contact_name")->nullable();
+            $table->string("emergency_contact_number")->nullable();
+            $table->enum("gender",["MALE","FEMALE","OTHER"]);
             $table->timestamps();
         });
     }

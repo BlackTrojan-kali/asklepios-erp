@@ -13,11 +13,12 @@ return new class extends Migration
     {
         Schema::create('profile_labs', function (Blueprint $table) {
             $table->id();
+              $table->foreignId("hospital_id")->constrained("hospitals")->onDelete("cascade");          
             $table->foreignId("user_id")->constrained("users")->onDelete("cascade");
-            $table->foreignId("center_id")->constrained("centers")->onDelete("cascade");
-            $table->foreignId("hospital_id")->constrained("hospitals")->onDelete("cascade");
+            $table->foreignId("laboratory_id")->constrained("laboratories")->onDelete("cascade");
             $table->string("speciality");
             $table->string("specifications")->nullable();
+            $table->json("lab_roles")->nullable();
             $table->timestamps();
         });
     }

@@ -11,12 +11,15 @@ import {
   Eye,
   Undo2,
   FileDown,
+  Building2 // 👉 Nouvel icône pour le filtre Succursale
 } from "lucide-react";
 import Swal from "sweetalert2";
 
-// Stores
+// Context & Stores
+import { useAuth } from "../../contexts/AuthContext";
 import usePurchaseStore from "../../functions/pharmacy/usePurchaseStore";
 import useProviderStore from "../../functions/pharmacy/useProviderStore";
+import usePharmacyStore from "../../functions/pharmacy/usePharmacyStore"; // 👉 Nouveau store
 
 // Modales
 import { PurchaseOrderModal } from "../../components/modals/Pharmacy/purchase_order/PurchaseOrderModal";
@@ -29,6 +32,10 @@ import { PurchaseReturnModal } from "../../components/modals/Pharmacy/purchase_r
 import type { PurchaseOrderDto } from "../../types/PurchaseTypes";
 
 const PurchaseOrders = () => {
+  // 👉 Vérification du rôle
+  const { profile } = useAuth();
+  const isAdmin = ['admin', 'super_admin'].includes(profile?.role || '');
+
   const {
     orders,
     ordersMeta,
@@ -37,33 +44,36 @@ const PurchaseOrders = () => {
     getOrders,
     deleteOrder,
     cancelOrder,
-    downloadOrderFormPdf, // <-- Ajout de l'export PDF spécifique
+    downloadOrderFormPdf,
   } = usePurchaseStore();
+  
   const { providers, getProviders } = useProviderStore();
+  const { pharmacyBranches, getPharmacyBranches } = usePharmacyStore(); // 👉 Récupération des succursales
 
   const [page, setPage] = useState(1);
-  const [filters, setFilters] = useState({ status: "", provider_id: "" });
+  // 👉 Ajout de pharmacy_branch_id dans les filtres
+  const [filters, setFilters] = useState({ status: "", provider_id: "", pharmacy_branch_id: "" });
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
 
   // Séparation claire des états de sélection
-  const [selectedOrderForEdit, setSelectedOrderForEdit] =
-    useState<PurchaseOrderDto | null>(null);
-  const [selectedOrderForView, setSelectedOrderForView] =
-    useState<PurchaseOrderDto | null>(null);
-  const [selectedOrderForReceive, setSelectedOrderForReceive] =
-    useState<PurchaseOrderDto | null>(null);
-  const [selectedOrderForReturn, setSelectedOrderForReturn] =
-    useState<PurchaseOrderDto | null>(null);
-
+  const [selectedOrderForEdit, setSelectedOrderForEdit] = useState<PurchaseOrderDto | null>(null);
+  const [selectedOrderForView, setSelectedOrderForView] = useState<PurchaseOrderDto | null>(null);
+  const [selectedOrderForReceive, setSelectedOrderForReceive] = useState<PurchaseOrderDto | null>(null);
+  const [selectedOrderForReturn, setSelectedOrderForReturn] = useState<PurchaseOrderDto | null>(null);
+  const [autoRefreshPage,setAutoRefreshPage] = useState<boolean>(false);
   useEffect(() => {
     getProviders({});
-  }, [getProviders]);
+    // 👉 L'admin charge la liste de toutes les succursales pour les filtres
+    if (isAdmin) {
+      getPharmacyBranches(1, {}, 100);
+    }
+  }, [getProviders, getPharmacyBranches, isAdmin,autoRefreshPage]);
 
   useEffect(() => {
     getOrders({ ...filters, page });
-  }, [getOrders, filters, page]);
+  }, [getOrders, filters, page,autoRefreshPage]);
 
   const handleRefresh = () => {
     getOrders({ ...filters, page });
@@ -104,7 +114,9 @@ const PurchaseOrders = () => {
       if (success) handleRefresh();
     }
   };
-
+const handleAutoRefresh = ()=>{
+  setAutoRefreshPage(!autoRefreshPage)
+}
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "PENDING":
@@ -142,6 +154,7 @@ const PurchaseOrders = () => {
 
   return (
     <div className="space-y-6">
+      {/* EN-TÊTE */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-teal-100 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400 rounded-lg">
@@ -183,8 +196,29 @@ const PurchaseOrders = () => {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row gap-4">
-        <div className="flex-1">
+      {/* FILTRES */}
+      <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col md:flex-row gap-4">
+        
+        {/* 👉 Filtre par Succursale (Uniquement pour l'Admin) */}
+        {isAdmin && (
+            <div className="flex-1 min-w-[200px]">
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
+                    <Building2 size={12} /> Succursale
+                </label>
+                <select 
+                    value={filters.pharmacy_branch_id}
+                    onChange={(e) => { setFilters({...filters, pharmacy_branch_id: e.target.value}); setPage(1); }}
+                    className="w-full bg-slate-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm outline-none focus:border-[#00a896] dark:text-white"
+                >
+                    <option value="">Toutes les succursales</option>
+                    {pharmacyBranches.map(branch => (
+                        <option key={branch.id} value={branch.id}>{branch.name}</option>
+                    ))}
+                </select>
+            </div>
+        )}
+
+        <div className="flex-1 min-w-[200px]">
           <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
             Filtrer par Fournisseur
           </label>
@@ -204,7 +238,8 @@ const PurchaseOrders = () => {
             ))}
           </select>
         </div>
-        <div className="flex-1">
+
+        <div className="flex-1 min-w-[200px]">
           <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
             Filtrer par Statut
           </label>
@@ -225,6 +260,7 @@ const PurchaseOrders = () => {
         </div>
       </div>
 
+      {/* TABLEAU */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
@@ -236,6 +272,12 @@ const PurchaseOrders = () => {
                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Fournisseur
                 </th>
+                {/* 👉 Colonne Succursale (Admin uniquement) */}
+                {isAdmin && (
+                  <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Succursale
+                  </th>
+                )}
                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">
                   Montant Total
                 </th>
@@ -250,7 +292,7 @@ const PurchaseOrders = () => {
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center">
+                  <td colSpan={isAdmin ? 6 : 5} className="p-8 text-center">
                     <Loader2
                       size={32}
                       className="animate-spin text-[#00a896] mx-auto mb-2"
@@ -262,7 +304,7 @@ const PurchaseOrders = () => {
                 </tr>
               ) : orders.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-12 text-center">
+                  <td colSpan={isAdmin ? 6 : 5} className="p-12 text-center">
                     <p className="text-gray-500 dark:text-gray-400">
                       Aucune commande trouvée.
                     </p>
@@ -288,6 +330,14 @@ const PurchaseOrders = () => {
                     <td className="p-4 font-medium text-slate-700 dark:text-gray-300">
                       {order.provider?.name || "Inconnu"}
                     </td>
+
+                    {/* 👉 Affichage de la Succursale (Admin uniquement) */}
+                    {isAdmin && (
+                        <td className="p-4 text-slate-600 dark:text-gray-400 text-xs font-medium">
+                            {/* @ts-ignore : On suppose que la relation destinationPharmacy existe dans le DTO */}
+                            {order.destinationPharmacy?.name || order.destination_pharmacy?.name || 'N/A'}
+                        </td>
+                    )}
 
                     <td className="p-4 text-right font-mono font-bold text-[#00a896]">
                       {order.total_amount?.toLocaleString("fr-FR")} FCFA

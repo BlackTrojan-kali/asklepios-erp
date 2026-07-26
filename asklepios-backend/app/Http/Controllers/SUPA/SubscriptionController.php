@@ -245,20 +245,31 @@ class SubscriptionController extends Controller
     public function preview($id)
     {
         // On récupère la souscription avec l'hôpital (et ses centres) et les licences
-        $subscription = Subscription::with(['hospital.centers', 'items.licence', 'country'])
+        $subscription = Subscription::with(['hospital.centers','hospital.pharmacies', 'items.licence', 'country'])
             ->findOrFail($id);
 
         $hospital = $subscription->hospital;
         $centerCount = $hospital->centers->count();
-
+        $pharmacyCount = $hospital->pharmacies->count();
+        $labCount = $hospital->laboratories->count();
         // Transformation des données pour la facture
-        $itemsPreview = $subscription->items->map(function ($item) use ($centerCount) {
-            $subTotal = $centerCount > 0 ? $item->unit_price * $centerCount : 0;
+        $itemsPreview = $subscription->items->map(function ($item) use ($centerCount,$pharmacyCount,$labCount) {
+            $qty = 0;
+            if($item->licence->name == "pharmacy"){
+                $qty = $pharmacyCount;
+            }else if($item->licence->name == "base_hospital"){
+                $qty = $centerCount;
+            }else if($item->licence->name == "laboratory"){
+                $qty = $labCount;
+            }  
+            $subTotal = $qty > 0 ? $item->unit_price * $qty : 0;
             
             return [
                 'licence_name' => $item->licence->name,
                 'unit_price' => $item->unit_price,
                 'center_count' => $centerCount,
+                "pharmacy_count" => $pharmacyCount,
+                "lab_count"=> $labCount,
                 'sub_total' => $subTotal,
             ];
         });
@@ -349,19 +360,30 @@ class SubscriptionController extends Controller
     public function downloadInvoice($id)
     {
         // On récupère les données avec les relations
-        $subscription = Subscription::with(['hospital.centers', 'items.licence', 'country'])
+        $subscription = Subscription::with(['hospital.centers',"hospital.pharmacies", 'items.licence', 'country'])
             ->findOrFail($id);
 
         $hospital = $subscription->hospital;
         $centerCount = $hospital->centers->count();
-
+        $pharmacyCount = $hospital->pharmacies->count();
+        $labCount = $hospital->laboratories->count();
         // Transformation pour le tableau de la facture
-        $items = $subscription->items->map(function ($item) use ($centerCount) {
-            return [
+        $items = $subscription->items->map(function ($item) use ($centerCount,$pharmacyCount,$labCount) {
+        $qty = 0;
+        if ($item->licence->name == "pharmacy"){
+            $qty = $pharmacyCount;
+        }else if($item->licence->name == "base_hospital"){
+            $qty = $centerCount;
+        }else if($item->licence->name == "laboratory"){
+            $qty = $labCount;
+        }else{
+            $qty = $centerCount;
+        }
+        return [
                 'name' => $item->licence->name,
                 'unit_price' => $item->unit_price,
-                'center_count' => $centerCount,
-                'sub_total' => $centerCount > 0 ? $item->unit_price * $centerCount : 0,
+                'center_count' => $qty,
+                'sub_total' => $qty > 0 ? $item->unit_price * $qty : 0,
             ];
         });
 
@@ -373,6 +395,8 @@ class SubscriptionController extends Controller
             'date' => now()->format('d/m/Y'),
             'hospital' => $hospital,
             'center_count' => $centerCount,
+            'pharmacy_count'=> $pharmacyCount,
+            "lab_count" => $labCount,
             'starting_date' => \Carbon\Carbon::parse($subscription->starting_date)->format('d/m/Y'),
             'ending_date' => \Carbon\Carbon::parse($subscription->ending_date)->format('d/m/Y'),
             'items' => $items,
@@ -381,7 +405,7 @@ class SubscriptionController extends Controller
         ];
 
         // Génération du PDF via la vue Blade
-        $pdf = Pdf::loadView('pdf.invoice', $data);
+        $pdf = Pdf::loadView('pdf.subs_invoice', $data);
 
         // Configuration du format (A4)
         $pdf->setPaper('A4', 'portrait');
@@ -399,7 +423,7 @@ class SubscriptionController extends Controller
         return $user->profile_admin->hospital_id 
             ?? $user->profile_pharm->hospital_id 
             ?? $user->profile_doctor->hospital_id 
-            ?? $user->profile_lab->hospital_id 
+            ?? $user->profile_lab?->laboratory->hospital_id 
             ?? $user->profile_reception->hospital_id 
             ?? null;
     }

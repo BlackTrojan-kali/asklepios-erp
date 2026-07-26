@@ -8,9 +8,10 @@ interface Props {
     onClose: () => void;
     pharmacien: PharmacienDto | null;
     branches: any[]; // Remplace par ton type exact PharmacyBranchDto[]
+    AutoRefreshPage:()=>void
 }
 
-export const UpdatePharmacienModal: React.FC<Props> = ({ isOpen, onClose, pharmacien, branches }) => {
+export const UpdatePharmacienModal: React.FC<Props> = ({ isOpen, onClose, pharmacien, branches,AutoRefreshPage }) => {
     const { updatePharmacien, actionLoading } = usePharmacienStore();
     
     const [payload, setPayload] = useState<PharmacienPayload>({
@@ -44,7 +45,9 @@ export const UpdatePharmacienModal: React.FC<Props> = ({ isOpen, onClose, pharma
         }
 
         const success = await updatePharmacien(pharmacien.id, payload);
-        if (success) onClose();
+        if (success) {
+            AutoRefreshPage()
+            onClose();}
     };
 
     if (!isOpen || !pharmacien) return null;

@@ -1,0 +1,57 @@
+import api from "../../api/api";
+import type { LabRequestDto, LabSampleDto, LabResultDto } from '../../types/types';
+
+export const getLabRequests = async (status?: string): Promise<LabRequestDto[]> => {
+    const response = await api.get('/laboratory/requests', {
+        params: { status }
+    });
+    return response.data;
+};
+
+export interface CreateLabRequestDto {
+    patient_id: number;
+    test_ids: number[];
+    priority?: 'ROUTINE' | 'URGENT';
+    external_prescriber_name?: string;
+    profile_doctor_id?: number;
+    patient_visit_id?: number;
+}
+
+export const createLabRequest = async (data: CreateLabRequestDto): Promise<{ message: string, lab_request: LabRequestDto, invoice: any }> => {
+    const response = await api.post('/laboratory/requests', data);
+    return response.data;
+};
+
+export const getLabRequestById = async (id: number): Promise<LabRequestDto> => {
+    const response = await api.get(`/laboratory/requests/${id}`);    
+    return response.data;
+};
+
+export const markAsSampled = async (id: number): Promise<{ message: string, request_status: string, samples: LabSampleDto[] }> => {
+    const response = await api.post(`/laboratory/requests/${id}/sample`);
+    return response.data;
+};
+
+export const saveLabResults = async (id: number, data: { results: LabResultDto[] } | FormData): Promise<any> => {
+    const isFormData = data instanceof FormData;
+    const response = await api.post(`/laboratory/requests/${id}/results`, data, {
+        headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : undefined
+    });
+    return response.data;
+};
+
+export const validateLabResults = async (id: number): Promise<any> => {
+    const response = await api.post(`/laboratory/requests/${id}/validate`);
+    return response.data;
+};
+
+export const downloadLabResultsPdf = async (id: number): Promise<void> => {
+    const response = await api.get(`/laboratory/requests/${id}/pdf`, { responseType: 'blob' });
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `resultats_labo_REQ-${id}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+};

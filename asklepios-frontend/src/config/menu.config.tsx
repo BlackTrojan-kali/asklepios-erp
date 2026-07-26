@@ -1,4 +1,5 @@
 import React from "react";
+import { ShieldPlus } from 'lucide-react';
 import {
   Globe,
   Hospital,
@@ -6,13 +7,26 @@ import {
   NotebookText,
   Settings,
   HospitalIcon,
-  Pill,
-  ListOrdered,
+  Tags,
   Layers,
+  ListOrdered,
+  Truck,
+  Wallet,
   ShoppingCart,
   Activity,
-  Search,
-  Truck,
+  Users,
+  Computer,
+  Calendar,
+  Workflow,
+  BriefcaseMedical,
+  Building2,
+  BedDouble,
+  Coins,
+  Microscope,
+  TestTubes,
+  Database,
+  Command,
+  Star,
 } from "lucide-react";
 
 // --- 1. DÉFINITION DES TYPES ---
@@ -22,14 +36,16 @@ export type MenuItemType = {
   path?: string;
   roles?: string[];
   positions?: ("magasin" | "vente")[];
-  requiredLicence?: string; // <-- NOUVEAU: Le module requis pour afficher ce menu
+  labRoles?: string[];
+  requiredLicence?: string;
+  excludedLicence?: string;
   subItems?: MenuItemType[];
 };
 
 // --- 2. CONFIGURATION GLOBALE DES MENUS ---
 export const MENU_CONFIG: MenuItemType[] = [
   // ==========================================
-  // MENUS SUPER ADMIN (Ignorent les licences)
+  // A. MENUS SUPER ADMIN (Gestion SaaS globale)
   // ==========================================
   {
     title: "Pays",
@@ -37,6 +53,7 @@ export const MENU_CONFIG: MenuItemType[] = [
     path: "/countries",
     roles: ["super_admin"],
   },
+  
   {
     title: "Hôpitaux",
     icon: <Hospital size={20} />,
@@ -44,13 +61,19 @@ export const MENU_CONFIG: MenuItemType[] = [
     roles: ["super_admin"],
   },
   {
-    title: "Admins",
+    title: "Administrateurs",
     icon: <Shield size={20} />,
     path: "/admins",
     roles: ["super_admin"],
   },
   {
-    title: "Licences & Souscriptions",
+    title: "Ceos",
+    icon: <Star size={20} />,
+    path: "/ceos",
+    roles: ["super_admin"],
+  },
+  {
+    title: "Abonnements",
     icon: <NotebookText size={20} />,
     roles: ["super_admin"],
     subItems: [
@@ -66,69 +89,144 @@ export const MENU_CONFIG: MenuItemType[] = [
   },
 
   // ==========================================
-  // MENUS ADMIN HÔPITAL
+  // B. MENUS ADMIN (Base Hôpital & RH)
   // ==========================================
   {
-    title: "Centres",
-    icon: <HospitalIcon size={20} />,
+    title: "Infrastructure",
+    icon: <Building2 size={20} />,
     roles: ["admin"],
+    requiredLicence: "base_hospital",
     subItems: [
       { title: "Centres", path: "/admin/centers" },
       { title: "Départements", path: "/admin/departments" },
+      { title: "Catégories Chambres", path: "/admin/room_categories" },
     ],
   },
   {
-    title: "Pharmacies",
-    icon: <Pill size={20} />,
-    roles: ["admin"],
-    requiredLicence: "pharmacy", // <-- CACHÉ SI PAS DE LICENCE
-    subItems: [
-      { title: "Pharmacies", path: "/admin/pharmacies" },
+    title:"Assurances",
+    icon:<ShieldPlus size={20}/>,
+    roles:["admin"],
+    subItems:[
       {
-        title: "Articles",
-        subItems: [
-          { title: "Catégories", path: "/admin/pharmacy/acticles-categories" },
-          { title: "Articles", path: "/admin/pharmacy/articles" },
-          { title: "Lots", path: "/admin/pharmacy/batch" },
-        ],
+        title:"Assurances",
+        path:"/admin/insurances"
       },
       {
-        title: "Logistique",
-        subItems: [
-          { title: "Vehicules", path: "/admin/vehicules" },
-          { title: "Transfers", path: "/admin/transfers" },
-          { title: "Chauffeurs", path: "/admin/drivers" },
-        ],
-      },
-      { title: "Pharmaciens", path: "/admin/pharmaciens" },
-      { title: "Versements", path: "/admin/pharmacy/versements" },
-      { title: "Mouvements", path: "/admin/movements" },
-      {
-        title: "Stocks",
-        subItems: [
-          { title: "État des stocks", path: "/admin/pharmacy/stocks" },
-          { title: "Inventaires", path: "/admin/inventory" },
-        ],
-      },
-      { title: "Fournisseurs", path: "/admin/pharmacy/providers" },
-    ],
+        title:"Demande de Paiement",
+        path:"/admin/guarantor_claims"
+      }
+    ]
+
   },
   {
-    title: "Commandes",
-    icon: <ListOrdered />,
+    title: "Équipe Médicale",
+    icon: <BriefcaseMedical size={20} />,
     roles: ["admin"],
-    requiredLicence: "pharmacy", // <-- CACHÉ SI PAS DE LICENCE
+    requiredLicence: "base_hospital",
     subItems: [
-      { title: "Commandes effectuées", path: "/admin/orders" },
-      { title: "Retours Commandes", path: "/admin/returns" },
+      { title: "Docteurs", path: "/admin/doctors" },
+      { title: "Réceptionnistes", path: "/admin/receptionists" },
     ],
   },
 
   // ==========================================
-  // MENUS PHARMACIEN (MAGASIN)
+  // C. MENUS ADMIN (Supervision Pharmacie)
   // ==========================================
   {
-    title: "Gestion des Stocks",
+    title: "Réseau Pharmacies",
+    icon: <HospitalIcon size={20} />,
+    roles: ["admin"],
+    requiredLicence: "pharmacy",
+    subItems: [
+      { title: "Succursales", path: "/admin/pharmacies" },
+      { title: "Pharmaciens", path: "/admin/pharmaciens" },
+    ],
+  },
+  {
+    title: "Catalogue Médicaments",
+    icon: <Tags size={20} />,
+    roles: ["admin"],
+    requiredLicence: "pharmacy",
+    subItems: [
+      { title: "Catégories", path: "/admin/pharmacy/acticles-categories" },
+      { title: "Articles", path: "/admin/pharmacy/articles" },
+      { title: "Lots", path: "/admin/pharmacy/batch" },
+      { title: "Grille Tarifaire", path: "/admin/pharmacy/articles/pricing" },
+    ],
+  },
+  {
+    title: "Supervision Stocks",
+    icon: <Layers size={20} />,
+    roles: ["admin"],
+    requiredLicence: "pharmacy",
+    subItems: [
+      { title: "État des stocks", path: "/admin/pharmacy/stocks" },
+      { title: "Mouvements", path: "/admin/movements" },
+      { title: "Inventaires", path: "/admin/inventory" },
+    ],
+  },
+  {
+    title: "Achats & Fournisseurs",
+    icon: <ListOrdered size={20} />,
+    roles: ["admin"],
+    requiredLicence: "pharmacy",
+    subItems: [
+      { title: "Fournisseurs", path: "/admin/pharmacy/providers" },
+      { title: "Bons de Commande", path: "/admin/orders" },
+      { title: "Retours", path: "/admin/returns" },
+    ],
+  },
+  {
+    title: "Flotte & Logistique",
+    icon: <Truck size={20} />,
+    roles: ["admin"],
+    requiredLicence: "pharmacy",
+    subItems: [
+      { title: "Véhicules", path: "/admin/vehicules" },
+      { title: "Chauffeurs", path: "/admin/drivers" },
+      { title: "Transferts inter-sites", path: "/admin/transfers" },
+    ],
+  },
+  {
+    title: "Finances & Caisses",
+    icon: <Wallet size={20} />,
+    roles: ["admin"],
+    requiredLicence: "pharmacy",
+    subItems: [
+      { title: "Comptes de Trésorerie", path: "/admin/pharmacy/accounts" },
+      {
+        title: "Caisses Enregistreuses",
+        path: "/admin/pharmacy/cash-register",
+      },
+      {
+        title: "Mouvements Trésorerie",
+        path: "/admin/pharmacy/treasury-transactions",
+      },
+      { title: "Versements en attente", path: "/admin/pharmacy/versements" },
+    ],
+  },
+  {
+    title: "Rapports Ventes",
+    icon: <Activity size={20} />,
+    roles: ["admin"],
+    requiredLicence: "pharmacy",
+    subItems: [
+      {
+        title: "Historiques des ventes",
+        path: "/admin/pharmacy/pos-sales-history",
+      },
+      {
+        title: "Historique des sessions",
+        path: "/admin/pharmacy/pos-sessions-history",
+      },
+    ],
+  },
+
+  // ==========================================
+  // D. MENUS PHARMACIEN (Opérations Magasin)
+  // ==========================================
+  {
+    title: "Mon Stock",
     icon: <Layers size={20} />,
     roles: ["pharmacy"],
     positions: ["magasin"],
@@ -136,8 +234,8 @@ export const MENU_CONFIG: MenuItemType[] = [
     subItems: [
       { title: "État des stocks", path: "/pharmacy" },
       { title: "Mouvements", path: "/pharmacy/movements" },
-      { title: "Inventaires", path: "/pharmacy/inventory" },
       { title: "Emplacements", path: "/pharmacy/storage_location" },
+      { title: "Inventaires", path: "/pharmacy/inventory" },
     ],
   },
   {
@@ -147,21 +245,21 @@ export const MENU_CONFIG: MenuItemType[] = [
     positions: ["magasin"],
     requiredLicence: "pharmacy",
     subItems: [
-      { title: "Commandes effectuées", path: "/pharmacy/orders" },
-      { title: "Retours Commandes", path: "/pharmacy/returns" },
+      { title: "Bons de commande", path: "/pharmacy/orders" },
+      { title: "Retours", path: "/pharmacy/returns" },
     ],
   },
   {
-    title: "Logistique",
+    title: "Logistique (Transferts)",
     icon: <Truck size={20} />,
     roles: ["pharmacy"],
     positions: ["magasin"],
     requiredLicence: "pharmacy",
-    path: "pharmacy/stock_transfers",
+    path: "/pharmacy/stock_transfers",
   },
 
   // ==========================================
-  // MENUS PHARMACIEN (COMMERCIAL / VENTE)
+  // E. MENUS PHARMACIEN (Opérations Caisse/Vente)
   // ==========================================
   {
     title: "Point de Vente",
@@ -169,22 +267,157 @@ export const MENU_CONFIG: MenuItemType[] = [
     roles: ["pharmacy"],
     positions: ["vente"],
     requiredLicence: "pharmacy",
-    path: "/pharmacy/pos",
+    path: "/pharmacy/cash",
   },
   {
-    title: "Historique Ventes",
+    title: "Session de Caisse",
+    icon: <Wallet size={20} />,
+    roles: ["pharmacy"],
+    positions: ["vente"],
+    requiredLicence: "pharmacy",
+    subItems: [
+      { title: "Ouvrir la caisse", path: "/pharmacy/cash/session/open" },
+      { title: "Clôturer la caisse", path: "/pharmacy/cash/session/close" },
+    ],
+  },
+  {
+    title: "Suivi & Historiques",
     icon: <Activity size={20} />,
     roles: ["pharmacy"],
     positions: ["vente"],
     requiredLicence: "pharmacy",
-    path: "/pharmacy/sales-history",
+    subItems: [
+      { title: "Historique des Ventes", path: "/pharmacy/cash/sales-history" },
+      {
+        title: "Historique des Sessions",
+        path: "/pharmacy/cash/session/history",
+      },
+      {
+        title: "Mouvements de Caisse",
+        path: "/pharmacy/cash/movements-history",
+      },
+    ],
+  },
+
+  // ==========================================
+  // F. MENUS RÉCEPTIONNISTE / ACCUEIL
+  // ==========================================
+  {
+    title: "Accueil & Patients",
+    icon: <Users size={20} />,
+    roles: ["reception", "admin"],
+    requiredLicence: "base_hospital",
+    subItems: [
+      { title: "Dossiers Patients", path: "/reception/patients" },
+      { title: "Gestion des RDV", path: "/reception/rdv" },
+      { title: "Historique des RDV", path: "/historique_rdv" },
+    ],
   },
   {
-    title: "Consulter Stocks",
-    icon: <Search size={20} />,
-    roles: ["pharmacy"],
-    positions: ["vente"],
-    requiredLicence: "pharmacy",
-    path: "/pharmacy/stocks-view",
+    title: "Facturation et Paiement",
+    icon: <Coins size={20} />,
+    roles: ["reception"],
+    requiredLicence: "base_hospital",
+    subItems: [
+      { title: "Gestion Factures", path: "/reception/facturation" },
+      { title: "Paiements", path: "/reception/payments" },
+    ],
+  },
+
+  // ==========================================
+  // G. MENUS DOCTEUR
+  // ==========================================
+  {
+    title: "Tableau de bord",
+    icon: <Computer size={20} />,
+    roles: ["doctor"],
+    requiredLicence: "base_hospital",
+    path: "/doctor/home",
+  },
+  {
+    title: "Mon Planning",
+    icon: <Calendar size={20} />,
+    roles: ["doctor"],
+    requiredLicence: "base_hospital",
+    subItems: [
+      { title: "Agenda des RDV", path: "/doctor/appointments/calendar" },
+      { title: "Historique des RDV", path: "/historique_rdv" },
+    ],
+  },
+  {
+    title: "Mon Service",
+    icon: <BedDouble size={20} />,
+    roles: ["doctor"],
+    requiredLicence: "base_hospital",
+    subItems: [
+      { title: "Chambres & Lits", path: "/doctor/wards" },
+      { title: "Actes Médicaux", path: "/doctor/medical_act" },
+    ],
+  },
+
+  // ==========================================
+  // H. MENUS LABORATOIRE (SIL)
+  // ==========================================
+  {
+    title: "Laboratoires",
+    icon: <Database size={20} />,
+    roles: ["admin"],
+    requiredLicence: "laboratory",
+    subItems: [
+      { title: "Laboratoires", path: "/admin/laboratories" },
+      { title: "Personnels de Laboratoire", path: "/admin/lab-personnel" },
+    ],
+  },
+  {
+    title: "Mon Équipe",
+    icon: <Users size={20} />,
+    roles: ["laboratory"], // Manager du labo indépendant
+    requiredLicence: "laboratory",
+    labRoles: ["lab_manager"],
+    path: "/laboratory/personnel",
+  },
+  {
+    title: "Comptoir Labo",
+    icon: <Users size={20} />,
+    roles: ["admin", "laboratory"],
+    requiredLicence: "laboratory",
+    labRoles: ["lab_receptionist", "lab_manager"],
+    subItems: [
+      { title: "Dossiers Patients", path: "/laboratory/patients" },
+      { title: "Facturation", path: "/laboratory/invoices" },
+      { title: "Registre de Caisse", path: "/laboratory/payments" },
+    ],
+  },
+  {
+    title: "Configuration Labo",
+    icon: <Database size={20} />,
+    roles: ["admin", "laboratory"],
+    requiredLicence: "laboratory",
+    labRoles: ["lab_manager", "lab_biologist"],
+    subItems: [
+      { title: "Catégories", path: "/laboratory/catalogue/categories" },
+      { title: "Examens & Paramètres", path: "/laboratory/catalogue/tests" },
+    ],
+  },
+
+  {
+    title: "Prélèvements",
+    icon: <TestTubes size={20} />,
+    roles: ["laboratory"],
+    requiredLicence: "laboratory",
+    labRoles: ["lab_manager", "lab_technician", "lab_biologist"],
+    path: "/laboratory/sampling",
+  },
+  {
+    title: "Analyses & Résultats",
+    icon: <Microscope size={20} />,
+    roles: ["laboratory"],
+    requiredLicence: "laboratory",
+    labRoles: ["lab_manager", "lab_technician", "lab_biologist"],
+    subItems: [
+      { title: "Saisie des Résultats", path: "/laboratory/results" },
+      { title: "Validation Biologiste", path: "/laboratory/validation" },
+      { title: "Archives", path: "/laboratory/archives" },
+    ],
   },
 ];

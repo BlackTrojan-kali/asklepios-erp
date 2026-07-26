@@ -38,9 +38,56 @@ export const SubscriptionForm: React.FC<Props> = ({ payload, setPayload, licence
         setPayload({ ...payload, items: newItems });
     };
 
-    // Styles de base pour s'assurer que le menu passe au-dessus de la modale
-    const selectStyles = {
-        menuPortal: (base: any) => ({ ...base, zIndex: 9999 })
+    // --- STYLES PERSONNALISÉS (Insensible au Dark Mode + Superposition) ---
+    const customSelectStyles = {
+        control: (base: any, state: any) => ({
+            ...base,
+            backgroundColor: '#ffffff', // Fond toujours blanc
+            borderColor: state.isFocused ? '#00a896' : '#e5e7eb',
+            borderWidth: '1px',
+            borderRadius: '0.375rem',
+            boxShadow: 'none',
+            minHeight: '40px',
+            '&:hover': {
+                borderColor: state.isFocused ? '#00a896' : '#d1d5db',
+            },
+        }),
+        menu: (base: any) => ({
+            ...base,
+            backgroundColor: '#ffffff', // Fond du menu toujours blanc
+            border: '1px solid #e5e7eb',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        }),
+        menuPortal: (base: any) => ({
+            ...base,
+            zIndex: 9999, // Permet d'afficher au-dessus des modales
+        }),
+        option: (base: any, state: any) => ({
+            ...base,
+            backgroundColor: state.isSelected 
+                ? '#00a896' 
+                : state.isFocused 
+                    ? '#f0fdfa' 
+                    : '#ffffff',
+            color: state.isSelected ? '#ffffff' : '#0f172a',
+            cursor: 'pointer',
+            '&:active': {
+                backgroundColor: '#00a896',
+                color: '#ffffff',
+            }
+        }),
+        singleValue: (base: any) => ({
+            ...base,
+            color: '#0f172a', // Texte sélectionné toujours foncé
+        }),
+        input: (base: any) => ({
+            ...base,
+            color: '#0f172a', // Texte en cours de frappe toujours foncé
+        }),
+        placeholder: (base: any) => ({
+            ...base,
+            color: '#64748b', // Couleur du placeholder
+        }),
     };
 
     return (
@@ -57,9 +104,7 @@ export const SubscriptionForm: React.FC<Props> = ({ payload, setPayload, licence
                         placeholder="Rechercher un hôpital..."
                         isClearable
                         menuPortalTarget={document.body}
-                        styles={selectStyles}
-                        className="react-select-container"
-                        classNamePrefix="react-select"
+                        styles={customSelectStyles}
                     />
                 </div>
                 <div>
@@ -71,7 +116,7 @@ export const SubscriptionForm: React.FC<Props> = ({ payload, setPayload, licence
                         placeholder="Rechercher un pays..."
                         isClearable
                         menuPortalTarget={document.body}
-                        styles={selectStyles}
+                        styles={customSelectStyles}
                     />
                 </div>
             </div>
@@ -122,7 +167,7 @@ export const SubscriptionForm: React.FC<Props> = ({ payload, setPayload, licence
                                 placeholder="Rechercher une licence..."
                                 isClearable
                                 menuPortalTarget={document.body}
-                                styles={selectStyles}
+                                styles={customSelectStyles}
                             />
                         </div>
                         
@@ -131,7 +176,7 @@ export const SubscriptionForm: React.FC<Props> = ({ payload, setPayload, licence
                                 <input 
                                     type="number" 
                                     placeholder="Prix unitaire" 
-                                    className="w-full border border-gray-300 dark:border-gray-600 rounded p-2 text-sm outline-none focus:border-[#00a896] dark:bg-gray-800"
+                                    className="w-full border border-gray-300 dark:border-gray-600 rounded p-2 text-sm outline-none focus:border-[#00a896] dark:bg-gray-800 dark:text-white"
                                     value={item.unit_price || ''}
                                     onChange={(e) => updateItem(index, 'unit_price', Number(e.target.value))} 
                                     min="0"

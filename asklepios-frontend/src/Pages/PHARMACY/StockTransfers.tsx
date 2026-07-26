@@ -358,12 +358,12 @@ const StockTransfers = () => {
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-2 text-slate-800 dark:text-gray-200 font-semibold">
                             <MapPin size={14} className="text-red-500" />
-                            {transfer.sourcePharmacy?.name ||
+                            {transfer.source_pharmacy?.name ||
                               `Pharmacie #${transfer.source_pharmacy_id}`}
                           </div>
                           <div className="flex items-center gap-2 text-slate-800 dark:text-gray-200 font-semibold">
                             <MapPin size={14} className="text-emerald-500" />
-                            {transfer.destinationPharmacy?.name ||
+                            {transfer.destination_pharmacy?.name ||
                               `Pharmacie #${transfer.destination_pharmacy_id}`}
                           </div>
                         </div>
@@ -438,7 +438,7 @@ const StockTransfers = () => {
                                 onClick={() =>
                                   handleReceive(
                                     transfer.id,
-                                    transfer.sourcePharmacy?.name || "",
+                                    transfer.source_pharmacy?.name || "",
                                   )
                                 }
                                 className="flex items-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-900/40 rounded-lg text-xs font-bold transition-colors"

@@ -35,6 +35,7 @@ class User extends Authenticatable
         ];
     }
     
+    protected $with = ['profile_doctor.department'];
     public function role(){
         return $this->belongsTo(Role::class);
     }
@@ -55,5 +56,9 @@ class User extends Authenticatable
     }
     public function profile_reception(){
         return $this->hasOne(ProfileReception::class);
+    }
+    public function profileCeo()
+    {
+    return $this->hasOne(ProfileCeo::class);
     }
 }

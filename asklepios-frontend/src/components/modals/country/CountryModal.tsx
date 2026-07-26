@@ -9,11 +9,12 @@ import toast from 'react-hot-toast';
 interface CountryModalProps {
     isOpen: boolean;
     onClose: () => void;
+    isRefreshed:()=>void;
     // Si null = Création. Si fourni = Modification
     countryToEdit?: CountryDto | null; 
 }
 
-const CountryModal = ({ isOpen, onClose, countryToEdit }: CountryModalProps) => {
+const CountryModal = ({ isOpen, onClose, countryToEdit,isRefreshed }: CountryModalProps) => {
     // Import des fonctions de ton store
     const { createCountry, updateCountry } = useCountryStore();
 
@@ -66,7 +67,7 @@ const CountryModal = ({ isOpen, onClose, countryToEdit }: CountryModalProps) => 
         }
 
         setLoading(false);
-
+        isRefreshed();
         // Si tout s'est bien passé, on ferme la modale
         if (success) {
             onClose();

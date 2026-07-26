@@ -52,13 +52,17 @@ const Batches = () => {
     // États pour les modales
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [selectedBatch, setSelectedBatch] = useState<BatchDto | null>(null);
+    const [autoRefreshPage,setAutoRefreshPage] = useState<boolean>(false);
 
     // Chargement initial des données
     useEffect(() => {
         getBatches(1, {}); // Demande la page 1 par défaut
         getArticles({}); 
-    }, [getBatches, getArticles]);
+    }, [getBatches, getArticles,autoRefreshPage]);
 
+    const handleAutoRefresh = ()=>{
+        setAutoRefreshPage(!autoRefreshPage);
+    }
     // Soumission du formulaire de filtre
     const handleFilterSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -448,6 +452,7 @@ const Batches = () => {
                 isOpen={isCreateOpen} 
                 onClose={() => setIsCreateOpen(false)} 
                 articles={articles}
+                AutoRefreshPage={handleAutoRefresh}
             />
 
             <UpdateBatchModal 
@@ -455,6 +460,7 @@ const Batches = () => {
                 onClose={() => setSelectedBatch(null)} 
                 batch={selectedBatch}
                 articles={articles}
+                AutoRefreshPage={handleAutoRefresh}
             />
 
         </div>

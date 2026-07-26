@@ -15,7 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId("hospital_id")->constrained("hospitals")->onDelete("cascade");
             $table->foreignId("category_id")->constrained("article_categories")->onDelete("cascade");
-            $table->string("name");
+            $table->string("name");   
+            $table->float("default_selling_price")->default(0.0);          
             $table->string("barcode")->nullable();
             $table->float("global_min_qty")->default(0.0);
             $table->string("image_url")->nullable();

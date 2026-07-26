@@ -78,7 +78,7 @@ const useCountryStore = () => {
     const createCountry = async (payload: CountryDto) => {
         try {
             setLoading(true);
-            const res = await api.post("/countries", payload);
+            const res = await api.post("/supa/countries", payload);
             toast.success("Pays ajouté avec succès !");
             
             // Rafraîchir les listes après un ajout réussi
@@ -100,7 +100,7 @@ const useCountryStore = () => {
     const updateCountry = async (id: number, payload: CountryDto) => {
         try {
             setLoading(true);
-            const res = await api.put(`/countries/${id}`, payload);
+            const res = await api.put(`/supa/countries/${id}`, payload);
             toast.success("Pays mis à jour avec succès !");
             
             // Rafraîchir la liste courante pour voir les modifications

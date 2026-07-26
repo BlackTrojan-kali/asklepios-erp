@@ -8,8 +8,17 @@ class ProfileLab extends Model
 {
     //
     protected $guarded = [];
+    
+    protected $casts = [
+        'lab_roles' => 'array',
+    ];
+    
     public function user(){
         return $this->belongsTo(User::class,"user_id");
-}
+    }
+
+    public function laboratory() {
+        return $this->belongsTo(\App\Models\Laboratory\Laboratory::class, 'laboratory_id');
+    }
 
 }

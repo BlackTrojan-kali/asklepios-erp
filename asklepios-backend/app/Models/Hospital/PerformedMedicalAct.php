@@ -1,0 +1,47 @@
+<?php
+
+namespace App\Models\Hospital;
+
+use App\Models\Patient;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class PerformedMedicalAct extends Model
+{
+    use HasFactory;
+
+  protected $fillable = [
+        'patient_visit_id',
+        'admission_id', // 👉 IL MANQUAIT CECI !
+        'medical_act_catalog_id',
+        'equipment_id',
+        'applied_price',
+        'is_billed',
+        'invoice_id'
+    ];
+    protected $casts = [
+        'applied_price' => 'float',
+    ];
+
+    public function patientVisit(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Hospital\PatientVisit::class);
+    }
+
+    public function medicalActCatalog(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Hospital\MedicalActCatalog::class);
+    }
+
+    public function equipment(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Hospital\Equipment::class);
+    }
+    public function visit(){
+        return $this->belongsTo(PatientVisit::class,"patient_visit_id");
+    }
+    public function admission(){
+        return $this->belongsTo(Admission::class);
+    }
+}

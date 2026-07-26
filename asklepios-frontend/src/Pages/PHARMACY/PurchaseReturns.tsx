@@ -1,32 +1,44 @@
 import React, { useEffect, useState } from 'react';
 import { 
     Undo2, Plus, RefreshCw, Loader2, Edit, Trash2, 
-    XCircle, CheckSquare, Eye, AlertCircle
+    XCircle, CheckSquare, Eye, AlertCircle, Building2
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
-// Stores
+// --- Context & Stores ---
+import { useAuth } from '../../contexts/AuthContext';
 import usePurchaseStore from '../../functions/pharmacy/usePurchaseStore';
 import useProviderStore from '../../functions/pharmacy/useProviderStore'; 
-// Modales
+import usePharmacyStore from '../../functions/pharmacy/usePharmacyStore'; // 👉 Import du store des pharmacies
+
+// --- Modales ---
 import { PurchaseReturnModal } from '../../components/modals/Pharmacy/purchase_return/PurchaseReturnModal';
 import { ViewReturnModal } from '../../components/modals/Pharmacy/purchase_return/ViewReturnModal';
 import { ExportPurchaseModal } from '../../components/modals/Pharmacy/purchase/ExportPurchaseModal';
 
-// Types
+// --- Types ---
 import type { PurchaseReturnDto } from '../../types/PurchaseTypes';
 
 const PurchaseReturns = () => {
+    // Profil utilisateur
+    const { profile } = useAuth();
+    const isAdmin = ['admin', 'super_admin'].includes(profile?.role || '');
+
     // Stores
     const { 
         returns, returnsMeta, loading, actionLoading,
         getReturns, deleteReturn, cancelReturn, validateReturn 
     } = usePurchaseStore();
+    
     const { providers, getProviders } = useProviderStore();
+    
+    // 👉 Store pour charger les succursales (si Admin)
+    const { pharmacyBranches, getPharmacyBranches } = usePharmacyStore();
 
     // États de la page
     const [page, setPage] = useState(1);
-    const [filters, setFilters] = useState({ status: '', provider_id: '' });
+    // 👉 Ajout de pharmacy_branch_id dans les filtres
+    const [filters, setFilters] = useState({ status: '', provider_id: '', pharmacy_branch_id: '' });
     
     // États des modales
     const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -35,19 +47,27 @@ const PurchaseReturns = () => {
     // Retours sélectionnés pour action
     const [selectedReturnForEdit, setSelectedReturnForEdit] = useState<PurchaseReturnDto | null>(null);
     const [selectedReturnForView, setSelectedReturnForView] = useState<PurchaseReturnDto | null>(null);
+    const [autoRefreshPage,setAutoRefreshPage] = useState(false); 
 
     // Chargement initial
     useEffect(() => {
         getProviders({});
-    }, [getProviders]);
+        // Si l'utilisateur est admin, on charge la liste de toutes les succursales
+        if (isAdmin) {
+            getPharmacyBranches(1, {}, 100); 
+        }
+    }, [getProviders, getPharmacyBranches, isAdmin,autoRefreshPage]);
 
     useEffect(() => {
         getReturns({ ...filters, page });
-    }, [getReturns, filters, page]);
+    }, [getReturns, filters, page,autoRefreshPage]);
 
     const handleRefresh = () => {
         getReturns({ ...filters, page });
     };
+    const handleAutoRefresh= ()=>{
+        setAutoRefreshPage(!autoRefreshPage)
+    }
 
     // --- ACTIONS DIRECTES ---
 
@@ -169,8 +189,28 @@ const PurchaseReturns = () => {
             </div>
 
             {/* BARRE DE FILTRES */}
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row gap-4">
-                <div className="flex-1">
+            <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col md:flex-row gap-4">
+                
+                {/* 👉 NOUVEAU : Filtre par Succursale (Uniquement pour l'Admin) */}
+                {isAdmin && (
+                    <div className="flex-1 min-w-[200px]">
+                        <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
+                            <Building2 size={12} /> Succursale
+                        </label>
+                        <select 
+                            value={filters.pharmacy_branch_id}
+                            onChange={(e) => { setFilters({...filters, pharmacy_branch_id: e.target.value}); setPage(1); }}
+                            className="w-full bg-slate-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2 text-sm outline-none focus:border-red-400 dark:text-white"
+                        >
+                            <option value="">Toutes les succursales</option>
+                            {pharmacyBranches.map(branch => (
+                                <option key={branch.id} value={branch.id}>{branch.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
+
+                <div className="flex-1 min-w-[200px]">
                     <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Filtrer par Fournisseur</label>
                     <select 
                         value={filters.provider_id}
@@ -181,7 +221,8 @@ const PurchaseReturns = () => {
                         {providers.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                     </select>
                 </div>
-                <div className="flex-1">
+
+                <div className="flex-1 min-w-[200px]">
                     <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Filtrer par Statut</label>
                     <select 
                         value={filters.status}
@@ -204,6 +245,8 @@ const PurchaseReturns = () => {
                             <tr className="bg-slate-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
                                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">N° Retour & Date</th>
                                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fournisseur</th>
+                                {/* Affichage de la succursale si admin */}
+                                {isAdmin && <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Succursale</th>}
                                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Lié à Cmd</th>
                                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-center">Statut</th>
                                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Actions</th>
@@ -212,14 +255,14 @@ const PurchaseReturns = () => {
                         <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                             {loading ? (
                                 <tr>
-                                    <td colSpan={5} className="p-8 text-center">
+                                    <td colSpan={isAdmin ? 6 : 5} className="p-8 text-center">
                                         <Loader2 size={32} className="animate-spin text-red-500 mx-auto mb-2" />
                                         <p className="text-sm text-gray-500 dark:text-gray-400">Chargement des retours...</p>
                                     </td>
                                 </tr>
                             ) : returns.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="p-12 text-center">
+                                    <td colSpan={isAdmin ? 6 : 5} className="p-12 text-center">
                                         <p className="text-gray-500 dark:text-gray-400">Aucun retour trouvé.</p>
                                     </td>
                                 </tr>
@@ -237,6 +280,13 @@ const PurchaseReturns = () => {
                                         <td className="p-4 font-medium text-slate-700 dark:text-gray-300">
                                             {ret.provider?.name || 'Inconnu'}
                                         </td>
+
+                                        {/* Colonne Succursale (Admin uniquement) */}
+                                        {isAdmin && (
+                                            <td className="p-4 text-slate-600 dark:text-gray-400 text-xs font-medium">
+                                                {ret.sourcePharmacy?.name || 'N/A'}
+                                            </td>
+                                        )}
 
                                         <td className="p-4 text-slate-600 dark:text-gray-400">
                                             {ret.purchase_order_id ? (
@@ -361,6 +411,7 @@ const PurchaseReturns = () => {
                 purchaseReturn={selectedReturnForView}
             />
 
+            {/* Modale d'export globale pour les retours */}
             <ExportPurchaseModal
                 isOpen={isExportOpen}
                 onClose={() => setIsExportOpen(false)}

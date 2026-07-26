@@ -47,8 +47,8 @@ class StockController extends Controller
         $hospitalId = $this->getHospitalId();
         $perPage = $request->query('per_page', 15); // 15 éléments par défaut
 
-        // On charge les relations nécessaires pour l'affichage (Succursale, Lot, Article, Catégorie)
-        $query = Stock::with(['branch', 'batch.article.category'])
+        // On charge les relations nécessaires pour l'affichage (Succursale, Lot, Article, Catégorie, Emplacement)
+        $query = Stock::with(['branch', 'batch.article.category', 'storageLocation'])
             // On s'assure de ne prendre que les stocks des succursales de CET hôpital
             ->whereHas('branch', function ($q) use ($hospitalId) {
                 $q->where('hospital_id', $hospitalId);
@@ -110,8 +110,8 @@ class StockController extends Controller
         $branchId = $profile->branch_id;
         $perPage = $request->query('per_page', 15); // 15 éléments par défaut
 
-        // On charge le Lot, l'Article et la Catégorie
-        $query = Stock::with(['batch.article.category'])
+        // On charge le Lot, l'Article, la Catégorie et l'Emplacement de rangement
+        $query = Stock::with(['batch.article.category', 'storageLocation'])
             ->where('pharmacy_branch_id', $branchId);
 
         // FILTRES

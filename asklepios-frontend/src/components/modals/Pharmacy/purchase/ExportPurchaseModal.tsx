@@ -6,20 +6,27 @@ import {
     FileSpreadsheet, 
     Calendar, 
     Filter,
-    Download
+    Download,
+    Building2 // 👉 Nouvel icône importé
 } from 'lucide-react';
 
-// Stores
+// Stores & Context
+import { useAuth } from '../../../../contexts/AuthContext';
 import usePurchaseStore from '../../../../functions/pharmacy/usePurchaseStore';
 import useProviderStore from '../../../../functions/pharmacy/useProviderStore';
+import usePharmacyStore from '../../../../functions/pharmacy/usePharmacyStore'; // 👉 Import du store pharmacie
 
 interface Props {
     isOpen: boolean;
     onClose: () => void;
-    type: 'orders' | 'returns'; // Permet d'utiliser la même modale pour les deux !
+    type: 'orders' | 'returns'; 
 }
 
 export const ExportPurchaseModal: React.FC<Props> = ({ isOpen, onClose, type }) => {
+    // Rôle utilisateur
+    const { profile } = useAuth();
+    const isAdmin = ['admin', 'super_admin'].includes(profile?.role || '');
+
     // Hooks
     const { 
         exportOrdersPdf, exportOrdersExcel, 
@@ -27,29 +34,42 @@ export const ExportPurchaseModal: React.FC<Props> = ({ isOpen, onClose, type }) 
         actionLoading 
     } = usePurchaseStore();
     const { providers, getProviders } = useProviderStore();
+    const { pharmacyBranches, getPharmacyBranches } = usePharmacyStore(); // 👉 Store des succursales
 
     // États des filtres
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [providerId, setProviderId] = useState<number | ''>('');
     const [status, setStatus] = useState<string>('');
+    const [pharmacyBranchId, setPharmacyBranchId] = useState<number | ''>(''); // 👉 Nouvel état
 
-    // Chargement des fournisseurs à l'ouverture
+    // Chargement des données à l'ouverture
     useEffect(() => {
         if (isOpen) {
             getProviders({});
+            
+            // Si admin, on charge la liste des succursales
+            if (isAdmin) {
+                getPharmacyBranches(1, {}, 100);
+            }
+
             // Réinitialisation des filtres
             setStartDate('');
             setEndDate('');
             setProviderId('');
             setStatus('');
+            setPharmacyBranchId('');
         }
-    }, [isOpen, getProviders]);
+    }, [isOpen, getProviders, isAdmin, getPharmacyBranches]);
 
     // Options pour les Selects
     const providerOptions = useMemo(() => {
         return providers.map(p => ({ value: p.id, label: p.name }));
     }, [providers]);
+
+    const branchOptions = useMemo(() => {
+        return pharmacyBranches.map(b => ({ value: b.id, label: b.name }));
+    }, [pharmacyBranches]);
 
     const statusOptions = type === 'orders' 
         ? [
@@ -72,6 +92,7 @@ export const ExportPurchaseModal: React.FC<Props> = ({ isOpen, onClose, type }) 
         if (endDate) params.end_date = endDate;
         if (providerId) params.provider_id = providerId;
         if (status) params.status = status;
+        if (pharmacyBranchId) params.pharmacy_branch_id = pharmacyBranchId; // 👉 Ajout au payload
 
         if (type === 'orders') {
             if (format === 'pdf') await exportOrdersPdf(params);
@@ -87,7 +108,7 @@ export const ExportPurchaseModal: React.FC<Props> = ({ isOpen, onClose, type }) 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/60 dark:bg-black/80 flex items-center justify-center z-50 p-4 backdrop-blur-xs">
+        <div className="fixed inset-0 bg-black/60 dark:bg-black/80 flex items-center justify-center z-[70] p-4 backdrop-blur-sm animate-fadeIn">
             <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-lg flex flex-col shadow-2xl border border-transparent dark:border-gray-800 animate-in fade-in zoom-in-95 duration-150">
                 
                 {/* EN-TÊTE */}
@@ -144,6 +165,24 @@ export const ExportPurchaseModal: React.FC<Props> = ({ isOpen, onClose, type }) 
                             </div>
                         </div>
                     </div>
+
+                    {/* 👉 Succursale (Uniquement Admin) */}
+                    {isAdmin && (
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                <Building2 size={14} /> Filtrer par Succursale
+                            </label>
+                            <Select 
+                                options={branchOptions}
+                                value={branchOptions.find(opt => opt.value === pharmacyBranchId) || null}
+                                onChange={(selected) => setPharmacyBranchId(selected ? selected.value : '')}
+                                placeholder="Toutes les succursales..."
+                                isClearable
+                                className="text-sm react-select-container"
+                                classNamePrefix="react-select"
+                            />
+                        </div>
+                    )}
 
                     {/* Fournisseur */}
                     <div>

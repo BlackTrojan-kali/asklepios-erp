@@ -7,9 +7,10 @@ interface Props {
     isOpen: boolean;
     onClose: () => void;
     articles: ArticleDto[];
+    AutoRefreshPage: ()=>void;
 }
 
-export const CreateBatchModal: React.FC<Props> = ({ isOpen, onClose, articles }) => {
+export const CreateBatchModal: React.FC<Props> = ({ isOpen, onClose, articles,AutoRefreshPage }) => {
     const { createBatch, actionLoading } = useBatchStore();
     
     const [payload, setPayload] = useState<BatchPayload>({
@@ -25,6 +26,7 @@ export const CreateBatchModal: React.FC<Props> = ({ isOpen, onClose, articles })
         const success = await createBatch(payload);
         if (success) {
             setPayload({ article_id: '', batch_number: '', expire_date: '', purchase_price: '' });
+            AutoRefreshPage();
             onClose();
         }
     };

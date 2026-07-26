@@ -44,6 +44,7 @@ const StorageLocations = () => {
     } = useStockStore();
 
     // --- ÉTATS STANDARDS ---
+    const [autoRefreshPage,setAutoRefreshPage] = useState(false);
     const [unassignedSearch, setUnassignedSearch] = useState(''); // Recherche colonne gauche
     const [locationSearch, setLocationSearch] = useState('');     // Recherche colonne droite
     const [hideEmpty, setHideEmpty] = useState(false);
@@ -60,8 +61,11 @@ const StorageLocations = () => {
         getLocations({});
         // Chargement large pour permettre le drag & drop client-side
         getMyBranchStocks({ per_page: 3000 }); 
-    }, [getLocations, getMyBranchStocks]);
+    }, [getLocations, getMyBranchStocks,autoRefreshPage]);
 
+    const handleAutoRefresh = ()=>{
+        setAutoRefreshPage(!autoRefreshPage);
+    }
     const handleRefresh = () => {
         getLocations({});
         getMyBranchStocks({ per_page: 3000 });
@@ -437,8 +441,8 @@ const StorageLocations = () => {
             </div>
 
             {/* MODALES */}
-            <CreateLocationModal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} />
-            <UpdateLocationModal isOpen={!!selectedLocation} onClose={() => setSelectedLocation(null)} location={selectedLocation} />
+            <CreateLocationModal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} AutoRefreshPage={handleAutoRefresh} />
+            <UpdateLocationModal AutoRefreshPage={handleAutoRefresh} isOpen={!!selectedLocation} onClose={() => setSelectedLocation(null)} location={selectedLocation} />
             <AssignStockModal
                 isOpen={!!stockToAssign}
                 onClose={() => setStockToAssign(null)}

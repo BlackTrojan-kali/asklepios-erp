@@ -15,4 +15,15 @@ class Center extends Model
     public function hospital(){
         return $this->belongsTo(Hospital::class,"hospital_id");
     }
+    /**
+     * Obtenir les départements de ce centre
+     */
+    public function departments()
+    {
+        return $this->hasMany(Department::class);
+    }
+    
+    public function laboratories(){
+        return $this->hasMany(\App\Models\Laboratory\Laboratory::class);
+    }
 }

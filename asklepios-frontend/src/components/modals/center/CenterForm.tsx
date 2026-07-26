@@ -6,9 +6,10 @@ interface Props {
     payload: CenterPayload;
     setPayload: (p: CenterPayload) => void;
     countries: CountryDto[];
+    AutoRefreshPage: ()=> void;
 }
 
-export const CenterForm: React.FC<Props> = ({ payload, setPayload, countries }) => {
+export const CenterForm: React.FC<Props> = ({ payload, setPayload, countries,AutoRefreshPage }) => {
     
     // Formatage des options pour react-select
     const countryOptions = countries.map(c => ({ value: c.id!, label: c.name }));
