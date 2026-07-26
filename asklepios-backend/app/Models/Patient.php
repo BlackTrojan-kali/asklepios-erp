@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Hospital\Admission;
 use App\Models\Hospital\MedicalBackground;
 use App\Models\Hospital\PatientVisit;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -65,11 +66,18 @@ class Patient extends Model
 public function currentAdmission()
 {
     // Permet de récupérer rapidement l'hospitalisation en cours du patient
-    return $this->hasOne(\App\Models\Hospital\Admission::class)->where('status', 'ADMITTED');
+    return $this->hasOne(Admission::class)->where('status', 'ADMITTED');
 }
 
 public function labRequests()
 {
     return $this->hasMany(\App\Models\Laboratory\LabRequest::class);
 }
+/**
+     * Les couvertures d'assurance de ce patient
+     */
+    public function coverages()
+    {
+        return $this->hasMany(PatientCoverage::class);
+    }
 }

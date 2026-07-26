@@ -1,0 +1,228 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam nodesep 35
+skinparam ranksep 45
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+title Architecture Asklepios Master : Multi-Assurances, DPI & Morgue Complète
+ 
+' --- DEFINITION DES COULEURS PAR DOMAINE ---
+skinparam package {
+    BackgroundColor<<Identity>> #E3F2FD
+    BackgroundColor<<Infra>> #E8F5E9
+    BackgroundColor<<Workflow>> #FFF9C4
+    BackgroundColor<<Clinical>> #FCE4EC
+    BackgroundColor<<Billing>> #F3E5F5
+    BackgroundColor<<Insurance>> #D1C4E9
+    BackgroundColor<<Morgue>> #CFD8DC
+} 
+
+package "1. Core & Identité" <<Identity>> {
+    class tenant {
+        id: UnsignedBigInteger
+        name: String
+    }
+    class hospital_branch {
+        id: UnsignedBigInteger
+        tenant_id: UnsignedBigInteger
+        name: String
+        address: String
+        contact_phone: String
+    }
+    class patient {
+        id: UnsignedBigInteger
+        patient_code: String
+        first_name: String
+        last_name: String
+        gender: String ('M', 'F', 'OTHER')
+        birth_date: Date
+        contact_phone: String
+    }
+    class practitioner {
+        id: UnsignedBigInteger
+        specialty: String
+        default_consultation_price: float
+    }
+}
+
+package "2. Infrastructures & Lits" <<Infra>> {
+    class facility_room {
+        id: UnsignedBigInteger
+        hospital_branch_id: UnsignedBigInteger
+        name: String
+        type: String ('WAITING_ROOM', 'CONSULTATION', 'WARD')
+    }
+    class bed {
+        id: UnsignedBigInteger
+        facility_room_id: UnsignedBigInteger
+        bed_number: String
+        status: String ('AVAILABLE', 'OCCUPIED', 'CLEANING', 'MAINTENANCE')
+    }
+}
+
+package "3. Flux Réception" <<Workflow>> {
+    class patient_visit {
+        id: UnsignedBigInteger
+        patient_id: UnsignedBigInteger
+        hospital_branch_id: UnsignedBigInteger
+        arrival_time: Datetime
+        status: String ('IN_WAITING_ROOM', 'IN_CONSULTATION', 'COMPLETED')
+    }
+}
+
+package "4. Dossier Clinique & Séjours" <<Clinical>> {
+    class consultation {
+        id: UnsignedBigInteger
+        patient_visit_id: UnsignedBigInteger
+        clinical_data: JSON
+        consultation_price: float
+    }
+    class admission {
+        id: UnsignedBigInteger
+        patient_visit_id: UnsignedBigInteger
+        bed_id: UnsignedBigInteger
+        admission_date: Datetime
+        actual_discharge_date: Datetime_optional
+        status: String ('ADMITTED', 'DISCHARGED', 'DECEASED')
+    }
+}
+
+package "5. Moteur de Facturation & Ventilation" <<Billing>> {
+    class performed_medical_act {
+        id: UnsignedBigInteger
+        patient_visit_id: UnsignedBigInteger_optional
+        morgue_admission_id: UnsignedBigInteger_optional (Pour formolisation, lavage, etc.)
+        medical_act_catalog_id: UnsignedBigInteger
+        applied_price: float
+        performed_at: Datetime
+    }
+    class invoice {
+        id: UnsignedBigInteger
+        patient_id: UnsignedBigInteger_optional
+        hospital_branch_id: UnsignedBigInteger
+        total_amount: float
+        status: String ('UNPAID', 'PARTIALLY_PAID', 'PAID')
+        created_at: Datetime
+    }
+    class invoice_line {
+        id: UnsignedBigInteger
+        invoice_id: UnsignedBigInteger
+        reference_type: String (ex: consultation, admission, performed_act, morgue_admission)
+        reference_id: UnsignedBigInteger
+        description: String
+        unit_price: float
+        is_covered_by_insurance: Boolean (L'acte est-il éligible à la prise en charge ?)
+    }
+    class invoice_split {
+        id: UnsignedBigInteger
+        invoice_id: UnsignedBigInteger
+        guarantor_claim_id: UnsignedBigInteger_optional (Clé vitale pour lier au bordereau d'assurance)
+        payer_type: String ('PATIENT', 'INSURANCE')
+        patient_coverage_id: UnsignedBigInteger_optional (Null si payeur = Patient)
+        amount_to_pay: float
+        status: String ('UNPAID', 'PAID')
+    }
+    class payment {
+        id: UnsignedBigInteger
+        invoice_split_id: UnsignedBigInteger (Éteint une ligne précise)
+        amount: float
+        payment_method: String
+        payment_date: Datetime
+    }
+}
+
+package "6. Assurances & Tiers-Payant (Multi-Niveaux)" <<Insurance>> {
+    class insurance_company {
+        id: UnsignedBigInteger
+        tenant_id: UnsignedBigInteger
+        name: String (ex: Ascoma, Activa, CNPS)
+    }
+    class patient_coverage {
+        id: UnsignedBigInteger
+        patient_id: UnsignedBigInteger
+        insurance_company_id: UnsignedBigInteger
+        policy_number: String
+        coverage_rate: float (ex: 80 pour 80%)
+        coverage_scope: JSON_optional (ex: ['CONSULTATION', 'PHARMACY', 'LAB'])
+        priority_order: Integer (1 = Principale, 2 = Complémentaire)
+        is_active: Boolean
+    }
+    class guarantor_claim {
+        id: UnsignedBigInteger
+        hospital_branch_id: UnsignedBigInteger
+        insurance_company_id: UnsignedBigInteger
+        claim_reference: String (ex: BORD-ASCOMA-07-2026)
+        claim_month: Date
+        total_claimed_amount: float
+        status: String ('DRAFT', 'SUBMITTED', 'PAID', 'DISPUTED')
+        created_at: Datetime
+    }
+}
+
+package "7. Gestion de la Morgue" <<Morgue>> {
+    class morgue_locker {
+        id: UnsignedBigInteger
+        hospital_branch_id: UnsignedBigInteger
+        locker_number: String
+        daily_rate: float
+        status: String ('AVAILABLE', 'OCCUPIED', 'MAINTENANCE')
+    }
+    class morgue_admission {
+        id: UnsignedBigInteger
+        hospital_branch_id: UnsignedBigInteger
+        morgue_locker_id: UnsignedBigInteger
+        patient_id: UnsignedBigInteger_optional (Si décès interne dans un lit de l'hôpital)
+        external_deceased_name: String_optional (Si corps amené de l'extérieur)
+        depositor_name: String (Identité de la famille qui dépose)
+        depositor_phone: String
+        arrival_date: Datetime
+        release_date: Datetime_optional
+        released_to: String_optional (Personne effectuant la levée)
+        status: String ('ADMITTED', 'RELEASED')
+    }
+}
+
+' --- RELATIONS CORE & WORKFLOW ---
+tenant "1" *-- "*" hospital_branch
+hospital_branch "1" *-- "*" patient
+patient "1" *-- "*" patient_visit
+patient_visit "1" *-- "1" consultation
+patient_visit "1" *-- "*" admission
+
+' --- RELATIONS INFRA & LITS ---
+hospital_branch "1" *-- "*" facility_room
+facility_room "1" *-- "*" bed
+bed "1" <-- "*" admission
+
+' --- RELATIONS ASSURANCES EVOLUÉES ---
+tenant "1" *-- "*" insurance_company
+patient "1" *-- "*" patient_coverage
+insurance_company "1" *-- "*" patient_coverage
+insurance_company "1" *-- "*" guarantor_claim
+
+' --- RELATIONS VENTILATION FINANCIÈRE ---
+hospital_branch "1" *-- "*" invoice
+invoice "1" *-- "*" invoice_line
+invoice "1" *-- "1..*" invoice_split : est ventilée en >
+patient_coverage "1" <-- "*" invoice_split : cible _optional <
+guarantor_claim "1" *-- "*" invoice_split : rassemble les parts impayées >
+invoice_split "1" *-- "*" payment : est soldée par >
+
+' --- RELATIONS ACTES & FACTURATION POLYMORPHE ---
+patient_visit "1" *-- "*" performed_medical_act
+morgue_admission "1" *-- "*" performed_medical_act : reçoit soins mortuaires >
+
+consultation "1" .. "*" invoice_line
+admission "1" .. "*" invoice_line
+performed_medical_act "1" .. "*" invoice_line
+morgue_admission "1" .. "*" invoice_line : facturation conservation >
+
+' --- RELATIONS MORGUE ---
+hospital_branch "1" *-- "*" morgue_locker
+morgue_locker "1" <-- "*" morgue_admission
+patient "1" <-- "*" morgue_admission : concerne _optional <
+
+@enduml

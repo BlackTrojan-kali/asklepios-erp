@@ -11,11 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('profile_ceos', function (Blueprint $table) {
+        Schema::create('insurance_companies', function (Blueprint $table) {
             $table->id();
             $table->foreignId("hospital_id")->constrained("hospitals")->onDelete("cascade");
-            $table->foreignId("user_id")->constrained("users")->onDelete("cascade");
-            $table->enum("type",["ceo","dsi","daf"]);
+            $table->string("contact")->nullable();
+            $table->string("email")->nullable();
+            $table->string("name");
             $table->timestamps();
         });
     }
@@ -25,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('profile_ceos');
+        Schema::dropIfExists('insurance_companies');
     }
 };

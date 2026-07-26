@@ -20,7 +20,8 @@ class InvoicePdfService
             'performedMedicalActs.equipment', 
             'admissions.bed.facilityRoom.category',
             'labRequests.lines.test',
-            'payments.reception.user'
+            'payments.reception.user',
+            'splits' // 👉 NOUVEAU : Chargement de la relation pour le calcul du Tiers Payant
         ])->findOrFail($invoiceId);
 
         // Encodage Base64 du logo de l'Hôpital (En-tête)
@@ -44,7 +45,7 @@ class InvoicePdfService
         foreach ($invoice->admissions as $admission) {
             $startDate = \Carbon\Carbon::parse($admission->admission_date);
             
-            // 👉 CORRECTION : Si pas de date de sortie, on arrête le compteur à la date de la facture !
+            // Si pas de date de sortie, on arrête le compteur à la date de la facture !
             $endDate = $admission->actual_discharge_date 
                         ? \Carbon\Carbon::parse($admission->actual_discharge_date) 
                         : \Carbon\Carbon::parse($invoice->created_at); 
@@ -61,6 +62,7 @@ class InvoicePdfService
                 'period'      => $startDate->format('d/m/Y') . " au " . $endDate->format('d/m/Y')
             ];
         }
+        
         $data = [
             'invoice'             => $invoice,
             'patient'             => $invoice->patient,

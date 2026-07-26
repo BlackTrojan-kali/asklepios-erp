@@ -94,7 +94,7 @@ class PatientController extends Controller
             return response()->json($query->paginate($perPage), 200);
         }
 
-        $query = Patient::where('hospital_id', $hospitalId)->with(["medicalBackground"]);
+        $query = Patient::where('hospital_id', $hospitalId)->with(["medicalBackground","coverages"]);
         
         // Filtre de recherche (Code, Nom, Prénom, Téléphone)
         if ($request->filled('search')) {

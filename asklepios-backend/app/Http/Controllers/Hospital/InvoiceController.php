@@ -9,6 +9,7 @@ use App\Models\Hospital\Admission;
 use App\Models\Hospital\Consultation;
 use App\Models\Hospital\Invoice;
 use App\Models\Hospital\PerformedMedicalAct;
+use App\Models\PatientCoverage; // Pour le Tiers Payant
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
 use Exception;
@@ -38,11 +39,14 @@ class InvoiceController extends Controller
         if ($user->profile_doctor) return $user->profile_doctor->hospital_id;
         abort(403, "Profil non autorisé à accéder aux ressources financières.");
     }
+
     private function getCenterId()
     {
-        $user= Auth::user();
+        $user = Auth::user();
         if($user->profile_doctor) return $user->profile_doctor->center_id;
         if($user->profile_reception) return $user->profile_reception->center_id;
+        
+        return null; // Sécurité si c'est un admin global par exemple
     }
 
    #[OA\Get(
@@ -63,7 +67,7 @@ class InvoiceController extends Controller
         $user = auth()->user();
 
         // Sécurité de base : On reste confiné au périmètre de l'hôpital de l'utilisateur connecté
-        // 👉 AJOUT CRITIQUE : 'payments' est ajouté au with() pour optimiser les Accessors (total_paid, remaining_debt)
+        // Chargement des 'splits' pour calculer automatiquement part patient et assurance
         $query = Invoice::whereHas('patient', function($q) use ($hospitalId) {
             $q->where('hospital_id', $hospitalId);
         })->with([
@@ -71,9 +75,10 @@ class InvoiceController extends Controller
             'center',
             'payments.reception.user',
             'labRequests.profileDoctor.user',
-            'consultations.profileDoctor.user'
+            'consultations.profileDoctor.user',
+            'splits'
         ]);
-
+        
         // --- APPLICATION DES RESTRICTIONS DE RÔLES & FILTRES ---
 
         // 1. Si c'est la Réception : Restriction stricte au centre où elle travaille
@@ -107,9 +112,10 @@ class InvoiceController extends Controller
             }
         }
 
-        // 👉 NOUVEAU : Filtre par code patient (Recherche via la relation "patient")
+        // Filtre par code patient (Recherche via la relation "patient")
         if ($request->filled('patient_code')) {
             $query->whereHas('patient', function($q) use ($request) {
+                // On utilise LIKE pour permettre une recherche partielle
                 $q->where('patient_code', 'like', '%' . $request->patient_code . '%');
             });
         }
@@ -126,13 +132,10 @@ class InvoiceController extends Controller
         security: [["sanctum" => []]],
         tags: ["Facturation"]
     )]
-    
-    #[OA\Response(response: 200, description: "element récupéré avec succès")]
+    #[OA\Response(response: 200, description: "Élément récupéré avec succès")]
     public function show($id)
     {
         $hospitalId = $this->getHospitalId();
-        $centerId = $this->getCenterId();
-    
 
         // Récupération de la facture avec chargement complet de toutes ses composantes
         $invoice = Invoice::whereHas('patient', function($q) use ($hospitalId) {
@@ -146,6 +149,7 @@ class InvoiceController extends Controller
             'admissions.bed.facilityRoom.category',
             'labRequests.lines.test.category',
             'payments.reception.user' // Historique des encaissements sur cette facture
+            'splits.guarantorClaim' // Chargement des divisions (Tiers payant)
         ])->findOrFail($id);
 
         return response()->json($invoice, 200);
@@ -158,8 +162,7 @@ class InvoiceController extends Controller
         tags: ["Facturation"]
     )]
     #[OA\Parameter(name: "action", in: "query", required: false, description: "values: 'stream' (aperçu) ou 'download' (télécharger)", schema: new OA\Schema(type: "string"))]
-    
-    #[OA\Response(response: 200, description: "element récupéré avec succès")]
+    #[OA\Response(response: 200, description: "PDF généré avec succès")]
     public function downloadPdf(Request $request, $id)
     {
         $hospitalId = $this->getHospitalId();
@@ -177,16 +180,16 @@ class InvoiceController extends Controller
         return $this->invoicePdfService->generateInvoicePdf($invoice->id, $action);
     }
 
-#[OA\Get(
+    #[OA\Get(
         path: "/api/shared/patients/{patientId}/unbilled-preview",
         summary: "Prévisualiser les éléments non facturés d'un patient",
         security: [["sanctum" => []]],
         tags: ["Facturation"]
     )]
-    #[OA\Response(response: 200, description: "Eléments récupérés avec succès")]
+    #[OA\Response(response: 200, description: "Éléments récupérés avec succès")]
     public function previewUnbilledForPatient($patientId)
     {
-        // 1. Consultations non facturées (Visites externes OU Hospitalisations)
+        // 1. Consultations non facturées
         $consultationsCount = Consultation::where(function($query) use ($patientId) {
             $query->whereHas('patientVisit', function($subQ) use ($patientId) {
                 $subQ->where('patient_id', $patientId);
@@ -195,7 +198,7 @@ class InvoiceController extends Controller
             });
         })->where('is_billed', false)->whereNull('invoice_id')->count();
         
-        // 2. Actes médicaux non facturés (Visites externes OU Hospitalisations)
+        // 2. Actes médicaux non facturés
         $actsTotal = PerformedMedicalAct::where(function($query) use ($patientId) {
             $query->whereHas('patientVisit', function($subQ) use ($patientId) {
                 $subQ->where('patient_id', $patientId);
@@ -214,42 +217,70 @@ class InvoiceController extends Controller
         $admissionsTotal = 0;
         foreach ($admissions as $admission) {
             $room = $admission->bed->facilityRoom ?? null;
-            // On récupère le prix par nuitée
             $nightPrice = $room && $room->category ? $room->category->price_per_night : 0;
             
             $startDate = \Carbon\Carbon::parse($admission->admission_date);
             $endDate = $admission->actual_discharge_date ? \Carbon\Carbon::parse($admission->actual_discharge_date) : now();
             
-            // Calcul du nombre de nuits (Minimum 1 nuit facturée)
             $nights = max(1, $startDate->diffInDays($endDate));
-            
             $admissionsTotal += ($nightPrice * $nights);
         }
+
+        // Récupération des assurances actives pour informer la réception
+        $activeCoverages = PatientCoverage::with('insuranceCompany')
+            ->where('patient_id', $patientId)
+            ->where('is_active', true)
+            ->whereDate('valid_until', '>=', now())
+            ->orderBy('priority_order', 'asc')
+            ->get();
 
         return response()->json([
             'unbilled_consultations_count' => $consultationsCount,
             'unbilled_acts_total'          => $actsTotal,
             'unbilled_admissions_total'    => $admissionsTotal,
-            'total_without_consultation'   => $actsTotal + $admissionsTotal
+            'total_without_consultation'   => $actsTotal + $admissionsTotal,
+            'active_coverages'             => $activeCoverages
         ]);
     }
 
-    #[OA\Post(path: "/api/shared/patients/{patientId}/generate-invoice")]
-    
-    #[OA\Response(response: 201, description: "element crée avec succès")]
+    #[OA\Post(path: "/api/shared/patients/{patientId}/generate-invoice", summary: "Générer une facture globale pour un patient")]
+    #[OA\Response(response: 201, description: "Facture générée avec succès")]
     public function generateForPatient(Request $request, $patientId)
-    
     {
-        
         $request->validate(['consultation_price' => 'nullable|numeric|min:0']);
         $price = $request->input('consultation_price', 0);
         $centerId = $this->getCenterId();
 
-
         try {
-            $invoice = $this->invoiceService->generateInvoiceForPatient($patientId, $price,$centerId);
+            $invoice = $this->invoiceService->generateInvoiceForPatient($patientId, $price, $centerId);
+            
+            // On recharge la facture fraîchement créée avec ses relations (dont les divisions de paiement)
+            $invoice->load(['splits', 'patient']);
+
             return response()->json([
                 'message' => 'Facture générée avec succès.',
+                'data'    => $invoice
+            ], 201);
+        } catch (Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+    }
+
+    #[OA\Post(path: "/api/shared/visits/{visitId}/generate-invoice", summary: "Générer une facture pour une visite spécifique")]
+    #[OA\Response(response: 201, description: "Facture générée avec succès")]
+    public function generateForVisit(Request $request, $visitId)
+    {
+        $request->validate(['consultation_price' => 'nullable|numeric|min:0']);
+        $price = $request->input('consultation_price', 0);
+
+        try {
+            $invoice = $this->invoiceService->generateInvoiceForVisit($visitId, $price);
+            
+            // On recharge la facture fraîchement créée avec ses relations (dont les divisions de paiement)
+            $invoice->load(['splits', 'patient']);
+
+            return response()->json([
+                'message' => 'Facture de visite générée avec succès.',
                 'data'    => $invoice
             ], 201);
         } catch (Exception $e) {

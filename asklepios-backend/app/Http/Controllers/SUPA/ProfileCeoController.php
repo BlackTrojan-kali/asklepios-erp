@@ -10,40 +10,41 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use OpenApi\Attributes as OA;
 
-/**
- * @OA\Tag(
- *     name="SuperAdmin - Direction (CEO/DSI/DAF)",
- *     description="Gestion des profils directeurs des hôpitaux par le Super Admin"
- * )
- */
+#[OA\Tag(
+    name: "SuperAdmin - Direction (CEO/DSI/DAF)", 
+    description: "Gestion des profils directeurs des hôpitaux par le Super Admin"
+)]
 class ProfileCeoController extends Controller
 {
-    /**
-     * @OA\Get(
-     *     path="/api/superadmin/ceos",
-     *     operationId="getSuperAdminCeos",
-     *     tags={"SuperAdmin - Direction (CEO/DSI/DAF)"},
-     *     summary="Liste tous les profils (CEO, DSI, DAF)",
-     *     description="Récupère la liste complète des profils de direction avec les informations de l'utilisateur et de l'hôpital associés.",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Response(
-     *         response=200,
-     *         description="Liste récupérée avec succès",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="status", type="string", example="success"),
-     *             @OA\Property(property="data", type="array", @OA\Items(
-     *                 @OA\Property(property="id", type="integer", example=1),
-     *                 @OA\Property(property="user_id", type="integer", example=5),
-     *                 @OA\Property(property="hospital_id", type="integer", example=2),
-     *                 @OA\Property(property="type", type="string", example="ceo"),
-     *                 @OA\Property(property="user", type="object"),
-     *                 @OA\Property(property="hospital", type="object")
-     *             ))
-     *         )
-     *     )
-     * )
-     */
+    #[OA\Get(
+        path: "/api/superadmin/ceos",
+        operationId: "getSuperAdminCeos",
+        summary: "Liste tous les profils (CEO, DSI, DAF)",
+        description: "Récupère la liste complète des profils de direction avec les informations de l'utilisateur et de l'hôpital associés.",
+        tags: ["SuperAdmin - Direction (CEO/DSI/DAF)"],
+        security: [["bearerAuth" => []]]
+    )]
+    #[OA\Response(
+        response: 200,
+        description: "Liste récupérée avec succès",
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: "status", type: "string", example: "success"),
+                new OA\Property(property: "data", type: "array", items: new OA\Items(
+                    properties: [
+                        new OA\Property(property: "id", type: "integer", example: 1),
+                        new OA\Property(property: "user_id", type: "integer", example: 5),
+                        new OA\Property(property: "hospital_id", type: "integer", example: 2),
+                        new OA\Property(property: "type", type: "string", example: "ceo"),
+                        new OA\Property(property: "user", type: "object"),
+                        new OA\Property(property: "hospital", type: "object")
+                    ]
+                ))
+            ]
+        )
+    )]
     public function index()
     {
         // On charge la relation user et hospital pour éviter le problème N+1
@@ -55,55 +56,61 @@ class ProfileCeoController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/superadmin/ceos",
-     *     operationId="storeSuperAdminCeo",
-     *     tags={"SuperAdmin - Direction (CEO/DSI/DAF)"},
-     *     summary="Créer un nouveau profil (CEO, DSI, DAF)",
-     *     description="Crée un nouvel utilisateur et l'associe automatiquement à un profil de direction pour un hôpital donné.",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"first_name", "phone", "email", "password", "hospital_id", "type"},
-     *             @OA\Property(property="first_name", type="string", example="Jean", description="Prénom"),
-     *             @OA\Property(property="last_name", type="string", example="Dupont", description="Nom de famille"),
-     *             @OA\Property(property="phone", type="integer", example=690000000, description="Numéro de téléphone"),
-     *             @OA\Property(property="email", type="string", format="email", example="directeur@hopital.com"),
-     *             @OA\Property(property="password", type="string", format="password", example="MotDePasseSecurise123", description="Minimum 8 caractères"),
-     *             @OA\Property(property="hospital_id", type="integer", example=1, description="ID de l'hôpital existant"),
-     *             @OA\Property(property="type", type="string", enum={"ceo", "dsi", "daf"}, example="ceo", description="Rôle dans la direction")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="Profil créé avec succès",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="status", type="string", example="success"),
-     *             @OA\Property(property="message", type="string", example="Profil créé avec succès."),
-     *             @OA\Property(property="data", type="object")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=422,
-     *         description="Erreur de validation des données",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
-     *             @OA\Property(property="errors", type="object")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=500,
-     *         description="Erreur interne du serveur",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="status", type="string", example="error"),
-     *             @OA\Property(property="message", type="string", example="Erreur lors de la création."),
-     *             @OA\Property(property="error", type="string")
-     *         )
-     *     )
-     * )
-     */
+    #[OA\Post(
+        path: "/api/superadmin/ceos",
+        operationId: "storeSuperAdminCeo",
+        summary: "Créer un nouveau profil (CEO, DSI, DAF)",
+        description: "Crée un nouvel utilisateur et l'associe automatiquement à un profil de direction pour un hôpital donné.",
+        tags: ["SuperAdmin - Direction (CEO/DSI/DAF)"],
+        security: [["bearerAuth" => []]]
+    )]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ["first_name", "phone", "email", "password", "hospital_id", "type"],
+            properties: [
+                new OA\Property(property: "first_name", type: "string", description: "Prénom", example: "Jean"),
+                new OA\Property(property: "last_name", type: "string", description: "Nom de famille", example: "Dupont"),
+                new OA\Property(property: "phone", type: "integer", description: "Numéro de téléphone", example: 690000000),
+                new OA\Property(property: "email", type: "string", format: "email", example: "directeur@hopital.com"),
+                new OA\Property(property: "password", type: "string", format: "password", description: "Minimum 8 caractères", example: "MotDePasseSecurise123"),
+                new OA\Property(property: "hospital_id", type: "integer", description: "ID de l'hôpital existant", example: 1),
+                new OA\Property(property: "type", type: "string", description: "Rôle dans la direction", enum: ["ceo", "dsi", "daf"], example: "ceo")
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 201,
+        description: "Profil créé avec succès",
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: "status", type: "string", example: "success"),
+                new OA\Property(property: "message", type: "string", example: "Profil créé avec succès."),
+                new OA\Property(property: "data", type: "object")
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 422,
+        description: "Erreur de validation des données",
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: "message", type: "string", example: "The given data was invalid."),
+                new OA\Property(property: "errors", type: "object")
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 500,
+        description: "Erreur interne du serveur",
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: "status", type: "string", example: "error"),
+                new OA\Property(property: "message", type: "string", example: "Erreur lors de la création."),
+                new OA\Property(property: "error", type: "string")
+            ]
+        )
+    )]
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -119,7 +126,7 @@ class ProfileCeoController extends Controller
         $roleCeo = Role::where("name","ceo")->first();
         try {
             DB::beginTransaction();
- 
+
             // 1. Création de l'utilisateur de base
             $user = User::create([
                 'first_name' => $validated['first_name'],
@@ -155,63 +162,69 @@ class ProfileCeoController extends Controller
         }
     }
 
-    /**
-     * @OA\Put(
-     *     path="/api/superadmin/ceos/{id}",
-     *     operationId="updateSuperAdminCeo",
-     *     tags={"SuperAdmin - Direction (CEO/DSI/DAF)"},
-     *     summary="Mettre à jour un profil existant",
-     *     description="Met à jour les informations de l'utilisateur et/ou du profil CEO/DSI/DAF.",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         description="ID du profil (ProfileCeo)",
-     *         @OA\Schema(type="integer", example=1)
-     *     ),
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             @OA\Property(property="first_name", type="string", example="Jean-Marc"),
-     *             @OA\Property(property="last_name", type="string", example="Dupont"),
-     *             @OA\Property(property="phone", type="integer", example=690000001),
-     *             @OA\Property(property="email", type="string", format="email", example="jm.dupont@hopital.com"),
-     *             @OA\Property(property="password", type="string", format="password", description="Laisser vide pour ne pas modifier"),
-     *             @OA\Property(property="hospital_id", type="integer", example=1),
-     *             @OA\Property(property="type", type="string", enum={"ceo", "dsi", "daf"}, example="dsi")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Profil mis à jour avec succès",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="status", type="string", example="success"),
-     *             @OA\Property(property="message", type="string", example="Profil mis à jour avec succès."),
-     *             @OA\Property(property="data", type="object")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=404,
-     *         description="Profil introuvable",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="No query results for model [App\\Models\\ProfileCeo].")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=422,
-     *         description="Erreur de validation",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="The email has already been taken."),
-     *             @OA\Property(property="errors", type="object")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=500,
-     *         description="Erreur interne du serveur"
-     *     )
-     * )
-     */
+    #[OA\Put(
+        path: "/api/superadmin/ceos/{id}",
+        operationId: "updateSuperAdminCeo",
+        summary: "Mettre à jour un profil existant",
+        description: "Met à jour les informations de l'utilisateur et/ou du profil CEO/DSI/DAF.",
+        tags: ["SuperAdmin - Direction (CEO/DSI/DAF)"],
+        security: [["bearerAuth" => []]]
+    )]
+    #[OA\Parameter(
+        name: "id",
+        in: "path",
+        required: true,
+        description: "ID du profil (ProfileCeo)",
+        schema: new OA\Schema(type: "integer", example: 1)
+    )]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: "first_name", type: "string", example: "Jean-Marc"),
+                new OA\Property(property: "last_name", type: "string", example: "Dupont"),
+                new OA\Property(property: "phone", type: "integer", example: 690000001),
+                new OA\Property(property: "email", type: "string", format: "email", example: "jm.dupont@hopital.com"),
+                new OA\Property(property: "password", type: "string", format: "password", description: "Laisser vide pour ne pas modifier"),
+                new OA\Property(property: "hospital_id", type: "integer", example: 1),
+                new OA\Property(property: "type", type: "string", enum: ["ceo", "dsi", "daf"], example: "dsi")
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: "Profil mis à jour avec succès",
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: "status", type: "string", example: "success"),
+                new OA\Property(property: "message", type: "string", example: "Profil mis à jour avec succès."),
+                new OA\Property(property: "data", type: "object")
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 404,
+        description: "Profil introuvable",
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: "message", type: "string", example: "No query results for model [App\\Models\\ProfileCeo].")
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 422,
+        description: "Erreur de validation",
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: "message", type: "string", example: "The email has already been taken."),
+                new OA\Property(property: "errors", type: "object")
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 500,
+        description: "Erreur interne du serveur"
+    )]
     public function update(Request $request, $id)
     {
         $profile = ProfileCeo::findOrFail($id);
@@ -264,44 +277,43 @@ class ProfileCeoController extends Controller
         }
     }
 
-    /**
-     * @OA\Delete(
-     *     path="/api/superadmin/ceos/{id}",
-     *     operationId="destroySuperAdminCeo",
-     *     tags={"SuperAdmin - Direction (CEO/DSI/DAF)"},
-     *     summary="Supprimer un profil",
-     *     description="Supprime définitivement le profil directeur ainsi que le compte utilisateur associé.",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         description="ID du profil à supprimer",
-     *         @OA\Schema(type="integer", example=1)
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Suppression réussie",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="status", type="string", example="success"),
-     *             @OA\Property(property="message", type="string", example="Profil et compte utilisateur supprimés avec succès.")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=404,
-     *         description="Profil introuvable"
-     *     ),
-     *     @OA\Response(
-     *         response=500,
-     *         description="Erreur interne du serveur",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="status", type="string", example="error"),
-     *             @OA\Property(property="message", type="string", example="Erreur lors de la suppression."),
-     *             @OA\Property(property="error", type="string")
-     *         )
-     *     )
-     * )
-     */
+    #[OA\Delete(
+        path: "/api/superadmin/ceos/{id}",
+        operationId: "destroySuperAdminCeo",
+        summary: "Supprimer un profil",
+        description: "Supprime définitivement le profil directeur ainsi que le compte utilisateur associé.",
+        tags: ["SuperAdmin - Direction (CEO/DSI/DAF)"],
+        security: [["bearerAuth" => []]]
+    )]
+    #[OA\Parameter(
+        name: "id",
+        in: "path",
+        required: true,
+        description: "ID du profil à supprimer",
+        schema: new OA\Schema(type: "integer", example: 1)
+    )]
+    #[OA\Response(
+        response: 200,
+        description: "Suppression réussie",
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: "status", type: "string", example: "success"),
+                new OA\Property(property: "message", type: "string", example: "Profil et compte utilisateur supprimés avec succès.")
+            ]
+        )
+    )]
+    #[OA\Response(response: 404, description: "Profil introuvable")]
+    #[OA\Response(
+        response: 500,
+        description: "Erreur interne du serveur",
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: "status", type: "string", example: "error"),
+                new OA\Property(property: "message", type: "string", example: "Erreur lors de la suppression."),
+                new OA\Property(property: "error", type: "string")
+            ]
+        )
+    )]
     public function destroy($id)
     {
         try {
