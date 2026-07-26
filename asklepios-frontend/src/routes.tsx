@@ -121,6 +121,7 @@ import LabInvoices from "./Pages/Laboratory/Billing/LabInvoices";
 import LabPayments from "./Pages/Laboratory/Billing/LabPayments";
 import CeoManagement from "./Pages/SUPA/ceo/CeoManagement";
 import CashMovementHistory from "./Pages/PHARMACY/CashMovementHistory";
+import CeoManagement from "./Pages/SUPA/ceo/CeoManagement";
 
 // ============================================================================
 // CONFIGURATION DES ROUTES
