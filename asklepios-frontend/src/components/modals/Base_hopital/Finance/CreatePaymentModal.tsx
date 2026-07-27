@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, CreditCard, DollarSign, Loader2, AlertCircle, Wallet } from 'lucide-react';
+import { X, CreditCard, DollarSign, Loader2, AlertCircle, Wallet, ShieldCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import usePaymentStore from '../../../../functions/base_hospital/usePaymentStore';
 import { PaymentMethod } from '../../../../types/PaymentTypes';
@@ -18,13 +18,23 @@ export const CreatePaymentModal: React.FC<CreatePaymentModalProps> = ({ isOpen, 
     const [amount, setAmount] = useState<number | ''>('');
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.CASH);
 
-    // Calcul du reste à payer pour pré-remplir le champ
-    const totalPaid = invoice?.payments?.reduce((acc, curr) => acc + curr.amount, 0) || 0;
-    const remainingAmount = Math.max(0, (invoice?.total_amount || 0) - totalPaid);
+    // 👉 NOUVEAU : On isole les parts (Splits) de la facture
+    const patientSplit = (invoice as any)?.splits?.find((s: any) => s.type === 'PATIENT');
+    const insuranceSplit = (invoice as any)?.splits?.find((s: any) => s.type === 'INSURANCE');
+
+    // Le total dû par le patient (s'il n'y a pas de split, on prend le total de la facture)
+    const patientPartAmount = patientSplit ? Number(patientSplit.amount_to_pay) : Number(invoice?.total_amount || 0);
+
+    // L'argent déjà versé par le patient UNIQUEMENT
+    const patientPaid = invoice?.payments
+        ?.filter(p => !p.invoice_split_id || (patientSplit && p.invoice_split_id === patientSplit.id))
+        .reduce((acc, curr) => acc + Number(curr.amount), 0) || 0;
+
+    // Le vrai reste à payer de la poche du patient
+    const remainingAmount = Math.max(0, patientPartAmount - patientPaid);
 
     useEffect(() => {
         if (isOpen && invoice) {
-            // Si un montant initial spécifique est fourni (ex: sélection partielle d'examens), on l'utilise
             const defaultAmt = initialAmount !== undefined ? Math.min(initialAmount, remainingAmount) : remainingAmount;
             setAmount(defaultAmt);
             setPaymentMethod(PaymentMethod.CASH);
@@ -41,11 +51,12 @@ export const CreatePaymentModal: React.FC<CreatePaymentModalProps> = ({ isOpen, 
         }
 
         if (Number(amount) > remainingAmount) {
-            return toast.error("Le montant saisi est supérieur au reste à payer.");
+            return toast.error("Le montant saisi est supérieur au reste à payer du patient.");
         }
 
         const result = await createPayment({
             invoice_id: invoice.id,
+            invoice_split_id: patientSplit?.id, // 👉 On lie explicitement le paiement à la part patient
             amount: Number(amount),
             payment_method: paymentMethod
         });
@@ -53,6 +64,8 @@ export const CreatePaymentModal: React.FC<CreatePaymentModalProps> = ({ isOpen, 
         if (result) {
             if (result.invoice_status === 'PAID') {
                 toast.success("Facture entièrement soldée !");
+            } else {
+                toast.success("Paiement enregistré. La facture reste non soldée (Part assurance ou paiement partiel en attente).", { duration: 4000 });
             }
             onClose();
         }
@@ -69,7 +82,7 @@ export const CreatePaymentModal: React.FC<CreatePaymentModalProps> = ({ isOpen, 
                             <Wallet size={20} />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold">Encaisser un paiement</h2>
+                            <h2 className="text-lg font-bold">Encaisser le patient</h2>
                             <p className="text-xs text-emerald-100">Facture INV-{String(invoice.id).padStart(5, '0')}</p>
                         </div>
                     </div>
@@ -81,17 +94,32 @@ export const CreatePaymentModal: React.FC<CreatePaymentModalProps> = ({ isOpen, 
                 {/* CORPS DU FORMULAIRE */}
                 <form onSubmit={handleSubmit} className="p-6 space-y-6">
                     
-                    {/* RÉCAPITULATIF */}
-                    <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
-                        <div className="flex justify-between text-sm mb-1">
-                            <span className="text-gray-500">Total Facture :</span>
-                            <span className="font-bold dark:text-white">{Number(invoice.total_amount).toLocaleString()} FCFA</span>
+                    {/* RÉCAPITULATIF FINANCIER INTELLIGENT */}
+                    <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 space-y-2">
+                        
+                        <div className="flex justify-between text-xs text-gray-400 pb-2 border-b border-gray-200 dark:border-gray-700">
+                            <span>Total Brut (Avant Assurance) :</span>
+                            <span>{Number(invoice.total_amount).toLocaleString()} FCFA</span>
                         </div>
-                        <div className="flex justify-between text-sm mb-2 pb-2 border-b border-gray-200 dark:border-gray-700">
-                            <span className="text-gray-500">Déjà versé :</span>
-                            <span className="font-bold text-emerald-600">{totalPaid.toLocaleString()} FCFA</span>
+
+                        {insuranceSplit && (
+                            <div className="flex justify-between text-sm text-blue-600 dark:text-blue-400 font-medium pb-2 border-b border-gray-200 dark:border-gray-700">
+                                <span className="flex items-center gap-1.5"><ShieldCheck size={16} /> Couverture Assurance :</span>
+                                <span>- {Number(insuranceSplit.amount_to_pay).toLocaleString()} FCFA</span>
+                            </div>
+                        )}
+
+                        <div className="flex justify-between text-sm pt-1">
+                            <span className="text-gray-600 dark:text-gray-300 font-bold">Part Patient :</span>
+                            <span className="font-bold dark:text-white">{patientPartAmount.toLocaleString()} FCFA</span>
                         </div>
-                        <div className="flex justify-between items-center">
+
+                        <div className="flex justify-between text-sm pb-2 border-b border-gray-200 dark:border-gray-700">
+                            <span className="text-gray-500">Déjà versé (Patient) :</span>
+                            <span className="font-bold text-emerald-600">{patientPaid.toLocaleString()} FCFA</span>
+                        </div>
+                        
+                        <div className="flex justify-between items-center pt-1">
                             <span className="font-bold text-red-500">Reste à payer :</span>
                             <span className="font-mono text-xl font-bold text-red-500">{remainingAmount.toLocaleString()} FCFA</span>
                         </div>
@@ -133,7 +161,7 @@ export const CreatePaymentModal: React.FC<CreatePaymentModalProps> = ({ isOpen, 
                                 <option value={PaymentMethod.MOBILE_MONEY}>Mobile Money (Orange/MTN)</option>
                                 <option value={PaymentMethod.CARD}>Carte Bancaire</option>
                                 <option value={PaymentMethod.BANK_TRANSFER}>Virement Bancaire</option>
-                                <option value={PaymentMethod.INSURANCE}>Prise en charge Assurance</option>
+                                {/* 👉 On désactive l'option "Assurance" ici car l'assurance est gérée via les bordereaux */}
                             </select>
                         </div>
                     </div>
@@ -141,7 +169,7 @@ export const CreatePaymentModal: React.FC<CreatePaymentModalProps> = ({ isOpen, 
                     {amount !== '' && Number(amount) < remainingAmount && (
                         <div className="flex items-start gap-2 p-3 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 text-xs rounded-lg border border-orange-200 dark:border-orange-800/50">
                             <AlertCircle size={16} className="shrink-0 mt-0.5" />
-                            <p><strong>Paiement partiel :</strong> La facture restera au statut "NON SOLDE" après ce versement.</p>
+                            <p><strong>Paiement partiel :</strong> La part patient restera non soldée après ce versement.</p>
                         </div>
                     )}
 

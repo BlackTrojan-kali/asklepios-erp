@@ -19,7 +19,7 @@ export const UpdatePaymentModal: React.FC<UpdatePaymentModalProps> = ({ isOpen, 
 
     useEffect(() => {
         if (isOpen && payment) {
-            setAmount(payment.amount);
+            setAmount(Number(payment.amount));
             setPaymentMethod(payment.payment_method);
         }
     }, [isOpen, payment]);
@@ -67,7 +67,7 @@ export const UpdatePaymentModal: React.FC<UpdatePaymentModalProps> = ({ isOpen, 
                 <form onSubmit={handleSubmit} className="p-6 space-y-5">
                     
                     <div className="p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300 text-xs rounded-lg border border-blue-100 dark:border-blue-800">
-                        Vous modifiez l'historique financier. Le statut de la facture sera automatiquement recalculé après cette modification.
+                        Vous modifiez l'historique financier. Le statut du Tiers Payant et de la facture sera automatiquement recalculé après cette modification.
                     </div>
 
                     {/* MONTANT CORRIGÉ */}
@@ -105,7 +105,6 @@ export const UpdatePaymentModal: React.FC<UpdatePaymentModalProps> = ({ isOpen, 
                                 <option value={PaymentMethod.MOBILE_MONEY}>Mobile Money (Orange/MTN)</option>
                                 <option value={PaymentMethod.CARD}>Carte Bancaire</option>
                                 <option value={PaymentMethod.BANK_TRANSFER}>Virement Bancaire</option>
-                                <option value={PaymentMethod.INSURANCE}>Prise en charge Assurance</option>
                             </select>
                         </div>
                     </div>

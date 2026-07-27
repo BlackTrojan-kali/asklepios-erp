@@ -61,19 +61,14 @@ const Invoices = () => {
   const [perPage, setPerPage] = useState(15);
   const [statusFilter, setStatusFilter] = useState<string>(""); // '', 'PAID', 'UNPAID'
   const [typeFilter, setTypeFilter] = useState<string>(""); // '', 'CONSULTATION', 'LABORATORY'
-  const [selectedCenter, setSelectedCenter] = useState<SelectOption | null>(
-    null,
-  );
+  const [selectedCenter, setSelectedCenter] = useState<SelectOption | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   // --- ÉTATS DES MODALES ---
-  const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(
-    null,
-  );
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(null);
   const [isGenerateModalOpen, setIsGenerateModalOpen] = useState(false);
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
-  const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] =
-    useState<InvoiceDto | null>(null);
+  const [selectedInvoiceForPayment, setSelectedInvoiceForPayment] = useState<InvoiceDto | null>(null);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isLabExamModalOpen, setIsLabExamModalOpen] = useState(false);
 
@@ -91,9 +86,7 @@ const Invoices = () => {
       {
         status: statusFilter || undefined,
         type: typeFilter || undefined,
-        center_id: selectedCenter?.value
-          ? Number(selectedCenter.value)
-          : undefined,
+        center_id: selectedCenter?.value ? Number(selectedCenter.value) : undefined,
         patient_code: searchQuery || undefined,
       },
       perPage,
@@ -116,9 +109,7 @@ const Invoices = () => {
       1,
       {
         status: statusFilter || undefined,
-        center_id: selectedCenter?.value
-          ? Number(selectedCenter.value)
-          : undefined,
+        center_id: selectedCenter?.value ? Number(selectedCenter.value) : undefined,
         patient_code: searchQuery || undefined,
       },
       perPage,
@@ -132,9 +123,7 @@ const Invoices = () => {
       1,
       {
         status: statusFilter || undefined,
-        center_id: selectedCenter?.value
-          ? Number(selectedCenter.value)
-          : undefined,
+        center_id: selectedCenter?.value ? Number(selectedCenter.value) : undefined,
         patient_code: undefined,
       },
       perPage,
@@ -163,8 +152,7 @@ const Invoices = () => {
     if (doctor) {
       return `Dr. ${doctor.first_name} ${doctor.last_name || ""}`;
     }
-    const extPrescriber = (inv as any).lab_requests?.[0]
-      ?.external_prescriber_name;
+    const extPrescriber = (inv as any).lab_requests?.[0]?.external_prescriber_name;
     if (extPrescriber) {
       return extPrescriber;
     }
@@ -418,7 +406,6 @@ const Invoices = () => {
                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Émis / Facturé par
                 </th>
-                {/* 👉 MODIFICATION : Focus sur la part patient */}
                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">
                   Montant (Patient)
                 </th>
@@ -460,19 +447,20 @@ const Invoices = () => {
                 </tr>
               ) : (
                 invoices.map((inv) => {
-                  // 👉 NOUVELLE LOGIQUE DE CALCUL DE LA PART PATIENT
-                  const patientPart = (inv as any).patient_part ?? inv.total_amount;
+                  // 👉 NOUVELLE LOGIQUE : Extraction STRICTE de la part depuis "invoice_splits"
                   const patientSplit = (inv as any).splits?.find((s: any) => s.type === 'PATIENT');
+                  
+                  // Si le split existe, on affiche son montant. Sinon (ex: vieille facture), on affiche le total global.
+                  const patientPartAmount = patientSplit ? Number(patientSplit.amount_to_pay) : Number(inv.total_amount || 0);
                   
                   // On calcule combien le patient a déjà versé pour sa part
                   const patientPaid = (inv as any).payments?.filter((p: any) => 
-                    (patientSplit && p.invoice_split_id === patientSplit.id) || !p.invoice_split_id
+                    !p.invoice_split_id || (patientSplit && p.invoice_split_id === patientSplit.id)
                   ).reduce((sum: number, p: any) => sum + Number(p.amount), 0) || 0;
                   
-                  const patientRemaining = Math.max(0, patientPart - patientPaid);
+                  const patientRemaining = Math.max(0, patientPartAmount - patientPaid);
                   
                   // Est-ce que le patient a payé sa part ? 
-                  // (Même si l'assurance n'a pas encore payé le reste)
                   const isPatientPaid = inv.status === 'PAID' || patientRemaining === 0;
 
                   return (
@@ -527,7 +515,7 @@ const Invoices = () => {
                       </td>
 
                       <td className="p-4 text-right font-mono font-bold text-slate-800 dark:text-gray-200">
-                        {formatCurrency(patientPart)}
+                        {formatCurrency(patientPartAmount)}
                       </td>
 
                       <td className="p-4 text-right font-mono font-bold text-red-500">
@@ -548,7 +536,6 @@ const Invoices = () => {
 
                       <td className="p-4 text-right">
                         <div className="flex justify-end items-center gap-2">
-                          {/* 👉 N'affiche le portefeuille que s'il reste une dette patient */}
                           {!isPatientPaid && (
                             <button
                               onClick={() => handleOpenPayment(inv)}
@@ -576,7 +563,7 @@ const Invoices = () => {
                             <Printer size={18} />
                           </button>
 
-                          {/* Autorise la suppression si la facture (au global) n'est pas payée */}
+                          {/* Autorise la suppression si la facture globale n'est pas payée */}
                           {inv.status === "UNPAID" && (
                             <button
                               onClick={() => handleDelete(inv.id)}

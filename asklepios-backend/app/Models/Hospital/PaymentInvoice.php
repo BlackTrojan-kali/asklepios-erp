@@ -13,9 +13,10 @@ class PaymentInvoice extends Model
 
     protected $fillable = [
         'invoice_id',
-        'reception_id', // L'agent de réception / caissier qui a encaissé
+        'invoice_split_id', // 👉 NOUVEAU : Traçabilité du tiers payant
+        'reception_id',     
         'amount',
-        'payment_method', // Ex: 'CASH', 'MOBILE_MONEY', 'CARD', 'INSURANCE'
+        'payment_method',   
     ];
 
     /**
@@ -27,11 +28,18 @@ class PaymentInvoice extends Model
     }
 
     /**
+     * La part spécifique (Split) payée (Patient ou Assurance).
+     */
+    public function invoiceSplit(): BelongsTo
+    {
+        return $this->belongsTo(InvoiceSplit::class, 'invoice_split_id');
+    }
+
+    /**
      * Le réceptionniste / caissier ayant enregistré ce paiement.
      */
     public function reception(): BelongsTo
     {
-        // Assure-toi que ton modèle ProfileReception est importé correctement
         return $this->belongsTo(ProfileReception::class, 'reception_id');
     }
 }

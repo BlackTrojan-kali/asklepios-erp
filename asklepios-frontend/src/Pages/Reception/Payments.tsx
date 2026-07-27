@@ -23,7 +23,6 @@ import { useAuth } from "../../contexts/AuthContext";
 
 // --- MODALES & TYPES ---
 import { UpdatePaymentModal } from "../../components/modals/Base_hopital/Finance/UpdatePaymentModal";
-// 👉 Import de la modale d'exportation
 import { ExportPaymentsModal } from "../../components/modals/Base_hopital/Finance/ExportPaymentsModal";
 import type { PaymentInvoiceDto } from "../../types/PaymentTypes";
 
@@ -45,7 +44,6 @@ const Payments = () => {
     actionLoading,
   } = usePaymentStore();
 
-  // 👉 DÉFINITION DES DROITS D'ACCÈS
   const canManagePayments = ["admin", "super_admin", "doctor"].includes(
     profile?.role || "",
   );
@@ -54,13 +52,9 @@ const Payments = () => {
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(15);
   const [searchInvoiceId, setSearchInvoiceId] = useState<string>("");
-  const [selectedCenter, setSelectedCenter] = useState<SelectOption | null>(
-    null,
-  );
-  const [selectedPayment, setSelectedPayment] =
-    useState<PaymentInvoiceDto | null>(null);
+  const [selectedCenter, setSelectedCenter] = useState<SelectOption | null>(null);
+  const [selectedPayment, setSelectedPayment] = useState<PaymentInvoiceDto | null>(null);
   const [autoRefreshPage, setAutoRefreshPage] = useState<boolean>(false);
-  // 👉 NOUVEL ÉTAT pour la modale d'export
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   // --- CHARGEMENT DES CENTRES ---
@@ -73,6 +67,7 @@ const Payments = () => {
   // --- CHARGEMENT DES PAIEMENTS ---
   useEffect(() => {
     fetchPayments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, perPage, selectedCenter, autoRefreshPage]);
 
   const fetchPayments = () => {
@@ -89,9 +84,11 @@ const Payments = () => {
       perPage,
     );
   };
+
   const handleAutoRefresh = () => {
     setAutoRefreshPage(!autoRefreshPage);
   };
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
@@ -174,7 +171,6 @@ const Payments = () => {
           </div>
         </div>
 
-        {/* 👉 CONTENEUR DES BOUTONS D'ACTION */}
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
           <button
             onClick={fetchPayments}
@@ -234,7 +230,6 @@ const Payments = () => {
           )}
         </form>
 
-        {/* Filtre par Centre autorisé pour ceux qui gèrent les paiements */}
         {canManagePayments && (
           <>
             <div className="hidden lg:block w-px h-10 bg-gray-200 dark:bg-gray-700"></div>
@@ -376,14 +371,22 @@ const Payments = () => {
                     </td>
 
                     <td className="p-4">
-                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 text-xs font-bold border border-gray-200 dark:border-gray-700">
+                      <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold border ${
+                        payment.payment_method === 'INSURANCE'
+                          ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-300'
+                          : 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300'
+                      }`}>
                         <CreditCard size={14} />
                         {getPaymentMethodLabel(payment.payment_method)}
                       </div>
                     </td>
 
                     <td className="p-4 text-gray-700 dark:text-gray-300">
-                      {payment.reception?.user?.first_name ? (
+                      {payment.payment_method === 'INSURANCE' ? (
+                        <span className="text-blue-600 dark:text-blue-400 font-medium text-xs italic">
+                          Tiers Payant (Système)
+                        </span>
+                      ) : payment.reception?.user?.first_name ? (
                         `${payment.reception.user.first_name} ${payment.reception.user.last_name || ""}`
                       ) : (
                         <span className="text-emerald-600 font-medium">
@@ -399,21 +402,30 @@ const Payments = () => {
                     {canManagePayments && (
                       <td className="p-4 text-right">
                         <div className="flex justify-end items-center gap-2">
-                          <button
-                            onClick={() => setSelectedPayment(payment)}
-                            title="Corriger l'encaissement"
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-                          >
-                            <Edit3 size={18} />
-                          </button>
+                          {/* 👉 SÉCURITÉ : On bloque la suppression/modification manuelle des paiements d'assurance */}
+                          {payment.payment_method === 'INSURANCE' ? (
+                            <span className="text-xs text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded cursor-not-allowed">
+                              Géré par bordereau
+                            </span>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => setSelectedPayment(payment)}
+                                title="Corriger l'encaissement"
+                                className="p-1.5 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                              >
+                                <Edit3 size={18} />
+                              </button>
 
-                          <button
-                            onClick={() => handleDelete(payment.id)}
-                            title="Annuler l'encaissement"
-                            className="p-1.5 text-red-500 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                          >
-                            <Trash2 size={18} />
-                          </button>
+                              <button
+                                onClick={() => handleDelete(payment.id)}
+                                title="Annuler l'encaissement"
+                                className="p-1.5 text-red-500 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     )}
@@ -530,7 +542,6 @@ const Payments = () => {
         payment={selectedPayment}
       />
 
-      {/* 👉 MODALE D'EXPORTATION DU POINT DE CAISSE */}
       <ExportPaymentsModal
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}

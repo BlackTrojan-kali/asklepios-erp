@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Hospital;
 use App\Http\Controllers\Controller;
 use App\Http\Services\PaymentService;
 use App\Models\Hospital\PaymentInvoice;
+use App\Models\Hospital\Invoice;
+use App\Models\Hospital\InvoiceSplit;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
 use Illuminate\Validation\Rule;
@@ -33,6 +35,45 @@ class PaymentController extends Controller
         abort(403, "Profil non autorisé à gérer les paiements.");
     }
 
+    /**
+     * 👉 NOUVEAU : Synchronise les statuts des Splits et de la Facture globale
+     * après chaque mouvement financier.
+     */
+    private function syncInvoiceStatuses($invoiceId)
+    {
+        $invoice = Invoice::with('splits')->find($invoiceId);
+        if (!$invoice) return;
+
+        $allSplitsPaid = true;
+
+        // 1. On vérifie et on met à jour le statut de CHAQUE part (Patient & Assurance)
+        foreach ($invoice->splits as $split) {
+            $totalPaidForSplit = PaymentInvoice::where('invoice_split_id', $split->id)->sum('amount');
+            
+            $status = ($totalPaidForSplit >= $split->amount_to_pay) ? 'PAID' : 'UNPAID';
+
+            if ($split->status !== $status) {
+                $split->update(['status' => $status]);
+            }
+
+            if ($status === 'UNPAID') {
+                $allSplitsPaid = false;
+            }
+        }
+
+        // Sécurité : S'il n'y a aucun split (ancienne facture), on base sur le total général
+        if ($invoice->splits->isEmpty()) {
+            $totalPaid = PaymentInvoice::where('invoice_id', $invoice->id)->sum('amount');
+            $allSplitsPaid = ($totalPaid >= $invoice->total_amount);
+        }
+
+        // 2. On met à jour la facture globale
+        $newInvoiceStatus = $allSplitsPaid ? 'PAID' : 'UNPAID';
+        if ($invoice->status !== $newInvoiceStatus) {
+            $invoice->update(['status' => $newInvoiceStatus]);
+        }
+    }
+
     #[OA\Get(
         path: "/api/shared/payments",
         summary: "Historique des paiements (Paginé et filtrable)",
@@ -40,7 +81,6 @@ class PaymentController extends Controller
         security: [["sanctum" => []]],
         tags: ["Paiements"]
     )]
-    
     #[OA\Response(response: 200, description: "Liste récupérée avec succès")]
     public function index(Request $request)
     {
@@ -54,12 +94,10 @@ class PaymentController extends Controller
 
         // 2. Restrictions de Rôles
         if ($user->profile_reception) {
-            // La réception ne voit que les paiements liés aux factures de SON centre
             $query->whereHas('invoice', function($q) use ($user) {
                 $q->where('center_id', $user->profile_reception->center_id);
             });
         } elseif ($user->profile_admin) {
-            // L'admin peut filtrer spécifiquement par centre s'il le souhaite
             if ($request->filled('center_id')) {
                 $query->whereHas('invoice', function($q) use ($request) {
                     $q->where('center_id', $request->center_id);
@@ -116,15 +154,26 @@ class PaymentController extends Controller
         security: [["sanctum" => []]],
         tags: ["Paiements"]
     )]
-    
     #[OA\Response(response: 201, description: "élément enregistré avec succès")]
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'invoice_id'     => 'required|exists:invoices,id',
-            'amount'         => 'required|numeric|min:1',
-            'payment_method' => ['required', Rule::in(['CASH', 'MOBILE_MONEY', 'CARD', 'INSURANCE', 'BANK_TRANSFER'])],
+            'invoice_id'       => 'required|exists:invoices,id',
+            'invoice_split_id' => 'nullable|exists:invoice_splits,id', // 👉 On autorise le ciblage spécifique
+            'amount'           => 'required|numeric|min:1',
+            'payment_method'   => ['required', Rule::in(['CASH', 'MOBILE_MONEY', 'CARD', 'INSURANCE', 'BANK_TRANSFER'])],
         ]);
+
+        // 👉 NOUVEAU : Auto-assignation de la part PATIENT
+        // Si aucun Split n'est précisé, on cible la part PATIENT par défaut
+        $splitId = $validated['invoice_split_id'] ?? null;
+        if (!$splitId) {
+            $patientSplit = InvoiceSplit::where('invoice_id', $validated['invoice_id'])
+                ->where('type', 'PATIENT')
+                ->first();
+            $splitId = $patientSplit ? $patientSplit->id : null;
+        }
+        $validated['invoice_split_id'] = $splitId;
 
         // Assigner automatiquement l'agent de réception s'il est connecté
         $user = auth()->user();
@@ -133,7 +182,9 @@ class PaymentController extends Controller
         try {
             $payment = $this->paymentService->createPayment($validated);
             
-            // Recharger la facture avec le nouveau statut pour renvoyer au frontend
+            // 👉 NOUVEAU : On met à jour les statuts après l'encaissement
+            $this->syncInvoiceStatuses($validated['invoice_id']);
+            
             $payment->load('invoice');
 
             return response()->json([
@@ -153,8 +204,7 @@ class PaymentController extends Controller
         security: [["sanctum" => []]],
         tags: ["Paiements"]
     )]
-    
-    #[OA\Response(response: 201, description: "élément supprimé avec succès")]
+    #[OA\Response(response: 201, description: "élément mis à jour avec succès")]
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
@@ -164,6 +214,10 @@ class PaymentController extends Controller
 
         try {
             $payment = $this->paymentService->updatePayment($id, $validated);
+            
+            // 👉 NOUVEAU : On met à jour les statuts suite à la correction du montant
+            $this->syncInvoiceStatuses($payment->invoice_id);
+            
             $payment->load('invoice');
 
             return response()->json([
@@ -183,15 +237,20 @@ class PaymentController extends Controller
         security: [["sanctum" => []]],
         tags: ["Paiements"]
     )]
-    
     #[OA\Response(response: 200, description: "élément supprimé avec succès")]
     public function destroy($id)
     {
         try {
+            $payment = PaymentInvoice::findOrFail($id);
+            $invoiceId = $payment->invoice_id;
+
             $this->paymentService->deletePayment($id);
 
+            // 👉 NOUVEAU : On met à jour les statuts (la facture pourrait repasser en UNPAID)
+            $this->syncInvoiceStatuses($invoiceId);
+
             return response()->json([
-                'message' => 'Paiement annulé avec succès. La facture a été recalculée.'
+                'message' => 'Paiement annulé avec succès. Les statuts de la facture ont été recalculés.'
             ], 200);
 
         } catch (Exception $e) {
