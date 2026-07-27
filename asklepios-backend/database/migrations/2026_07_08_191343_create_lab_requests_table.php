@@ -19,6 +19,7 @@ return new class extends Migration
             $table->foreignId('patient_visit_id')->nullable()->constrained('patient_visits')->onDelete('set null');
             $table->foreignId('profile_doctor_id')->nullable()->constrained('profile_doctors')->onDelete('set null');
             $table->string('external_prescriber_name')->nullable();
+            $table->boolean("is_billed")->default(False);
             $table->enum('priority', ['ROUTINE', 'URGENT'])->default('ROUTINE');
             $table->enum('status', ['PENDING_PAYMENT', 'PAID', 'SAMPLED', 'PARTIAL', 'COMPLETED'])->default('PENDING_PAYMENT');
             $table->timestamps();

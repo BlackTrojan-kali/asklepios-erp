@@ -44,12 +44,15 @@ export const LabExamInvoiceModal: React.FC<LabExamInvoiceModalProps> = ({
         try {
             setLoadingRequests(true);
             const requests = await getLabRequests('PENDING_PAYMENT', initialPatientId);
-            const list = requests || [];
+            
+            // 👉 CORRECTION ICI : On filtre pour NE PAS AFFICHER les examens déjà facturés (is_billed == true ou 1)
+            const list = (requests || []).filter((req: any) => !req.is_billed);
+            
             setPendingRequests(list);
 
             if (list.length > 0) {
                 const target = initialLabRequestId 
-                    ? list.find(r => r.id === initialLabRequestId) || list[0] 
+                    ? list.find((r: any) => r.id === initialLabRequestId) || list[0] 
                     : list[0];
                 handleSelectRequest(target);
             } else {
@@ -99,14 +102,13 @@ export const LabExamInvoiceModal: React.FC<LabExamInvoiceModalProps> = ({
     // Sélection d'une demande
     const handleSelectRequest = (request: LabRequestDto) => {
         setSelectedRequest(request);
-        // Sélectionner par défaut uniquement les examens NON payés
         const unpaidLineIds = request.lines
             ?.filter(l => !checkIsLinePaid(l, request))
             .map(l => l.id) || [];
         setSelectedLineIds(unpaidLineIds);
     };
 
-    // Cocher / Décocher un examen (uniquement s'il n'est pas déjà payé)
+    // Cocher / Décocher un examen
     const toggleLineSelection = (line: LabRequestLineDto) => {
         if (selectedRequest && checkIsLinePaid(line, selectedRequest)) return;
         setSelectedLineIds(prev => 
@@ -114,7 +116,7 @@ export const LabExamInvoiceModal: React.FC<LabExamInvoiceModalProps> = ({
         );
     };
 
-    // Tout sélectionner / Décocher tout (uniquement sur les examens NON payés)
+    // Tout sélectionner / Décocher tout
     const toggleAllLines = () => {
         if (!selectedRequest?.lines) return;
         const unpaidLines = selectedRequest.lines.filter(l => !checkIsLinePaid(l, selectedRequest));
@@ -127,7 +129,7 @@ export const LabExamInvoiceModal: React.FC<LabExamInvoiceModalProps> = ({
         }
     };
 
-    // Calcul du montant total des examens cochés
+    // Calcul du montant total
     const calculatedTotal = () => {
         if (!selectedRequest || !selectedRequest.lines) return 0;
         return selectedRequest.lines
@@ -135,13 +137,12 @@ export const LabExamInvoiceModal: React.FC<LabExamInvoiceModalProps> = ({
             .reduce((sum, line) => sum + Number(line.test?.price ?? 0), 0);
     };
 
-    // Total brut de la demande
     const requestGrandTotal = (req: LabRequestDto) => {
         if (!req.lines) return 0;
         return req.lines.reduce((sum, line) => sum + Number(line.test?.price ?? 0), 0);
     };
 
-    // 3. Génération de la Facture (Facturation seule sans encaissement direct)
+    // 3. Génération de la Facture
     const handleGenerateInvoice = async () => {
         if (!selectedRequest || !selectedRequest.invoice) {
             return toast.error("Aucune demande ou facture valide sélectionnée.");
@@ -199,12 +200,9 @@ export const LabExamInvoiceModal: React.FC<LabExamInvoiceModalProps> = ({
                 {/* --- BODY DIVISÉ EN 2 COLONNES --- */}
                 <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 overflow-hidden bg-slate-50 dark:bg-slate-950">
                     
-                    {/* ========================================================================= */}
-                    {/* COLONNE GAUCHE (40%) : LISTE DES PATIENTS AVEC PRESCRIPTIONS EN ATTENTE */}
-                    {/* ========================================================================= */}
+                    {/* COLONNE GAUCHE (40%) */}
                     <div className="lg:col-span-5 flex flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
                         
-                        {/* Barre de recherche & filtre à gauche */}
                         <div className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 space-y-2 shrink-0">
                             <div className="flex items-center justify-between">
                                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
@@ -231,7 +229,6 @@ export const LabExamInvoiceModal: React.FC<LabExamInvoiceModalProps> = ({
                             </div>
                         </div>
 
-                        {/* Liste déroulante des demandes */}
                         <div className="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 p-2 space-y-1">
                             {loadingRequests ? (
                                 <div className="p-8 text-center text-xs text-slate-400 flex flex-col items-center gap-2">
@@ -299,14 +296,11 @@ export const LabExamInvoiceModal: React.FC<LabExamInvoiceModalProps> = ({
                         </div>
                     </div>
 
-                    {/* ========================================================================= */}
-                    {/* COLONNE DROITE (60%) : DÉTAIL DE LA PRESCRIPTION & ÉMISSION FACTURE */}
-                    {/* ========================================================================= */}
+                    {/* COLONNE DROITE (60%) */}
                     <div className="lg:col-span-7 flex flex-col h-full overflow-hidden bg-slate-50 dark:bg-slate-950">
                         {selectedRequest ? (
                             <div className="flex flex-col h-full overflow-hidden">
                                 
-                                {/* En-tête de la demande sélectionnée */}
                                 <div className="p-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shrink-0 flex items-center justify-between">
                                     <div>
                                         <div className="flex items-center gap-2">
@@ -337,7 +331,6 @@ export const LabExamInvoiceModal: React.FC<LabExamInvoiceModalProps> = ({
                                     </Button>
                                 </div>
 
-                                {/* Liste cochable des examens de la prescription */}
                                 <div className="flex-1 overflow-y-auto p-4 space-y-3">
                                     <div className="flex justify-between items-center text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
                                         <span>
@@ -419,10 +412,7 @@ export const LabExamInvoiceModal: React.FC<LabExamInvoiceModalProps> = ({
                                     </div>
                                 </div>
 
-                                {/* BLOC DE FACTURATION DE BAS DE PAGE */}
                                 <div className="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shrink-0 space-y-4 shadow-lg">
-                                    
-                                    {/* Résumé du total */}
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Montant total de la facture</span>
@@ -436,7 +426,6 @@ export const LabExamInvoiceModal: React.FC<LabExamInvoiceModalProps> = ({
                                         </p>
                                     </div>
 
-                                    {/* Action de facturation */}
                                     <div className="flex justify-end gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
                                         <Button 
                                             variant="outline" 
@@ -457,7 +446,6 @@ export const LabExamInvoiceModal: React.FC<LabExamInvoiceModalProps> = ({
                                             Générer Facture ({calculatedTotal().toLocaleString('fr-FR')} FCFA)
                                         </Button>
                                     </div>
-
                                 </div>
 
                             </div>
@@ -471,9 +459,7 @@ export const LabExamInvoiceModal: React.FC<LabExamInvoiceModalProps> = ({
                             </div>
                         )}
                     </div>
-
                 </div>
-
             </div>
         </div>
     );

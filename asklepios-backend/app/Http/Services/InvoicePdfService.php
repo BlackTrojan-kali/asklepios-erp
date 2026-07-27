@@ -12,6 +12,7 @@ class InvoicePdfService
      */
     public function generateInvoicePdf(int $invoiceId, string $action = 'stream')
     {
+        // 👉 NOUVEAU : Chargement approfondi des relations pour le Tiers Payant
         $invoice = Invoice::with([
             'patient.hospital',
             'center',
@@ -19,9 +20,10 @@ class InvoicePdfService
             'performedMedicalActs.medicalActCatalog',
             'performedMedicalActs.equipment', 
             'admissions.bed.facilityRoom.category',
-            'labRequests.lines.test',
+            'labRequests.lines.test.category',
             'payments.reception.user',
-            'splits' // 👉 NOUVEAU : Chargement de la relation pour le calcul du Tiers Payant
+            'payments.invoiceSplit', // Savoir si le paiement vient du patient ou de l'assurance
+            'splits.guarantorClaim.insuranceCompany' // Récupérer le nom de l'assurance si réclamée
         ])->findOrFail($invoiceId);
 
         // Encodage Base64 du logo de l'Hôpital (En-tête)
@@ -40,7 +42,7 @@ class InvoicePdfService
             $asklepiosLogoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($asklepiosLogoPath));
         }
 
-      // Calcul des éléments complexes (nuits d'hospitalisation réelles)
+        // Calcul des éléments complexes (nuits d'hospitalisation réelles)
         $processedAdmissions = [];
         foreach ($invoice->admissions as $admission) {
             $startDate = \Carbon\Carbon::parse($admission->admission_date);

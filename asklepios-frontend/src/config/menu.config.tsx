@@ -316,7 +316,7 @@ export const MENU_CONFIG: MenuItemType[] = [
   {
     title: "Facturation et Paiement",
     icon: <Coins size={20} />,
-    roles: ["reception"],
+    roles: ["reception","admin"],
     requiredLicence: "base_hospital",
     subItems: [
       { title: "Gestion Factures", path: "/reception/facturation" },

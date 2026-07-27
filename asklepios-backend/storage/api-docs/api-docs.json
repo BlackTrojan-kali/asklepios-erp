@@ -4034,6 +4034,15 @@
                         }
                     },
                     {
+                        "name": "payment_method",
+                        "in": "query",
+                        "description": "Mode de paiement",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
                         "name": "start_date",
                         "in": "query",
                         "description": "Date de début",
@@ -4110,6 +4119,15 @@
                         "required": false,
                         "schema": {
                             "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "payment_method",
+                        "in": "query",
+                        "description": "Mode de paiement",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
                         }
                     },
                     {
@@ -4879,7 +4897,7 @@
                     "Stocks"
                 ],
                 "summary": "Voir les stocks globaux paginés (Toutes succursales)",
-                "description": "1. VUE GLOBALE PAGINÉE (Pour les Administrateurs ou Superviseurs)\r\nListe tous les stocks de l'hôpital, avec possibilité de filtrer par succursale.",
+                "description": "1. VUE GLOBALE PAGINÉE (Pour les Administrateurs ou Superviseurs)\nListe tous les stocks de l'hôpital, avec possibilité de filtrer par succursale.",
                 "operationId": "getGlobalStocks",
                 "parameters": [
                     {
@@ -4948,7 +4966,7 @@
                     "Stocks"
                 ],
                 "summary": "Voir les stocks paginés de ma succursale",
-                "description": "2. VUE LOCALE PAGINÉE (Pour les Pharmaciens / Vendeurs)\r\nListe uniquement les stocks de la succursale du pharmacien connecté.",
+                "description": "2. VUE LOCALE PAGINÉE (Pour les Pharmaciens / Vendeurs)\nListe uniquement les stocks de la succursale du pharmacien connecté.",
                 "operationId": "getMyBranchStocks",
                 "parameters": [
                     {
@@ -6453,6 +6471,190 @@
                 ]
             }
         },
+        "/api/shared/guarantor-claims": {
+            "get": {
+                "summary": "Lister les bordereaux avec filtres",
+                "operationId": "2891732e2297038b81aa3a174deb89a3",
+                "parameters": [
+                    {
+                        "name": "center_id",
+                        "in": "query",
+                        "description": "Filtrer par centre",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "insurance_company_id",
+                        "in": "query",
+                        "description": "Filtrer par assurance",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filtrer par statut (DRAFT, SUBMITTED, PAID, DISPUTED)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "claim_month",
+                        "in": "query",
+                        "description": "Filtrer par mois (YYYY-MM)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste des bordereaux récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "summary": "Créer un nouveau bordereau de réclamation",
+                "operationId": "97ba3f312db646afafbe5a985572131e",
+                "responses": {
+                    "201": {
+                        "description": "Bordereau généré avec succès"
+                    },
+                    "422": {
+                        "description": "Erreur de validation (Assurance manquante, factures invalides...)"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/shared/guarantor-claims/{id}": {
+            "get": {
+                "summary": "Voir les détails d'un bordereau",
+                "operationId": "459590f2b61414b84656d409c515e0ab",
+                "responses": {
+                    "200": {
+                        "description": "Détails du bordereau récupérés avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "summary": "Mettre à jour le statut (ex: SUBMITTED, PAID)",
+                "operationId": "a9861a8902950159c6d6d203c852d24c",
+                "responses": {
+                    "200": {
+                        "description": "Bordereau mis à jour avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "summary": "Supprimer un bordereau (DRAFT uniquement)",
+                "operationId": "f88066f454c8a89da2aa0a6f69d8d24c",
+                "responses": {
+                    "200": {
+                        "description": "Bordereau supprimé avec succès"
+                    },
+                    "403": {
+                        "description": "Impossible de supprimer ce bordereau"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/shared/invoice-splits/unclaimed": {
+            "get": {
+                "summary": "Récupérer les parts assurances non réclamées",
+                "operationId": "c833b744a23c21c74daee7f83a7165d0",
+                "parameters": [
+                    {
+                        "name": "insurance_company_id",
+                        "in": "query",
+                        "description": "ID de la compagnie d'assurance",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "claim_month",
+                        "in": "query",
+                        "description": "Mois ciblé au format YYYY-MM",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste des factures impayées récupérées avec succès"
+                    },
+                    "422": {
+                        "description": "Paramètres invalides (ex: format de date incorrect)"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/shared/guarantor-claims/{id}/download": {
+            "get": {
+                "summary": "Générer le PDF du bordereau d'assurance",
+                "operationId": "f24847ba3dc32ebdd45fa5ad808a695c",
+                "parameters": [
+                    {
+                        "name": "action",
+                        "in": "query",
+                        "description": "'stream' (aperçu) ou 'download' (télécharger)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Flux ou téléchargement du PDF généré"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/shared/invoices": {
             "get": {
                 "tags": [
@@ -6520,7 +6722,24 @@
                 "operationId": "f77cec3506df0ae64003d6dbf6e982a2",
                 "responses": {
                     "200": {
-                        "description": "element récupéré avec succès"
+                        "description": "Élément récupéré avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Facturation"
+                ],
+                "summary": "Mettre à jour une facture",
+                "operationId": "9bd3088dc7d3bb16ed1afb6e06693b98",
+                "responses": {
+                    "200": {
+                        "description": "élément mis a jours avec succès"
                     }
                 },
                 "security": [
@@ -6535,10 +6754,10 @@
                 ],
                 "summary": "Annuler une facture proforma non payée",
                 "description": "Supprime une facture au statut UNPAID et libère automatiquement les actes.",
-                "operationId": "c79151377d7f2a4854b06ec403a55d6a",
+                "operationId": "f1b77e226431654af24fbb6d1ab8ccce",
                 "responses": {
                     "200": {
-                        "description": "élément supprimé avec succès"
+                        "description": "élément mis a jours avec succès"
                     }
                 },
                 "security": [
@@ -6568,7 +6787,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "element récupéré avec succès"
+                        "description": "PDF généré avec succès"
                     }
                 },
                 "security": [
@@ -6587,7 +6806,7 @@
                 "operationId": "d989464ce62f586f41cc40db21669469",
                 "responses": {
                     "200": {
-                        "description": "Eléments récupérés avec succès"
+                        "description": "Éléments récupérés avec succès"
                     }
                 },
                 "security": [
@@ -6599,10 +6818,22 @@
         },
         "/api/shared/patients/{patientId}/generate-invoice": {
             "post": {
+                "summary": "Générer une facture globale pour un patient",
                 "operationId": "0ee9b7e5edad624514db8b0d2a43c24f",
                 "responses": {
                     "201": {
-                        "description": "element crée avec succès"
+                        "description": "Facture générée avec succès"
+                    }
+                }
+            }
+        },
+        "/api/shared/visits/{visitId}/generate-invoice": {
+            "post": {
+                "summary": "Générer une facture pour une visite spécifique",
+                "operationId": "260091cb6d6022bd9efb7cb03891128f",
+                "responses": {
+                    "201": {
+                        "description": "Facture générée avec succès"
                     }
                 }
             }
@@ -11538,6 +11769,11 @@
         }
     },
     "components": {
+        "responses": {
+            "200": {
+                "description": "élément supprimé avec succès"
+            }
+        },
         "securitySchemes": {
             "bearerAuth": {
                 "type": "http",

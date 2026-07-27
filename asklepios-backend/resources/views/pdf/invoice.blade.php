@@ -32,7 +32,7 @@
 
         /* --- TOTAUX --- */
         .totals-wrapper { width: 100%; margin-top: 10px; }
-        .totals-table { width: 50%; float: right; border-collapse: collapse; font-size: 12px; }
+        .totals-table { width: 55%; float: right; border-collapse: collapse; font-size: 12px; }
         .totals-table td { padding: 6px 8px; border-bottom: 1px solid #e2e8f0; }
         .total-final { background-color: #00a896; color: white; font-weight: bold; font-size: 14px; }
         .total-final td { border: none; }
@@ -157,9 +157,39 @@
                     @endif
                 @endforeach
             @endif
-
         </tbody>
     </table>
+
+    {{-- LOGIQUE DE CALCUL DU TIERS PAYANT --}}
+    @php
+        $insurancePart = $invoice->insurance_part ?? 0;
+        $patientPart = $invoice->patient_part ?? $invoice->total_amount;
+        
+        $patientPaid = 0;
+        $insurancePaid = 0;
+        
+        // Séparation des acomptes selon la source du paiement
+        if(isset($invoice->payments)) {
+            foreach($invoice->payments as $payment) {
+                if ($payment->invoiceSplit && $payment->invoiceSplit->type === 'INSURANCE') {
+                    $insurancePaid += $payment->amount;
+                } else {
+                    $patientPaid += $payment->amount; // Cas PATIENT ou factures classiques sans split
+                }
+            }
+        }
+
+        // Récupération du nom de l'assurance (si présente)
+        $insuranceName = 'Assurance';
+        if (isset($invoice->splits)) {
+            foreach($invoice->splits as $split) {
+                if ($split->type === 'INSURANCE' && $split->guarantorClaim && $split->guarantorClaim->insuranceCompany) {
+                    $insuranceName = $split->guarantorClaim->insuranceCompany->name;
+                    break;
+                }
+            }
+        }
+    @endphp
 
     <div class="totals-wrapper">
         <table class="totals-table">
@@ -169,14 +199,9 @@
             </tr>
             
             {{-- AFFICHAGE DE LA PRISE EN CHARGE ASSURANCE --}}
-            @php
-                $insurancePart = $invoice->insurance_part ?? 0;
-                $patientPart = $invoice->patient_part ?? $invoice->total_amount;
-            @endphp
-
             @if($insurancePart > 0)
             <tr>
-                <td class="text-insurance font-bold">Prise en charge Assurance</td>
+                <td class="text-insurance font-bold">Prise en charge ({{ $insuranceName }})</td>
                 <td class="text-right font-mono text-insurance font-bold">- {{ number_format($insurancePart, 0, ',', ' ') }}</td>
             </tr>
             @endif
@@ -186,23 +211,19 @@
                 <td class="font-bold" style="font-size: 13px;">Part Patient</td>
                 <td class="text-right font-mono font-bold" style="font-size: 13px;">{{ number_format($patientPart, 0, ',', ' ') }}</td>
             </tr>
-
-            @php
-                $totalPaid = isset($invoice->payments) ? $invoice->payments->sum('amount') : 0;
-            @endphp
             
-            {{-- ACOMPTES / DÉJÀ VERSÉ --}}
-            @if($totalPaid > 0)
+            {{-- ACOMPTES / DÉJÀ VERSÉ PAR LE PATIENT UNIQUEMENT --}}
+            @if($patientPaid > 0)
             <tr>
-                <td class="text-payment">Déjà Versé (Acomptes)</td>
-                <td class="text-right font-mono text-payment">- {{ number_format($totalPaid, 0, ',', ' ') }}</td>
+                <td class="text-payment">Déjà Versé (Acomptes Patient)</td>
+                <td class="text-right font-mono text-payment">- {{ number_format($patientPaid, 0, ',', ' ') }}</td>
             </tr>
             @endif
 
             {{-- NET À PAYER (Ce qu'il reste à payer de la poche du patient) --}}
             <tr class="total-final">
                 <td>NET À PAYER (Patient)</td>
-                <td class="text-right font-mono">{{ number_format(max(0, $patientPart - $totalPaid), 0, ',', ' ') }} FCFA</td>
+                <td class="text-right font-mono">{{ number_format(max(0, $patientPart - $patientPaid), 0, ',', ' ') }} FCFA</td>
             </tr>
         </table>
         <div style="clear: both;"></div>
@@ -210,16 +231,24 @@
 
     @if(isset($invoice->payments) && $invoice->payments->count() > 0)
     <div style="margin-top: 30px;">
-        <p style="font-size: 10px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 5px;">Historique des paiements du patient</p>
+        <p style="font-size: 10px; font-weight: bold; color: #64748b; text-transform: uppercase; margin-bottom: 5px;">Historique des encaissements</p>
         <table style="width: 100%; border-collapse: collapse; font-size: 9px; color: #64748b;">
             <tr style="border-bottom: 1px solid #e2e8f0;">
                 <th style="text-align: left; padding: 4px 0;">Date</th>
+                <th style="text-align: left; padding: 4px 0;">Source</th>
                 <th style="text-align: left; padding: 4px 0;">Méthode</th>
                 <th style="text-align: right; padding: 4px 0;">Montant</th>
             </tr>
             @foreach($invoice->payments as $payment)
             <tr>
                 <td style="padding: 4px 0;">{{ \Carbon\Carbon::parse($payment->created_at)->format('d/m/Y H:i') }}</td>
+                <td style="padding: 4px 0;">
+                    @if($payment->invoiceSplit && $payment->invoiceSplit->type === 'INSURANCE')
+                        <strong style="color: #0284c7;">Assurance</strong>
+                    @else
+                        <strong style="color: #10b981;">Patient</strong>
+                    @endif
+                </td>
                 <td style="padding: 4px 0;">{{ $payment->payment_method }}</td>
                 <td style="text-align: right; padding: 4px 0;">{{ number_format($payment->amount, 0, ',', ' ') }} FCFA</td>
             </tr>

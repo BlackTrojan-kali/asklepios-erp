@@ -7,7 +7,7 @@ import type {
     InvoiceDto, 
     GenerateInvoicePayload, 
     InvoiceReportFilters,
-    UnbilledPreviewDto // Nouvel import
+    UnbilledPreviewDto
 } from "../../types/InvoiceTypes";
 
 export interface PaginationData {
@@ -65,7 +65,7 @@ const useInvoiceStore = () => {
         }
     }, []);
 
-    // --- 👉 NOUVEAU : GET /shared/patients/{patientId}/unbilled-preview ---
+    // --- GET /shared/patients/{patientId}/unbilled-preview ---
     const previewUnbilledForPatient = async (patientId: number): Promise<UnbilledPreviewDto | null> => {
         try {
             setLoading(true);
@@ -127,7 +127,9 @@ const useInvoiceStore = () => {
             return true;
         } catch (error) {
             if (axios.isAxiosError(error)) {
-                toast.error(error.response?.data?.message || "Impossible d'annuler cette facture.");
+                // 👉 CORRECTION ICI : On va chercher 'error' (le message détaillé) en priorité, puis 'message' en secours.
+                const errorMessage = error.response?.data?.error || error.response?.data?.message || "Impossible d'annuler cette facture.";
+                toast.error(errorMessage);
             }
             return false;
         } finally {
@@ -197,7 +199,7 @@ const useInvoiceStore = () => {
         actionLoading,
         getInvoices,
         getInvoiceById,
-        previewUnbilledForPatient, // 👉 NOUVEAU EXPORTÉ
+        previewUnbilledForPatient,
         generateInvoice,
         cancelInvoice,
         downloadInvoicePdf,

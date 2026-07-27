@@ -64,7 +64,7 @@ const Invoices = () => {
   const [selectedCenter, setSelectedCenter] = useState<SelectOption | null>(
     null,
   );
-  const [searchQuery, setSearchQuery] = useState(""); // 👉 NOUVEAU : Barre de recherche
+  const [searchQuery, setSearchQuery] = useState("");
 
   // --- ÉTATS DES MODALES ---
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<number | null>(
@@ -100,7 +100,6 @@ const Invoices = () => {
     );
   };
 
-  // On écoute les changements de pagination et de filtres directs
   useEffect(() => {
     fetchInvoices();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -110,7 +109,6 @@ const Invoices = () => {
     fetchInvoices();
   };
 
-  // 👉 SOUMISSION DE LA RECHERCHE
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
@@ -127,7 +125,6 @@ const Invoices = () => {
     );
   };
 
-  // 👉 RÉINITIALISATION DE LA RECHERCHE
   const handleResetSearch = () => {
     setSearchQuery("");
     setPage(1);
@@ -421,11 +418,12 @@ const Invoices = () => {
                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Émis / Facturé par
                 </th>
+                {/* 👉 MODIFICATION : Focus sur la part patient */}
                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">
-                  Montant Total
+                  Montant (Patient)
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">
-                  Reste à Payer
+                  Reste à Payer (Patient)
                 </th>
                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-center">
                   Statut
@@ -461,119 +459,138 @@ const Invoices = () => {
                   </td>
                 </tr>
               ) : (
-                invoices.map((inv) => (
-                  <tr
-                    key={inv.id}
-                    className="hover:bg-slate-50/50 dark:hover:bg-gray-700/30 transition-colors"
-                  >
-                    <td className="p-4 font-mono font-bold text-[#003366] dark:text-blue-400">
-                      INV-{String(inv.id).padStart(5, "0")}
-                    </td>
+                invoices.map((inv) => {
+                  // 👉 NOUVELLE LOGIQUE DE CALCUL DE LA PART PATIENT
+                  const patientPart = (inv as any).patient_part ?? inv.total_amount;
+                  const patientSplit = (inv as any).splits?.find((s: any) => s.type === 'PATIENT');
+                  
+                  // On calcule combien le patient a déjà versé pour sa part
+                  const patientPaid = (inv as any).payments?.filter((p: any) => 
+                    (patientSplit && p.invoice_split_id === patientSplit.id) || !p.invoice_split_id
+                  ).reduce((sum: number, p: any) => sum + Number(p.amount), 0) || 0;
+                  
+                  const patientRemaining = Math.max(0, patientPart - patientPaid);
+                  
+                  // Est-ce que le patient a payé sa part ? 
+                  // (Même si l'assurance n'a pas encore payé le reste)
+                  const isPatientPaid = inv.status === 'PAID' || patientRemaining === 0;
 
-                    <td className="p-4">
-                      {(inv as any).type === "LABORATORY" ||
-                      (inv as any).lab_requests?.length > 0 ? (
-                        <span className="inline-flex items-center gap-1 bg-teal-50 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300 border border-teal-200 dark:border-teal-800 text-[11px] font-bold px-2 py-0.5 rounded-md whitespace-nowrap">
-                          <Beaker size={13} className="text-[#00a896]" />{" "}
-                          Examens Labo
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-[11px] font-bold px-2 py-0.5 rounded-md whitespace-nowrap">
-                          <Stethoscope size={13} className="text-blue-500" />{" "}
-                          Consult. & Actes
-                        </span>
-                      )}
-                    </td>
+                  return (
+                    <tr
+                      key={inv.id}
+                      className="hover:bg-slate-50/50 dark:hover:bg-gray-700/30 transition-colors"
+                    >
+                      <td className="p-4 font-mono font-bold text-[#003366] dark:text-blue-400">
+                        INV-{String(inv.id).padStart(5, "0")}
+                      </td>
 
-                    <td className="p-4 text-gray-600 dark:text-gray-300">
-                      {new Date(inv.created_at).toLocaleDateString("fr-FR")}{" "}
-                      <br />
-                      <span className="text-xs text-gray-400">
-                        {new Date(inv.created_at).toLocaleTimeString("fr-FR", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
-                    </td>
-
-                    <td className="p-4">
-                      <div className="font-bold text-slate-800 dark:text-gray-200">
-                        {inv.patient?.first_name} {inv.patient?.last_name}
-                      </div>
-                      <div className="text-[11px] text-gray-500 font-mono mt-0.5">
-                        Code: {inv.patient?.patient_code}
-                      </div>
-                    </td>
-
-                    <td className="p-4 text-xs font-medium text-slate-700 dark:text-gray-300">
-                      <div className="flex items-center gap-1.5">
-                        <User size={14} className="text-gray-400 shrink-0" />
-                        <span>{getBilledBy(inv)}</span>
-                      </div>
-                    </td>
-
-                    <td className="p-4 text-right font-mono font-bold text-slate-800 dark:text-gray-200">
-                      {formatCurrency(inv.total_amount)}
-                    </td>
-
-                    <td className="p-4 text-right font-mono font-bold text-red-500">
-                      {formatCurrency((inv as any).remaining_debt || 0)}
-                    </td>
-
-                    <td className="p-4 text-center">
-                      {inv.status === "PAID" ? (
-                        <span className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-[10px] font-black px-2.5 py-1 rounded tracking-widest uppercase">
-                          Soldée
-                        </span>
-                      ) : (
-                        <span className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-[10px] font-black px-2.5 py-1 rounded tracking-widest uppercase">
-                          Non Payée
-                        </span>
-                      )}
-                    </td>
-
-                    <td className="p-4 text-right">
-                      <div className="flex justify-end items-center gap-2">
-                        {inv.status === "UNPAID" && (
-                          <button
-                            onClick={() => handleOpenPayment(inv)}
-                            title="Encaisser un paiement"
-                            className="p-1.5 text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"
-                          >
-                            <Wallet size={18} />
-                          </button>
+                      <td className="p-4">
+                        {(inv as any).type === "LABORATORY" ||
+                        (inv as any).lab_requests?.length > 0 ? (
+                          <span className="inline-flex items-center gap-1 bg-teal-50 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300 border border-teal-200 dark:border-teal-800 text-[11px] font-bold px-2 py-0.5 rounded-md whitespace-nowrap">
+                            <Beaker size={13} className="text-[#00a896]" />{" "}
+                            Examens Labo
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-[11px] font-bold px-2 py-0.5 rounded-md whitespace-nowrap">
+                            <Stethoscope size={13} className="text-blue-500" />{" "}
+                            Consult. & Actes
+                          </span>
                         )}
+                      </td>
 
-                        <button
-                          onClick={() => setSelectedInvoiceId(inv.id)}
-                          title="Voir les détails"
-                          className="p-1.5 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-                        >
-                          <Eye size={18} />
-                        </button>
+                      <td className="p-4 text-gray-600 dark:text-gray-300">
+                        {new Date(inv.created_at).toLocaleDateString("fr-FR")}{" "}
+                        <br />
+                        <span className="text-xs text-gray-400">
+                          {new Date(inv.created_at).toLocaleTimeString("fr-FR", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </td>
 
-                        <button
-                          onClick={() => downloadInvoicePdf(inv.id, "stream")}
-                          disabled={actionLoading}
-                          title="Imprimer le PDF"
-                          className="p-1.5 text-slate-600 hover:bg-slate-100 dark:text-gray-300 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50"
-                        >
-                          <Printer size={18} />
-                        </button>
+                      <td className="p-4">
+                        <div className="font-bold text-slate-800 dark:text-gray-200">
+                          {inv.patient?.first_name} {inv.patient?.last_name}
+                        </div>
+                        <div className="text-[11px] text-gray-500 font-mono mt-0.5">
+                          Code: {inv.patient?.patient_code}
+                        </div>
+                      </td>
 
-                        {inv.status === "UNPAID" && (
-                          <button
-                            onClick={() => handleDelete(inv.id)}
-                            title="Annuler la facture"
-                            className="p-1.5 text-red-500 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                          >
-                            <Trash2 size={18} />
-                          </button>
+                      <td className="p-4 text-xs font-medium text-slate-700 dark:text-gray-300">
+                        <div className="flex items-center gap-1.5">
+                          <User size={14} className="text-gray-400 shrink-0" />
+                          <span>{getBilledBy(inv)}</span>
+                        </div>
+                      </td>
+
+                      <td className="p-4 text-right font-mono font-bold text-slate-800 dark:text-gray-200">
+                        {formatCurrency(patientPart)}
+                      </td>
+
+                      <td className="p-4 text-right font-mono font-bold text-red-500">
+                        {formatCurrency(patientRemaining)}
+                      </td>
+
+                      <td className="p-4 text-center">
+                        {isPatientPaid ? (
+                          <span className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-[10px] font-black px-2.5 py-1 rounded tracking-widest uppercase">
+                            Soldée
+                          </span>
+                        ) : (
+                          <span className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-[10px] font-black px-2.5 py-1 rounded tracking-widest uppercase">
+                            Non Payée
+                          </span>
                         )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+
+                      <td className="p-4 text-right">
+                        <div className="flex justify-end items-center gap-2">
+                          {/* 👉 N'affiche le portefeuille que s'il reste une dette patient */}
+                          {!isPatientPaid && (
+                            <button
+                              onClick={() => handleOpenPayment(inv)}
+                              title="Encaisser un paiement"
+                              className="p-1.5 text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/30 rounded-lg transition-colors"
+                            >
+                              <Wallet size={18} />
+                            </button>
+                          )}
+
+                          <button
+                            onClick={() => setSelectedInvoiceId(inv.id)}
+                            title="Voir les détails"
+                            className="p-1.5 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                          >
+                            <Eye size={18} />
+                          </button>
+
+                          <button
+                            onClick={() => downloadInvoicePdf(inv.id, "stream")}
+                            disabled={actionLoading}
+                            title="Imprimer le PDF"
+                            className="p-1.5 text-slate-600 hover:bg-slate-100 dark:text-gray-300 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50"
+                          >
+                            <Printer size={18} />
+                          </button>
+
+                          {/* Autorise la suppression si la facture (au global) n'est pas payée */}
+                          {inv.status === "UNPAID" && (
+                            <button
+                              onClick={() => handleDelete(inv.id)}
+                              title="Annuler la facture"
+                              className="p-1.5 text-red-500 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
