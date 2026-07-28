@@ -1,6 +1,6 @@
- export interface UserLoginDto {
-    email:string | null,
-    password:string | null,
+export interface UserLoginDto {
+    email: string | null,
+    password: string | null,
 }
 // src/types/types.ts
 
@@ -14,13 +14,14 @@ export interface ProfileDto {
     profile_reception?: { id?: number; center_id: number } | null;
     branch_id?: number | null;
 }
-export  interface CountryDto{
-    
+
+export interface CountryDto {
     id?: number; 
-    name:string;
-    code:string;
-    currency:string;
+    name: string;
+    code: string;
+    currency: string;
 }
+
 // Interface magique pour gérer n'importe quelle réponse paginée de Laravel !
 export interface PaginatedResponse<T> {
     data: T[];
@@ -29,6 +30,7 @@ export interface PaginatedResponse<T> {
     per_page: number;
     total: number;
 }
+
 export interface HospitalDto {
     id?: number;
     name: string;
@@ -36,12 +38,20 @@ export interface HospitalDto {
     logo_url?: string | null; // L'URL venant de la BDD pour l'affichage
     logo?: File | null;       // Le fichier réel à envoyer lors de la création/modification
 }
-// --- DTOs POUR LA GESTION DES ADMINISTRATEURS ---
+
+// ==========================================
+// DTOs POUR LA GESTION DES ADMINISTRATEURS
+// ==========================================
 
 export interface AdminProfileDto {
     id: number;
     user_id: number;
     hospital_id: number;
+    // Nouveaux champs pour la gestion multi-sites (BI et accès)
+    center_ids?: number[] | null;
+    pharmacy_branch_ids?: number[] | null;
+    laboratory_ids?: number[] | null;
+    accessible_licences?: string[] | null;
     // La relation optionnelle vers l'hôpital
     hospital?: HospitalDto; 
 }
@@ -53,7 +63,7 @@ export interface AdminDto {
     phone: number | string;
     email: string;
     role_id: number;
-    // La relation optionnelle vers le profil (qui contient l'hôpital)
+    // La relation optionnelle vers le profil (qui contient l'hôpital et les restrictions)
     profile_admin?: AdminProfileDto;
 }
 
@@ -66,7 +76,13 @@ export interface AdminPayload {
     // Requis à la création, optionnel à la modification
     password?: string; 
     hospital_id: number;
+    // Nouveaux champs pour la gestion multi-sites (BI et accès)
+    accessible_licences?: string[] | null;
+    center_ids?: number[] | null;
+    pharmacy_branch_ids?: number[] | null;
+    laboratory_ids?: number[] | null;
 }
+
 export interface LicenceDto {
     id: number;
     name: string;
@@ -83,6 +99,7 @@ export interface LicencePayload {
     name: string;
     description?: string | null;
 }
+
 // ==========================================
 // DTOs POUR LA GESTION DES SOUSCRIPTIONS (SUPA)
 // ==========================================
@@ -149,6 +166,7 @@ export interface SubscriptionPreviewDto {
     total_amount: number;
     currency: string;
 }
+
 export interface CenterDto {
     id: number;
     name: string;
@@ -178,6 +196,7 @@ export interface CenterPayload {
     address?: string | null;
     country_id: number;
 }
+
 export interface DepartmentDto {
     id: number;
     center_id: number;
@@ -191,6 +210,7 @@ export interface DepartmentPayload {
     name: string;
     alias?: string | null;
 }
+
 // ==========================================
 // DTOs POUR LE RÔLE PHARMACIEN
 // ==========================================

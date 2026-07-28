@@ -123,6 +123,7 @@ import CashMovementHistory from "./Pages/PHARMACY/CashMovementHistory";
 import CeoManagement from "./Pages/SUPA/ceo/CeoManagement";
 import InsuranceManagement from "./Pages/Admin/InsuranceManagement";
 import GuarantorClaims from "./Pages/Admin/Base_hospital/guarantor/GuarantorClaims";
+import { PharmacyBiDashboard } from "./Pages/CEO/PharmacyBI/PharmacyBiDashboard";
 
 // ============================================================================
 // CONFIGURATION DES ROUTES
@@ -161,11 +162,22 @@ const routes = createBrowserRouter([
         children: [
           { path: "countries", element: <Countries /> },
           { path: "hospitals", element: <Hospitals /> },
-          { path: "admins", element: <Admins /> },
           { path: "ceos", element: <CeoManagement /> },
           { path: "licences", element: <Licences /> },
           { path: "subscriptions", element: <Subscriptions /> },
         ],
+      },
+      {
+        element:(
+          <CheckRole roles={["admin","super_admin"]}>
+            <Outlet/>
+          </CheckRole>
+        ),
+        children:[
+          
+          { path: "admins", element: <Admins /> },
+        ]
+
       },
       //BI AND REPORTING
       // ====================================================
@@ -176,7 +188,7 @@ const routes = createBrowserRouter([
             <Outlet />
           </CheckRole>
         ),
-        children: [{ path: "dashboard", element: <b>hi</b> }],
+        children: [{ path: "pharmacy-dashboard", element: <PharmacyBiDashboard/> }],
       },
       // ====================================================
       // B. ESPACE ADMINISTRATEUR (Base Hôpital & Paramétrages)

@@ -425,6 +425,7 @@ class SubscriptionController extends Controller
             ?? $user->profile_doctor->hospital_id 
             ?? $user->profile_lab?->laboratory->hospital_id 
             ?? $user->profile_reception->hospital_id 
+            ?? $user->profile_ceo->hospital_id
             ?? null;
     }
 /**
@@ -459,7 +460,6 @@ class SubscriptionController extends Controller
         }
 
         $hospitalId = $this->resolveUserHospitalId($user);
-
         if (!$hospitalId) {
             return response()->json([
                 'message' => 'Aucun hôpital associé à ce profil.',

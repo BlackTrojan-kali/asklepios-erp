@@ -5,6 +5,7 @@ namespace App\Http\Controllers\SUPA;
 use App\Http\Controllers\Controller;
 use App\Models\Hospital;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use OpenApi\Attributes as OA;
 
@@ -30,11 +31,16 @@ class HospitalController extends Controller
         $search = $request->query('search');
 
         $query = Hospital::query();
+        $role  = Auth::user()->role->name;
 
+        
         if ($search) {
             $query->where('name', 'like', "%{$search}%")
                   ->orWhere('niu', 'like', "%{$search}%");
         }
+        if($role == "admin"){
+            $query->where("id",Auth::user()->profile_admin->hospital_id);
+        };
 
         $hospitals = $query->latest()->paginate($perPage);
 

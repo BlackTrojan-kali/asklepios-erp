@@ -3,14 +3,14 @@ import { Menu, X, ChevronLeft } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import SidebarItem from "./SidebarItem";
 import { MENU_CONFIG } from "../config/menu.config";
-import useSubscriptionStore from "../functions/subscriptions/useSubscriptionStore"; // Ajuste le chemin selon ton dossier
+import useSubscriptionStore from "../functions/subscriptions/useSubscriptionStore";
 
 const Sidebar = () => {
   const { profile } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  // Récupération du statut d'abonnement
+  // Récupération du statut d'abonnement (Fallback)
   const { mySubscriptionStatus, getMyRemainingDays } = useSubscriptionStore();
 
   // Extraction du rôle et de la position
@@ -24,11 +24,19 @@ const Sidebar = () => {
     }
   }, [userRole, getMyRemainingDays]);
 
-  // Extraction de la liste des noms de licences actives depuis le store
-  const activeLicences = useMemo(() => {
+  // 👉 NOUVELLE LOGIQUE : Extraction des licences autorisées
+  const allowedLicences = useMemo(() => {
+    // 1. On privilégie les licences renvoyées dans le profil (depuis le nouveau AuthController)
+    // Cela contient déjà l'intersection (Abonnements Hôpital + Restrictions de l'Admin)
+    const userLicences = (profile as any)?.licences;
+    if (userLicences && Array.isArray(userLicences) && userLicences.length > 0) {
+      return userLicences;
+    }
+
+    // 2. Fallback : Si non présent dans le profil, on utilise le store des souscriptions
     if (!mySubscriptionStatus?.licences) return [];
     return mySubscriptionStatus.licences.map((licence) => licence.name);
-  }, [mySubscriptionStatus]);
+  }, [profile, mySubscriptionStatus]);
 
   const filteredMenu = useMemo(() => {
     if (!userRole) return [];
@@ -40,14 +48,14 @@ const Sidebar = () => {
 
       // 2. VÉRIFICATION DE LA LICENCE (Si le menu exige une licence et qu'on n'est pas super_admin)
       if (item.requiredLicence && userRole !== "super_admin") {
-        if (!activeLicences.includes(item.requiredLicence)) {
-          return false; // On cache le menu
+        if (!allowedLicences.includes(item.requiredLicence)) {
+          return false; // On cache le menu car l'admin n'a pas accès à cette licence
         }
       }
 
       // 2.b. EXCLUSION DE LICENCE (Si le menu est interdit quand une certaine licence est présente)
       if (item.excludedLicence && userRole !== "super_admin") {
-        if (activeLicences.includes(item.excludedLicence)) {
+        if (allowedLicences.includes(item.excludedLicence)) {
           return false; // On cache le menu
         }
       }
@@ -85,7 +93,7 @@ const Sidebar = () => {
       // Pour les autres rôles (admin, super_admin) ayant passé les vérifications précédentes
       return true;
     });
-  }, [userRole, userPosition, activeLicences]);
+  }, [userRole, userPosition, allowedLicences]);
 
   return (
     <>

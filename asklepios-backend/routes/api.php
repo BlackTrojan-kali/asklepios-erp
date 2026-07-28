@@ -31,6 +31,7 @@ use App\Http\Controllers\Admin\ProviderController;
 use App\Http\Controllers\Admin\RoomCategoryController;
 use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Admin\VehiculeController;
+use App\Http\Controllers\BI\PharmacyBIController;
 use App\Http\Controllers\Doctor\ConsultationController;
 use App\Http\Controllers\Doctor\PdfController as DoctorPdfController;
 use App\Http\Controllers\Doctor\EquipmentController;
@@ -70,6 +71,27 @@ Route::prefix("auth")->group(function(){
 // 2. ROUTES AUTHENTIFIÉES (GLOBALES)
 // ==========================================================
 Route::middleware('auth:sanctum')->group(function () {
+
+// ==========================================================
+        // 6. ESPACE BUSINESS INTELLIGENCE (CEO & ADMIN)
+        // ==========================================================
+        Route::middleware(['role:ceo,admin', 'licence:pharmacy'])->prefix('ceo/bi/pharmacy')->group(function () {
+            
+            // KPIs globaux (CA, Marge, Panier moyen)
+            Route::get('/kpis', [PharmacyBIController::class, 'getGlobalKPIs']);
+            
+            // Analyse détaillée des ventes (Courbes, Tops, Ratio Ordonnances)
+            Route::get('/sales-analytics', [PharmacyBIController::class, 'getSalesAnalytics']);
+            
+            // Valorisation financière du stock (Valeur d'achat, Valeur de vente, Bénéfice)
+            Route::get('/inventory-valuation', [PharmacyBIController::class, 'getInventoryValuation']);
+            
+            // Conformité MINSANTE (Péremptions et Ruptures de stock)
+            Route::get('/minsante-compliance', [PharmacyBIController::class, 'getMinsanteCompliance']);
+            
+        });
+
+
 Route::get('insurance-coverages/patient/{patient_id}', [PatientCoverageController::class, 'getPatientCoverages']);
 
 Route::middleware(['role:admin,reception'])->group(function () {
@@ -97,11 +119,16 @@ Route::middleware(['role:admin,reception'])->prefix('admin')->group(function () 
     Route::apiResource('insurance-companies', InsuranceCompanyController::class)->except(['show']);
 });
 
-Route::middleware(['role:super_admin'])->prefix('superadmin')->group(function () {
+Route::middleware(['role:super_admin,admin'])->prefix('supa')->group(function () {
     
     // Vous pouvez utiliser apiResource pour générer automatiquement index, store, update, destroy
     Route::apiResource('ceos', ProfileCeoController::class)->except(['show']);
     
+        Route::patch('/admins/{id}/password', [AdminController::class, 'updatePassword']);
+        Route::apiResource('admins', AdminController::class);
+        
+        // Hôpitaux & Administrateurs clients
+        Route::apiResource('hospitals', HospitalController::class);
 });
     // Profil utilisateur
     Route::get('/user', function (Request $request) {
@@ -136,10 +163,6 @@ Route::middleware(['role:super_admin'])->prefix('superadmin')->group(function ()
         Route::put('/countries/{id}', [CountryController::class, 'update']);
         Route::apiResource('licences', LicenceController::class);
 
-        // Hôpitaux & Administrateurs clients
-        Route::apiResource('hospitals', HospitalController::class);
-        Route::patch('/admins/{id}/password', [AdminController::class, 'updatePassword']);
-        Route::apiResource('admins', AdminController::class);
 
         // Souscriptions (Abonnements)
         Route::prefix('subscriptions')->group(function () {

@@ -2,211 +2,173 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Rapport Financier - {{ $reportType }}</title>
+    <title>Rapport des Factures et Créances</title>
     <style>
-        @page { margin: 120px 30px 50px 30px; }
-        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1f2937; font-size: 10px; }
+        body { font-family: 'Helvetica', 'Arial', sans-serif; color: #333; font-size: 10px; margin: 0; padding: 0; }
         
-        .watermark { position: fixed; top: 15%; left: 25%; width: 50%; opacity: 0.08; z-index: -1000; text-align: center; }
-        .watermark img { width: 100%; max-width: 400px; }
-
-        header { position: fixed; top: -100px; left: 0; right: 0; height: 80px; border-bottom: 2px solid #003366; padding-bottom: 10px; }
-        .header-table { width: 100%; border-collapse: collapse; }
-        .hospital-name { font-size: 16px; font-weight: bold; color: #003366; text-transform: uppercase; }
-        .doc-title { text-align: right; }
-        .doc-title h1 { margin: 0; font-size: 20px; color: #003366; }
-        .doc-subtitle { margin: 2px 0; font-size: 11px; color: #00a896; font-weight: bold; }
-
-        footer { position: fixed; bottom: -30px; left: 0; right: 0; height: 20px; border-top: 1px solid #00a896; text-align: center; font-size: 9px; color: #64748b; padding-top: 5px; }
-        .page-number:after { content: counter(page); }
-
-        .summary-box { background-color: #f8fafc; border: 1px solid #cbd5e1; padding: 10px; margin-bottom: 15px; border-left: 4px solid #00a896; }
-        .summary-box p { margin: 3px 0; font-size: 11px; }
-
-        .data-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 9px; }
-        .data-table th, .data-table td { border: 1px solid #cbd5e1; padding: 6px; }
-        .data-table th { background-color: #003366; color: white; text-align: left; text-transform: uppercase; }
-        .data-table tr:nth-child(even) { background-color: #f8fafc; }
+        .header-table { width: 100%; border-bottom: 2px solid #00a896; padding-bottom: 10px; margin-bottom: 15px; }
+        .title { color: #003366; font-size: 18px; font-weight: bold; text-transform: uppercase; margin: 0 0 5px 0; }
+        .subtitle { color: #64748b; font-size: 10px; margin: 0; }
+        
+        .data-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 9px; }
+        .data-table th { background-color: #003366; color: white; padding: 6px 4px; text-align: left; text-transform: uppercase; }
+        .data-table td { padding: 6px 4px; border-bottom: 1px solid #e2e8f0; }
         
         .text-right { text-align: right; }
         .text-center { text-align: center; }
-        .amount { font-weight: bold; font-family: monospace; font-size: 10px; }
-        .total-row { background-color: #e2e8f0 !important; font-weight: bold; font-size: 11px; }
-        .badge { padding: 2px 4px; border-radius: 2px; color: white; font-size: 8px; }
-        .bg-red { background-color: #ef4444; }
-        .bg-green { background-color: #10b981; }
+        .font-mono { font-family: monospace; font-size: 10px; }
+        .text-green { color: #10b981; font-weight: bold; }
+        .text-red { color: #ef4444; font-weight: bold; }
+        .text-blue { color: #3b82f6; font-weight: bold; }
+        
+        .badge { display: inline-block; padding: 2px 4px; font-weight: bold; font-size: 8px; color: white; border-radius: 3px; }
+        .bg-paid { background-color: #10b981; }
+        .bg-unpaid { background-color: #ef4444; }
+
+        .totals-wrapper { width: 100%; page-break-inside: avoid; margin-top: 20px;}
+        .totals-table { width: 45%; float: right; border-collapse: collapse; font-size: 11px; }
+        .totals-table td { padding: 6px 8px; border: 1px solid #cbd5e1; }
+        .totals-table th { background-color: #f1f5f9; padding: 6px 8px; border: 1px solid #cbd5e1; text-align: left; color: #334155; }
+        .total-final-row th, .total-final-row td { background-color: #003366; color: white; font-weight: bold; font-size: 12px; border-color: #003366; }
+
+        .footer { position: fixed; bottom: -20px; left: 0; right: 0; text-align: center; font-size: 8px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 5px; }
     </style>
 </head>
 <body>
 
-    @if($asklepiosLogoBase64)
-        <div class="watermark">
-            <img src="{{ $asklepiosLogoBase64 }}" alt="Filigrane Asclépios">
-        </div>
-    @endif
-
-    <header>
-        <table class="header-table">
-            <tr>
-                <td style="width: 50%;">
-                    @if($hospitalLogoBase64)
-                        <img src="{{ $hospitalLogoBase64 }}" style="max-height: 50px;" alt="Logo">
+    <table class="header-table">
+        <tr>
+            <td style="width: 50%; vertical-align: top;">
+                @if(isset($logoBase64) && $logoBase64)
+                    <img src="{{ $logoBase64 }}" style="max-height: 40px; margin-bottom: 10px;" alt="Logo">
+                @endif
+                <h1 class="title">Rapport des Factures & Créances</h1>
+                <p class="subtitle">
+                    Généré par : {{ $user->first_name }} {{ $user->last_name }} 
+                </p>
+            </td>
+            <td style="width: 50%; vertical-align: top; text-align: right;">
+                <p style="margin: 0 0 5px 0;"><strong>Critères du rapport :</strong></p>
+                <p style="margin: 0; color: #64748b; font-size: 9px; line-height: 1.4;">
+                    Période : 
+                    @if(!empty($filters['start_date']) || !empty($filters['end_date']))
+                        Du {{ !empty($filters['start_date']) ? \Carbon\Carbon::parse($filters['start_date'])->format('d/m/Y') : 'Début' }} 
+                        au {{ !empty($filters['end_date']) ? \Carbon\Carbon::parse($filters['end_date'])->format('d/m/Y') : 'Aujourd\'hui' }}
                     @else
-                        <div class="hospital-name">{{ $hospital->name }}</div>
+                        Toutes les dates
                     @endif
-                </td>
-                <td class="doc-title" style="width: 50%;">
-                    <h1>
-                        @if($reportType === 'INVOICES') RAPPORT DES FACTURATIONS
-                        @elseif($reportType === 'PAYMENTS') RAPPORT DES ENCAISSEMENTS
-                        @elseif($reportType === 'DEBTS') ÉTAT DES CRÉANCES CLIENTS
-                        @endif
-                    </h1>
-                    <p class="doc-subtitle">Période du {{ $startDate }} au {{ $endDate }}</p>
-                </td>
-            </tr>
-        </table>
-    </header>
-
-    <footer>
-        Généré par {{ $generated_by }} le {{ $generated_at }} via Asclépios ERP - Page <span class="page-number"></span>
-    </footer>
-
-    <div class="summary-box">
-        <table style="width: 100%;">
-            <tr>
-                <td style="width: 50%;">
-                    <p><strong>Établissement :</strong> {{ $hospital->name }}</p>
-                    <p><strong>Centre concerné :</strong> {{ $centerName }}</p>
-                    <p><strong>Nombre d'enregistrements :</strong> {{ count($records) }}</p>
-                </td>
-                <td style="width: 50%; text-align: right;">
-                    @if($reportType === 'INVOICES')
-                        <p style="font-size: 14px;"><strong>Chiffre d'Affaires Facturé :</strong> <span style="color: #003366;">{{ number_format($totals['amount'], 0, ',', ' ') }} FCFA</span></p>
-                    @elseif($reportType === 'PAYMENTS')
-                        <p style="font-size: 14px;"><strong>Total Encaissé (Trésorerie) :</strong> <span style="color: #10b981;">{{ number_format($totals['paid'], 0, ',', ' ') }} FCFA</span></p>
-                    @elseif($reportType === 'DEBTS')
-                        <p><strong>Total Facturé (Dettes) :</strong> {{ number_format($totals['amount'], 0, ',', ' ') }} FCFA</p>
-                        <p><strong>Total Avancé :</strong> {{ number_format($totals['paid'], 0, ',', ' ') }} FCFA</p>
-                        <p style="font-size: 14px;"><strong>Total Reste à Recouvrer :</strong> <span style="color: #ef4444;">{{ number_format($totals['debt'], 0, ',', ' ') }} FCFA</span></p>
-                    @endif
-                </td>
-            </tr>
-        </table>
-    </div>
-
-    <table class="data-table">
-        
-        @if($reportType === 'INVOICES')
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>N° Facture</th>
-                    <th>Patient</th>
-                    <th>Code Patient</th>
-                    <th>Centre</th>
-                    <th class="text-center">Statut</th>
-                    <th class="text-right">Montant (FCFA)</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($records as $inv)
-                    <tr>
-                        <td>{{ \Carbon\Carbon::parse($inv->created_at)->format('d/m/Y H:i') }}</td>
-                        <td>INV-{{ str_pad($inv->id, 5, '0', STR_PAD_LEFT) }}</td>
-                        <td>{{ $inv->patient->first_name }} {{ $inv->patient->last_name }}</td>
-                        <td>{{ $inv->patient->patient_code }}</td>
-                        <td>{{ $inv->center->name ?? 'N/A' }}</td>
-                        <td class="text-center">
-                            @if($inv->status === 'PAID') <span class="badge bg-green">SOLDE</span>
-                            @else <span class="badge bg-red">NON SOLDE</span> @endif
-                        </td>
-                        <td class="text-right amount">{{ number_format($inv->total_amount, 0, ',', ' ') }}</td>
-                    </tr>
-                @endforeach
-                @if(count($records) > 0)
-                    <tr class="total-row">
-                        <td colspan="6" class="text-right">TOTAL GÉNÉRAL FACTURÉ</td>
-                        <td class="text-right amount">{{ number_format($totals['amount'], 0, ',', ' ') }}</td>
-                    </tr>
-                @endif
-            </tbody>
-
-        @elseif($reportType === 'PAYMENTS')
-            <thead>
-                <tr>
-                    <th>Date d'encaissement</th>
-                    <th>N° Reçu</th>
-                    <th>Patient</th>
-                    <th>Lié à la Facture</th>
-                    <th>Méthode</th>
-                    <th>Caissier(ère)</th>
-                    <th class="text-right">Montant (FCFA)</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($records as $pay)
-                    <tr>
-                        <td>{{ \Carbon\Carbon::parse($pay->created_at)->format('d/m/Y H:i') }}</td>
-                        <td>REC-{{ str_pad($pay->id, 5, '0', STR_PAD_LEFT) }}</td>
-                        <td>{{ $pay->invoice->patient->first_name }} {{ $pay->invoice->patient->last_name }}</td>
-                        <td>INV-{{ str_pad($pay->invoice_id, 5, '0', STR_PAD_LEFT) }}</td>
-                        <td>{{ $pay->payment_method }}</td>
-                        <td>{{ $pay->reception->user->first_name ?? 'Admin' }}</td>
-                        <td class="text-right amount">{{ number_format($pay->amount, 0, ',', ' ') }}</td>
-                    </tr>
-                @endforeach
-                @if(count($records) > 0)
-                    <tr class="total-row">
-                        <td colspan="6" class="text-right">TOTAL ENCAISSÉ</td>
-                        <td class="text-right amount">{{ number_format($totals['paid'], 0, ',', ' ') }}</td>
-                    </tr>
-                @endif
-            </tbody>
-
-        @elseif($reportType === 'DEBTS')
-            <thead>
-                <tr>
-                    <th>Date d'émission</th>
-                    <th>N° Facture</th>
-                    <th>Patient (Contact)</th>
-                    <th>Centre</th>
-                    <th class="text-right">Montant Facture</th>
-                    <th class="text-right">Déjà Versé</th>
-                    <th class="text-right" style="color:#ef4444;">Reste à Payer</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($records as $debt)
-                    <tr>
-                        <td>{{ \Carbon\Carbon::parse($debt->created_at)->format('d/m/Y') }}</td>
-                        <td>INV-{{ str_pad($debt->id, 5, '0', STR_PAD_LEFT) }}</td>
-                        <td>
-                            {{ $debt->patient->first_name }} {{ $debt->patient->last_name }}<br>
-                            <span style="font-size: 8px; color: #64748b;">Tél: {{ $debt->patient->contact_phone }}</span>
-                        </td>
-                        <td>{{ $debt->center->name ?? 'N/A' }}</td>
-                        <td class="text-right amount">{{ number_format($debt->total_amount, 0, ',', ' ') }}</td>
-                        <td class="text-right amount" style="color: #10b981;">{{ number_format($debt->paid_amount, 0, ',', ' ') }}</td>
-                        <td class="text-right amount" style="color: #ef4444;">{{ number_format($debt->remaining_amount, 0, ',', ' ') }}</td>
-                    </tr>
-                @endforeach
-                @if(count($records) > 0)
-                    <tr class="total-row">
-                        <td colspan="4" class="text-right">TOTAUX DES CRÉANCES EN SOUFFRANCE</td>
-                        <td class="text-right amount">{{ number_format($totals['amount'], 0, ',', ' ') }}</td>
-                        <td class="text-right amount" style="color: #10b981;">{{ number_format($totals['paid'], 0, ',', ' ') }}</td>
-                        <td class="text-right amount" style="color: #ef4444;">{{ number_format($totals['debt'], 0, ',', ' ') }}</td>
-                    </tr>
-                @endif
-            </tbody>
-        @endif
-
+                    <br>
+                    Statut : {{ !empty($filters['status']) ? ($filters['status'] == 'PAID' ? 'Soldées uniquement' : 'Impayés uniquement') : 'Tous statuts' }}
+                </p>
+            </td>
+        </tr>
     </table>
 
-    @if(count($records) === 0)
-        <p class="text-center text-muted" style="margin-top: 30px;">Aucune donnée trouvée pour cette période et ce centre.</p>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th style="width: 8%;">Date</th>
+                <th style="width: 10%;">N° Facture</th>
+                <th style="width: 18%;">Patient</th>
+                <th style="width: 12%;" class="text-right">Total Brut</th>
+                <th style="width: 12%;" class="text-right">Assurance</th>
+                <th style="width: 12%;" class="text-right">Part Patient</th>
+                <th style="width: 10%;" class="text-right">Reste à recouvrer</th>
+                <th style="width: 8%;" class="text-center">Statut</th>
+            </tr>
+        </thead>
+        <tbody>
+            @php
+                $globalTotalBrut = 0;
+                $globalTotalInsurance = 0;
+                $globalTotalPatient = 0;
+                $globalTotalPatientPaid = 0;
+                $globalTotalDebt = 0;
+            @endphp
+
+            @forelse($invoices as $invoice)
+                @php
+                    $insurancePart = $invoice->splits->where('type', 'INSURANCE')->sum('amount_to_pay');
+                    $patientSplit = $invoice->splits->where('type', 'PATIENT')->first();
+                    $patientPart = $patientSplit ? $patientSplit->amount_to_pay : $invoice->total_amount;
+                    
+                    // Calcul de ce que le patient a réellement versé de sa poche
+                    $patientPaid = $invoice->payments->filter(function($p) use ($patientSplit) {
+                        return !$p->invoice_split_id || ($patientSplit && $p->invoice_split_id == $patientSplit->id);
+                    })->sum('amount');
+                    
+                    $remainingPatientDebt = max(0, $patientPart - $patientPaid);
+
+                    // Incrémentations globales
+                    $globalTotalBrut += $invoice->total_amount;
+                    $globalTotalInsurance += $insurancePart;
+                    $globalTotalPatient += $patientPart;
+                    $globalTotalPatientPaid += $patientPaid;
+                    $globalTotalDebt += $remainingPatientDebt;
+                @endphp
+            <tr>
+                <td>{{ \Carbon\Carbon::parse($invoice->created_at)->format('d/m/Y') }}</td>
+                <td class="font-mono">INV-{{ str_pad($invoice->id, 5, '0', STR_PAD_LEFT) }}</td>
+                <td>
+                    <strong>{{ $invoice->patient->first_name ?? '' }} {{ $invoice->patient->last_name ?? '' }}</strong><br>
+                    <span style="color: #64748b; font-size: 8px;">{{ $invoice->patient->patient_code ?? '' }}</span>
+                </td>
+                
+                <td class="text-right font-mono">{{ number_format($invoice->total_amount, 0, ',', ' ') }}</td>
+                <td class="text-right font-mono text-blue">{{ number_format($insurancePart, 0, ',', ' ') }}</td>
+                <td class="text-right font-mono">{{ number_format($patientPart, 0, ',', ' ') }}</td>
+                
+                <td class="text-right font-mono {{ $remainingPatientDebt > 0 ? 'text-red' : 'text-green' }}">
+                    {{ number_format($remainingPatientDebt, 0, ',', ' ') }}
+                </td>
+                
+                <td class="text-center">
+                    <span class="badge {{ ($invoice->status === 'PAID' || $remainingPatientDebt == 0) ? 'bg-paid' : 'bg-unpaid' }}">
+                        {{ ($invoice->status === 'PAID' || $remainingPatientDebt == 0) ? 'SOLDÉE' : 'NON SOLDÉE' }}
+                    </span>
+                </td>
+            </tr>
+            @empty
+            <tr>
+                <td colspan="8" class="text-center" style="padding: 20px; color: #64748b;">
+                    Aucune facture trouvée pour ces critères de recherche.
+                </td>
+            </tr>
+            @endforelse
+        </tbody>
+    </table>
+
+    @if(count($invoices) > 0)
+    <div class="totals-wrapper">
+        <table class="totals-table">
+            <tr>
+                <th>Montant Global Brut</th>
+                <td class="text-right font-mono">{{ number_format($globalTotalBrut, 0, ',', ' ') }} FCFA</td>
+            </tr>
+            <tr>
+                <th>Prise en charge Assurance</th>
+                <td class="text-right font-mono text-blue">- {{ number_format($globalTotalInsurance, 0, ',', ' ') }} FCFA</td>
+            </tr>
+            <tr>
+                <th>Total Dû par les Patients</th>
+                <td class="text-right font-mono">{{ number_format($globalTotalPatient, 0, ',', ' ') }} FCFA</td>
+            </tr>
+            <tr>
+                <th>Total Encaissé (Caisses)</th>
+                <td class="text-right font-mono text-green">{{ number_format($globalTotalPatientPaid, 0, ',', ' ') }} FCFA</td>
+            </tr>
+            <tr class="total-final-row">
+                <th>RESTE À RECOUVRER (PATIENTS)</th>
+                <td class="text-right font-mono">{{ number_format($globalTotalDebt, 0, ',', ' ') }} FCFA</td>
+            </tr>
+        </table>
+        <div style="clear: both;"></div>
+    </div>
     @endif
+
+    <div class="footer">
+        Système de gestion hospitalière Asclépios ERP - Document généré le {{ isset($generated_at) ? $generated_at : now()->format('d/m/Y H:i') }}
+    </div>
 
 </body>
 </html>

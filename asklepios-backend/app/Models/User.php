@@ -57,7 +57,7 @@ class User extends Authenticatable
     public function profile_reception(){
         return $this->hasOne(ProfileReception::class);
     }
-    public function profileCeo()
+    public function profile_ceo()
     {
     return $this->hasOne(ProfileCeo::class);
     }

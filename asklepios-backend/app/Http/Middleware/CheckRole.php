@@ -22,7 +22,7 @@ class CheckRole
         // 2. Récupérer le rôle de l'utilisateur
         // En me basant sur ton AuthController, ton rôle est accessible via la relation ->role->name
         $userRole = $request->user()->role->name ?? null;
-
+    
         // 3. Vérifier si le rôle de l'utilisateur est dans le tableau des rôles autorisés
         if (! in_array($userRole, $roles)) {
             return response()->json([

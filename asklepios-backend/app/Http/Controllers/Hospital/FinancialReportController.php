@@ -32,7 +32,6 @@ class FinancialReportController extends Controller
         security: [["sanctum" => []]],
         tags: ["Facturation"]
     )]
-    
     #[OA\Response(response: 200, description: "élément généré avec succès")]
     public function generateReport(Request $request)
     {
@@ -46,7 +45,6 @@ class FinancialReportController extends Controller
         $hospitalId = $this->getHospitalId();
         $user = auth()->user();
 
-        // Si l'utilisateur est un docteur, on bloque l'accès aux rapports financiers globaux
         if ($user->profile_doctor) {
             abort(403, "Les médecins n'ont pas accès aux rapports financiers consolidés.");
         }
@@ -58,33 +56,33 @@ class FinancialReportController extends Controller
             $request->report_type
         );
     }
+
     #[OA\Get(
         path: "/api/shared/reports/invoices-pdf",
-        summary: "Générer un rapport PDF des factures avec dettes",
+        summary: "Générer un rapport PDF des factures avec dettes et Tiers Payant",
         security: [["sanctum" => []]],
         tags: ["Facturation"]
     )]
     #[OA\Response(response: 200, description: "élément généré avec succès")]
-    
     public function exportInvoicesReport(Request $request)
     {
-        // Validation des filtres
         $validated = $request->validate([
             'start_date' => 'nullable|date',
             'end_date'   => 'nullable|date|after_or_equal:start_date',
             'patient_id' => 'nullable|exists:patients,id',
-            'center_id'  => 'nullable|exists:centers,id'
+            'center_id'  => 'nullable|exists:centers,id',
+            'status'     => 'nullable|in:PAID,UNPAID' // 👉 NOUVEAU: Permet de filtrer les impayés purs
         ]);
 
         $user = auth()->user();
 
-        // Les médecins n'ont pas vocation à sortir des bilans comptables
         if ($user->profile_doctor) {
             abort(403, "Accès refusé. Réservé à l'administration et à la caisse.");
         }
 
         return $this->reportService->generateInvoicesReportPdf($user, $validated);
     }
+
     #[OA\Get(
         path: "/api/shared/reports/payments-pdf",
         summary: "Générer un rapport PDF des encaissements (Point de caisse)",
@@ -94,7 +92,6 @@ class FinancialReportController extends Controller
     #[OA\Response(response: 200, description: "élément généré avec succès")]
     public function exportPaymentsReport(Request $request)
     {
-        // Validation des filtres
         $validated = $request->validate([
             'start_date'     => 'nullable|date',
             'end_date'       => 'nullable|date|after_or_equal:start_date',

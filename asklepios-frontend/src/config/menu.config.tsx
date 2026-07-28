@@ -1,5 +1,4 @@
 import React from "react";
-import { ShieldPlus } from 'lucide-react';
 import {
   Globe,
   Hospital,
@@ -17,7 +16,6 @@ import {
   Users,
   Computer,
   Calendar,
-  Workflow,
   BriefcaseMedical,
   Building2,
   BedDouble,
@@ -25,11 +23,11 @@ import {
   Microscope,
   TestTubes,
   Database,
-  Command,
   Star,
+  ShieldPlus,
+  PieChart // 👉 NOUVEAU: Icône pour la BI
 } from "lucide-react";
 
-// --- 1. DÉFINITION DES TYPES ---
 export type MenuItemType = {
   title: string;
   icon?: React.ReactNode;
@@ -42,7 +40,6 @@ export type MenuItemType = {
   subItems?: MenuItemType[];
 };
 
-// --- 2. CONFIGURATION GLOBALE DES MENUS ---
 export const MENU_CONFIG: MenuItemType[] = [
   // ==========================================
   // A. MENUS SUPER ADMIN (Gestion SaaS globale)
@@ -53,7 +50,6 @@ export const MENU_CONFIG: MenuItemType[] = [
     path: "/countries",
     roles: ["super_admin"],
   },
-  
   {
     title: "Hôpitaux",
     icon: <Hospital size={20} />,
@@ -64,7 +60,7 @@ export const MENU_CONFIG: MenuItemType[] = [
     title: "Administrateurs",
     icon: <Shield size={20} />,
     path: "/admins",
-    roles: ["super_admin"],
+    roles: ["super_admin","admin"],
   },
   {
     title: "Ceos",
@@ -89,6 +85,20 @@ export const MENU_CONFIG: MenuItemType[] = [
   },
 
   // ==========================================
+  // 👉 NOUVEAU : I. ESPACE DIRECTION (BI)
+  // ==========================================
+  {
+    title: "Tableaux de Bord (BI)",
+    icon: <PieChart size={20} />,
+    roles: ["ceo", "admin"], // Accessible au CEO et à l'Admin
+    requiredLicence: "pharmacy", // Ou "base_hospital" si vous avez d'autres dashboards
+    subItems: [
+      { title: "Rapport Pharmacie", path: "/bi/pharmacy-dashboard" },
+      // Vous pourrez ajouter d'autres dashboards ici (Ex: /bi/hospital-dashboard)
+    ],
+  },
+
+  // ==========================================
   // B. MENUS ADMIN (Base Hôpital & RH)
   // ==========================================
   {
@@ -103,20 +113,13 @@ export const MENU_CONFIG: MenuItemType[] = [
     ],
   },
   {
-    title:"Assurances",
-    icon:<ShieldPlus size={20}/>,
-    roles:["admin"],
-    subItems:[
-      {
-        title:"Assurances",
-        path:"/admin/insurances"
-      },
-      {
-        title:"Demande de Paiement",
-        path:"/admin/guarantor_claims"
-      }
-    ]
-
+    title: "Assurances",
+    icon: <ShieldPlus size={20} />,
+    roles: ["admin"],
+    subItems: [
+      { title: "Assurances", path: "/admin/insurances" },
+      { title: "Demande de Paiement", path: "/admin/guarantor_claims" },
+    ],
   },
   {
     title: "Équipe Médicale",
@@ -194,14 +197,8 @@ export const MENU_CONFIG: MenuItemType[] = [
     requiredLicence: "pharmacy",
     subItems: [
       { title: "Comptes de Trésorerie", path: "/admin/pharmacy/accounts" },
-      {
-        title: "Caisses Enregistreuses",
-        path: "/admin/pharmacy/cash-register",
-      },
-      {
-        title: "Mouvements Trésorerie",
-        path: "/admin/pharmacy/treasury-transactions",
-      },
+      { title: "Caisses Enregistreuses", path: "/admin/pharmacy/cash-register" },
+      { title: "Mouvements Trésorerie", path: "/admin/pharmacy/treasury-transactions" },
       { title: "Versements en attente", path: "/admin/pharmacy/versements" },
     ],
   },
@@ -211,14 +208,8 @@ export const MENU_CONFIG: MenuItemType[] = [
     roles: ["admin"],
     requiredLicence: "pharmacy",
     subItems: [
-      {
-        title: "Historiques des ventes",
-        path: "/admin/pharmacy/pos-sales-history",
-      },
-      {
-        title: "Historique des sessions",
-        path: "/admin/pharmacy/pos-sessions-history",
-      },
+      { title: "Historiques des ventes", path: "/admin/pharmacy/pos-sales-history" },
+      { title: "Historique des sessions", path: "/admin/pharmacy/pos-sessions-history" },
     ],
   },
 
@@ -288,14 +279,8 @@ export const MENU_CONFIG: MenuItemType[] = [
     requiredLicence: "pharmacy",
     subItems: [
       { title: "Historique des Ventes", path: "/pharmacy/cash/sales-history" },
-      {
-        title: "Historique des Sessions",
-        path: "/pharmacy/cash/session/history",
-      },
-      {
-        title: "Mouvements de Caisse",
-        path: "/pharmacy/cash/movements-history",
-      },
+      { title: "Historique des Sessions", path: "/pharmacy/cash/session/history" },
+      { title: "Mouvements de Caisse", path: "/pharmacy/cash/movements-history" },
     ],
   },
 
@@ -316,7 +301,7 @@ export const MENU_CONFIG: MenuItemType[] = [
   {
     title: "Facturation et Paiement",
     icon: <Coins size={20} />,
-    roles: ["reception","admin"],
+    roles: ["reception", "admin"],
     requiredLicence: "base_hospital",
     subItems: [
       { title: "Gestion Factures", path: "/reception/facturation" },
@@ -371,7 +356,7 @@ export const MENU_CONFIG: MenuItemType[] = [
   {
     title: "Mon Équipe",
     icon: <Users size={20} />,
-    roles: ["laboratory"], // Manager du labo indépendant
+    roles: ["laboratory"],
     requiredLicence: "laboratory",
     labRoles: ["lab_manager"],
     path: "/laboratory/personnel",
@@ -399,7 +384,6 @@ export const MENU_CONFIG: MenuItemType[] = [
       { title: "Examens & Paramètres", path: "/laboratory/catalogue/tests" },
     ],
   },
-
   {
     title: "Prélèvements",
     icon: <TestTubes size={20} />,

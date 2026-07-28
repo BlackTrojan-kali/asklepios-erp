@@ -9,7 +9,7 @@ interface PasswordAdminModalProps {
     isOpen: boolean;
     onClose: () => void;
     adminId: number | null; 
-    adminName: string; // Pour afficher "Nouveau mot de passe pour Jean Dupont"
+    adminName: string;
 }
 
 const PasswordAdminModal = ({ isOpen, onClose, adminId, adminName }: PasswordAdminModalProps) => {
@@ -41,7 +41,6 @@ const PasswordAdminModal = ({ isOpen, onClose, adminId, adminName }: PasswordAdm
         setLoading(false);
 
         if (success) {
-            // On vide les champs pour la prochaine ouverture
             setPassword('');
             setConfirmPassword('');
             onClose();
@@ -54,16 +53,13 @@ const PasswordAdminModal = ({ isOpen, onClose, adminId, adminName }: PasswordAdm
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex justify-center items-center p-4 transition-opacity">
             <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden transform transition-all">
                 
-                {/* En-tête avec un design légèrement différent pour montrer l'aspect "Sécurité" */}
+                {/* En-tête Sécurité */}
                 <div className="flex justify-between items-center p-4 border-b border-orange-100 dark:border-orange-900/30 bg-orange-50 dark:bg-orange-900/10">
                     <div className="flex items-center gap-2 text-orange-600 dark:text-orange-400">
                         <KeyRound size={20} />
                         <h3 className="text-lg font-bold">Sécurité du compte</h3>
                     </div>
-                    <button 
-                        onClick={onClose} 
-                        className="p-1 rounded-md text-gray-400 hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors"
-                    >
+                    <button onClick={onClose} className="p-1 rounded-md text-gray-400 hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors">
                         <X size={20} />
                     </button>
                 </div>

@@ -50,7 +50,7 @@ class AdminController extends Controller
     }
 
     /**
-     * Créer un nouvel administrateur et son profil
+     * Créer un nouvel administrateur et son profil (avec restrictions optionnelles)
      */
     #[OA\Post(
         path: "/api/supa/admins",
@@ -65,11 +65,15 @@ class AdminController extends Controller
             required: ["first_name", "phone", "email", "password", "hospital_id"],
             properties: [
                 new OA\Property(property: "first_name", type: "string"),
-                new OA\Property(property: "last_name", type: "string"),
+                new OA\Property(property: "last_name", type: "string", nullable: true),
                 new OA\Property(property: "phone", type: "integer"),
                 new OA\Property(property: "email", type: "string"),
                 new OA\Property(property: "password", type: "string"),
-                new OA\Property(property: "hospital_id", type: "integer")
+                new OA\Property(property: "hospital_id", type: "integer"),
+                new OA\Property(property: "accessible_licences", type: "array", items: new OA\Items(type: "string"), nullable: true, description: "Ex: ['pharmacy', 'laboratory']"),
+                new OA\Property(property: "center_ids", type: "array", items: new OA\Items(type: "integer"), nullable: true, description: "Laisser null pour un accès total"),
+                new OA\Property(property: "pharmacy_branch_ids", type: "array", items: new OA\Items(type: "integer"), nullable: true),
+                new OA\Property(property: "laboratory_ids", type: "array", items: new OA\Items(type: "integer"), nullable: true)
             ]
         )
     )]
@@ -84,6 +88,14 @@ class AdminController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
             'hospital_id' => 'required|exists:hospitals,id',
+            'accessible_licences' => 'nullable|array',
+            'accessible_licences.*' => 'string',
+            'center_ids' => 'nullable|array',
+            'center_ids.*' => 'integer|exists:centers,id',
+            'pharmacy_branch_ids' => 'nullable|array',
+            'pharmacy_branch_ids.*' => 'integer|exists:pharmacy_branches,id',
+            'laboratory_ids' => 'nullable|array',
+            'laboratory_ids.*' => 'integer|exists:laboratories,id',
         ]);
 
         $adminRole = Role::where('name', 'admin')->firstOrFail();
@@ -102,6 +114,10 @@ class AdminController extends Controller
             ProfileAdmin::create([
                 'user_id' => $user->id,
                 'hospital_id' => $validatedData['hospital_id'],
+                'accessible_licences' => $validatedData['accessible_licences'] ?? null,
+                'center_ids' => $validatedData['center_ids'] ?? null,
+                'pharmacy_branch_ids' => $validatedData['pharmacy_branch_ids'] ?? null,
+                'laboratory_ids' => $validatedData['laboratory_ids'] ?? null,
             ]);
 
             return $user;
@@ -140,7 +156,7 @@ class AdminController extends Controller
     }
 
     /**
-     * Modifier les informations d'un administrateur
+     * Modifier les informations d'un administrateur (y compris ses restrictions)
      */
     #[OA\Put(
         path: "/api/supa/admins/{id}",
@@ -155,10 +171,14 @@ class AdminController extends Controller
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: "first_name", type: "string"),
-                new OA\Property(property: "last_name", type: "string"),
+                new OA\Property(property: "last_name", type: "string", nullable: true),
                 new OA\Property(property: "phone", type: "integer"),
                 new OA\Property(property: "email", type: "string"),
-                new OA\Property(property: "hospital_id", type: "integer")
+                new OA\Property(property: "hospital_id", type: "integer"),
+                new OA\Property(property: "accessible_licences", type: "array", items: new OA\Items(type: "string"), nullable: true),
+                new OA\Property(property: "center_ids", type: "array", items: new OA\Items(type: "integer"), nullable: true),
+                new OA\Property(property: "pharmacy_branch_ids", type: "array", items: new OA\Items(type: "integer"), nullable: true),
+                new OA\Property(property: "laboratory_ids", type: "array", items: new OA\Items(type: "integer"), nullable: true)
             ]
         )
     )]
@@ -175,15 +195,35 @@ class AdminController extends Controller
             'phone' => 'sometimes|required|numeric',
             'email' => 'sometimes|required|string|email|max:255|unique:users,email,' . $user->id,
             'hospital_id' => 'sometimes|required|exists:hospitals,id',
+            'accessible_licences' => 'nullable|array',
+            'accessible_licences.*' => 'string',
+            'center_ids' => 'nullable|array',
+            'center_ids.*' => 'integer|exists:centers,id',
+            'pharmacy_branch_ids' => 'nullable|array',
+            'pharmacy_branch_ids.*' => 'integer|exists:pharmacy_branches,id',
+            'laboratory_ids' => 'nullable|array',
+            'laboratory_ids.*' => 'integer|exists:laboratories,id',
         ]);
 
         DB::transaction(function () use ($validatedData, $user) {
-            $user->update($validatedData);
+            $userData = array_intersect_key($validatedData, array_flip(['first_name', 'last_name', 'phone', 'email']));
+            if (!empty($userData)) {
+                $user->update($userData);
+            }
 
-            if (isset($validatedData['hospital_id'])) {
-                $user->profile_admin()->update([
-                    'hospital_id' => $validatedData['hospital_id']
-                ]);
+            // Extraction et mise à jour des champs du profil admin
+            $profileFields = ['hospital_id', 'accessible_licences', 'center_ids', 'pharmacy_branch_ids', 'laboratory_ids'];
+            $profileData = [];
+
+            foreach ($profileFields as $field) {
+                // array_key_exists permet de mettre à jour avec "null" si c'est explicitement envoyé
+                if (array_key_exists($field, $validatedData)) {
+                    $profileData[$field] = $validatedData[$field];
+                }
+            }
+
+            if (!empty($profileData)) {
+                $user->profile_admin()->update($profileData);
             }
         });
 

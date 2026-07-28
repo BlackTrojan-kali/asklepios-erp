@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, FileDown, Calendar, User, Building2, Loader2 } from 'lucide-react';
+import { X, FileDown, Calendar, User, Building2, Filter, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Select from 'react-select';
 
@@ -23,30 +23,27 @@ export const ExportInvoicesModal: React.FC<ExportInvoicesModalProps> = ({ isOpen
     const { profile } = useAuth();
     const { downloadInvoicesReportPdf, actionLoading } = useInvoiceStore();
     
-    // Stores pour alimenter les listes déroulantes
     const { patients, getPatients } = usePatientStore();
     const { centers, getCenters } = useCenterStore();
 
     // --- ÉTATS DU FORMULAIRE ---
     const [startDate, setStartDate] = useState<string>('');
     const [endDate, setEndDate] = useState<string>('');
+    const [statusFilter, setStatusFilter] = useState<string>(''); // Nouveau filtre
     const [selectedPatient, setSelectedPatient] = useState<SelectOption | null>(null);
     const [selectedCenter, setSelectedCenter] = useState<SelectOption | null>(null);
 
-    // Initialisation & Chargement des données à l'ouverture de la modale
     useEffect(() => {
         if (isOpen) {
-            // On charge une grande liste de patients pour le sélecteur
             getPatients(1, {}, 200); 
             
-            // On charge les centres uniquement si l'utilisateur est admin
             if (profile?.role === 'admin' || profile?.role === 'super_admin') {
                 getCenters(1, {}, 50);
             }
 
-            // Réinitialiser les champs
             setStartDate('');
             setEndDate('');
+            setStatusFilter('');
             setSelectedPatient(null);
             setSelectedCenter(null);
         }
@@ -54,7 +51,6 @@ export const ExportInvoicesModal: React.FC<ExportInvoicesModalProps> = ({ isOpen
 
     if (!isOpen) return null;
 
-    // Préparation des options pour React-Select
     const patientOptions: SelectOption[] = patients.map(p => ({
         value: p.id.toString(),
         label: `${p.first_name} ${p.last_name || ''} (${p.patient_code})`
@@ -65,11 +61,9 @@ export const ExportInvoicesModal: React.FC<ExportInvoicesModalProps> = ({ isOpen
         label: c.name
     }));
 
-    // Soumission du formulaire
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Validation basique des dates
         if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
             return toast.error("La date de début ne peut pas être supérieure à la date de fin.");
         }
@@ -78,7 +72,8 @@ export const ExportInvoicesModal: React.FC<ExportInvoicesModalProps> = ({ isOpen
             start_date: startDate || undefined,
             end_date: endDate || undefined,
             patient_id: selectedPatient?.value,
-            center_id: selectedCenter?.value
+            center_id: selectedCenter?.value,
+            status: statusFilter || undefined
         };
 
         const success = await downloadInvoicesReportPdf(filters);
@@ -99,8 +94,8 @@ export const ExportInvoicesModal: React.FC<ExportInvoicesModalProps> = ({ isOpen
                             <FileDown size={20} />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold font-brand">Exporter le Rapport</h2>
-                            <p className="text-xs text-blue-200">Générez un PDF des factures et créances</p>
+                            <h2 className="text-lg font-bold font-brand">Rapport des Factures</h2>
+                            <p className="text-xs text-blue-200">Générez un PDF détaillé des créances et facturations</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-full transition-colors">
@@ -111,7 +106,6 @@ export const ExportInvoicesModal: React.FC<ExportInvoicesModalProps> = ({ isOpen
                 {/* --- CORPS DU FORMULAIRE --- */}
                 <form onSubmit={handleSubmit} className="p-6 space-y-5">
                     
-                    {/* Filtre : Période (Dates) */}
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">Date de début</label>
@@ -139,10 +133,27 @@ export const ExportInvoicesModal: React.FC<ExportInvoicesModalProps> = ({ isOpen
                         </div>
                     </div>
 
+                    {/* Statut de la facture */}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5 flex items-center gap-2">
+                            <Filter size={16} className="text-[#00a896]"/>
+                            Statut des factures
+                        </label>
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-[#00a896] outline-none text-sm dark:text-white"
+                        >
+                            <option value="">Toutes les factures</option>
+                            <option value="UNPAID">Factures Impayées (Créances actives)</option>
+                            <option value="PAID">Factures Soldées</option>
+                        </select>
+                    </div>
+
                     {/* Filtre : Patient */}
                     <div>
                         <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5 flex items-center gap-2">
-                            <User size={16} className="text-[#00a896]"/>
+                            <User size={16} className="text-gray-500"/>
                             Patient spécifique (Optionnel)
                         </label>
                         <Select
@@ -156,19 +167,14 @@ export const ExportInvoicesModal: React.FC<ExportInvoicesModalProps> = ({ isOpen
                             classNamePrefix="react-select"
                             styles={{
                                 control: (base) => ({
-                                    ...base,
-                                    minHeight: '44px',
-                                    borderRadius: '0.75rem',
-                                    borderColor: '#d1d5db',
-                                    boxShadow: 'none',
-                                    '&:hover': { borderColor: '#00a896' }
+                                    ...base, minHeight: '44px', borderRadius: '0.75rem', borderColor: '#d1d5db', boxShadow: 'none', '&:hover': { borderColor: '#00a896' }
                                 }),
                                 menu: (base) => ({ ...base, zIndex: 100 })
                             }}
                         />
                     </div>
 
-                    {/* Filtre : Centre (Uniquement si l'utilisateur est Admin) */}
+                    {/* Filtre : Centre */}
                     {(profile?.role === 'admin' || profile?.role === 'super_admin') && (
                         <div>
                             <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5 flex items-center gap-2">
@@ -186,17 +192,11 @@ export const ExportInvoicesModal: React.FC<ExportInvoicesModalProps> = ({ isOpen
                                 classNamePrefix="react-select"
                                 styles={{
                                     control: (base) => ({
-                                        ...base,
-                                        minHeight: '44px',
-                                        borderRadius: '0.75rem',
-                                        borderColor: '#d1d5db',
-                                        boxShadow: 'none',
-                                        '&:hover': { borderColor: '#003366' }
+                                        ...base, minHeight: '44px', borderRadius: '0.75rem', borderColor: '#d1d5db', boxShadow: 'none', '&:hover': { borderColor: '#003366' }
                                     }),
                                     menu: (base) => ({ ...base, zIndex: 100 })
                                 }}
                             />
-                            <p className="text-[11px] text-gray-500 mt-1">Laissez vide pour avoir un rapport global de tous les centres.</p>
                         </div>
                     )}
 

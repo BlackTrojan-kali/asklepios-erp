@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Search, Edit, Trash2, ShieldCheck, ChevronLeft, ChevronRight, Loader2, KeyRound, RefreshCw } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, ShieldCheck, ChevronLeft, ChevronRight, Loader2, KeyRound, RefreshCw, ShieldAlert } from 'lucide-react';
 import Swal from 'sweetalert2';
-import useAdminStore from '../../../functions/admin/useAdminStore'; // Ajuste le chemin
-import AdminModal from '../../../components/modals/admin/AdminModal'; // Ajuste le chemin
-import PasswordAdminModal from '../../../components/modals/admin/PasswordAdminModal'; // Ajuste le chemin
+import useAdminStore from '../../../functions/admin/useAdminStore';
+import AdminModal from '../../../components/modals/admin/AdminModal';
+import PasswordAdminModal from '../../../components/modals/admin/PasswordAdminModal';
 import type { AdminDto } from '../../../types/types';
 
 const Admins = () => {
     const { admins, loading, pagination, getAdmins, deleteAdmin } = useAdminStore();
-    const [autoRefreshPage,SetAutoRefreshPage] = useState<boolean>(false);
+    const [autoRefreshPage, SetAutoRefreshPage] = useState<boolean>(false);
+    
     // États locaux pour la recherche
     const [searchInput, setSearchInput] = useState('');
     
@@ -22,11 +23,14 @@ const Admins = () => {
 
     // Chargement initial
     useEffect(() => {
-        getAdmins(1, '');
-    }, [getAdmins,autoRefreshPage]);
-    const handleAutoRefreshPage = ()=>{
-        SetAutoRefreshPage(!autoRefreshPage)
-    }
+        getAdmins(1, searchInput);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [autoRefreshPage]);
+
+    const handleAutoRefreshPage = () => {
+        SetAutoRefreshPage(!autoRefreshPage);
+    };
+
     // Gérer la recherche
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -35,12 +39,10 @@ const Admins = () => {
 
     // Gérer le rafraîchissement des données
     const handleRefresh = () => {
-        // Rafraîchit les données en gardant la page courante et la recherche active
         getAdmins(pagination?.currentPage || 1, searchInput);
     };
 
     // --- HANDLERS POUR LES MODALES ---
-
     const handleOpenCreate = () => {
         setSelectedAdmin(null);
         setIsAdminModalOpen(true);
@@ -54,6 +56,32 @@ const Admins = () => {
     const handleOpenPassword = (admin: AdminDto) => {
         setAdminForPassword(admin);
         setIsPasswordModalOpen(true);
+    };
+
+    // --- ANALYSE DES ACCÈS ---
+    const getAccessBadge = (admin: AdminDto) => {
+        const profile = admin.profile_admin;
+        if (!profile) return null;
+
+        const isRestricted = 
+            (profile.center_ids && profile.center_ids.length > 0) ||
+            (profile.pharmacy_branch_ids && profile.pharmacy_branch_ids.length > 0) ||
+            (profile.laboratory_ids && profile.laboratory_ids.length > 0) ||
+            (profile.accessible_licences && profile.accessible_licences.length > 0);
+
+        if (isRestricted) {
+            return (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 mt-1.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50">
+                    <ShieldAlert size={10} /> Accès Restreint
+                </span>
+            );
+        }
+
+        return (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 mt-1.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50">
+                <ShieldCheck size={10} /> Superviseur Global
+            </span>
+        );
     };
 
     // --- SUPPRESSION ---
@@ -151,7 +179,7 @@ const Admins = () => {
                             <tr className="bg-slate-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
                                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Identité & Contact</th>
                                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Téléphone</th>
-                                <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Hôpital Assigné</th>
+                                <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Hôpital & Accès</th>
                                 <th className="p-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider text-right">Actions</th>
                             </tr>
                         </thead>
@@ -190,11 +218,14 @@ const Admins = () => {
                                             {admin.phone}
                                         </td>
 
-                                        {/* Colonne HÔPITAL */}
+                                        {/* Colonne HÔPITAL & ACCÈS */}
                                         <td className="p-4">
-                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
-                                                {admin.profile_admin?.hospital?.name || 'Non assigné'}
-                                            </span>
+                                            <div className="flex flex-col items-start">
+                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
+                                                    {admin.profile_admin?.hospital?.name || 'Non assigné'}
+                                                </span>
+                                                {getAccessBadge(admin)}
+                                            </div>
                                         </td>
 
                                         {/* Colonne ACTIONS */}
