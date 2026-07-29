@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Pharmacien;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-
 use App\Models\Pharmacy\Article;
+use App\Http\Services\Security\ScopeResolver; // 🟢 IMPORT DU SERVICE
 use Illuminate\Support\Facades\Auth;
 use OpenApi\Attributes as OA;
 
@@ -38,9 +38,19 @@ class CashierController extends Controller
     public function getAllArticles()
     {
         $hospitalId = $this->getHospitalId();
+        $user = Auth::user();
+
         $articles = Article::where('hospital_id', $hospitalId)
-            ->with(['branchArticles.defaultStorageLocation'])
+            // 🟢 SÉCURITÉ : Filtrer la relation branchArticles pour ne charger que les succursales autorisées
+            ->with(['branchArticles' => function ($query) use ($user) {
+                if ($user->profile_admin) {
+                    ScopeResolver::applyPharmacyScope($query, 'pharmacy_branch_id');
+                } elseif ($user->profile_pharm) {
+                    $query->where('pharmacy_branch_id', $user->profile_pharm->branch_id);
+                }
+            }, 'branchArticles.defaultStorageLocation'])
             ->get();
+
         return response()->json($articles, 200);
     }
 }

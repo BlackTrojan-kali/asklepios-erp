@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Hospital;
 use App\Http\Controllers\Controller;
 use App\Http\Services\InvoiceService;
 use App\Http\Services\InvoicePdfService;
+use App\Http\Services\Security\ScopeResolver;
 use App\Models\Hospital\Admission;
 use App\Models\Hospital\Consultation;
 use App\Models\Hospital\Invoice;
@@ -58,6 +59,7 @@ class InvoiceController extends Controller
             'labRequests.profileDoctor.user', 'consultations.profileDoctor.user', 'splits'
         ]);
         
+        $query = ScopeResolver::applyCenterScope($query,"center_id");
         if ($user->profile_reception) {
             $query->where('center_id', $user->profile_reception->center_id);
         } elseif ($user->profile_doctor) {

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Laboratory;
 
 use App\Http\Controllers\Controller;
+use App\Http\Services\Security\ScopeResolver;
 use Illuminate\Http\Request;
 use App\Models\Laboratory\LabRequest;
 use App\Models\Laboratory\LabSample;
@@ -45,6 +46,7 @@ class LabRequestController extends Controller
             'invoice.payments'
         ]);
 
+        $query = ScopeResolver::applyLaboratoryScope($query,"laboratory_id");
         if ($laboratoryId) {
             $query->where('laboratory_id', $laboratoryId);
         }

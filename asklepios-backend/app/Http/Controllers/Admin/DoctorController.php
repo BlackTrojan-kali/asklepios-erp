@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Services\Security\ScopeResolver;
 use App\Models\ProfileDoctor;
 use App\Models\Role;
 use App\Models\User;
@@ -50,6 +51,7 @@ class DoctorController extends Controller
         $query = ProfileDoctor::with(['user', 'center', 'department'])
             ->where('hospital_id', $hospitalId);
 
+        $query = ScopeResolver::applyCenterScope($query,"center_id");
         // Recherche par mot-clé
         if ($request->filled('search')) {
             $search = $request->query('search');

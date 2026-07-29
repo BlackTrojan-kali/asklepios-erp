@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Laboratory;
 
 use App\Http\Controllers\Controller;
+use App\Http\Services\Security\ScopeResolver;
 use App\Models\Laboratory\Laboratory;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
@@ -16,6 +17,7 @@ class LaboratoryController extends Controller
     public function index(Request $request)
     {
         $query = Laboratory::query();
+        $query = ScopeResolver::applyLaboratoryScope($query,"laboratory_id");
         if ($request->has('hospital_id')) {
             $query->where('hospital_id', $request->hospital_id);
         }

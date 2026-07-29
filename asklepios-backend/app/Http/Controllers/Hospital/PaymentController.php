@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Hospital;
 
 use App\Http\Controllers\Controller;
 use App\Http\Services\PaymentService;
+use App\Http\Services\Security\ScopeResolver;
 use App\Models\Hospital\PaymentInvoice;
 use App\Models\Hospital\Invoice;
 use App\Models\Hospital\InvoiceSplit;
@@ -91,7 +92,8 @@ class PaymentController extends Controller
         $query = PaymentInvoice::whereHas('invoice.patient', function($q) use ($hospitalId) {
             $q->where('hospital_id', $hospitalId);
         })->with(['invoice.patient', 'reception.user']); // Eager loading pour afficher les infos
-
+        
+        $query = ScopeResolver::applyCenterScope($query,"id");
         // 2. Restrictions de Rôles
         if ($user->profile_reception) {
             $query->whereHas('invoice', function($q) use ($user) {

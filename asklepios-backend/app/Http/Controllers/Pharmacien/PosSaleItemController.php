@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Pharmacien;
 
 use App\Http\Controllers\Controller;
 use App\Models\Pharmacy\PosSaleItem;
+use App\Http\Services\Security\ScopeResolver; // 🟢 IMPORT DU SERVICE
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use OpenApi\Attributes as OA;
@@ -27,23 +28,38 @@ class PosSaleItemController extends Controller
     #[OA\Response(response: 403, description: "Accès refusé")]
     public function index(Request $request)
     {
-        $profile = Auth::user()->profile_pharm;
-        if (!$profile || !$profile->branch_id) {
-            return response()->json(['message' => 'Accès refusé.'], 403);
-        }
-
+        $user = Auth::user();
+        
         $saleId = $request->query('pos_sale_id');
         if (!$saleId) {
             return response()->json(['message' => 'L\'identifiant de la vente est requis.'], 400);
         }
 
-        // S'assurer que la vente appartient à la succursale du pharmacien
-        $items = PosSaleItem::whereHas('sale', function ($q) use ($profile) {
-                $q->where('pharmacy_branch_id', $profile->branch_id);
-            })
-            ->where('pos_sale_id', $saleId)
-            ->with(['article', 'batch'])
-            ->get();
+        $query = PosSaleItem::where('pos_sale_id', $saleId)->with(['article', 'batch']);
+
+        // 🟢 SÉCURITÉ : On vérifie les droits sur la vente parente (pos_sales)
+        $query->whereHas('sale', function ($q) use ($user) {
+            if ($user->profile_admin) {
+                // Vérification de l'hôpital de l'admin
+                $q->whereHas('branch', function ($q2) use ($user) {
+                    $q2->where('hospital_id', $user->profile_admin->hospital_id);
+                });
+                
+                // Application du Scope sur la table pos_sales
+                ScopeResolver::applyPharmacyScope($q, 'pharmacy_branch_id');
+                
+            } elseif ($user->profile_pharm) {
+                // Vérification stricte pour le pharmacien
+                if (!$user->profile_pharm->branch_id) {
+                    abort(403, "Accès refusé. Vous n'êtes affecté à aucune succursale.");
+                }
+                $q->where('pharmacy_branch_id', $user->profile_pharm->branch_id);
+            } else {
+                abort(403, "Accès refusé.");
+            }
+        });
+
+        $items = $query->get();
 
         return response()->json($items, 200);
     }

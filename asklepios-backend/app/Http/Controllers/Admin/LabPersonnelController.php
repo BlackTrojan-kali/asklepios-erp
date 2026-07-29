@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Services\Security\ScopeResolver;
 use App\Models\ProfileLab;
 use App\Models\Role;
 use App\Models\User;
@@ -40,7 +41,8 @@ class LabPersonnelController extends Controller
             ->whereHas('laboratory', function ($q) use ($hospitalId) {
                 $q->where('hospital_id', $hospitalId);
             });
-
+        
+        $query = ScopeResolver::applyLaboratoryScope($query,"laboratory_id");
         // Recherche
         if ($request->filled('search')) {
             $search = $request->query('search');

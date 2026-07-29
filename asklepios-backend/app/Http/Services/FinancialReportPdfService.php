@@ -4,7 +4,7 @@ namespace App\Http\Services;
 
 use App\Models\Hospital\Invoice;
 use App\Models\Hospital\PaymentInvoice;
-use App\Models\Hospital\Hospital;
+use App\Models\Hospital;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 
@@ -122,9 +122,12 @@ class FinancialReportPdfService
             $query->where('center_id', $user->profile_reception->center_id);
         } elseif ($user->profile_admin) {
             // L'admin peut voir tous les centres de son hôpital, ou filtrer par un centre précis
-            $query->whereHas('center', function($q) use ($user) {
+            $query->whereHas('center', function ($q) use ($user) {
                 $q->where('hospital_id', $user->profile_admin->hospital_id);
             });
+            // On applique la restriction par centre si elle existe pour cet admin
+            $user->profile_admin->scopeCenterAccess($query, 'center_id');
+
             if (!empty($filters['center_id'])) {
                 $query->where('center_id', $filters['center_id']);
             }
@@ -202,15 +205,17 @@ class FinancialReportPdfService
             });
         } elseif ($user->profile_admin) {
             // L'admin voit tout l'hôpital
-            $query->whereHas('invoice.center', function($q) use ($user) {
+            $query->whereHas('invoice.center', function ($q) use ($user) {
                 $q->where('hospital_id', $user->profile_admin->hospital_id);
             });
-            // S'il filtre par centre spécifique
-            if (!empty($filters['center_id'])) {
-                $query->whereHas('invoice', function($q) use ($filters) {
+
+            // On applique la restriction par centre et le filtre optionnel
+            $query->whereHas('invoice', function ($q) use ($user, $filters) {
+                $user->profile_admin->scopeCenterAccess($q, 'center_id');
+                if (!empty($filters['center_id'])) {
                     $q->where('center_id', $filters['center_id']);
-                });
-            }
+                }
+            });
         }
 
         // 3. Application des filtres

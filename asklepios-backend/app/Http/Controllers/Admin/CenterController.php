@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Services\Security\ScopeResolver;
 use App\Models\Center;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
@@ -43,7 +44,7 @@ class CenterController extends Controller
         // On restreint STRICTEMENT la requête à l'hôpital de l'admin
         // On charge aussi la relation country pour l'affichage frontend
         $query = Center::with('country')->where('hospital_id', $hospitalId);
-
+        $query = ScopeResolver::applyCenterScope($query,"id");
         // Recherche générale (Nom)
         if ($request->filled('search')) {
             $search = $request->query('search');

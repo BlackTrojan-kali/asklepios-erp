@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Pharmacien;
 
 use App\Http\Controllers\Controller;
+use App\Http\Services\Security\ScopeResolver;
 use App\Http\Services\StockMovementService;
 use App\Models\Pharmacy\StockTransfer;
 use App\Models\Pharmacy\StockTransferLine;
@@ -44,7 +45,7 @@ class StockTransferController extends Controller
                 $q->where('source_pharmacy_id', $branchId)
                   ->orWhere('destination_pharmacy_id', $branchId);
             });
-        } elseif ($context['role'] === 'admin' && $request->filled('pharmacy_id')) {
+        } else if ($context['role'] === 'admin' && $request->filled('pharmacy_id')) {
             $pharmacyId = $request->query('pharmacy_id');
             $query->where(function ($q) use ($pharmacyId) {
                 $q->where('source_pharmacy_id', $pharmacyId)
@@ -75,6 +76,7 @@ class StockTransferController extends Controller
         $query = StockTransfer::query();
         $query = $this->applyFilters($query, $request, $context);
         
+        $query = ScopeResolver::applyPharmacyScope($query,"source_pharmacy_id");
         $perPage = $request->query('per_page', 15);
         return response()->json($query->paginate($perPage), 200);
     }
@@ -258,6 +260,7 @@ class StockTransferController extends Controller
     {
         $context = $this->getContext();
         $query = StockTransfer::query();
+        $query = ScopeResolver::applyPharmacyScope($query,"source_pharmacy_id");
         $transfers = $this->applyFilters($query, $request, $context)->get();
 
         $pdf = Pdf::loadView('exports.pdf.stock_transfers', [

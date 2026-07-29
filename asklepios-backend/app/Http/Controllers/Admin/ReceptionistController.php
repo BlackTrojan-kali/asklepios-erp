@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Services\Security\ScopeResolver;
 use App\Models\ProfileReception;
 use App\Models\Role;
 use App\Models\User;
@@ -49,6 +50,7 @@ class ReceptionistController extends Controller
         $query = ProfileReception::with(['user', 'center'])
             ->where('hospital_id', $hospitalId);
 
+        $query = ScopeResolver::applyCenterScope($query,"center_id");
         // Filtre par recherche texte (Nom, prénom, email, téléphone du User ou nom du bureau)
         if ($request->filled('search')) {
             $search = $request->query('search');

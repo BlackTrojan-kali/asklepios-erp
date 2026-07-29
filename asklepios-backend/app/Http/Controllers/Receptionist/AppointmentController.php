@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Receptionist;
 
 use App\Http\Controllers\Controller;
 use App\Http\Services\PatientAdmissionService;
+use App\Http\Services\Security\ScopeResolver;
 use App\Models\Hospital\Appointment;
 use App\Models\Hospital\PatientVisit;
 use Illuminate\Http\Request;
@@ -28,7 +29,8 @@ protected PatientAdmissionService $admissionService;
     {
         $user = auth()->user();
         $query = Appointment::with(['patient.medicalBackground', 'doctor.user', 'center', 'visit']);
-
+        
+        $query = ScopeResolver::applyCenterScope($query,"center_id");
         // 1. SÉCURITÉ DES RÔLES
         if ($user->profile_reception) {
             // La réceptionniste ne voit que son centre

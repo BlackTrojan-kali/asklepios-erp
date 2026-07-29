@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Pharmacien;
 
 use App\Http\Controllers\Controller;
+use App\Http\Services\Security\ScopeResolver;
 use App\Models\Pharmacy\PurchaseOrderLine;
 use App\Models\Pharmacy\Batch;
 use App\Http\Services\StockMovementService;
@@ -59,6 +60,7 @@ class PurchaseOrderController extends Controller
             if ($request->filled('pharmacy_branch_id')) {
                 $query->where('destination_pharmacy_id', $request->query('pharmacy_branch_id'));
             }
+            $query =  ScopeResolver::applyPharmacyScope($query,"destination_pharmacy_id");
         } else {
             // Le pharmacien ne voit que sa succursale
             $query->where('destination_pharmacy_id', $context['branch_id']);

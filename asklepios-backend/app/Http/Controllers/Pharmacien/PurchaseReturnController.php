@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Pharmacy\PurchaseReturnLine;
 use App\Http\Services\StockMovementService;
 use App\Models\Pharmacy\PurchaseReturn;
+use App\Http\Services\Security\ScopeResolver; // <-- IMPORT DU SERVICE
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -54,6 +55,10 @@ class PurchaseReturnController extends Controller
         
         if ($context['role'] === 'admin') {
             $query->where('hospital_id', $context['hospital_id']);
+            
+            // 🟢 NOUVEAUTÉ : Application automatique de la restriction de sites
+            $query = ScopeResolver::applyPharmacyScope($query, 'source_pharmacy_id');
+            
         } else {
             $query->where('source_pharmacy_id', $context['branch_id']);
         }
@@ -62,9 +67,6 @@ class PurchaseReturnController extends Controller
     }
 
     /**
-     * FILTRES : Applique les filtres de recherche (GET) sur une requête existante.
-     */
-   /**
      * FILTRES : Applique les filtres de recherche (GET) sur une requête existante.
      */
     private function applyFilters($query, Request $request)
@@ -83,9 +85,7 @@ class PurchaseReturnController extends Controller
             $query->where('provider_id', $request->query('provider_id'));
         }
         
-        // 🚨 CORRECTION DU FILTRE DE PÉRIODE 🚨
-        // On utilise un simple "where" avec concaténation de l'heure. 
-        // C'est 100% compatible MySQL/PostgreSQL/SQLite et ça inclut toute la journée.
+        // CORRECTION DU FILTRE DE PÉRIODE
         if ($request->filled('start_date')) {
             $query->where('created_at', '>=', $request->query('start_date') . ' 00:00:00');
         }
@@ -128,6 +128,11 @@ class PurchaseReturnController extends Controller
         ]);
         
         $branchId = $context['role'] === 'admin' ? $request->source_pharmacy_id : $context['branch_id'];
+
+        // 🟢 NOUVEAUTÉ : Empêcher l'admin de créer un retour pour une pharmacie interdite
+        if (!ScopeResolver::canAccessPharmacy($branchId)) {
+            return response()->json(['message' => 'Accès refusé. Vous n\'avez pas les droits sur cette succursale.'], 403);
+        }
 
         DB::beginTransaction();
         try {
@@ -296,7 +301,7 @@ class PurchaseReturnController extends Controller
                 $exportData[] = [
                     'Retour N°' => $r->id,
                     'Date de Retour' => $r->return_date->format('d/m/Y'),
-                    'Succursale' => $r->sourcePharmacy->name ?? 'N/A', // Pratique pour l'admin dans l'Excel
+                    'Succursale' => $r->sourcePharmacy->name ?? 'N/A',
                     'Fournisseur' => $r->provider->name ?? 'Inconnu',
                     'Commande Réf' => $r->purchase_order_id ? '#' . $r->purchase_order_id : 'N/A',
                     'Statut' => $r->status,

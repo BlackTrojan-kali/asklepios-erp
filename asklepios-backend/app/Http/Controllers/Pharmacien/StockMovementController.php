@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Pharmacien;
 
 use App\Http\Controllers\Controller;
 use App\Models\Pharmacy\StockMovement;
+use App\Http\Services\Security\ScopeResolver; // <-- IMPORT AJOUTÉ ICI
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -40,7 +41,6 @@ class StockMovementController extends Controller
     {
         $context = $this->getContext();
         
-        // On charge les relations utiles pour l'affichage
         $query = StockMovement::with([
             'batch.article.category', 
             'storageLocation', 
@@ -48,10 +48,14 @@ class StockMovementController extends Controller
         ]);
 
         if ($context['role'] === 'admin') {
-            // L'admin voit les mouvements de toutes les succursales de son hôpital
+            // L'admin voit les mouvements de son hôpital
             $query->whereHas('pharmacyBranch', function ($q) use ($context) {
                 $q->where('hospital_id', $context['hospital_id']);
             });
+
+            // Application automatique de la restriction de sites (Multi-tenant)
+            $query = ScopeResolver::applyPharmacyScope($query, 'pharmacy_branch_id');
+            
         } else {
             // Le pharmacien ne voit que les mouvements de sa propre succursale
             $query->where('pharmacy_branch_id', $context['branch_id']);
@@ -96,7 +100,6 @@ class StockMovementController extends Controller
 
         // Filtre par Date
         if ($request->filled('start_date') && $request->filled('end_date')) {
-            // On ajoute les heures pour couvrir toute la journée
             $start = $request->query('start_date') . ' 00:00:00';
             $end = $request->query('end_date') . ' 23:59:59';
             $query->whereBetween('created_at', [$start, $end]);
@@ -120,7 +123,7 @@ class StockMovementController extends Controller
     // ==========================================
 
     #[OA\Get(path: "/api/stock-movements/export/pdf", summary: "Exporter les mouvements en PDF", security: [["bearerAuth" => []]], tags: ["Mouvements de Stock"])]
- #[OA\Response(response: 200, description: "Fichier PDF généré")] // <-- LIGNE MANQUANTE
+    #[OA\Response(response: 200, description: "Fichier PDF généré")]
     public function exportPdf(Request $request)
     {
         $query = $this->applyFilters($this->getScopedQuery(), $request);
@@ -134,14 +137,13 @@ class StockMovementController extends Controller
     }
 
     #[OA\Get(path: "/api/stock-movements/export/excel", summary: "Exporter les mouvements en Excel", security: [["bearerAuth" => []]], tags: ["Mouvements de Stock"])]
-   #[OA\Response(response: 200, description: "Fichier Excel généré")] // <-- LIGNE MANQUANTE
+    #[OA\Response(response: 200, description: "Fichier Excel généré")]
     public function exportExcel(Request $request)
     {
         $query = $this->applyFilters($this->getScopedQuery(), $request);
         $movements = $query->get();
 
         $exportData = $movements->map(function ($m) {
-            
             // Traduction des types de référence pour Excel
             $refTypes = [
                 'PURCHASE' => 'Achat / Commande',

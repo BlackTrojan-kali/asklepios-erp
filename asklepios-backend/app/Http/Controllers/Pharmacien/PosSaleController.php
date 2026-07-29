@@ -8,6 +8,7 @@ use App\Models\Pharmacy\PosSaleItem;
 use App\Models\Pharmacy\CashRegisterSession;
 use App\Models\Pharmacy\Batch;
 use App\Http\Services\StockMovementService;
+use App\Http\Services\Security\ScopeResolver; // 🟢 CORRECTION CRITIQUE : Le bon namespace !
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -19,57 +20,52 @@ use OpenApi\Attributes as OA;
 class PosSaleController extends Controller
 {
     /**
-     * Lister les ventes de la succursale du pharmacien connecté
+     * Lister les ventes de la succursale du pharmacien connecté ou les ventes autorisées pour l'admin
      */
     #[OA\Get(
         path: "/api/pharmacy/pos-sales",
         operationId: "getPosSales",
-        summary: "Lister les ventes de la succursale du pharmacien connecté",
+        summary: "Lister les ventes (Admin / Pharmacien)",
         security: [["bearerAuth" => []]],
         tags: ["Ventes POS (Pharmacy)"]
     )]
     #[OA\Response(response: 200, description: "Liste des ventes récupérée avec succès")]
     #[OA\Response(response: 403, description: "Accès refusé")]
-    public function index(Request $request)
+   public function index(Request $request)
     {
-        $profile = Auth::user()->profile_pharm;
-        if (!$profile || !$profile->branch_id) {
-            return response()->json(['message' => 'Accès refusé. Vous n\'êtes affecté à aucune succursale.'], 403);
-        }
-
-        $query = PosSale::where('pharmacy_branch_id', $profile->branch_id)
-            ->with(['session.user', 'items.article', 'patient']);
-
-        // Filtrer par session active de l'utilisateur connecté par défaut si scope est 'my-active-session'
-        $scope = $request->query('scope', 'my-active-session');
+        $user = auth()->user();
         
-        if ($scope === 'my-active-session') {
-            // Trouver la session active de l'utilisateur connecté
-            $activeSession = CashRegisterSession::where('user_id', Auth::id())
-                ->whereNull('closed_at')
-                ->first();
-            
-            if ($activeSession) {
-                $query->where('cash_register_session_id', $activeSession->id);
-            } else {
-                // Si aucune session active n'est ouverte pour ce vendeur, on ne retourne rien
-                return response()->json([], 200);
-            }
-        } elseif ($scope === 'me') {
-            $query->whereHas('session', function ($q) {
-                $q->where('user_id', Auth::id());
+        // 1. Requête de base pour l'hôpital de l'admin
+        $query = PosSale::with(['session.user', 'items.article', 'patient', 'branch'])
+            ->whereHas('branch', function ($q) use ($user) {
+                $q->where('hospital_id', $user->profile_admin->hospital_id);
             });
-        }
+        // 🟢 2. ON APPLIQUE LE SCOPE MULTI-SITES ICI
+        $query = ScopeResolver::applyPharmacyScope($query, 'pharmacy_branch_id');
 
-        // Filtre par moyen de paiement
+        // 3. Les filtres classiques de l'admin
+        if ($request->filled('pharmacy_branch_id')) {
+            $query->where('pos_sales.pharmacy_branch_id', $request->query('pharmacy_branch_id'));
+        }
         if ($request->filled('payment_method')) {
             $query->where('payment_method', $request->query('payment_method'));
         }
+        if ($request->filled('start_date')) {
+            $query->where('created_at', '>=', $request->query('start_date') . ' 00:00:00');
+        }
+        if ($request->filled('end_date')) {
+            $query->where('created_at', '<=', $request->query('end_date') . ' 23:59:59');
+        }
 
-        $sales = $query->latest()->get();
+        $query->latest();
 
-        return response()->json($sales, 200);
+        if ($request->has('per_page')) {
+            return response()->json($query->paginate($request->query('per_page', 15)), 200);
+        }
+
+        return response()->json($query->get(), 200);
     }
+
 
     /**
      * Détails d'une vente
@@ -87,14 +83,27 @@ class PosSaleController extends Controller
     #[OA\Response(response: 404, description: "Vente non trouvée")]
     public function show($id)
     {
-        $profile = Auth::user()->profile_pharm;
-        if (!$profile || !$profile->branch_id) {
-            return response()->json(['message' => 'Accès refusé. Vous n\'êtes affecté à aucune succursale.'], 403);
+        $user = Auth::user();
+        $query = PosSale::with(['session.user', 'session.register', 'branch.country', 'items.article', 'items.batch', 'patient']);
+
+        if ($user->profile_admin) {
+            $query->whereHas('branch', function ($q) use ($user) {
+                $q->where('hospital_id', $user->profile_admin->hospital_id);
+            });
+            
+            // 🟢 SÉCURITÉ
+            $query = ScopeResolver::applyPharmacyScope($query, 'pharmacy_branch_id');
+
+        } elseif ($user->profile_pharm) {
+            if (!$user->profile_pharm->branch_id) {
+                return response()->json(['message' => 'Accès refusé. Vous n\'êtes affecté à aucune succursale.'], 403);
+            }
+            $query->where('pharmacy_branch_id', $user->profile_pharm->branch_id);
+        } else {
+            return response()->json(['message' => 'Accès refusé.'], 403);
         }
 
-        $sale = PosSale::where('pharmacy_branch_id', $profile->branch_id)
-            ->with(['session.user', 'session.register', 'branch.country', 'items.article', 'items.batch', 'patient'])
-            ->findOrFail($id);
+        $sale = $query->findOrFail($id);
 
         return response()->json($sale, 200);
     }
@@ -104,9 +113,10 @@ class PosSaleController extends Controller
      */
     public function store(Request $request)
     {
+        // La création de vente POS reste le privilège du Pharmacien (Caissier)
         $profile = Auth::user()->profile_pharm;
         if (!$profile || !$profile->branch_id) {
-            return response()->json(['message' => 'Accès refusé. Vous n\'êtes affecté à aucune succursale.'], 403);
+            return response()->json(['message' => 'Accès refusé. Seul un caissier affecté à une succursale peut effectuer une vente.'], 403);
         }
 
         $branchId = $profile->branch_id;
@@ -178,8 +188,8 @@ class PosSaleController extends Controller
                 $totalAmount += $subTotal;
                 
                 // Résoudre le lot (batch_id) si non fourni (pour les articles sans suivi de lots)
-                $batchId = $item['batch_id'] ?? null;
-                if (!$batchId) {
+                $batchIdItem = $item['batch_id'] ?? null;
+                if (!$batchIdItem) {
                     $batch = Batch::where('article_id', $item['article_id'])->first();
                     if (!$batch) {
                         $batch = Batch::create([
@@ -189,12 +199,12 @@ class PosSaleController extends Controller
                             'expire_date' => null,
                         ]);
                     }
-                    $batchId = $batch->id;
+                    $batchIdItem = $batch->id;
                 }
                 
                 $itemsData[] = [
                     'article_id' => $item['article_id'],
-                    'batch_id' => $batchId,
+                    'batch_id' => $batchIdItem,
                     'qty' => $item['qty'],
                     'unit_price' => $item['unit_price'],
                     'discount' => $discount,
@@ -289,40 +299,36 @@ class PosSaleController extends Controller
     public function exportPdf($id)
     {
         $user = Auth::user();
-        $sale = null;
+        
+        $query = PosSale::with([
+            'session.user',
+            'session.register',
+            'branch.hospital',
+            'branch.country',
+            'items.article',
+            'items.batch'
+        ]);
 
         if ($user->profile_admin) {
             $hospitalId = $user->profile_admin->hospital_id;
-            $sale = PosSale::whereHas('branch', function ($q) use ($hospitalId) {
+            $query->whereHas('branch', function ($q) use ($hospitalId) {
                 $q->where('hospital_id', $hospitalId);
-            })
-            ->with([
-                'session.user',
-                'session.register',
-                'branch.hospital',
-                'branch.country',
-                'items.article',
-                'items.batch'
-            ])
-            ->findOrFail($id);
+            });
+            
+            // 🟢 SÉCURITÉ : Restriction à l'export
+            $query = ScopeResolver::applyPharmacyScope($query, 'pos_sales.pharmacy_branch_id');
+            
         } elseif ($user->profile_pharm) {
             $branchId = $user->profile_pharm->branch_id;
             if (!$branchId) {
                 abort(403, "Accès refusé.");
             }
-            $sale = PosSale::where('pharmacy_branch_id', $branchId)
-            ->with([
-                'session.user',
-                'session.register',
-                'branch.hospital',
-                'branch.country',
-                'items.article',
-                'items.batch'
-            ])
-            ->findOrFail($id);
+            $query->where('pharmacy_branch_id', $branchId);
         } else {
             abort(403, "Accès refusé.");
         }
+
+        $sale = $query->findOrFail($id);
 
         $pdf = Pdf::loadView('exports.pdf.sale_invoice', compact('sale'));
         

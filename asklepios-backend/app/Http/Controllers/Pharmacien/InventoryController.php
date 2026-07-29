@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Pharmacien;
 
 use App\Http\Controllers\Controller;
+use App\Http\Services\Security\ScopeResolver;
 use App\Models\Pharmacy\Inventory;
 use App\Models\Pharmacy\InventoryLine;
 use App\Models\Pharmacy\Stock;
@@ -56,6 +57,7 @@ class InventoryController extends Controller
             $query->whereHas('pharmacyBranch', function ($q) use ($context) {
                 $q->where('hospital_id', $context['hospital_id']);
             });
+            $query = ScopeResolver::applyPharmacyScope($query,"pharmacy_branch_id");
         } else {
             $query->where('pharmacy_branch_id', $context['branch_id']);
         }
