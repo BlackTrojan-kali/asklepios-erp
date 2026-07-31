@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Pharmacy\ArticleCategory;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use OpenApi\Attributes as OA;
 
@@ -17,7 +18,13 @@ class ArticleCategoryController extends Controller
     
     private function getHospitalId()
     {
-        return auth()->user()->profile_admin->hospital_id;
+        $hospitalId = 0;
+        if(Auth::user()->role->name == 'admin'){
+            $hospitalId = Auth::user()->profile_admin->hospital->id;
+        }else if(Auth::user()->role->name == 'ceo'){
+            $hospitalId = Auth::user()->profile_ceo->hospital->id;
+        }
+        return $hospitalId; 
     }
 
     /**

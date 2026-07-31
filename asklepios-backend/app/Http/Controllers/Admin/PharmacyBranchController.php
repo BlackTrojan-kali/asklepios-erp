@@ -7,6 +7,7 @@ use App\Models\Pharmacy\PharmacyBranch;
 use App\Models\User;
 use App\Notifications\NewPharmacyNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
 use OpenApi\Attributes as OA;
@@ -19,7 +20,7 @@ class PharmacyBranchController extends Controller
      */
     private function getContext()
     {
-        $user = auth()->user();
+        $user = Auth::user();
         
         if ($user->profile_admin) {
             return ['role' => 'admin', 'hospital_id' => $user->profile_admin->hospital_id];
@@ -28,6 +29,8 @@ class PharmacyBranchController extends Controller
         if ($user->profile_pharm) {
             $hospitalId = $user->profile_pharm->hospital_id ?? $user->profile_pharm->branch->hospital_id ?? null;
             return ['role' => 'pharmacy', 'hospital_id' => $hospitalId];
+        }if ($user->profile_ceo) {
+            return ['role' => 'ceo', 'hospital_id' => $user->profile_ceo->hospital->id];
         }
         
         abort(403, "Profil non autorisé.");
@@ -58,7 +61,7 @@ class PharmacyBranchController extends Controller
     #[OA\Parameter(name: "paginated", in: "query", required: false, description: "true pour paginer, false pour tout récupérer", schema: new OA\Schema(type: "string"))]
     #[OA\Response(response: 200, description: "Liste récupérée avec succès")]
     public function index(Request $request)
-    {
+    { 
         $context = $this->getContext();
         $hospitalId = $context['hospital_id'];
 

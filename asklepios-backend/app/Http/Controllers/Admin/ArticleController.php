@@ -8,6 +8,7 @@ use App\Models\Pharmacy\Article;
 use App\Models\Pharmacy\Stock;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Storage;
 use OpenApi\Attributes as OA;
@@ -33,6 +34,8 @@ class ArticleController extends Controller
         }
         else if(auth()->user()->role->name ==  "doctor"){
             return auth()->user()->profile_doctor->hospital_id;
+        }else if(Auth::user()->role->name == "ceo"){
+            return Auth::user()->profile_ceo->hospital->id;
         }
     }
 

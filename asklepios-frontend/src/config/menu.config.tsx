@@ -95,6 +95,7 @@ export const MENU_CONFIG: MenuItemType[] = [
     requiredLicence: "pharmacy", // Ou "base_hospital" si vous avez d'autres dashboards
     subItems: [
       { title: "Rapport Pharmacie", path: "/bi/pharmacy-dashboard" },
+      { title: "Rapport Pharmacie Stock", path: "/bi/stock" },
       // Vous pourrez ajouter d'autres dashboards ici (Ex: /bi/hospital-dashboard)
     ],
   },

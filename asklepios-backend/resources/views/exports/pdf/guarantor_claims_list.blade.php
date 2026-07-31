@@ -32,6 +32,13 @@
     <div class="header">
         <h1>Rapport des Bordereaux d'Assurance</h1>
         <p>Généré le {{ date('d/m/Y à H:i') }} par {{ $user->first_name }} {{ $user->last_name }}</p>
+        
+        <!-- 👉 NOUVEAU : Affichage de la période -->
+        @if(isset($filters['start_date']) && isset($filters['end_date']))
+            <p style="font-weight: bold; color: #0f172a; margin-top: 8px;">
+                Période : Du {{ date('d/m/Y', strtotime($filters['start_date'])) }} au {{ date('d/m/Y', strtotime($filters['end_date'])) }}
+            </p>
+        @endif
     </div>
 
     <!-- Statistiques Globales -->

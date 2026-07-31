@@ -18,7 +18,7 @@ class PharmacyBIController extends Controller
     {
         $user = auth()->user();
         if ($user->profile_admin) return $user->profile_admin->hospital_id;
-        if ($user->profile_pharmacy_manager) return $user->profile_pharmacy_manager->hospital_id; // Profil hypothétique du gérant
+        if ($user->profile_ceo) return $user->profile_ceo->hospital_id; // Profil hypothétique du gérant
         abort(403, "Accès refusé. Réservé à la direction et à l'administration.");
     }
 

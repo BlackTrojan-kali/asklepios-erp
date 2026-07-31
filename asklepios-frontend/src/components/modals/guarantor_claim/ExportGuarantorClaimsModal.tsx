@@ -6,7 +6,7 @@ interface ExportGuarantorClaimsModalProps {
     isOpen: boolean;
     onClose: () => void;
     baseFilters?: any; 
-    insurances: any[]; // Liste des assurances passée depuis le composant parent
+    insurances: any[]; 
 }
 
 export const ExportGuarantorClaimsModal: React.FC<ExportGuarantorClaimsModalProps> = ({ 
@@ -17,7 +17,10 @@ export const ExportGuarantorClaimsModal: React.FC<ExportGuarantorClaimsModalProp
 }) => {
     const { exportClaimsPdfList, exportClaimsExcelList, exportLoading } = useGuarantorClaimStore();
 
-    const [month, setMonth] = useState<string>(baseFilters.claim_month || '');
+    // 👉 NOUVEAU : Période (Début et Fin)
+    const [startDate, setStartDate] = useState<string>('');
+    const [endDate, setEndDate] = useState<string>('');
+    
     const [status, setStatus] = useState<string>(baseFilters.status || ''); 
     const [insuranceId, setInsuranceId] = useState<string>(baseFilters.insurance_company_id || '');
 
@@ -25,7 +28,11 @@ export const ExportGuarantorClaimsModal: React.FC<ExportGuarantorClaimsModalProp
 
     const buildFilters = () => {
         const filters = { ...baseFilters };
-        if (month) filters.claim_month = month;
+        // Retirer l'ancien filtre sur le mois s'il traîne, on le remplace par la période
+        delete filters.claim_month; 
+
+        if (startDate) filters.start_date = startDate;
+        if (endDate) filters.end_date = endDate;
         if (status) filters.status = status;
         if (insuranceId) filters.insurance_company_id = insuranceId;
         return filters;
@@ -70,16 +77,31 @@ export const ExportGuarantorClaimsModal: React.FC<ExportGuarantorClaimsModalProp
                         Générez un rapport PDF ou un fichier Excel des bordereaux d'assurance. Affinez les critères ci-dessous :
                     </p>
 
-                    <div className="space-y-1.5">
-                        <label className="text-sm font-medium text-slate-700 dark:text-gray-300 flex items-center gap-2">
-                            <Calendar size={14} className="text-indigo-500" /> Mois de Facturation
-                        </label>
-                        <input
-                            type="month"
-                            value={month}
-                            onChange={(e) => setMonth(e.target.value)}
-                            className="w-full p-2.5 bg-slate-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm outline-none focus:border-indigo-500 dark:focus:border-indigo-500 text-slate-800 dark:text-white transition-colors"
-                        />
+                    {/* 👉 NOUVEAU : Calendrier Période */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                            <label className="text-sm font-medium text-slate-700 dark:text-gray-300 flex items-center gap-2">
+                                <Calendar size={14} className="text-indigo-500" /> Du
+                            </label>
+                            <input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                className="w-full p-2.5 bg-slate-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm outline-none focus:border-indigo-500 dark:focus:border-indigo-500 text-slate-800 dark:text-white transition-colors [color-scheme:light] dark:[color-scheme:dark]"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <label className="text-sm font-medium text-slate-700 dark:text-gray-300 flex items-center gap-2">
+                                <Calendar size={14} className="text-indigo-500" /> Au
+                            </label>
+                            <input
+                                type="date"
+                                value={endDate}
+                                min={startDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                                className="w-full p-2.5 bg-slate-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm outline-none focus:border-indigo-500 dark:focus:border-indigo-500 text-slate-800 dark:text-white transition-colors [color-scheme:light] dark:[color-scheme:dark]"
+                            />
+                        </div>
                     </div>
 
                     <div className="space-y-1.5">

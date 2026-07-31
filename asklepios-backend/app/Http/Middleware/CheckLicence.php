@@ -110,6 +110,7 @@ class CheckLicence
             'doctor'     => $user->profile_doctor?->hospital_id ?? null,
             'laboratory' => $user->profile_lab?->hospital_id ?? null,  // ✅ Corrigé : 'lab' → 'laboratory'
             'reception'  => $user->profile_reception?->hospital_id ?? null,
+            'ceo'        => $user->profile_ceo?->hospital_id ?? null,
             default      => null,
         };
     }

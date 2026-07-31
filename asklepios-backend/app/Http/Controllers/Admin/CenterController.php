@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Services\Security\ScopeResolver;
 use App\Models\Center;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use OpenApi\Attributes as OA;
 
 #[OA\Tag(name: "Centres (Admin)", description: "Gestion des centres médicaux de l'hôpital de l'administrateur")]
@@ -18,7 +19,13 @@ class CenterController extends Controller
     {
         // On suppose que la relation dans ton modèle User s'appelle 'profile_admin' ou 'profileAdmin'
         // Ajuste le nom de la relation si nécessaire selon ton modèle User.
-        return auth()->user()->profile_admin->hospital_id; 
+        $hospitalId = 0;
+        if(Auth::user()->role->name == 'admin'){
+            $hospitalId = Auth::user()->profile_admin->hospital->id;
+        }else if(Auth::user()->role->name == 'ceo'){
+            $hospitalId = Auth::user()->profile_ceo->hospital->id;
+        }
+        return $hospitalId; 
     }
 
     /**

@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\Hospital;
 
 use App\Http\Controllers\Controller;
+use App\Http\Exports\GuarantorClaimsExport;
 use App\Models\GuarantorClaim;
 use App\Models\Hospital\InvoiceSplit;
-use App\Models\Hospital\PaymentInvoice; // 👉 NOUVEAU
+use App\Models\Hospital\PaymentInvoice;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -13,10 +14,14 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Exception;
+use Maatwebsite\Excel\Facades\Excel;
 
 #[OA\Tag(name: "Bordereaux Assurance", description: "Gestion des réclamations (Tiers Payant) vers les assurances")]
 class GuarantorClaimController extends Controller
 {
+    /**
+     * Récupère l'ID du centre en fonction du profil de l'utilisateur connecté.
+     */
     private function getCenterId(Request $request)
     {
         $user = Auth::user();
@@ -25,34 +30,60 @@ class GuarantorClaimController extends Controller
         return null;
     }
 
-    #[OA\Get(path: "/api/shared/guarantor-claims", summary: "Lister les bordereaux avec filtres", security: [["sanctum" => []]])]
-     #[OA\Response(response: 200, description: "Données récupérées avec succès")]
-    public function index(Request $request)
+    /**
+     * 🟢 NOUVEAU : Centralisation de la requête avec les filtres pour l'Index et les Exports
+     */
+   // Remplacer l'ancienne méthode par celle-ci
+    private function getScopedAndFilteredQuery(Request $request)
     {
         $query = GuarantorClaim::with(['insuranceCompany', 'center'])
                     ->withCount('invoiceSplits'); 
 
+        // 1. Filtrage par centre (Sécurité + Dynamique)
         if ($centerId = $this->getCenterId($request)) {
             $query->where('center_id', $centerId);
         } elseif ($request->filled('center_id')) {
             $query->where('center_id', $request->center_id);
         }
 
-        if ($request->filled('insurance_company_id')) $query->where('insurance_company_id', $request->insurance_company_id);
-        if ($request->filled('status')) $query->where('status', $request->status);
+        // 2. Filtres dynamiques
+        if ($request->filled('insurance_company_id')) {
+            $query->where('insurance_company_id', $request->insurance_company_id);
+        }
+        
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
         
         if ($request->filled('claim_month')) {
             $query->whereMonth('claim_month', date('m', strtotime($request->claim_month)))
                   ->whereYear('claim_month', date('Y', strtotime($request->claim_month)));
         }
 
-        $query->orderBy('created_at', 'desc');
+        // 👉 NOUVEAU : Filtre par période (utile pour les exports)
+        if ($request->filled('start_date')) {
+            $query->where('created_at', '>=', $request->start_date . ' 00:00:00');
+        }
+        if ($request->filled('end_date')) {
+            $query->where('created_at', '<=', $request->end_date . ' 23:59:59');
+        }
+
+        // 3. Tri par défaut
+        return $query->orderBy('created_at', 'desc');
+    }
+
+    #[OA\Get(path: "/api/shared/guarantor-claims", summary: "Lister les bordereaux avec filtres", security: [["sanctum" => []]])]
+    #[OA\Response(response: 200, description: "Données récupérées avec succès")]
+    public function index(Request $request)
+    {
+        // 🟢 Utilisation de la fonction centralisée
+        $query = $this->getScopedAndFilteredQuery($request);
 
         return response()->json($query->paginate($request->query('per_page', 15)), 200);
     }
 
     #[OA\Post(path: "/api/shared/guarantor-claims", summary: "Créer un nouveau bordereau", security: [["sanctum" => []]])]
-     #[OA\Response(response: 201, description: "Données enregistrées avec succès")]
+    #[OA\Response(response: 201, description: "Données enregistrées avec succès")]
     public function store(Request $request)
     {
         $request->validate([
@@ -91,7 +122,7 @@ class GuarantorClaimController extends Controller
     }
 
     #[OA\Get(path: "/api/shared/guarantor-claims/{id}", summary: "Voir les détails d'un bordereau", security: [["sanctum" => []]])]
-     #[OA\Response(response: 200, description: "Données récupérées avec succès")]
+    #[OA\Response(response: 200, description: "Données récupérées avec succès")]
     public function show($id)
     {
         $claim = GuarantorClaim::with([
@@ -106,7 +137,7 @@ class GuarantorClaimController extends Controller
     }
 
     #[OA\Put(path: "/api/shared/guarantor-claims/{id}", summary: "Mettre à jour le statut", security: [["sanctum" => []]])]
-     #[OA\Response(response: 200, description: "Données mis a jour  avec succès")]
+    #[OA\Response(response: 200, description: "Données mis a jour  avec succès")]
     public function update(Request $request, $id)
     {
         $request->validate([
@@ -120,32 +151,27 @@ class GuarantorClaimController extends Controller
             $oldStatus = $claim->status;
             $claim->update($request->only(['status', 'claim_refence']));
 
-            // 👉 NOUVEAU : Si le bordereau passe en "PAID" (et qu'il ne l'était pas déjà)
             if ($claim->status === 'PAID' && $oldStatus !== 'PAID') {
                 $user = auth()->user();
                 $receptionId = $user->profile_reception->id ?? null;
 
                 foreach ($claim->invoiceSplits as $split) {
                     if ($split->status !== 'PAID') {
-                        // 1. Marquer la part (split) comme payée
                         $split->update(['status' => 'PAID']);
 
-                        // 2. Générer le paiement d'assurance pour la traçabilité
                         PaymentInvoice::create([
                             'invoice_id'       => $split->invoice_id,
                             'invoice_split_id' => $split->id,
                             'reception_id'     => $receptionId,
                             'amount'           => $split->amount_to_pay,
-                            'payment_method'   => 'INSURANCE', // Moteur de paiement
+                            'payment_method'   => 'INSURANCE', 
                         ]);
 
-                        // 3. Vérifier si la Facture Mère est désormais totalement soldée
                         $invoice = $split->invoice;
                         $hasUnpaidSplits = InvoiceSplit::where('invoice_id', $invoice->id)
                                             ->where('status', 'UNPAID')
                                             ->exists();
                         
-                        // Si le patient a déjà payé sa part, la facture globale passe à PAID !
                         if (!$hasUnpaidSplits && $invoice->status !== 'PAID') {
                             $invoice->update(['status' => 'PAID']);
                         }
@@ -183,7 +209,7 @@ class GuarantorClaimController extends Controller
     }
 
     #[OA\Delete(path: "/api/shared/guarantor-claims/{id}", summary: "Supprimer un bordereau (DRAFT uniquement)", security: [["sanctum" => []]])]
-     #[OA\Response(response: 203, description: "Donnée suprimée avec succès")]
+    #[OA\Response(response: 203, description: "Donnée suprimée avec succès")]
     public function destroy($id)
     {
         $claim = GuarantorClaim::findOrFail($id);
@@ -201,7 +227,7 @@ class GuarantorClaimController extends Controller
     }
 
     #[OA\Get(path: "/api/shared/guarantor-claims/{id}/download", summary: "Générer le PDF du bordereau d'assurance", security: [["sanctum" => []]])]
-     #[OA\Response(response: 200, description: "Données récupérées avec succès")]
+    #[OA\Response(response: 200, description: "Données récupérées avec succès")]
     public function downloadPdf(Request $request, $id)
     {
         $claim = GuarantorClaim::with([
@@ -266,6 +292,7 @@ class GuarantorClaimController extends Controller
     {
         $query = $this->getScopedAndFilteredQuery($request);
         
+        // Assurez-vous d'importer Maatwebsite\Excel\Facades\Excel tout en haut du fichier
         return Excel::download(
             new GuarantorClaimsExport($query), 
             'liste_bordereaux_' . date('Ymd_His') . '.xlsx'

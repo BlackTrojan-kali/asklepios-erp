@@ -126,6 +126,7 @@ import GuarantorClaims from "./Pages/Admin/Base_hospital/guarantor/GuarantorClai
 import { PharmacyBiDashboard } from "./Pages/CEO/PharmacyBI/PharmacyBiDashboard";
 import ConsultationHistory from "./Pages/Admin/Base_hospital/ConsultationHistory";
 import AdmissionHistory from "./Pages/Admin/Base_hospital/AdmissionHistory";
+import StockBIDashboard from "./Pages/BI/StockBIDashboard";
 
 // ============================================================================
 // CONFIGURATION DES ROUTES
@@ -189,7 +190,13 @@ const routes = createBrowserRouter([
             <Outlet />
           </CheckRole>
         ),
-        children: [{ path: "pharmacy-dashboard", element: <PharmacyBiDashboard/> }],
+        children: [{ path: "pharmacy-dashboard", element: <PharmacyBiDashboard/> },
+          {
+      path: "stock",
+      element: <StockBIDashboard />
+    },
+      
+      ],
       },
       // ====================================================
       // B. ESPACE ADMINISTRATEUR (Base Hôpital & Paramétrages)
