@@ -2254,6 +2254,43 @@
                 ]
             }
         },
+        "/api/admin/facility-rooms/{id}/waiting-patients": {
+            "get": {
+                "tags": [
+                    "Infrastructures (Salles)"
+                ],
+                "summary": "Lister les patients présents dans une salle d'attente",
+                "description": "Retourne les visites de patients actuellement en statut IN_WAITING_ROOM pour une salle donnée.",
+                "operationId": "getPatientsInWaitingRoom",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID de la salle (Facility Room)",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste des patients en salle d'attente"
+                    },
+                    "400": {
+                        "description": "La salle n'est pas une salle d'attente"
+                    },
+                    "404": {
+                        "description": "Salle introuvable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/admin/insurance-companies": {
             "get": {
                 "tags": [
@@ -4666,6 +4703,359 @@
                 ]
             }
         },
+        "/api/reports/admissions": {
+            "get": {
+                "tags": [
+                    "Rapports des Hospitalisations"
+                ],
+                "summary": "Historique des hospitalisations (filtrable)",
+                "operationId": "7a3a8d67cafbd12cfd9b49226d72c35a",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Nombre d'éléments par page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    },
+                    {
+                        "name": "hospital_id",
+                        "in": "query",
+                        "description": "Filtrer par hôpital",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "center_id",
+                        "in": "query",
+                        "description": "Filtrer par centre",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "department_id",
+                        "in": "query",
+                        "description": "Filtrer par département",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "profile_doctor_id",
+                        "in": "query",
+                        "description": "Filtrer par médecin responsable",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "patient_id",
+                        "in": "query",
+                        "description": "Filtrer par patient",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Statut: ADMITTED ou DISCHARGED",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "is_billed",
+                        "in": "query",
+                        "description": "Filtrer par facturation (true/false)",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "Date de début d'admission",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "Date de fin d'admission",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste paginée des hospitalisations récupérée avec succès"
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/reports/admissions/export/pdf": {
+            "get": {
+                "tags": [
+                    "Rapports des Hospitalisations"
+                ],
+                "summary": "Exporter l'historique des hospitalisations en PDF",
+                "description": "Génère un fichier PDF contenant l'historique détaillé et les statistiques (Admis, Libérés, Facturés) selon les filtres fournis.",
+                "operationId": "0f3cc47a2bfab0b16d720acd790f03d9",
+                "responses": {
+                    "200": {
+                        "description": "Fichier PDF généré"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/reports/consultations": {
+            "get": {
+                "tags": [
+                    "Rapports des Consultations"
+                ],
+                "summary": "Historique des consultations (filtrable)",
+                "operationId": "05828754b5b607ea724937f3898e2fe0",
+                "parameters": [
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Nombre d'éléments par page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    },
+                    {
+                        "name": "hospital_id",
+                        "in": "query",
+                        "description": "Filtrer par ID de l'hôpital",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "center_id",
+                        "in": "query",
+                        "description": "Filtrer par ID du centre",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "department_id",
+                        "in": "query",
+                        "description": "Filtrer par ID du département",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "profile_doctor_id",
+                        "in": "query",
+                        "description": "Filtrer par médecin traitant",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "patient_id",
+                        "in": "query",
+                        "description": "Filtrer par patient",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "is_billed",
+                        "in": "query",
+                        "description": "Filtrer par statut de facturation (true/false)",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "Date de début (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "Date de fin (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste paginée des consultations récupérée avec succès"
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/reports/consultations/export/pdf": {
+            "get": {
+                "tags": [
+                    "Rapports des Consultations"
+                ],
+                "summary": "Exporter l'historique des consultations en PDF",
+                "description": "Génère un fichier PDF contenant l'historique détaillé et les statistiques (Chiffre d'affaires, total facturé, etc.) selon les filtres fournis.",
+                "operationId": "e65f8f6523da1dec4627a8df4a922fcd",
+                "parameters": [
+                    {
+                        "name": "hospital_id",
+                        "in": "query",
+                        "description": "Filtrer par ID de l'hôpital",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "center_id",
+                        "in": "query",
+                        "description": "Filtrer par ID du centre",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "department_id",
+                        "in": "query",
+                        "description": "Filtrer par ID du département",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "profile_doctor_id",
+                        "in": "query",
+                        "description": "Filtrer par médecin traitant",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "patient_id",
+                        "in": "query",
+                        "description": "Filtrer par patient",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "is_billed",
+                        "in": "query",
+                        "description": "Filtrer par statut de facturation (true/false)",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "Date de début (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "Date de fin (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Fichier PDF généré et prêt au téléchargement"
+                    },
+                    "401": {
+                        "description": "Non authentifié"
+                    },
+                    "403": {
+                        "description": "Accès refusé"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/shared/room-categories": {
             "get": {
                 "tags": [
@@ -5153,7 +5543,7 @@
                     "Authentification"
                 ],
                 "summary": "Authentifier un utilisateur",
-                "description": "Vérifie les identifiants de l'utilisateur et retourne un jeton d'accès (Token) ainsi que ses informations de profil.",
+                "description": "Vérifie les identifiants de l'utilisateur et retourne un jeton d'accès (Token) ainsi que ses informations de profil, incluant ses licences actives et ses restrictions.",
                 "operationId": "loginUser",
                 "requestBody": {
                     "description": "Identifiants de connexion requis",
@@ -5199,7 +5589,7 @@
                                         "user": {
                                             "description": "Informations de l'utilisateur encodées au format chaîne JSON",
                                             "type": "string",
-                                            "example": "{\"first_name\":\"John\",\"last_name\":\"Doe\",\"role\":\"super_admin\",\"email\":\"admin@asklepios.com\"}"
+                                            "example": "{\"id\":1,\"first_name\":\"John\",\"last_name\":\"Doe\",\"role\":\"ceo\",\"email\":\"admin@asklepios.com\",\"licences\":[\"pharmacy\",\"base_hospital\"]}"
                                         }
                                     },
                                     "type": "object"
@@ -5217,7 +5607,7 @@
                         }
                     },
                     "422": {
-                        "description": "Erreur de validation (champs manquants ou mal formatés)"
+                        "description": "Erreur de validation"
                     }
                 }
             }
@@ -5249,6 +5639,70 @@
                 "security": [
                     {
                         "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/pharmacy/bi/kpis": {
+            "get": {
+                "summary": "KPIs Globaux (CA, Marges, Panier Moyen)",
+                "operationId": "3f9bc8a93e30f998e2304e5def2c142d",
+                "responses": {
+                    "200": {
+                        "description": "Données récupérées avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/pharmacy/bi/sales-analytics": {
+            "get": {
+                "summary": "Analyse détaillée des ventes",
+                "operationId": "04dd16a7585a89d0a1c0a654c1d581ba",
+                "responses": {
+                    "200": {
+                        "description": "Données récupérées avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/pharmacy/bi/inventory-valuation": {
+            "get": {
+                "summary": "Valorisation des stocks en temps réel",
+                "operationId": "175da7a11d69d9047fee3d358478eac3",
+                "responses": {
+                    "200": {
+                        "description": "Données récupérées avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/pharmacy/bi/minsante-compliance": {
+            "get": {
+                "summary": "Rapports de conformité MINSANTE (Péremptions & Ruptures)",
+                "operationId": "c0077edb1c2bd7139dc4853c9ffcb073",
+                "responses": {
+                    "200": {
+                        "description": "Données récupérées avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
                     }
                 ]
             }
@@ -6438,7 +6892,7 @@
                 "tags": [
                     "Facturation"
                 ],
-                "summary": "Générer un rapport PDF des factures avec dettes",
+                "summary": "Générer un rapport PDF des factures avec dettes et Tiers Payant",
                 "operationId": "d4f18ebf7624d1af25ec24d235172564",
                 "responses": {
                     "200": {
@@ -6475,47 +6929,9 @@
             "get": {
                 "summary": "Lister les bordereaux avec filtres",
                 "operationId": "2891732e2297038b81aa3a174deb89a3",
-                "parameters": [
-                    {
-                        "name": "center_id",
-                        "in": "query",
-                        "description": "Filtrer par centre",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "insurance_company_id",
-                        "in": "query",
-                        "description": "Filtrer par assurance",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "status",
-                        "in": "query",
-                        "description": "Filtrer par statut (DRAFT, SUBMITTED, PAID, DISPUTED)",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "claim_month",
-                        "in": "query",
-                        "description": "Filtrer par mois (YYYY-MM)",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
-                        "description": "Liste des bordereaux récupérée avec succès"
+                        "description": "Données récupérées avec succès"
                     }
                 },
                 "security": [
@@ -6525,14 +6941,11 @@
                 ]
             },
             "post": {
-                "summary": "Créer un nouveau bordereau de réclamation",
+                "summary": "Créer un nouveau bordereau",
                 "operationId": "97ba3f312db646afafbe5a985572131e",
                 "responses": {
                     "201": {
-                        "description": "Bordereau généré avec succès"
-                    },
-                    "422": {
-                        "description": "Erreur de validation (Assurance manquante, factures invalides...)"
+                        "description": "Données enregistrées avec succès"
                     }
                 },
                 "security": [
@@ -6548,7 +6961,7 @@
                 "operationId": "459590f2b61414b84656d409c515e0ab",
                 "responses": {
                     "200": {
-                        "description": "Détails du bordereau récupérés avec succès"
+                        "description": "Données récupérées avec succès"
                     }
                 },
                 "security": [
@@ -6558,11 +6971,11 @@
                 ]
             },
             "put": {
-                "summary": "Mettre à jour le statut (ex: SUBMITTED, PAID)",
+                "summary": "Mettre à jour le statut",
                 "operationId": "a9861a8902950159c6d6d203c852d24c",
                 "responses": {
                     "200": {
-                        "description": "Bordereau mis à jour avec succès"
+                        "description": "Données mis a jour  avec succès"
                     }
                 },
                 "security": [
@@ -6575,11 +6988,8 @@
                 "summary": "Supprimer un bordereau (DRAFT uniquement)",
                 "operationId": "f88066f454c8a89da2aa0a6f69d8d24c",
                 "responses": {
-                    "200": {
-                        "description": "Bordereau supprimé avec succès"
-                    },
-                    "403": {
-                        "description": "Impossible de supprimer ce bordereau"
+                    "203": {
+                        "description": "Donnée suprimée avec succès"
                     }
                 },
                 "security": [
@@ -6593,32 +7003,9 @@
             "get": {
                 "summary": "Récupérer les parts assurances non réclamées",
                 "operationId": "c833b744a23c21c74daee7f83a7165d0",
-                "parameters": [
-                    {
-                        "name": "insurance_company_id",
-                        "in": "query",
-                        "description": "ID de la compagnie d'assurance",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "claim_month",
-                        "in": "query",
-                        "description": "Mois ciblé au format YYYY-MM",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
-                        "description": "Liste des factures impayées récupérées avec succès"
-                    },
-                    "422": {
-                        "description": "Paramètres invalides (ex: format de date incorrect)"
+                        "description": "Données récupérées avec succès"
                     }
                 },
                 "security": [
@@ -6632,20 +7019,9 @@
             "get": {
                 "summary": "Générer le PDF du bordereau d'assurance",
                 "operationId": "f24847ba3dc32ebdd45fa5ad808a695c",
-                "parameters": [
-                    {
-                        "name": "action",
-                        "in": "query",
-                        "description": "'stream' (aperçu) ou 'download' (télécharger)",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
-                        "description": "Flux ou téléchargement du PDF généré"
+                        "description": "Données récupérées avec succès"
                     }
                 },
                 "security": [
@@ -6660,50 +7036,28 @@
                 "tags": [
                     "Facturation"
                 ],
-                "summary": "Historique des factures (Paginé et filtrable)",
-                "description": "Filtres disponibles selon le rôle : center_id (Réception), patient_id (Docteur), ou global (Admin).",
+                "summary": "Historique des factures",
                 "operationId": "0552347dc39585d3694f03327b206b64",
-                "parameters": [
-                    {
-                        "name": "center_id",
-                        "in": "query",
-                        "description": "Filtrer par centre (Cliniq/Succursale)",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "patient_id",
-                        "in": "query",
-                        "description": "Filtrer par patient spécifique",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "patient_code",
-                        "in": "query",
-                        "description": "Filtrer par code patient (ex: H1-0001)",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "status",
-                        "in": "query",
-                        "description": "Filtrer par statut (UNPAID, PAID)",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
-                        "description": "Liste récupérée avec succès"
+                        "description": "Données récupérées avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Facturation"
+                ],
+                "summary": "Créer une facture manuellement",
+                "operationId": "f9ed2be40897c3fc92fb5de4c1b20946",
+                "responses": {
+                    "201": {
+                        "description": "Données enregistrées avec succès"
                     }
                 },
                 "security": [
@@ -6718,11 +7072,11 @@
                 "tags": [
                     "Facturation"
                 ],
-                "summary": "Prévisualiser les détails d'une facture",
+                "summary": "Prévisualiser les détails",
                 "operationId": "f77cec3506df0ae64003d6dbf6e982a2",
                 "responses": {
                     "200": {
-                        "description": "Élément récupéré avec succès"
+                        "description": "Données récupérées avec succès"
                     }
                 },
                 "security": [
@@ -6739,7 +7093,7 @@
                 "operationId": "9bd3088dc7d3bb16ed1afb6e06693b98",
                 "responses": {
                     "200": {
-                        "description": "élément mis a jours avec succès"
+                        "description": "Données mise à jour avec succès"
                     }
                 },
                 "security": [
@@ -6752,12 +7106,11 @@
                 "tags": [
                     "Facturation"
                 ],
-                "summary": "Annuler une facture proforma non payée",
-                "description": "Supprime une facture au statut UNPAID et libère automatiquement les actes.",
-                "operationId": "f1b77e226431654af24fbb6d1ab8ccce",
+                "summary": "Annuler une facture",
+                "operationId": "c79151377d7f2a4854b06ec403a55d6a",
                 "responses": {
                     "200": {
-                        "description": "élément mis a jours avec succès"
+                        "description": "Données supprimées avec succès"
                     }
                 },
                 "security": [
@@ -6772,22 +7125,11 @@
                 "tags": [
                     "Facturation"
                 ],
-                "summary": "Télécharger ou afficher la facture au format PDF détaillé",
+                "summary": "Télécharger le PDF",
                 "operationId": "0d28cf11e869532ac67361d4ca91ae16",
-                "parameters": [
-                    {
-                        "name": "action",
-                        "in": "query",
-                        "description": "values: 'stream' (aperçu) ou 'download' (télécharger)",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
-                        "description": "PDF généré avec succès"
+                        "description": "Données récupérées avec succès"
                     }
                 },
                 "security": [
@@ -6802,11 +7144,11 @@
                 "tags": [
                     "Facturation"
                 ],
-                "summary": "Prévisualiser les éléments non facturés d'un patient",
+                "summary": "Aperçu des impayés",
                 "operationId": "d989464ce62f586f41cc40db21669469",
                 "responses": {
                     "200": {
-                        "description": "Éléments récupérés avec succès"
+                        "description": "Données récupérées avec succès"
                     }
                 },
                 "security": [
@@ -6818,24 +7160,40 @@
         },
         "/api/shared/patients/{patientId}/generate-invoice": {
             "post": {
+                "tags": [
+                    "Facturation"
+                ],
                 "summary": "Générer une facture globale pour un patient",
                 "operationId": "0ee9b7e5edad624514db8b0d2a43c24f",
                 "responses": {
-                    "201": {
-                        "description": "Facture générée avec succès"
+                    "200": {
+                        "description": "Données générées avec succès"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
             }
         },
         "/api/shared/visits/{visitId}/generate-invoice": {
             "post": {
-                "summary": "Générer une facture pour une visite spécifique",
+                "tags": [
+                    "Facturation"
+                ],
+                "summary": "Générer une facture pour une visite",
                 "operationId": "260091cb6d6022bd9efb7cb03891128f",
                 "responses": {
-                    "201": {
-                        "description": "Facture générée avec succès"
+                    "200": {
+                        "description": "Données récupérées avec succès"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
             }
         },
         "/api/shared/payments": {
@@ -6884,7 +7242,7 @@
                 "operationId": "c9408c183363986b20f6a76fd2fa0d26",
                 "responses": {
                     "201": {
-                        "description": "élément supprimé avec succès"
+                        "description": "élément mis à jour avec succès"
                     }
                 },
                 "security": [
@@ -8361,8 +8719,8 @@
                 "tags": [
                     "Ventes POS (Pharmacy)"
                 ],
-                "summary": "Lister les ventes de la succursale du pharmacien connecté",
-                "description": "Lister les ventes de la succursale du pharmacien connecté",
+                "summary": "Lister les ventes (Admin / Pharmacien)",
+                "description": "Lister les ventes de la succursale du pharmacien connecté ou les ventes autorisées pour l'admin",
                 "operationId": "getPosSales",
                 "responses": {
                     "200": {
@@ -10177,7 +10535,7 @@
                     "Administrateurs (SUPA)"
                 ],
                 "summary": "Créer un administrateur",
-                "description": "Créer un nouvel administrateur et son profil",
+                "description": "Créer un nouvel administrateur et son profil (avec restrictions optionnelles)",
                 "operationId": "storeAdmin",
                 "requestBody": {
                     "required": true,
@@ -10196,7 +10554,8 @@
                                         "type": "string"
                                     },
                                     "last_name": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "nullable": true
                                     },
                                     "phone": {
                                         "type": "integer"
@@ -10209,6 +10568,36 @@
                                     },
                                     "hospital_id": {
                                         "type": "integer"
+                                    },
+                                    "accessible_licences": {
+                                        "description": "Ex: ['pharmacy', 'laboratory']",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "nullable": true
+                                    },
+                                    "center_ids": {
+                                        "description": "Laisser null pour un accès total",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "nullable": true
+                                    },
+                                    "pharmacy_branch_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "nullable": true
+                                    },
+                                    "laboratory_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -10268,7 +10657,7 @@
                     "Administrateurs (SUPA)"
                 ],
                 "summary": "Modifier un administrateur",
-                "description": "Modifier les informations d'un administrateur",
+                "description": "Modifier les informations d'un administrateur (y compris ses restrictions)",
                 "operationId": "updateAdmin",
                 "parameters": [
                     {
@@ -10290,7 +10679,8 @@
                                         "type": "string"
                                     },
                                     "last_name": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "nullable": true
                                     },
                                     "phone": {
                                         "type": "integer"
@@ -10300,6 +10690,34 @@
                                     },
                                     "hospital_id": {
                                         "type": "integer"
+                                    },
+                                    "accessible_licences": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "nullable": true
+                                    },
+                                    "center_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "nullable": true
+                                    },
+                                    "pharmacy_branch_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "nullable": true
+                                    },
+                                    "laboratory_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -11769,11 +12187,6 @@
         }
     },
     "components": {
-        "responses": {
-            "200": {
-                "description": "élément supprimé avec succès"
-            }
-        },
         "securitySchemes": {
             "bearerAuth": {
                 "type": "http",
@@ -11865,6 +12278,14 @@
         {
             "name": "Réceptionnistes (Admin)",
             "description": "Gestion des réceptionnistes de l'hôpital"
+        },
+        {
+            "name": "Rapports des Hospitalisations",
+            "description": "Historique, filtrage et export PDF des admissions"
+        },
+        {
+            "name": "Rapports des Consultations",
+            "description": "Historique, filtrage et export PDF des consultations"
         },
         {
             "name": "Catégories de Chambres",
@@ -12001,6 +12422,10 @@
         {
             "name": "Souscriptions (SUPA)",
             "description": "Gestion des abonnements et licences des hôpitaux"
+        },
+        {
+            "name": "Infrastructures (Salles)",
+            "description": "Infrastructures (Salles)"
         },
         {
             "name": "Article des Branches (Admin)",

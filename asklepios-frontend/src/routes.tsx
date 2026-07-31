@@ -31,6 +31,9 @@ import BedsExplorer from "./Pages/Admin/Base_hospital/BedsExplorer";
 import EquipmentExplorer from "./Pages/Admin/Base_hospital/EquipmentExplorer";
 import MedicalActExplorer from "./Pages/Admin/Base_hospital/MedicalActExplorer";
 
+// 👉 NOUVEL IMPORT : La file d'attente (Ajustez le chemin si nécessaire)
+import WaitingRoomPatients from "./Pages/Admin/Base_hospital/WaitingRoomPatients"; 
+
 // Ressources Humaines
 import Receptionists from "./Pages/Admin/Base_hospital/receptionist/Receptionist";
 import Doctors from "./Pages/Admin/Base_hospital/doctor/Doctors";
@@ -107,9 +110,6 @@ import LabValidation from "./Pages/Laboratory/Execution/LabValidation";
 // ============================================================================
 // IMPORTS : LABORATOIRE
 // ============================================================================
-/*
-import LabDashboard from "./Pages/Laboratory/LabDashboard";
-*/
 import LabArchives from "./Pages/Laboratory/Execution/LabArchives";
 
 // Import Admin Laboratoire
@@ -124,6 +124,8 @@ import CeoManagement from "./Pages/SUPA/ceo/CeoManagement";
 import InsuranceManagement from "./Pages/Admin/InsuranceManagement";
 import GuarantorClaims from "./Pages/Admin/Base_hospital/guarantor/GuarantorClaims";
 import { PharmacyBiDashboard } from "./Pages/CEO/PharmacyBI/PharmacyBiDashboard";
+import ConsultationHistory from "./Pages/Admin/Base_hospital/ConsultationHistory";
+import AdmissionHistory from "./Pages/Admin/Base_hospital/AdmissionHistory";
 
 // ============================================================================
 // CONFIGURATION DES ROUTES
@@ -150,7 +152,6 @@ const routes = createBrowserRouter([
       </AuthMiddleware>
     ),
     children: [
-      // 👉 NOUVELLE ROUTE GLOBALE (Accessible à tous les connectés)
       { path: "search", element: <SearchResults /> },
       // ====================================================
       {
@@ -208,6 +209,7 @@ const routes = createBrowserRouter([
           { path: "lab-personnel", element: <LabPersonnel /> },
           { path: "insurances", element: <InsuranceManagement/>},
           {path:"guarantor_claims",element:<GuarantorClaims/>},
+          
           // -- Structure de l'Hôpital --
           { path: "laboratories", element: <LaboratoriesAdmin /> },
           { path: "centers", element: <Centers /> },
@@ -225,7 +227,15 @@ const routes = createBrowserRouter([
             path: "departments/:id/medical-acts",
             element: <MedicalActExplorer />,
           },
+          
           { path: "rooms/:id/beds", element: <BedsExplorer /> },
+          // 👉 NOUVELLE ROUTE : Historique des consultations d'une salle/département
+          { path: "rooms/:roomId/consultations", element: <ConsultationHistory /> },
+          // 👉 NOUVELLE ROUTE : Historique des admissions pour un WARD
+          { path: "rooms/:roomId/admissions", element: <AdmissionHistory /> },
+          // 👉 NOUVELLE ROUTE : Patients en salle d'attente
+          { path: "rooms/:roomId/waiting-patients", element: <WaitingRoomPatients /> },
+
           { path: "room_categories", element: <RoomCategories /> },
 
           // -- Pharmacie (Supervision Admin) --
@@ -387,8 +397,6 @@ const routes = createBrowserRouter([
           </CheckRole>
         ),
         children: [
-          // { path: "dashboard", element: <LabDashboard /> },
-
           // -- Gestion du Labo (Lab Manager) --
           {
             path: "personnel",

@@ -26,6 +26,7 @@ class GuarantorClaimController extends Controller
     }
 
     #[OA\Get(path: "/api/shared/guarantor-claims", summary: "Lister les bordereaux avec filtres", security: [["sanctum" => []]])]
+     #[OA\Response(response: 200, description: "Données récupérées avec succès")]
     public function index(Request $request)
     {
         $query = GuarantorClaim::with(['insuranceCompany', 'center'])
@@ -51,6 +52,7 @@ class GuarantorClaimController extends Controller
     }
 
     #[OA\Post(path: "/api/shared/guarantor-claims", summary: "Créer un nouveau bordereau", security: [["sanctum" => []]])]
+     #[OA\Response(response: 201, description: "Données enregistrées avec succès")]
     public function store(Request $request)
     {
         $request->validate([
@@ -89,6 +91,7 @@ class GuarantorClaimController extends Controller
     }
 
     #[OA\Get(path: "/api/shared/guarantor-claims/{id}", summary: "Voir les détails d'un bordereau", security: [["sanctum" => []]])]
+     #[OA\Response(response: 200, description: "Données récupérées avec succès")]
     public function show($id)
     {
         $claim = GuarantorClaim::with([
@@ -103,6 +106,7 @@ class GuarantorClaimController extends Controller
     }
 
     #[OA\Put(path: "/api/shared/guarantor-claims/{id}", summary: "Mettre à jour le statut", security: [["sanctum" => []]])]
+     #[OA\Response(response: 200, description: "Données mis a jour  avec succès")]
     public function update(Request $request, $id)
     {
         $request->validate([
@@ -154,6 +158,7 @@ class GuarantorClaimController extends Controller
     }
 
     #[OA\Get(path: "/api/shared/invoice-splits/unclaimed", summary: "Récupérer les parts assurances non réclamées", security: [["sanctum" => []]])]
+    #[OA\Response(response: 200, description: "Données récupérées avec succès")]
     public function getUnclaimedSplits(Request $request)
     {
         $request->validate([
@@ -178,6 +183,7 @@ class GuarantorClaimController extends Controller
     }
 
     #[OA\Delete(path: "/api/shared/guarantor-claims/{id}", summary: "Supprimer un bordereau (DRAFT uniquement)", security: [["sanctum" => []]])]
+     #[OA\Response(response: 203, description: "Donnée suprimée avec succès")]
     public function destroy($id)
     {
         $claim = GuarantorClaim::findOrFail($id);
@@ -195,6 +201,7 @@ class GuarantorClaimController extends Controller
     }
 
     #[OA\Get(path: "/api/shared/guarantor-claims/{id}/download", summary: "Générer le PDF du bordereau d'assurance", security: [["sanctum" => []]])]
+     #[OA\Response(response: 200, description: "Données récupérées avec succès")]
     public function downloadPdf(Request $request, $id)
     {
         $claim = GuarantorClaim::with([
@@ -225,5 +232,43 @@ class GuarantorClaimController extends Controller
         $fileName = 'Bordereau_' . str_replace(' ', '_', $claim->insuranceCompany->name) . '_' . date('m_Y', strtotime($claim->claim_month)) . '.pdf';
 
         return $action === 'download' ? $pdf->download($fileName) : $pdf->stream($fileName);
+    }
+
+    // 👇 NOUVELLES MÉTHODES D'EXPORT LISTE 👇
+
+    #[OA\Get(path: "/api/shared/guarantor-claims/export/pdf", summary: "Exporter la liste filtrée des bordereaux en PDF", security: [["sanctum" => []]])]
+    #[OA\Response(response: 200, description: "Fichier PDF généré")]
+    public function exportPdfList(Request $request)
+    {
+        $query = $this->getScopedAndFilteredQuery($request);
+        
+        $totalClaims = $query->count();
+        $totalAmount = $query->sum('total_claim_amount');
+        
+        $claims = $query->get();
+        $filters = $request->all();
+        $user = Auth::user();
+
+        $pdf = Pdf::loadView('exports.pdf.guarantor_claims_list', compact(
+            'claims', 
+            'filters', 
+            'user',
+            'totalClaims',
+            'totalAmount'
+        ))->setPaper('a4', 'landscape');
+
+        return $pdf->download("liste_bordereaux_" . date('Ymd_His') . ".pdf");
+    }
+
+    #[OA\Get(path: "/api/shared/guarantor-claims/export/excel", summary: "Exporter la liste filtrée des bordereaux en Excel", security: [["sanctum" => []]])]
+    #[OA\Response(response: 200, description: "Fichier Excel généré")]
+    public function exportExcelList(Request $request)
+    {
+        $query = $this->getScopedAndFilteredQuery($request);
+        
+        return Excel::download(
+            new GuarantorClaimsExport($query), 
+            'liste_bordereaux_' . date('Ymd_His') . '.xlsx'
+        );
     }
 }

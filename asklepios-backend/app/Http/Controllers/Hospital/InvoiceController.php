@@ -47,6 +47,7 @@ class InvoiceController extends Controller
     }
 
     #[OA\Get(path: "/api/shared/invoices", summary: "Historique des factures", security: [["sanctum" => []]], tags: ["Facturation"])]
+     #[OA\Response(response: 200, description: "Données récupérées avec succès")]
     public function index(Request $request)
     {
         $hospitalId = $this->getHospitalId();
@@ -87,6 +88,7 @@ class InvoiceController extends Controller
     }
 
     #[OA\Get(path: "/api/shared/invoices/{id}", summary: "Prévisualiser les détails", security: [["sanctum" => []]], tags: ["Facturation"])]
+     #[OA\Response(response: 200, description: "Données récupérées avec succès")]
     public function show($id)
     {
         $hospitalId = $this->getHospitalId();
@@ -104,6 +106,7 @@ class InvoiceController extends Controller
     }
 
     #[OA\Get(path: "/api/shared/invoices/{id}/download", summary: "Télécharger le PDF", security: [["sanctum" => []]], tags: ["Facturation"])]
+     #[OA\Response(response: 200, description: "Données récupérées avec succès")]
     public function downloadPdf(Request $request, $id)
     {
         $hospitalId = $this->getHospitalId();
@@ -119,7 +122,9 @@ class InvoiceController extends Controller
     }
 
     #[OA\Get(path: "/api/shared/patients/{patientId}/unbilled-preview", summary: "Aperçu des impayés", security: [["sanctum" => []]], tags: ["Facturation"])]
+     #[OA\Response(response: 200, description: "Données récupérées avec succès")]
     public function previewUnbilledForPatient($patientId)
+
     {
         $consultationsCount = Consultation::where(function($query) use ($patientId) {
             $query->whereHas('patientVisit', fn($subQ) => $subQ->where('patient_id', $patientId))
@@ -159,6 +164,7 @@ class InvoiceController extends Controller
     }
 
     #[OA\Post(path: "/api/shared/invoices", summary: "Créer une facture manuellement", security: [["sanctum" => []]], tags: ["Facturation"])]
+    #[OA\Response(response: 201, description: "Données enregistrées avec succès")]
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -188,6 +194,7 @@ class InvoiceController extends Controller
     }
 
     #[OA\Post(path: "/api/shared/patients/{patientId}/generate-invoice", summary: "Générer une facture globale pour un patient", security: [["sanctum" => []]], tags: ["Facturation"])]
+     #[OA\Response(response: 200, description: "Données générées avec succès")]
     public function generateForPatient(Request $request, $patientId)
     {
         // 👉 Sécurité : On accepte le champ 'consultation_price' ou 'price' selon ce que le frontend envoie
@@ -205,6 +212,7 @@ class InvoiceController extends Controller
     }
 
     #[OA\Post(path: "/api/shared/visits/{visitId}/generate-invoice", summary: "Générer une facture pour une visite", security: [["sanctum" => []]], tags: ["Facturation"])]
+     #[OA\Response(response: 200, description: "Données récupérées avec succès")]
     public function generateForVisit(Request $request, $visitId)
     {
         $price = $request->input('consultation_price', $request->input('price', 0));
@@ -220,6 +228,7 @@ class InvoiceController extends Controller
     }
 
     #[OA\Put(path: "/api/shared/invoices/{id}", summary: "Mettre à jour une facture", security: [["sanctum" => []]], tags: ["Facturation"])]
+     #[OA\Response(response: 200, description: "Données mise à jour avec succès")]
     public function update(Request $request, $id)
     {
         $invoice = Invoice::findOrFail($id);
@@ -247,6 +256,7 @@ class InvoiceController extends Controller
     }
 
     #[OA\Delete(path: "/api/shared/invoices/{id}", summary: "Annuler une facture", security: [["sanctum" => []]], tags: ["Facturation"])]
+ #[OA\Response(response: 200, description: "Données supprimées avec succès")]
     public function destroy($id)
     {
         try {

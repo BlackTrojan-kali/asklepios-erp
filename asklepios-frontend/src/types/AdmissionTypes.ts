@@ -11,7 +11,7 @@ export interface BedDto {
     facility_room_id: number;
     bed_number: string;
     state: BedState;
-    facilityRoom?: FacilityRoomDto; // Si tu as besoin d'afficher le nom de la salle
+    facilityRoom?: FacilityRoomDto; 
     created_at: string;
     updated_at: string;
 }
@@ -33,7 +33,7 @@ export interface AdmissionDto {
     created_at: string;
     updated_at: string;
 
-    // Relations (chargées via le "with" du contrôleur)
+    // Relations 
     patient?: PatientDto;
     bed?: BedDto;
     doctor?: DoctorDto;
@@ -44,11 +44,26 @@ export interface CreateAdmissionPayload {
     patient_id: number;
     bed_id: number;
     reason_for_admission: string;
-    patient_visit_id?: number | null; // Optionnel (utile si l'admission vient d'une consultation en cours)
-    profile_doctor_id?: number | null; // Optionnel (Le médecin en charge)
-    expected_discharge_date?: string | null; // YYYY-MM-DD
+    patient_visit_id?: number | null; 
+    profile_doctor_id?: number | null; 
+    expected_discharge_date?: string | null; 
 }
 
 export interface DischargePayload {
     discharge_notes?: string;
+}
+
+// 👉 NOUVEAU : Filtres pour l'historique et les rapports PDF
+export interface AdmissionFilters {
+    hospital_id?: number;
+    center_id?: number;
+    department_id?: number;
+    facility_room_id?: number;
+    profile_doctor_id?: number;
+    patient_id?: number;
+    status?: AdmissionStatus | '';
+    is_billed?: string | boolean;
+    start_date?: string;
+    end_date?: string;
+    search?: string;
 }

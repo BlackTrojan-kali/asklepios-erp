@@ -61,6 +61,7 @@ export const MENU_CONFIG: MenuItemType[] = [
     icon: <Shield size={20} />,
     path: "/admins",
     roles: ["super_admin","admin"],
+    globalAdminOnly: true, // 👉 NOUVEAU: Seuls les super_admin et admin globaux le verront
   },
   {
     title: "Ceos",
@@ -107,7 +108,7 @@ export const MENU_CONFIG: MenuItemType[] = [
     roles: ["admin"],
     requiredLicence: "base_hospital",
     subItems: [
-      { title: "Centres", path: "/admin/centers" },
+      { title: "Centres", path: "/admin/centers", },
       { title: "Départements", path: "/admin/departments" },
       { title: "Catégories Chambres", path: "/admin/room_categories" },
     ],

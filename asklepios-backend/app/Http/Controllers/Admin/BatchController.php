@@ -3,11 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Services\StockService;
 use App\Models\Pharmacy\Batch;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use OpenApi\Attributes as OA;
+use App\Http\Services\StockService;
 
 #[OA\Tag(name: "Lots d'Articles (Admin)", description: "Gestion des lots (Batches) avec dates de péremption et prix d'achat")]
 class BatchController extends Controller

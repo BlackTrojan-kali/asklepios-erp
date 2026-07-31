@@ -12,7 +12,7 @@ export default function useCeoStore() {
     const getCeos = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await api.get('/superadmin/ceos');
+            const res = await api.get('/supa/ceos');
             setCeos(res.data.data);
         } catch (error: any) {
             toast.error(error.response?.data?.message || "Erreur lors de la récupération des profils.");
@@ -25,7 +25,7 @@ export default function useCeoStore() {
     const createCeo = async (data: any): Promise<boolean> => {
         setActionLoading(true);
         try {
-            await api.post('/superadmin/ceos', data);
+            await api.post('/supa/ceos', data);
             toast.success("Profil de direction créé avec succès !");
             return true;
         } catch (error: any) {
@@ -41,7 +41,7 @@ export default function useCeoStore() {
     const updateCeo = async (id: number, data: any): Promise<boolean> => {
         setActionLoading(true);
         try {
-            await api.put(`/superadmin/ceos/${id}`, data);
+            await api.put(`/supa/ceos/${id}`, data);
             toast.success("Profil mis à jour avec succès !");
             return true;
         } catch (error: any) {
@@ -57,7 +57,7 @@ export default function useCeoStore() {
     const deleteCeo = async (id: number): Promise<boolean> => {
         setActionLoading(true);
         try {
-            await api.delete(`/superadmin/ceos/${id}`);
+            await api.delete(`/supa/ceos/${id}`);
             toast.success("Profil supprimé avec succès !");
             // Mise à jour de l'état local après suppression
             setCeos(prev => prev.filter(ceo => ceo.id !== id));

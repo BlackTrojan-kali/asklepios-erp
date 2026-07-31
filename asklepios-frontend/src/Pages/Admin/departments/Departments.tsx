@@ -38,25 +38,45 @@ const Departments = () => {
     // États pour la sélection et la recherche
     const [selectedCenterOption, setSelectedCenterOption] = useState<any>(null);
     const [searchTerm, setSearchTerm] = useState("");
-    const [autoRefreshPage,setAutorRefreshPage] = useState<boolean>(false);
+    const [autoRefreshPage, setAutoRefreshPage] = useState<boolean>(false);
 
     // États pour les modales
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [selectedDept, setSelectedDept] = useState<DepartmentDto | null>(null);
-    const handleAutoRefresh = ()=>{
-        setAutorRefreshPage(!autoRefreshPage)
+
+    // 🟢 NOUVEAU : État pour le menu contextuel (clic droit)
+    const [contextMenu, setContextMenu] = useState<{
+        mouseX: number;
+        mouseY: number;
+        dept: DepartmentDto;
+    } | null>(null);
+
+    const handleAutoRefresh = () => {
+        setAutoRefreshPage(!autoRefreshPage)
     }
+
     // 1. Chargement initial des centres de l'hôpital
     useEffect(() => {
         getCenters(1, {}, 100);
-    }, [getCenters,autoRefreshPage]);
+    }, [getCenters, autoRefreshPage]);
 
     // 2. Chargement des départements quand le centre sélectionné change
     useEffect(() => {
         if (selectedCenterOption) {
             getDepartments(selectedCenterOption.value, searchTerm);
         }
-    }, [selectedCenterOption, searchTerm, getDepartments,autoRefreshPage]);
+    }, [selectedCenterOption, searchTerm, getDepartments, autoRefreshPage]);
+
+    // 🟢 NOUVEAU : Fermer le menu contextuel si on clique ailleurs ou si on scroll
+    useEffect(() => {
+        const handleClickOutside = () => setContextMenu(null);
+        document.addEventListener("click", handleClickOutside);
+        document.addEventListener("scroll", handleClickOutside);
+        return () => {
+            document.removeEventListener("click", handleClickOutside);
+            document.removeEventListener("scroll", handleClickOutside);
+        };
+    }, []);
 
     // Formatage des centres pour le composant Select
     const centerOptions = useMemo(() => 
@@ -72,14 +92,11 @@ const Departments = () => {
 
     // Action : Naviguer vers l'intérieur du dossier (Gestion des salles)
     const handleOpenFolder = (dept: DepartmentDto) => {
-        // TODO: Ajuste cette URL selon tes routes réelles pour la page d'exploration du département
         navigate(`/admin/departments/${dept.id}/manage_department`, { state: { department: dept } });
     };
 
-    // Action : Supprimer un département
-    const handleDelete = async (e: React.MouseEvent, id: number) => {
-        e.stopPropagation(); // Empêche l'ouverture du dossier lors du clic sur la poubelle
-
+    // 🟢 MODIFICATION : Nettoyage de la signature (l'événement e.stopPropagation est géré dans le JSX)
+    const handleDelete = async (id: number) => {
         if (!selectedCenterOption) return;
 
         const result = await Swal.fire({
@@ -100,10 +117,24 @@ const Departments = () => {
         }
     };
 
-    // Action : Modifier un département
-    const handleEdit = (e: React.MouseEvent, dept: DepartmentDto) => {
-        e.stopPropagation(); // Empêche l'ouverture du dossier lors du clic sur l'édition
+    // 🟢 MODIFICATION : Nettoyage de la signature
+    const handleEdit = (dept: DepartmentDto) => {
         setSelectedDept(dept);
+    };
+
+    // 🟢 NOUVEAU : Fonction pour capturer le clic droit
+    const handleContextMenu = (e: React.MouseEvent, dept: DepartmentDto) => {
+        e.preventDefault(); // Empêche le menu contextuel natif du navigateur
+        
+        // Empêche le menu de sortir de l'écran (ajustement des coordonnées)
+        const x = e.clientX + 200 > window.innerWidth ? window.innerWidth - 220 : e.clientX;
+        const y = e.clientY + 150 > window.innerHeight ? window.innerHeight - 170 : e.clientY;
+
+        setContextMenu({
+            mouseX: x,
+            mouseY: y,
+            dept: dept
+        });
     };
 
     // Styles personnalisés pour React-Select (Dark Mode compatible)
@@ -208,7 +239,35 @@ const Departments = () => {
             </div>
 
             {/* ZONE EXPLORATEUR DE DOSSIERS */}
-            <div className="bg-slate-50 dark:bg-gray-900/30 rounded-xl border border-gray-100 dark:border-gray-800 min-h-[400px] p-6">
+            <div className="bg-slate-50 dark:bg-gray-900/30 rounded-xl border border-gray-100 dark:border-gray-800 min-h-[400px] p-6 relative">
+                
+                {/* 🟢 NOUVEAU : MENU CONTEXTUEL FLOTTANT */}
+                {contextMenu && (
+                    <div 
+                        className="fixed z-50 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-2 animate-in fade-in zoom-in duration-150"
+                        style={{ top: contextMenu.mouseY, left: contextMenu.mouseX }}
+                    >
+                        <div className="px-4 py-2 mb-1 border-b border-gray-100 dark:border-gray-700">
+                            <span className="block text-xs font-semibold text-gray-400 uppercase tracking-wider truncate">
+                                {contextMenu.dept.name}
+                            </span>
+                        </div>
+
+                        <button onClick={() => { handleOpenFolder(contextMenu.dept); setContextMenu(null); }} className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3 text-sm text-slate-700 dark:text-gray-200 transition-colors">
+                            <FolderOpen size={16} className="text-[#00a896]" /> Ouvrir
+                        </button>
+                        
+                        <div className="h-px bg-gray-100 dark:bg-gray-700 my-1"></div>
+
+                        <button onClick={() => { handleEdit(contextMenu.dept); setContextMenu(null); }} className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3 text-sm text-blue-600 dark:text-blue-400 transition-colors">
+                            <Edit3 size={16} /> Modifier
+                        </button>
+                        <button onClick={() => { handleDelete(contextMenu.dept.id); setContextMenu(null); }} className="w-full text-left px-4 py-2 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-3 text-sm text-red-600 dark:text-red-400 transition-colors">
+                            <Trash2 size={16} /> Supprimer
+                        </button>
+                    </div>
+                )}
+
                 {!selectedCenterOption ? (
                     <div className="flex flex-col items-center justify-center h-full text-center py-20">
                         <Building2 size={64} className="text-gray-300 dark:text-gray-600 mb-4" />
@@ -232,11 +291,12 @@ const Departments = () => {
                             <div 
                                 key={dept.id}
                                 onClick={() => handleOpenFolder(dept)}
-                                className="group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 flex flex-col hover:border-[#00a896] dark:hover:border-[#00a896] hover:shadow-md transition-all cursor-pointer relative overflow-hidden"
+                                onContextMenu={(e) => handleContextMenu(e, dept)} // 🟢 Événement Clic Droit ajouté
+                                className={`group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 flex flex-col hover:border-[#00a896] dark:hover:border-teal-500 hover:shadow-md transition-all cursor-pointer cursor-context-menu relative overflow-hidden ${contextMenu?.dept.id === dept.id ? 'border-[#00a896] dark:border-teal-500 ring-2 ring-[#00a896]/20' : ''}`}
                             >
                                 {/* Icône de dossier et nom */}
                                 <div className="flex items-start gap-3 mb-4">
-                                    <div className="p-2.5 bg-indigo-50 text-indigo-500 dark:bg-indigo-900/30 dark:text-indigo-400 rounded-lg group-hover:bg-[#00a896]/10 group-hover:text-[#00a896] transition-colors">
+                                    <div className="p-2.5 bg-indigo-50 text-indigo-500 dark:bg-indigo-900/30 dark:text-indigo-400 rounded-lg group-hover:bg-[#00a896]/10 group-hover:text-[#00a896] dark:group-hover:text-teal-400 transition-colors">
                                         <Folder size={28} className="fill-current opacity-20" />
                                     </div>
                                     <div className="flex-1 min-w-0">
@@ -254,15 +314,15 @@ const Departments = () => {
                                 {/* Actions rapides (Éditer / Supprimer) - Apparaissent au survol */}
                                 <div className="mt-auto flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                     <button 
-                                        onClick={(e) => handleEdit(e, dept)}
-                                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-md transition-colors"
+                                        onClick={(e) => { e.stopPropagation(); handleEdit(dept); }}
+                                        className="p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-md transition-colors"
                                         title="Renommer / Modifier"
                                     >
                                         <Edit3 size={16} />
                                     </button>
                                     <button 
-                                        onClick={(e) => handleDelete(e, dept.id)}
-                                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors"
+                                        onClick={(e) => { e.stopPropagation(); handleDelete(dept.id); }}
+                                        className="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors"
                                         title="Supprimer"
                                     >
                                         <Trash2 size={16} />

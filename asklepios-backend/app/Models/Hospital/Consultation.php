@@ -50,4 +50,8 @@ class Consultation extends Model
     {
         return $this->hasMany(\App\Models\Hospital\Prescription::class);
     }
+    public function doctor(){
+        return $this->belongsTo(\App\Models\ProfileDoctor::class,"profile_doctor_id");
+    
+    }
 }

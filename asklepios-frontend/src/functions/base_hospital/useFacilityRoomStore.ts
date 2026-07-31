@@ -17,6 +17,10 @@ const useFacilityRoomStore = () => {
     // ======================================================
     const [facilityRooms, setFacilityRooms] = useState<FacilityRoomDto[]>([]);
     const [sharedFacilityRooms, setSharedFacilityRooms] = useState<FacilityRoomDto[]>([]); // Liste plate pour React-Select
+    
+    // NOUVEAU : État pour stocker les patients dans une salle d'attente
+    const [waitingPatients, setWaitingPatients] = useState<any[]>([]); 
+    
     const [pagination, setPagination] = useState<PaginationData | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [actionLoading, setActionLoading] = useState<boolean>(false);
@@ -47,7 +51,6 @@ const useFacilityRoomStore = () => {
                 total: res.data.total || 0
             });
             
-            
         } catch (error) {
             if (axios.isAxiosError(error) && !axios.isCancel(error)) {
                 toast.error("Erreur lors de la récupération des salles");
@@ -75,6 +78,26 @@ const useFacilityRoomStore = () => {
         } catch (error) {
             console.error("Erreur lors de la récupération des salles (liste complète)", error);
             setSharedFacilityRooms([]);
+            return [];
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    // --- NOUVEAU : RÉCUPÉRER LES PATIENTS D'UNE SALLE D'ATTENTE ---
+    const getPatientsInWaitingRoom = useCallback(async (roomId: number) => {
+        if (!roomId) return [];
+
+        try {
+            setLoading(true);
+            const res = await api.get(`/admin/facility-rooms/${roomId}/waiting-patients`);
+            setWaitingPatients(res.data);
+            return res.data;
+        } catch (error) {
+            if (axios.isAxiosError(error) && !axios.isCancel(error)) {
+                toast.error(error.response?.data?.message || "Erreur lors de la récupération de la file d'attente");
+            }
+            setWaitingPatients([]);
             return [];
         } finally {
             setLoading(false);
@@ -174,6 +197,7 @@ const useFacilityRoomStore = () => {
         // États
         facilityRooms,
         sharedFacilityRooms,
+        waitingPatients, // <--- Exposé ici
         pagination,
         loading,
         actionLoading,
@@ -181,6 +205,7 @@ const useFacilityRoomStore = () => {
         // Méthodes
         getFacilityRooms,
         getSharedFacilityRooms,
+        getPatientsInWaitingRoom, // <--- Exposée ici
         createFacilityRoom,
         updateFacilityRoom,
         deleteFacilityRoom,

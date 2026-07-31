@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Services\Security\ScopeResolver;
 use App\Models\Department;
 use App\Models\Hospital\FacilityRoom;
 use App\Models\Hospital\RoomCategory;
 use App\Http\Services\WaitingRoomService; // Ajout du service
+use App\Models\Hospital\PatientVisit;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
 
@@ -240,5 +242,43 @@ class FacilityRoomController extends Controller
         return response()->json([
             'message' => 'Salle supprimée avec succès.'
         ], 200);
+    }
+
+    #[OA\Get(
+        path: "/api/admin/facility-rooms/{id}/waiting-patients",
+        operationId: "getPatientsInWaitingRoom",
+        summary: "Lister les patients présents dans une salle d'attente",
+        description: "Retourne les visites de patients actuellement en statut IN_WAITING_ROOM pour une salle donnée.",
+        security: [["bearerAuth" => []]],
+        tags: ["Infrastructures (Salles)"]
+    )]
+    #[OA\Parameter(name: "id", in: "path", required: true, description: "ID de la salle (Facility Room)", schema: new OA\Schema(type: "integer"))]
+    #[OA\Response(response: 200, description: "Liste des patients en salle d'attente")]
+    #[OA\Response(response: 400, description: "La salle n'est pas une salle d'attente")]
+    #[OA\Response(response: 404, description: "Salle introuvable")]
+    public function getPatientsInWaitingRoom($id)
+    {
+        // 1. Vérifier que la salle existe et que c'est bien une salle d'attente
+        $room = FacilityRoom::findOrFail($id);
+
+        if ($room->type !== 'WAITING_ROOM') {
+            return response()->json(['message' => 'Cette salle n\'est pas configurée comme une salle d\'attente.'], 400);
+        }
+
+        // 2. Récupérer les visites en cours dans cette salle
+        $query = PatientVisit::with([
+            'patient', 
+            'appointment' // On charge le rendez-vous (optionnel, utile pour afficher l'heure prévue ou le motif)
+        ])
+        ->where('waiting_room_id', $id)
+        ->where('status', 'IN_WAITING_ROOM');
+
+        // 3. 🟢 SÉCURITÉ : Restreindre l'accès au centre de la visite selon les droits de l'admin
+        $query = ScopeResolver::applyCenterScope($query, 'patient_visits.center_id');
+
+        // 4. Trier par heure d'arrivée (premier arrivé, premier servi)
+        $visits = $query->orderBy('arrival_time', 'asc')->get();
+
+        return response()->json($visits, 200);
     }
 }

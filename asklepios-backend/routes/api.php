@@ -28,6 +28,8 @@ use App\Http\Controllers\Admin\PharmacienController;
 use App\Http\Controllers\Admin\PharmacyBranchArticleController;
 use App\Http\Controllers\Admin\PharmacyBranchController;
 use App\Http\Controllers\Admin\ProviderController;
+use App\Http\Controllers\Admin\Reports\AdmissionHistoryController;
+use App\Http\Controllers\Admin\Reports\ConsultationHistoryController;
 use App\Http\Controllers\Admin\RoomCategoryController;
 use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Admin\VehiculeController;
@@ -103,7 +105,9 @@ Route::middleware(['role:admin,reception'])->group(function () {
     });
     
     Route::middleware(['role:admin'])->prefix('shared')->group(function () {
-    
+    // 👉 NOUVELLES ROUTES (À placer avant les routes avec {id})
+        Route::get('/guarantor-claims/export/pdf', [GuarantorClaimController::class, 'exportPdfList']);
+        Route::get('/guarantor-claims/export/excel', [GuarantorClaimController::class, 'exportExcelList']);
     // Gestion des bordereaux de réclamation assurance (Tiers Payant)
     Route::get('/guarantor-claims', [GuarantorClaimController::class, 'index']);
     Route::post('/guarantor-claims', [GuarantorClaimController::class, 'store']);
@@ -209,6 +213,16 @@ Route::middleware(['role:super_admin,admin'])->prefix('supa')->group(function ()
             Route::apiResource('drivers', DriverController::class);
         });
         Route::middleware('role:admin')->prefix('admin')->group(function () {
+            // Historiques des consultations et rapports
+    Route::prefix('reports')->group(function () {
+        Route::get('/consultations', [ConsultationHistoryController::class, 'index']);
+        Route::get('/consultations/export/pdf', [ConsultationHistoryController::class, 'exportPdf']);
+        Route::get('/admissions', [AdmissionHistoryController::class, 'index']);
+        Route::get('/admissions/export/pdf', [AdmissionHistoryController::class, 'exportPdf']);
+    });
+
+            Route::get('/facility-rooms/{id}/waiting-patients', [FacilityRoomController::class, 'getPatientsInWaitingRoom']);
+
             // Gestion complète (CRUD) des médecins de l'hôpital
             Route::apiResource('doctors', DoctorController::class);
             

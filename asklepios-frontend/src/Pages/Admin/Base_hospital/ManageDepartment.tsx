@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { 
     Folder, 
@@ -17,10 +17,22 @@ import Swal from 'sweetalert2';
 import useFacilityRoomStore from '../../../functions/base_hospital/useFacilityRoomStore';
 import { useAuth } from '../../../contexts/AuthContext';
 
+// --- TYPES ---
+interface SubFolder {
+    id: string;
+    title: string;
+    description: string;
+    icon: React.ReactNode;
+    colorClass: string;
+    borderColorClass: string;
+    path: string;
+}
+
 const ManageDepartment = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const location = useLocation();
+    
     // Hook du store pour l'initialisation des salles
     const { syncWaitingRooms, actionLoading } = useFacilityRoomStore();
 
@@ -28,15 +40,33 @@ const ManageDepartment = () => {
     const departmentName = location.state?.department?.name || "Département";
     const departmentAlias = location.state?.department?.alias;
 
+    // 🟢 NOUVEAU : État pour le menu contextuel (clic droit)
+    const [contextMenu, setContextMenu] = useState<{
+        mouseX: number;
+        mouseY: number;
+        folder: SubFolder;
+    } | null>(null);
+
+    // 🟢 NOUVEAU : Fermer le menu contextuel si on clique ailleurs ou si on scroll
+    useEffect(() => {
+        const handleClickOutside = () => setContextMenu(null);
+        document.addEventListener("click", handleClickOutside);
+        document.addEventListener("scroll", handleClickOutside);
+        return () => {
+            document.removeEventListener("click", handleClickOutside);
+            document.removeEventListener("scroll", handleClickOutside);
+        };
+    }, []);
+
     // Configuration des sous-dossiers disponibles dans ce département
-    const subFolders = [
+    const subFolders: SubFolder[] = [
         {
             id: 'rooms',
             title: 'Chambres & Installations',
             description: 'Gestion des lits, salles d’attente, blocs de consultation et hospitalisations.',
             icon: <BedDouble size={28} />,
             colorClass: 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 group-hover:bg-indigo-600 group-hover:text-white',
-            borderColorClass: 'hover:border-indigo-500',
+            borderColorClass: 'hover:border-indigo-500 dark:hover:border-indigo-500',
             path: `/admin/departments/${id}/rooms`
         },
         {
@@ -45,7 +75,7 @@ const ManageDepartment = () => {
             description: 'Inventaire du matériel médical, maintenance et allocation des dispositifs.',
             icon: <Construction size={28} />,
             colorClass: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 group-hover:bg-emerald-600 group-hover:text-white',
-            borderColorClass: 'hover:border-emerald-500',
+            borderColorClass: 'hover:border-emerald-500 dark:hover:border-emerald-500',
             path: `/admin/departments/${id}/equipments`
         },
         {
@@ -54,7 +84,7 @@ const ManageDepartment = () => {
             description: 'Gestion de la tarification et des prestations médicales facturables.',
             icon: <FileText size={28} />,
             colorClass: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 group-hover:bg-amber-600 group-hover:text-white',
-            borderColorClass: 'hover:border-amber-500',
+            borderColorClass: 'hover:border-amber-500 dark:hover:border-amber-500',
             path: `/admin/departments/${id}/medical-acts`
         }
     ];
@@ -77,6 +107,21 @@ const ManageDepartment = () => {
         if (result.isConfirmed) {
             await syncWaitingRooms();
         }
+    };
+
+    // 🟢 NOUVEAU : Fonction pour capturer le clic droit
+    const handleContextMenu = (e: React.MouseEvent, folder: SubFolder) => {
+        e.preventDefault(); // Empêche le menu contextuel natif du navigateur
+        
+        // Calcul pour éviter que le menu ne déborde de l'écran
+        const x = e.clientX + 200 > window.innerWidth ? window.innerWidth - 220 : e.clientX;
+        const y = e.clientY + 100 > window.innerHeight ? window.innerHeight - 120 : e.clientY;
+
+        setContextMenu({
+            mouseX: x,
+            mouseY: y,
+            folder: folder
+        });
     };
 
     return (
@@ -102,7 +147,7 @@ const ManageDepartment = () => {
                             <div className="flex items-center gap-2">
                                 <h1 className="text-2xl font-bold text-slate-800 dark:text-white">{departmentName}</h1>
                                 {departmentAlias && (
-                                    <span className="px-2 py-0.5 bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-gray-400 text-xs font-mono rounded font-bold uppercase">
+                                    <span className="px-2 py-0.5 bg-slate-100 dark:bg-gray-800 text-slate-600 dark:text-gray-400 text-xs font-mono rounded font-bold uppercase border border-gray-200 dark:border-gray-700">
                                         {departmentAlias}
                                     </span>
                                 )}
@@ -140,38 +185,73 @@ const ManageDepartment = () => {
             </div>
 
             {/* GRILLE DES SOUS-DOSSIERS INTERACTIFS */}
-            <div className="bg-white dark:bg-gray-800/40 rounded-xl border border-gray-100 dark:border-gray-800 p-6 min-h-[350px]">
+            <div className="bg-white dark:bg-gray-800/40 rounded-xl border border-gray-100 dark:border-gray-800 p-6 min-h-[350px] relative">
+                
+                {/* 🟢 NOUVEAU : MENU CONTEXTUEL FLOTTANT */}
+                {contextMenu && (
+                    <div 
+                        className="fixed z-50 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-2 animate-in fade-in zoom-in duration-150"
+                        style={{ top: contextMenu.mouseY, left: contextMenu.mouseX }}
+                    >
+                        <div className="px-4 py-2 mb-1 border-b border-gray-100 dark:border-gray-700">
+                            <span className="block text-xs font-semibold text-gray-400 uppercase tracking-wider truncate">
+                                {contextMenu.folder.title}
+                            </span>
+                        </div>
+
+                        <button 
+                            onClick={() => {
+                                navigate(contextMenu.folder.path, { state: { departmentName, departmentId: id } });
+                                setContextMenu(null);
+                            }} 
+                            className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3 text-sm text-slate-700 dark:text-gray-200 transition-colors"
+                        >
+                            <FolderOpen size={16} className="text-indigo-500" /> Ouvrir le dossier
+                        </button>
+                    </div>
+                )}
+
                 <h2 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4">
                     Sous-dossiers de gestion
                 </h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    {subFolders.map((folder) => (
-                        <div
-                            key={folder.id}
-                            onClick={() => navigate(folder.path, { state: { departmentName, departmentId: id } })}
-                            className={`group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700/80 rounded-xl p-5 flex items-start gap-4 transition-all shadow-sm cursor-pointer ${folder.borderColorClass} hover:shadow-md`}
-                        >
-                            {/* Icône enveloppée */}
-                            <div className={`p-3 rounded-xl transition-colors duration-300 shrink-0 ${folder.colorClass}`}>
-                                {folder.icon}
-                            </div>
+                    {subFolders.map((folder) => {
+                        // Condition pour garder le dossier en surbrillance si le menu contextuel est ouvert dessus
+                        const isContextMenuActive = contextMenu?.folder.id === folder.id;
 
-                            {/* Contenu textuel */}
-                            <div className="flex-1 space-y-1 min-w-0">
-                                <div className="flex items-center justify-between">
-                                    <h3 className="font-bold text-slate-800 dark:text-gray-200 group-hover:text-slate-900 dark:group-hover:text-white text-base transition-colors flex items-center gap-1.5">
-                                        <Folder size={16} className="fill-current opacity-30 text-gray-400 group-hover:text-inherit" />
-                                        {folder.title}
-                                    </h3>
-                                    <ChevronRight size={16} className="text-gray-400 group-hover:translate-x-1 transition-transform" />
+                        return (
+                            <div
+                                key={folder.id}
+                                onClick={() => navigate(folder.path, { state: { departmentName, departmentId: id } })}
+                                onContextMenu={(e) => handleContextMenu(e, folder)} // 🟢 Ajout du listener contextMenu
+                                className={`group bg-white dark:bg-gray-800 border rounded-xl p-5 flex items-start gap-4 transition-all shadow-sm cursor-pointer cursor-context-menu hover:shadow-md ${
+                                    isContextMenuActive 
+                                    ? 'border-indigo-500 dark:border-indigo-500 ring-2 ring-indigo-500/20' 
+                                    : `border-gray-200 dark:border-gray-700/80 ${folder.borderColorClass}`
+                                }`}
+                            >
+                                {/* Icône enveloppée */}
+                                <div className={`p-3 rounded-xl transition-colors duration-300 shrink-0 ${folder.colorClass} ${isContextMenuActive ? 'bg-indigo-600 text-white' : ''}`}>
+                                    {folder.icon}
                                 </div>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
-                                    {folder.description}
-                                </p>
+
+                                {/* Contenu textuel */}
+                                <div className="flex-1 space-y-1 min-w-0">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className={`font-bold text-base transition-colors flex items-center gap-1.5 ${isContextMenuActive ? 'text-slate-900 dark:text-white' : 'text-slate-800 dark:text-gray-200 group-hover:text-slate-900 dark:group-hover:text-white'}`}>
+                                            <Folder size={16} className={`fill-current opacity-30 ${isContextMenuActive ? 'text-indigo-500' : 'text-gray-400 group-hover:text-inherit'}`} />
+                                            {folder.title}
+                                        </h3>
+                                        <ChevronRight size={16} className={`transition-transform ${isContextMenuActive ? 'text-indigo-500 translate-x-1' : 'text-gray-400 group-hover:translate-x-1'}`} />
+                                    </div>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                                        {folder.description}
+                                    </p>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
 

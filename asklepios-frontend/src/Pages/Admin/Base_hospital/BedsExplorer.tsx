@@ -51,11 +51,18 @@ const BedsExplorer = () => {
     const [page, setPage] = useState(1);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedStateFilter, setSelectedStateFilter] = useState('');
-    const [autoRefreshPage,setAutoRefreshPage] = useState<boolean>(false);
+    const [autoRefreshPage, setAutoRefreshPage] = useState<boolean>(false);
 
     // États pour les modales
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [selectedBed, setSelectedBed] = useState<BedDto | null>(null);
+
+    // 🟢 NOUVEAU : État pour le menu contextuel (clic droit)
+    const [contextMenu, setContextMenu] = useState<{
+        mouseX: number;
+        mouseY: number;
+        bed: BedDto;
+    } | null>(null);
 
     // --- CHARGEMENT INITIAL ---
     useEffect(() => {
@@ -63,7 +70,18 @@ const BedsExplorer = () => {
             fetchBeds(page);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [roomId, page,autoRefreshPage]);
+    }, [roomId, page, autoRefreshPage]);
+
+    // 🟢 NOUVEAU : Fermer le menu contextuel au clic ailleurs ou au scroll
+    useEffect(() => {
+        const handleClickOutside = () => setContextMenu(null);
+        document.addEventListener("click", handleClickOutside);
+        document.addEventListener("scroll", handleClickOutside);
+        return () => {
+            document.removeEventListener("click", handleClickOutside);
+            document.removeEventListener("scroll", handleClickOutside);
+        };
+    }, []);
 
     const fetchBeds = (targetPage: number = 1) => {
         getBeds(roomId, targetPage, {
@@ -80,9 +98,11 @@ const BedsExplorer = () => {
         setPage(1);
         fetchBeds(1);
     };
-    const handleAutoRefresh = ()=>{
-        setAutoRefreshPage(!autoRefreshPage)
+
+    const handleAutoRefresh = () => {
+        setAutoRefreshPage(!autoRefreshPage);
     }
+
     const handleResetFilters = () => {
         setSearchQuery('');
         setSelectedStateFilter('');
@@ -90,10 +110,8 @@ const BedsExplorer = () => {
         getBeds(roomId, 1, { search: '', state: '' });
     };
 
-    // Action : Supprimer un lit
-    const handleDelete = async (e: React.MouseEvent, id: number, bedNumber: string) => {
-        e.stopPropagation();
-
+    // 🟢 MODIFICATION : Ajustement de la signature (plus besoin du "e: React.MouseEvent")
+    const handleDelete = async (id: number, bedNumber: string) => {
         const result = await Swal.fire({
             title: 'Retirer ce lit ?',
             text: `Le lit "${bedNumber}" sera définitivement supprimé de cette salle.`,
@@ -108,6 +126,21 @@ const BedsExplorer = () => {
         if (result.isConfirmed) {
             await deleteBed(id, roomId);
         }
+    };
+
+    // 🟢 NOUVEAU : Fonction pour capturer le clic droit
+    const handleContextMenu = (e: React.MouseEvent, bed: BedDto) => {
+        e.preventDefault(); // Empêche le menu natif du navigateur
+        
+        // Calcul pour éviter que le menu ne déborde de l'écran en bas ou à droite
+        const x = e.clientX + 200 > window.innerWidth ? window.innerWidth - 220 : e.clientX;
+        const y = e.clientY + 150 > window.innerHeight ? window.innerHeight - 170 : e.clientY;
+
+        setContextMenu({
+            mouseX: x,
+            mouseY: y,
+            bed: bed
+        });
     };
 
     // Helper : Rendu dynamique de l'état du lit (Style, Icône, Texte)
@@ -184,7 +217,7 @@ const BedsExplorer = () => {
                             className="flex items-center justify-center p-2.5 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-lg font-medium transition-colors shadow-sm disabled:opacity-50"
                             title="Rafraîchir"
                         >
-                            <RefreshCw size={18} className={loading ? "animate-spin text-indigo-600" : ""} />
+                            <RefreshCw size={18} className={loading ? "animate-spin text-indigo-600 dark:text-indigo-400" : ""} />
                         </button>
                         <button 
                             onClick={() => setIsCreateOpen(true)}
@@ -215,19 +248,21 @@ const BedsExplorer = () => {
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <Search size={18} className="text-gray-400" />
                         </div>
+                        {/* 🟢 CORRECTION DU DARK MODE SUR L'INPUT */}
                         <input 
                             type="text" 
                             placeholder="Rechercher par numéro de lit (ex: LIT-01)..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 p-2 min-h-[42px] bg-slate-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:border-indigo-500 text-sm text-slate-800 dark:text-white transition-colors"
+                            className="w-full pl-10 p-2 min-h-[42px] bg-slate-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:border-indigo-500 dark:focus:border-indigo-500 text-sm text-slate-800 dark:text-white transition-colors"
                         />
                     </div>
                     <div>
+                        {/* 🟢 CORRECTION DU DARK MODE SUR LE SELECT */}
                         <select
                             value={selectedStateFilter}
                             onChange={(e) => setSelectedStateFilter(e.target.value)}
-                            className="w-full p-2 min-h-[42px] bg-slate-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:border-indigo-500 text-sm text-slate-800 dark:text-white transition-colors"
+                            className="w-full p-2 min-h-[42px] bg-slate-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:border-indigo-500 dark:focus:border-indigo-500 text-sm text-slate-800 dark:text-white transition-colors"
                         >
                             <option value="">Tous les états</option>
                             <option value={BedState.AVAILABLE}>🟢 Disponibles</option>
@@ -237,11 +272,11 @@ const BedsExplorer = () => {
                         </select>
                     </div>
                     <div className="flex gap-2">
-                        <button type="submit" className="flex-1 bg-slate-800 hover:bg-slate-900 dark:bg-gray-700 text-white px-4 py-2 min-h-[42px] rounded-lg font-medium transition-colors text-sm shadow-sm">
+                        <button type="submit" className="flex-1 bg-slate-800 dark:bg-gray-700 hover:bg-slate-900 dark:hover:bg-gray-600 text-white px-4 py-2 min-h-[42px] rounded-lg font-medium transition-colors text-sm shadow-sm">
                             Filtrer
                         </button>
                         {(searchQuery || selectedStateFilter) && (
-                            <button type="button" onClick={handleResetFilters} className="px-4 py-2 min-h-[42px] bg-gray-200 hover:bg-gray-300 text-gray-700 dark:bg-gray-800 dark:text-gray-200 rounded-lg font-medium transition-colors text-sm">
+                            <button type="button" onClick={handleResetFilters} className="px-4 py-2 min-h-[42px] bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700 rounded-lg font-medium transition-colors text-sm">
                                 Effacer
                             </button>
                         )}
@@ -250,17 +285,39 @@ const BedsExplorer = () => {
             </div>
 
             {/* LISTE DES LITS (GRILLE) */}
-            <div className="bg-slate-50 dark:bg-gray-900/30 rounded-xl border border-gray-100 dark:border-gray-800 min-h-[400px] p-6">
+            <div className="bg-slate-50 dark:bg-gray-900/30 rounded-xl border border-gray-100 dark:border-gray-800 min-h-[400px] p-6 relative">
+                
+                {/* 🟢 MENU CONTEXTUEL FLOTTANT */}
+                {contextMenu && (
+                    <div 
+                        className="fixed z-50 w-52 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-2 animate-in fade-in zoom-in duration-150"
+                        style={{ top: contextMenu.mouseY, left: contextMenu.mouseX }}
+                    >
+                        <div className="px-4 py-2 mb-1 border-b border-gray-100 dark:border-gray-700">
+                            <span className="block text-xs font-semibold text-gray-400 uppercase tracking-wider truncate">
+                                Lit {contextMenu.bed.bed_number}
+                            </span>
+                        </div>
+
+                        <button onClick={() => setSelectedBed(contextMenu.bed)} className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3 text-sm text-blue-600 dark:text-blue-400 transition-colors">
+                            <Edit3 size={16} /> Modifier l'état
+                        </button>
+                        <button onClick={() => handleDelete(contextMenu.bed.id, contextMenu.bed.bed_number)} className="w-full text-left px-4 py-2 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-3 text-sm text-red-600 dark:text-red-400 transition-colors">
+                            <Trash2 size={16} /> Supprimer
+                        </button>
+                    </div>
+                )}
+
                 {loading ? (
                     <div className="flex flex-col items-center justify-center h-full py-20">
-                        <Loader2 size={48} className="animate-spin text-indigo-600 mb-4" />
-                        <p className="text-sm text-gray-500 uppercase tracking-widest font-medium">Chargement des lits...</p>
+                        <Loader2 size={48} className="animate-spin text-indigo-600 dark:text-indigo-400 mb-4" />
+                        <p className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-widest font-medium">Chargement des lits...</p>
                     </div>
                 ) : beds.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-center py-20">
-                        <BedDouble size={64} className="text-gray-300 dark:text-gray-600 mb-4" />
+                        <BedDouble size={64} className="text-gray-300 dark:text-gray-700 mb-4" />
                         <p className="text-lg text-slate-600 dark:text-gray-400 font-medium">Aucun lit trouvé.</p>
-                        <p className="text-sm text-gray-500 mt-1">Ajoutez des lits à cette salle pour commencer.</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">Ajoutez des lits à cette salle pour commencer.</p>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -270,7 +327,8 @@ const BedsExplorer = () => {
                             return (
                                 <div 
                                     key={bed.id}
-                                    className="group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 rounded-xl p-4 flex flex-col transition-all relative shadow-sm hover:shadow-md"
+                                    onContextMenu={(e) => handleContextMenu(e, bed)} // 🟢 Ajout du listener contextMenu
+                                    className={`group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-indigo-400 dark:hover:border-indigo-500 rounded-xl p-4 flex flex-col transition-all relative shadow-sm hover:shadow-md cursor-context-menu ${contextMenu?.bed.id === bed.id ? 'border-indigo-500 dark:border-indigo-500 ring-2 ring-indigo-500/20' : ''}`}
                                 >
                                     <div className="flex justify-between items-start mb-4">
                                         <div className={`p-3 rounded-xl bg-slate-50 dark:bg-gray-900/50 ${config.iconColor}`}>
@@ -280,15 +338,15 @@ const BedsExplorer = () => {
                                         {/* Actions : Éditer / Supprimer */}
                                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                             <button 
-                                                onClick={() => setSelectedBed(bed)}
-                                                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-md transition-colors"
+                                                onClick={(e) => { e.stopPropagation(); setSelectedBed(bed); }}
+                                                className="p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-md transition-colors"
                                                 title="Modifier l'état"
                                             >
                                                 <Edit3 size={16} />
                                             </button>
                                             <button 
-                                                onClick={(e) => handleDelete(e, bed.id, bed.bed_number)}
-                                                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors"
+                                                onClick={(e) => { e.stopPropagation(); handleDelete(bed.id, bed.bed_number); }}
+                                                className="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors"
                                                 title="Supprimer"
                                             >
                                                 <Trash2 size={16} />

@@ -146,6 +146,45 @@ export const CreateGuarantorClaimModal: React.FC<CreateGuarantorClaimModalProps>
         }
     };
 
+    // 🟢 Styles personnalisés pour React-Select (Dark Mode compatible)
+    const selectStyles = {
+        control: (base: any) => ({
+            ...base,
+            backgroundColor: document.documentElement.classList.contains('dark') ? '#111827' : '#f9fafb', // bg-gray-900 / bg-gray-50
+            borderColor: document.documentElement.classList.contains('dark') ? '#4b5563' : '#d1d5db', // border-gray-600 / border-gray-300
+            color: document.documentElement.classList.contains('dark') ? 'white' : 'black',
+            padding: '2px',
+            borderRadius: '0.5rem',
+            boxShadow: 'none',
+            '&:hover': { borderColor: '#6366f1' } // hover:border-indigo-500
+        }),
+        menu: (base: any) => ({
+            ...base,
+            backgroundColor: document.documentElement.classList.contains('dark') ? '#1f2937' : 'white', // bg-gray-800
+            zIndex: 9999
+        }),
+        option: (base: any, state: any) => ({
+            ...base,
+            backgroundColor: state.isFocused 
+                ? (document.documentElement.classList.contains('dark') ? '#374151' : '#f1f5f9') // hover bg
+                : 'transparent',
+            color: document.documentElement.classList.contains('dark') ? 'white' : 'black',
+            cursor: 'pointer'
+        }),
+        singleValue: (base: any) => ({
+            ...base,
+            color: document.documentElement.classList.contains('dark') ? 'white' : '#374151',
+        }),
+        input: (base: any) => ({
+            ...base,
+            color: document.documentElement.classList.contains('dark') ? 'white' : '#374151',
+        }),
+        placeholder: (base: any) => ({
+            ...base,
+            color: document.documentElement.classList.contains('dark') ? '#9ca3af' : '#6b7280',
+        })
+    };
+
     if (!isOpen) return null;
 
     const formatCurrency = (amount: number) => {
@@ -184,7 +223,7 @@ export const CreateGuarantorClaimModal: React.FC<CreateGuarantorClaimModalProps>
                                 Sélectionner l'Assurance
                             </label>
                             
-                            {/* Remplacement du <select> par React-Select */}
+                            {/* 🟢 React-Select corrigé avec selectStyles */}
                             <Select
                                 options={insuranceOptions}
                                 value={insuranceOptions.find(opt => opt.value === insuranceId) || null}
@@ -193,22 +232,7 @@ export const CreateGuarantorClaimModal: React.FC<CreateGuarantorClaimModalProps>
                                 isClearable
                                 isDisabled={insurancesLoading}
                                 noOptionsMessage={() => "Aucune assurance trouvée"}
-                                styles={{
-                                    control: (base) => ({
-                                        ...base,
-                                        padding: '2px',
-                                        borderRadius: '0.5rem',
-                                        borderColor: '#d1d5db',
-                                        boxShadow: 'none',
-                                        '&:hover': {
-                                            borderColor: '#6366f1'
-                                        }
-                                    }),
-                                    menu: (base) => ({
-                                        ...base,
-                                        zIndex: 9999
-                                    })
-                                }}
+                                styles={selectStyles}
                             />
                         </div>
 
@@ -217,6 +241,7 @@ export const CreateGuarantorClaimModal: React.FC<CreateGuarantorClaimModalProps>
                                 <Calendar size={16} className="text-indigo-500"/>
                                 Mois de réclamation
                             </label>
+                            {/* 🟢 Ajout de color-scheme pour forcer le calendrier en mode sombre */}
                             <input 
                                 type="month" 
                                 value={claimMonth}
@@ -224,7 +249,7 @@ export const CreateGuarantorClaimModal: React.FC<CreateGuarantorClaimModalProps>
                                     setClaimMonth(e.target.value);
                                     setHasSearched(false);
                                 }}
-                                className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                                className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 dark:focus:ring-indigo-500 text-slate-800 dark:text-white transition-colors [color-scheme:light] dark:[color-scheme:dark]"
                             />
                         </div>
 
@@ -253,9 +278,9 @@ export const CreateGuarantorClaimModal: React.FC<CreateGuarantorClaimModalProps>
                                     <thead className="sticky top-0 bg-white dark:bg-gray-800 shadow-sm z-10">
                                         <tr className="border-b border-gray-200 dark:border-gray-700">
                                             <th className="p-3 w-12 text-center">
-                                                <button onClick={toggleSelectAll} className="text-gray-500 hover:text-indigo-600 transition-colors">
+                                                <button onClick={toggleSelectAll} className="text-gray-500 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
                                                     {selectedSplitIds.length === unclaimedSplits.length && unclaimedSplits.length > 0 
-                                                        ? <CheckSquare size={20} className="text-indigo-600" /> 
+                                                        ? <CheckSquare size={20} className="text-indigo-600 dark:text-indigo-400" /> 
                                                         : <Square size={20} />
                                                     }
                                                 </button>
@@ -269,7 +294,7 @@ export const CreateGuarantorClaimModal: React.FC<CreateGuarantorClaimModalProps>
                                     <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                                         {unclaimedSplits.length === 0 ? (
                                             <tr>
-                                                <td colSpan={5} className="p-8 text-center text-gray-500">
+                                                <td colSpan={5} className="p-8 text-center text-gray-500 dark:text-gray-400">
                                                     Aucune facture impayée trouvée pour cette assurance à cette période.
                                                 </td>
                                             </tr>
@@ -280,12 +305,12 @@ export const CreateGuarantorClaimModal: React.FC<CreateGuarantorClaimModalProps>
                                                     <tr 
                                                         key={split.id} 
                                                         onClick={() => toggleSplit(split.id)}
-                                                        className={`cursor-pointer transition-colors ${isSelected ? 'bg-indigo-50/50 dark:bg-indigo-900/10' : 'hover:bg-slate-50 dark:hover:bg-gray-700/50'}`}
+                                                        className={`cursor-pointer transition-colors ${isSelected ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : 'hover:bg-slate-50 dark:hover:bg-gray-700/50'}`}
                                                     >
                                                         <td className="p-3 text-center">
                                                             {isSelected 
-                                                                ? <CheckSquare size={18} className="text-indigo-600 mx-auto" /> 
-                                                                : <Square size={18} className="text-gray-400 mx-auto" />
+                                                                ? <CheckSquare size={18} className="text-indigo-600 dark:text-indigo-400 mx-auto" /> 
+                                                                : <Square size={18} className="text-gray-400 dark:text-gray-500 mx-auto" />
                                                             }
                                                         </td>
                                                         <td className="p-3 text-gray-600 dark:text-gray-300">
@@ -298,7 +323,7 @@ export const CreateGuarantorClaimModal: React.FC<CreateGuarantorClaimModalProps>
                                                             <div className="font-bold text-slate-800 dark:text-gray-200">
                                                                 {split.invoice.patient.first_name} {split.invoice.patient.last_name}
                                                             </div>
-                                                            <div className="text-[10px] text-gray-500 font-mono">
+                                                            <div className="text-[10px] text-gray-500 dark:text-gray-400 font-mono">
                                                                 {split.invoice.patient.patient_code}
                                                             </div>
                                                         </td>
@@ -316,7 +341,7 @@ export const CreateGuarantorClaimModal: React.FC<CreateGuarantorClaimModalProps>
                             {/* Résumé des montants */}
                             <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex justify-between items-center">
                                 <span className="font-bold text-gray-600 dark:text-gray-300">TOTAL BORDEREAU (Estimation) :</span>
-                                <span className="font-bold text-xl font-mono text-[#00a896]">
+                                <span className="font-bold text-xl font-mono text-[#00a896] dark:text-teal-400">
                                     {formatCurrency(totalSelectedAmount)}
                                 </span>
                             </div>

@@ -48,6 +48,8 @@ class PharmacyBIController extends Controller
     }
 
     #[OA\Get(path: "/api/pharmacy/bi/kpis", summary: "KPIs Globaux (CA, Marges, Panier Moyen)", security: [["sanctum" => []]])]
+  #[OA\Response(response: 200, description: "Données récupérées avec succès")]
+    
     public function getGlobalKPIs(Request $request)
     {
         $hospitalId = $this->getHospitalId();
@@ -93,6 +95,7 @@ class PharmacyBIController extends Controller
     }
 
     #[OA\Get(path: "/api/pharmacy/bi/sales-analytics", summary: "Analyse détaillée des ventes", security: [["sanctum" => []]])]
+     #[OA\Response(response: 200, description: "Données récupérées avec succès")]
     public function getSalesAnalytics(Request $request)
     {
         $hospitalId = $this->getHospitalId();
@@ -155,6 +158,7 @@ class PharmacyBIController extends Controller
     }
 
     #[OA\Get(path: "/api/pharmacy/bi/inventory-valuation", summary: "Valorisation des stocks en temps réel", security: [["sanctum" => []]])]
+     #[OA\Response(response: 200, description: "Données récupérées avec succès")]
     public function getInventoryValuation(Request $request)
     {
         $hospitalId = $this->getHospitalId();
@@ -202,6 +206,7 @@ class PharmacyBIController extends Controller
     }
 
     #[OA\Get(path: "/api/pharmacy/bi/minsante-compliance", summary: "Rapports de conformité MINSANTE (Péremptions & Ruptures)", security: [["sanctum" => []]])]
+    #[OA\Response(response: 200, description: "Données récupérées avec succès")]
     public function getMinsanteCompliance(Request $request)
     {
         $hospitalId = $this->getHospitalId();

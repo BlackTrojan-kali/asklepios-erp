@@ -23,6 +23,8 @@ const useGuarantorClaimStore = () => {
     
     const [loading, setLoading] = useState<boolean>(false);
     const [actionLoading, setActionLoading] = useState<boolean>(false);
+    // N'oublie pas d'ajouter exportLoading dans les states du hook
+const [exportLoading, setExportLoading] = useState<boolean>(false);
 
     // --- GET /shared/guarantor-claims ---
     const getClaims = useCallback(async (
@@ -160,6 +162,63 @@ const useGuarantorClaimStore = () => {
             setActionLoading(false);
         }
     };
+    const exportClaimsPdfList = async (filters: any = {}) => {
+    try {
+        setExportLoading(true);
+        const res = await api.get("/shared/guarantor-claims/export/pdf", {
+            params: filters,
+            responseType: 'blob'
+        });
+
+        const blob = new Blob([res.data], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `Bordereaux_Assurance_${new Date().toISOString().split('T')[0]}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+        
+        toast.success("Rapport PDF généré !");
+        return true;
+    } catch (error) {
+        toast.error("Échec de l'export PDF.");
+        return false;
+    } finally {
+        setExportLoading(false);
+    }
+};
+
+// --- EXPORT EXCEL ---
+const exportClaimsExcelList = async (filters: any = {}) => {
+    try {
+        setExportLoading(true);
+        const res = await api.get("/shared/guarantor-claims/export/excel", {
+            params: filters,
+            responseType: 'blob' // Important pour Excel aussi !
+        });
+
+        // Type MIME pour Excel (xlsx)
+        const blob = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `Bordereaux_Assurance_${new Date().toISOString().split('T')[0]}.xlsx`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+        
+        toast.success("Fichier Excel généré !");
+        return true;
+    } catch (error) {
+        toast.error("Échec de l'export Excel.");
+        return false;
+    } finally {
+        setExportLoading(false);
+    }
+};
 
     return {
         claims,
@@ -172,7 +231,10 @@ const useGuarantorClaimStore = () => {
         createClaim,
         updateClaim,
         deleteClaim,
-        downloadClaimPdf
+        downloadClaimPdf,
+        exportLoading,
+        exportClaimsExcelList,
+        exportClaimsPdfList
     };
 };
 
