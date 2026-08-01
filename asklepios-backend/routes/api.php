@@ -33,6 +33,9 @@ use App\Http\Controllers\Admin\Reports\ConsultationHistoryController;
 use App\Http\Controllers\Admin\RoomCategoryController;
 use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Admin\VehiculeController;
+use App\Http\Controllers\BI\FinanceBIController;
+use App\Http\Controllers\BI\HospitalActivityBIController;
+use App\Http\Controllers\BI\HospitalFinanceBIController;
 use App\Http\Controllers\BI\PharmacyBIController;
 use App\Http\Controllers\BI\StockBIController;
 use App\Http\Controllers\Doctor\ConsultationController;
@@ -153,12 +156,42 @@ Route::middleware('auth:sanctum')->group(function () {
     // ==========================================================
     // 4. BUSINESS INTELLIGENCE (BI)
     // ==========================================================
-    Route::prefix('bi/stock')->middleware(['role:ceo'])->group(function () {
+    Route::prefix('bi')->middleware(['role:ceo'])->group(function () {
+    Route::prefix('/stock')->group(function () {
         Route::get('/kpis', [StockBIController::class, 'getKPIs']);
         Route::get('/valuation-by-category', [StockBIController::class, 'getValuationByCategory']);
         Route::get('/expiring-soon', [StockBIController::class, 'getExpiringSoon']);
         Route::get('/movement-trends', [StockBIController::class, 'getMovementTrends']);
         Route::get('/low-stock-details', [StockBIController::class, 'getLowStockDetails']);
+    });
+
+    // 👉 NOUVELLES ROUTES FINANCE
+        Route::prefix('finance')->group(function () {
+            Route::get('/kpis', [FinanceBIController::class, 'getKPIs']);
+            Route::get('/revenue-trends', [FinanceBIController::class, 'getRevenueTrends']);
+            Route::get('/revenue-by-payment-method', [FinanceBIController::class, 'getRevenueByPaymentMethod']);
+            Route::get('/revenue-by-category', [FinanceBIController::class, 'getRevenueByCategory']);
+            Route::get('/top-articles', [FinanceBIController::class, 'getTopArticles']);
+            Route::get('/cash-flow', [FinanceBIController::class, 'getCashFlow']);
+        });
+
+      // 👉 NOUVELLES ROUTES ACTIVITÉS DE L'HÔPITAL
+        Route::prefix('hospital')->group(function () {
+            Route::get('/kpis', [HospitalActivityBIController::class, 'getKPIs']);
+            Route::get('/visit-trends', [HospitalActivityBIController::class, 'getVisitTrends']);
+            Route::get('/consultations-by-doctor', [HospitalActivityBIController::class, 'getConsultationsByDoctor']);
+            Route::get('/top-medical-acts', [HospitalActivityBIController::class, 'getTopMedicalActs']);
+            Route::get('/active-admissions', [HospitalActivityBIController::class, 'getActiveAdmissions']);
+        }); 
+        
+        // 👉 NOUVELLES ROUTES : FINANCE DE L'HÔPITAL
+        Route::prefix('hospital-finance')->group(function () {
+            Route::get('/kpis', [HospitalFinanceBIController::class, 'getKPIs']);
+            Route::get('/revenue-trends', [HospitalFinanceBIController::class, 'getRevenueTrends']);
+            Route::get('/revenue-by-service', [HospitalFinanceBIController::class, 'getRevenueByService']);
+            Route::get('/payment-methods', [HospitalFinanceBIController::class, 'getPaymentMethods']);
+            Route::get('/insurance-claims', [HospitalFinanceBIController::class, 'getInsuranceClaims']);
+        });
     });
 
     Route::middleware(['role:ceo,admin', 'licence:pharmacy'])->prefix('ceo/bi/pharmacy')->group(function () {

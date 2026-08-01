@@ -127,6 +127,9 @@ import { PharmacyBiDashboard } from "./Pages/CEO/PharmacyBI/PharmacyBiDashboard"
 import ConsultationHistory from "./Pages/Admin/Base_hospital/ConsultationHistory";
 import AdmissionHistory from "./Pages/Admin/Base_hospital/AdmissionHistory";
 import StockBIDashboard from "./Pages/BI/StockBIDashboard";
+import FinanceBIDashboard from "./Pages/BI/FinanceBIDashboard";
+import ActivityBIDashboard from "./Pages/BI/ActivityBIDashboard";
+import HospitalFinanceBIDashboard from "./Pages/BI/HospitalFinanceBIDashboard";
 
 // ============================================================================
 // CONFIGURATION DES ROUTES
@@ -195,7 +198,13 @@ const routes = createBrowserRouter([
       path: "stock",
       element: <StockBIDashboard />
     },
-      
+      // 👉 NOUVELLE ROUTE BI FINANCES
+    {
+      path: "finance",
+      element: <FinanceBIDashboard />
+    },
+    { path: "hospital", element: <ActivityBIDashboard /> },
+    { path: "hospital-finance", element: <HospitalFinanceBIDashboard /> }, //
       ],
       },
       // ====================================================

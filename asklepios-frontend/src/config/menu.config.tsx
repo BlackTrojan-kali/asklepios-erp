@@ -89,17 +89,27 @@ export const MENU_CONFIG: MenuItemType[] = [
   // 👉 NOUVEAU : I. ESPACE DIRECTION (BI)
   // ==========================================
   {
-    title: "Tableaux de Bord (BI)",
+    title: "(BI) Pharmacies",
     icon: <PieChart size={20} />,
-    roles: ["ceo", "admin"], // Accessible au CEO et à l'Admin
+    roles: ["ceo"], // Accessible au CEO et à l'Admin
     requiredLicence: "pharmacy", // Ou "base_hospital" si vous avez d'autres dashboards
     subItems: [
-      { title: "Rapport Pharmacie", path: "/bi/pharmacy-dashboard" },
+      { title: "Rapport Financier Pharmacie", path: "/bi/finance" },
       { title: "Rapport Pharmacie Stock", path: "/bi/stock" },
       // Vous pourrez ajouter d'autres dashboards ici (Ex: /bi/hospital-dashboard)
     ],
   },
-
+{
+    title: "(BI) Hopital",
+    icon: <PieChart size={20} />,
+    roles: ["ceo"], // Accessible au CEO et à l'Admin
+    requiredLicence: "base_hospital", // Ou "base_hospital" si vous avez d'autres dashboards
+    subItems: [
+      { title: "Activité Hôpital", path: "/bi/hospital" },
+      { title: "Finance Hôpital", path: "/bi/hospital-finance" }, // 👉 NOUVEAU MENU
+      // Vous pourrez ajouter d'autres dashboards ici (Ex: /bi/hospital-dashboard)
+    ],
+  },
   // ==========================================
   // B. MENUS ADMIN (Base Hôpital & RH)
   // ==========================================
