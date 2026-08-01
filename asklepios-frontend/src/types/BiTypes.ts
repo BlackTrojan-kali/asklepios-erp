@@ -196,3 +196,49 @@ export interface InsuranceClaimStatusDto {
     PAID: number;
     DISPUTED: number;
 }
+
+// ======================================================
+// FILTRES GLOBAUX BI LABORATOIRE
+// ======================================================
+export interface BiLaboratoryFilters {
+    hospital_id?: number | string;
+    laboratory_id?: number | string;
+    start_date?: string; // Format YYYY-MM-DD
+    end_date?: string;   // Format YYYY-MM-DD
+}
+
+// ======================================================
+// DTOs DES RÉSULTATS BI LABORATOIRE
+// ======================================================
+
+export interface LabActivityKpisDto {
+    total_requests: number;
+    total_revenue: number;
+    total_samples: number;
+    rejection_rate: number;
+    abnormal_rate: number;
+}
+
+export interface LabRequestTrendDto {
+    date: string;
+    total_requests: number;
+}
+
+export interface LabTopTestDto {
+    test_name: string;
+    test_code: string;
+    category_name: string;
+    total_performed: number;
+    total_revenue: number;
+}
+
+export interface LabRevenueByCategoryDto {
+    category_name: string;
+    revenue: number;
+    volume: number;
+}
+
+export interface LabSampleQualityDto {
+    name: string; // Ex: COLLECTED, REJECTED_HEMOLYSIS...
+    value: number;
+}

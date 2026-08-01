@@ -36,6 +36,7 @@ use App\Http\Controllers\Admin\VehiculeController;
 use App\Http\Controllers\BI\FinanceBIController;
 use App\Http\Controllers\BI\HospitalActivityBIController;
 use App\Http\Controllers\BI\HospitalFinanceBIController;
+use App\Http\Controllers\BI\LabActivityBIController;
 use App\Http\Controllers\BI\PharmacyBIController;
 use App\Http\Controllers\BI\StockBIController;
 use App\Http\Controllers\Doctor\ConsultationController;
@@ -191,6 +192,14 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/revenue-by-service', [HospitalFinanceBIController::class, 'getRevenueByService']);
             Route::get('/payment-methods', [HospitalFinanceBIController::class, 'getPaymentMethods']);
             Route::get('/insurance-claims', [HospitalFinanceBIController::class, 'getInsuranceClaims']);
+        });
+        // 👉 NOUVELLES ROUTES : ACTIVITÉS DU LABORATOIRE
+        Route::prefix('laboratory')->group(function () {
+            Route::get('/kpis', [LabActivityBIController::class, 'getKPIs']);
+            Route::get('/request-trends', [LabActivityBIController::class, 'getRequestTrends']);
+            Route::get('/top-tests', [LabActivityBIController::class, 'getTopTests']);
+            Route::get('/revenue-by-category', [LabActivityBIController::class, 'getRevenueByCategory']);
+            Route::get('/sample-quality', [LabActivityBIController::class, 'getSampleQuality']);
         });
     });
 

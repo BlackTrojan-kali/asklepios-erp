@@ -109,6 +109,14 @@ export const MENU_CONFIG: MenuItemType[] = [
       { title: "Finance Hôpital", path: "/bi/hospital-finance" }, // 👉 NOUVEAU MENU
       // Vous pourrez ajouter d'autres dashboards ici (Ex: /bi/hospital-dashboard)
     ],
+  },{
+    title: "(BI) Laboratoires",
+    icon: <PieChart size={20} />,
+    roles: ["ceo"], // Accessible au CEO et à l'Admin
+    requiredLicence: "laboratory", // Ou "base_hospital" si vous avez d'autres dashboards
+    subItems: [
+   { title: "Activité Laboratoire", path: "/bi/laboratory" }, // 👉 NOUVEAU MENU 
+   ],
   },
   // ==========================================
   // B. MENUS ADMIN (Base Hôpital & RH)

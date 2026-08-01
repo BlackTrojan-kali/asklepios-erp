@@ -130,6 +130,7 @@ import StockBIDashboard from "./Pages/BI/StockBIDashboard";
 import FinanceBIDashboard from "./Pages/BI/FinanceBIDashboard";
 import ActivityBIDashboard from "./Pages/BI/ActivityBIDashboard";
 import HospitalFinanceBIDashboard from "./Pages/BI/HospitalFinanceBIDashboard";
+import LabActivityBIDashboard from "./Pages/BI/LabActivityBIDashboard";
 
 // ============================================================================
 // CONFIGURATION DES ROUTES
@@ -205,6 +206,7 @@ const routes = createBrowserRouter([
     },
     { path: "hospital", element: <ActivityBIDashboard /> },
     { path: "hospital-finance", element: <HospitalFinanceBIDashboard /> }, //
+    { path: "laboratory", element: <LabActivityBIDashboard /> }, // 👉 NOUVELLE ROUTE
       ],
       },
       // ====================================================
