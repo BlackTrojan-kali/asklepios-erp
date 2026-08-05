@@ -86,9 +86,8 @@ class InvoiceController extends Controller
 
         return response()->json($query->paginate($request->query('per_page', 15)), 200);
     }
-
-    #[OA\Get(path: "/api/shared/invoices/{id}", summary: "Prévisualiser les détails", security: [["sanctum" => []]], tags: ["Facturation"])]
-     #[OA\Response(response: 200, description: "Données récupérées avec succès")]
+#[OA\Get(path: "/api/shared/invoices/{id}", summary: "Prévisualiser les détails", security: [["sanctum" => []]], tags: ["Facturation"])]
+    #[OA\Response(response: 200, description: "Données récupérées avec succès")]
     public function show($id)
     {
         $hospitalId = $this->getHospitalId();
@@ -96,15 +95,31 @@ class InvoiceController extends Controller
         $invoice = Invoice::whereHas('patient', function($q) use ($hospitalId) {
             $q->where('hospital_id', $hospitalId);
         })->with([
-            'patient', 'center', 'consultations.profileDoctor.user',
-            'performedMedicalActs.medicalActCatalog', 'performedMedicalActs.equipment',
-            'admissions.bed.facilityRoom.category', 'labRequests.lines.test.category',
-            'payments.reception.user', 'splits.guarantorClaim'
+            'patient', 
+            'center', 
+            'consultations.profileDoctor.user',
+            'consultations.bloodTransfusions.bloodBag',
+            'performedMedicalActs.medicalActCatalog', 
+            'performedMedicalActs.equipment',
+            'admissions.bed.facilityRoom.category', 
+            'labRequests.lines.test.category',
+            'payments.reception.user', 
+            'splits.guarantorClaim'
         ])->findOrFail($id);
+
+        // 👉 AJOUT : On attache le prix calculé à chaque transfusion pour l'affichage Frontend
+        foreach ($invoice->consultations as $consultation) {
+            foreach ($consultation->bloodTransfusions as $transfusion) {
+                $pricing = \App\Models\Hospital\BagCenter::where('center_id', $transfusion->center_id)
+                                    ->where('blood_type', $transfusion->bloodBag->blood_type ?? '')
+                                    ->first();
+                // On ajoute une propriété 'price' à l'objet à la volée
+                $transfusion->price = $pricing ? (float)$pricing->price : 0;
+            }
+        }
 
         return response()->json($invoice, 200);
     }
-
     #[OA\Get(path: "/api/shared/invoices/{id}/download", summary: "Télécharger le PDF", security: [["sanctum" => []]], tags: ["Facturation"])]
      #[OA\Response(response: 200, description: "Données récupérées avec succès")]
     public function downloadPdf(Request $request, $id)
@@ -122,20 +137,43 @@ class InvoiceController extends Controller
     }
 
     #[OA\Get(path: "/api/shared/patients/{patientId}/unbilled-preview", summary: "Aperçu des impayés", security: [["sanctum" => []]], tags: ["Facturation"])]
-     #[OA\Response(response: 200, description: "Données récupérées avec succès")]
-    public function previewUnbilledForPatient($patientId)
-
+     #[OA\Response(response: 200, description: "Données récupérées avec succès")]public function previewUnbilledForPatient($patientId)
     {
-        $consultationsCount = Consultation::where(function($query) use ($patientId) {
-            $query->whereHas('patientVisit', fn($subQ) => $subQ->where('patient_id', $patientId))
-                  ->orWhereHas('admission', fn($subQ) => $subQ->where('patient_id', $patientId));
-        })->where('is_billed', false)->whereNull('invoice_id')->count();
+        // 1. Récupération des consultations AVEC leurs transfusions
+        $unbilledConsultations = Consultation::with('bloodTransfusions.bloodBag')
+            ->where(function($query) use ($patientId) {
+                $query->whereHas('patientVisit', fn($subQ) => $subQ->where('patient_id', $patientId))
+                      ->orWhereHas('admission', fn($subQ) => $subQ->where('patient_id', $patientId));
+            })->where('is_billed', false)->whereNull('invoice_id')->get();
+
+        $consultationsCount = $unbilledConsultations->count();
+
+        // 2. Calcul des transfusions sanguines impayées
+        $unbilledTransfusionsCount = 0;
+        $unbilledTransfusionsTotal = 0;
+
+        foreach ($unbilledConsultations as $consult) {
+            foreach ($consult->bloodTransfusions as $transfusion) {
+                if (!$transfusion->is_billed) {
+                    $unbilledTransfusionsCount++;
+                    
+                    // Récupération du prix de la poche via le BagCenter
+                    $pricing = \App\Models\Hospital\BagCenter::where('center_id', $transfusion->center_id)
+                                        ->where('blood_type', $transfusion->bloodBag->blood_type ?? '')
+                                        ->first();
+                                        
+                    $unbilledTransfusionsTotal += $pricing ? (float)$pricing->price : 0.0;
+                }
+            }
+        }
         
+        // 3. Récupération des actes médicaux impayés
         $actsTotal = PerformedMedicalAct::where(function($query) use ($patientId) {
             $query->whereHas('patientVisit', fn($subQ) => $subQ->where('patient_id', $patientId))
                   ->orWhereHas('admission', fn($subQ) => $subQ->where('patient_id', $patientId));
         })->where('is_billed', false)->whereNull('invoice_id')->sum('applied_price');
 
+        // 4. Récupération des admissions (séjours) impayées
         $admissions = Admission::with('bed.facilityRoom.category')
             ->where('patient_id', $patientId)->where('is_billed', false)->whereNull('invoice_id')->get();
         
@@ -149,16 +187,20 @@ class InvoiceController extends Controller
             $admissionsTotal += ($nightPrice * $nights);
         }
 
+        // 5. Récupération des assurances actives
         $activeCoverages = PatientCoverage::with('insuranceCompany')
             ->where('patient_id', $patientId)->where('is_active', true)
             ->whereDate('valid_until', '>=', now())->orderBy('priority_order', 'asc')->get();
 
+        // 6. Retour de la réponse JSON avec les NOUVELLES CLÉS
         return response()->json([
             'unbilled_consultations_count' => $consultationsCount,
             'unbilled_acts_total'          => $actsTotal,
             'unbilled_admissions_total'    => $admissionsTotal,
             'unbilled_labs_total'          => 0, // Isolé
-            'total_without_consultation'   => $actsTotal + $admissionsTotal,
+            'unbilled_transfusions_count'  => $unbilledTransfusionsCount, // 👉 NOUVEAU
+            'unbilled_transfusions_total'  => $unbilledTransfusionsTotal, // 👉 NOUVEAU
+            'total_without_consultation'   => $actsTotal + $admissionsTotal + $unbilledTransfusionsTotal, // 👉 MISE À JOUR DU TOTAL BRUT
             'active_coverages'             => $activeCoverages
         ]);
     }

@@ -1,135 +1,154 @@
-# 🏥 Asklepios ERP - API Backend (Laravel)
+Vous pouvez copier ce code et remplacer l'intégralité de votre fichier actuel.
+Markdown
 
-Bienvenue sur le dépôt backend d'**Asklepios ERP**, une solution logicielle SaaS multi-locataire (Multi-tenant) de pointe conçue pour la gestion d'établissements hospitaliers, de services cliniques et de logistique pharmaceutique avancée.
+# 🏥 Asklepios ERP - Guide de Démarrage Développeur
 
-Le backend est propulsé par le framework **Laravel 12** avec une API REST moderne, sécurisée, entièrement documentée et prête pour la production.
+Bienvenue sur le dépôt backend d'**Asklepios ERP**. Ce document est le guide officiel pour configurer, exécuter et tester le projet en local sans rencontrer d'erreurs.
 
----
-
-## 🚀 Fonctionnalités & Modules Clés
-
-Asklepios ERP est architecturé autour de rôles d'utilisateurs distincts et de licences applicatives modulaires :
-
-### 1. 🌐 Administration SaaS (Super Admin - `SUPA`)
-* **Gestion Multi-tenant :** Création, activation et suivi des établissements hospitaliers affiliés.
-* **Licences & Abonnements :** Gestion des licences disponibles (`base_hospital`, `laboratory`, `pharmacy`) et cycle de vie des abonnements (création, renouvellement, historique de facturation).
-* **Facturation :** Génération automatique de factures acquittées au format PDF avec filigrane dynamique.
-* **Référentiel Géographique :** Gestion des pays pour l'expansion du SaaS.
-
-### 2. 🏢 Administration Hospitalière (Admin)
-* **Configuration Structurelle :** Définition des centres hospitaliers et des départements cliniques (Ex. Pédiatrie, Urgences, Cardiologie).
-* **Gestion du Personnel :** Enrôlement des administrateurs d'hôpitaux, des pharmaciens, des médecins et autres profils professionnels.
-* **Logistique & Transports :** Enregistrement des véhicules de livraison et des chauffeurs avec outils d'importation/exportation Excel pour un gain de temps opérationnel.
-* **Catalogue Pharmaceutique Global :** Configuration des articles (médicaments, consommables), catégories et gestion globale des lots (Batches) avec traçabilité complète.
-
-### 3. 🧪 Gestion Logistique & Pharmacie (Pharmacien / Admin)
-* **Emplacements de Stockage :** Découpage physique d'une pharmacie en allées et étagères pour localiser précisément les articles.
-* **Commandes & Retours d'Achat :** Processus complet d'approvisionnement auprès des fournisseurs (création, validation, annulation, génération automatique de bons de commande PDF).
-* **Transferts de Stock Inter-succursales :** Expédition et réception sécurisée d'articles d'une pharmacie à une autre avec génération de lettre de voiture (Waybill) et suivi logistique en temps réel.
-* **Inventaires Physiques :** Audits de stock périodiques avec ajustement automatique des stocks réels après validation.
-* **Mouvements de Stock :** Historique immuable de toutes les transactions de stock (entrées, sorties, transferts, ajustements).
+Ce projet utilise une architecture **Multi-Tenant (Database-per-tenant)** propulsée par **Laravel 12** et **Laravel Octane (RoadRunner)** pour des performances maximales.
 
 ---
 
-## 🛠️ Stack Technique & Dépendances
-
-* **Framework :** Laravel v12.x
-* **Base de données :** SQLite (par défaut pour le développement) ou MySQL/PostgreSQL (production).
-* **Authentification :** Laravel Sanctum (tokens Bearer sécurisés).
-* **Génération PDF :** `barryvdh/laravel-dompdf` pour les factures, bons de commande et rapports.
-* **Import/Export Excel :** `maatwebsite/excel` pour les listes de fournisseurs, véhicules et chauffeurs.
-* **Documentation API :** `darkaonline/l5-swagger` (OpenAPI v3.0 annotations).
+## ⚠️ AVERTISSEMENT : Environnement de Développement (Windows vs Linux)
+Le serveur **Laravel Octane** nécessite l'extension PHP `pcntl` (Process Control) pour gérer les signaux d'arrêt du serveur (`SIGINT`, `Ctrl+C`). 
+**Cette extension n'est pas supportée nativement par Windows.** 
+* Si vous développez sous Windows, vous **devez** exécuter les commandes du serveur depuis un terminal Linux (via WSL - Windows Subsystem for Linux, ou une distribution comme Parrot OS/Ubuntu).
+* Si vous ne pouvez pas utiliser WSL, vous devrez utiliser le serveur lent par défaut (`php artisan serve`) au lieu d'Octane.
 
 ---
 
-## 📂 Structure du Projet Backend
+## 🏗️ Architecture Multi-Tenant : Comment ça marche ?
 
+Le projet interagit avec deux bases de données distinctes :
+1. 🟢 **Base Système (`asklepios_system`) :** C'est le cerveau SaaS. Elle contient la table `saas_tenants` (les licences) et route dynamiquement les requêtes.
+2. 🔵 **Base Tenant (`asklepios_dev_tenant`) :** C'est la base de l'hôpital. Elle contient tout le métier (Patients, Pharmacie, Labo, etc.). 
+
+À chaque requête, un Middleware lit le domaine (ex: `localhost`), interroge la base Système, puis bascule la connexion sur la base Tenant correspondante.
+
+---
+
+## ⚙️ Installation Étape par Étape
+
+### 1. Prérequis Système
+* **PHP >= 8.2** (avec `pdo_mysql`, `curl`, `zip`, `mbstring`, et `pcntl` sous Linux)
+* **Composer** & **Node.js**
+* **MySQL** ou **MariaDB**
+
+### 2. Clonage et Dépendances
 ```bash
-asklepios-backend/
-├── app/
-│   ├── Http/
-│   │   ├── Controllers/
-│   │   │   ├── Admin/         # Contrôleurs pour la gestion interne d'un hôpital
-│   │   │   ├── Auth/          # Contrôle d'accès et authentification
-│   │   │   ├── Pharmacien/    # Gestion des stocks, inventaires et achats
-│   │   │   └── SUPA/          # Espace Super Admin (gestion SaaS)
-│   │   └── Middleware/        # Middlewares de vérification de Rôles et Licences
-│   └── Models/
-│       ├── Pharmacy/          # Modèles logistiques (Article, Batch, Stock, Transfer...)
-│       └── ...                # Modèles de base (User, Hospital, Subscription, Role...)
-├── config/                    # Fichiers de configuration de l'application
-├── database/
-│   ├── migrations/            # Schéma de base de données (40+ migrations d'entités)
-│   └── seeders/               # Données de démonstration et rôles initiaux
-├── routes/
-│   └── api.php                # Définition complète des routes REST de l'ERP
-└── storage/api-docs/          # Spécifications OpenAPI/Swagger générées
-```
+git clone <url-du-depot-git>
+cd asklepios-backend
+composer install
+npm install
 
----
+3. Configuration de l'Environnement (.env)
 
-## ⚙️ Installation & Configuration
+Créez votre fichier d'environnement et générez la clé d'application :
+Bash
 
-### Prérequis
-* PHP >= 8.2 (avec extensions curl, sqlite3, zip, mbstring)
-* Composer
-* Node.js & NPM (pour compiler les assets de base si nécessaire)
+cp .env.example .env
+php artisan key:generate
 
-### 1. Cloner et Initialiser le Projet
-Pour vous faciliter le travail, un script de configuration automatisé est inclus dans le fichier `composer.json`. Placez-vous dans le dossier `asklepios-backend` et lancez :
+🚨 IMPORTANT : Ouvrez votre fichier .env et configurez-le exactement comme suit. Assurez-vous qu'il n'y ait aucun doublon de variable (notamment pour CACHE_STORE ou QUEUE_CONNECTION) plus bas dans le fichier.
+Code snippet
 
-```bash
-composer run setup
-```
+APP_NAME="Asklepios ERP"
+APP_ENV=local
+APP_KEY= # (Générée automatiquement)
+APP_DEBUG=true
+APP_URL=http://localhost:8000
 
-Ce script va automatiquement :
-1. Installer les dépendances Composer (`composer install`).
-2. Créer le fichier d'environnement `.env` à partir de `.env.example`.
-3. Générer la clé d'application unique (`php artisan key:generate`).
-4. Préparer la base de données SQLite et appliquer toutes les migrations.
-5. Installer et compiler les paquets NPM.
+# MOTEUR OCTANE
+OCTANE_SERVER=roadrunner
 
-### 2. Base de données & Seeders
-Si vous souhaitez réinitialiser ou peupler la base de données avec les données initiales de démonstration (utilisateurs de test, hôpitaux, licences et rôles), exécutez la commande suivante :
+# BASE SYSTÈME (Routeur)
+DB_CONNECTION=system
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=asklepios_system
+DB_USERNAME=root
+DB_PASSWORD=votre_mot_de_passe
 
-```bash
-php artisan migrate:fresh --seed
-```
+# BASE TENANT (CLI par défaut)
+DB_TENANT_HOST=127.0.0.1
+DB_TENANT_PORT=3306
+DB_TENANT_DATABASE=asklepios_dev_tenant
+DB_TENANT_USERNAME=root
+DB_TENANT_PASSWORD=votre_mot_de_passe
 
-#### Identifiants par défaut (Super Admin)
-* **Email :** `admin@asklepios.com`
-* **Mot de passe :** `secrets`
+# PERFORMANCES (Toujours sur "file" ou "sync" en dev local)
+SESSION_DRIVER=file
+CACHE_STORE=file
+QUEUE_CONNECTION=sync
+FILESYSTEM_DISK=local
 
----
+4. Configuration Interne (config/database.php)
 
-## 💻 Démarrage du Serveur de Développement
+Pour que les commandes de terminal (CLI) comme db:seed fonctionnent sur la base de l'hôpital, vérifiez que le bloc tenant possède bien un point de chute défini dans config/database.php :
+PHP
 
-Pour démarrer simultanément le serveur de développement Laravel Artisan, le listener de files d'attente (Queue Worker), le logger interactif Pail et le serveur de build Vite, lancez :
+'tenant' => [
+    'driver' => 'mysql',
+    // ...
+    'database' => env('DB_TENANT_DATABASE', 'asklepios_dev_tenant'), 
+    // ...
+],
 
-```bash
-composer run dev
-```
+5. Préparation des Bases de Données
 
-L'API sera par défaut accessible sur **`http://localhost:8000`**.
+Dans PhpMyAdmin, DBeaver ou votre terminal MySQL, créez deux bases de données vides :
 
----
+    asklepios_system
 
-## 📖 Documentation Interactive de l'API (Swagger)
+    asklepios_dev_tenant
 
-Le projet intègre une interface Swagger UI permettant de tester et d'interagir en temps réel avec tous les endpoints de l'API.
+6. Nettoyage et Migrations
 
-* **URL de l'interface :** `http://localhost:8000/api/documentation`
-* **Mise à jour de la documentation :** Si vous modifiez les annotations dans vos contrôleurs, relancez le serveur de dev ou utilisez :
-  ```bash
-  php artisan l5-swagger:generate
-  ```
+Avant de lancer les migrations, purgez les anciens caches résiduels qui pourraient bloquer l'application (Erreurs SQL "Table cache doesn't exist") :
+Bash
 
----
+# S'il y a des fichiers .php dans bootstrap/cache/, supprimez-les manuellement !
+rm bootstrap/cache/*.php
+php artisan optimize:clear
 
-## 🧪 Tests Unitaires & d'Intégration
+Exécutez ensuite les migrations dans l'ordre strict de l'architecture Multi-Tenant :
 
-Les tests automatisés d'Asklepios ERP couvrent les flux critiques comme l'authentification, les transactions de stock et l'attribution des licences. Pour exécuter la suite de tests PHPUnit :
+A. La Base Système :
+Bash
 
-```bash
-composer run test
-```
+php artisan migrate:fresh --database=system --path=database/migrations/system
+php artisan db:seed --class=SystemDatabaseSeeder --database=system
+
+B. La Base de l'Hôpital (Tenant) :
+Bash
+
+php artisan migrate:fresh --database=tenant --path=database/migrations/tenant
+php artisan db:seed --database=tenant
+
+⚡ Lancement du Serveur (Octane / RoadRunner)
+
+Ouvrez un terminal Linux (WSL, Ubuntu, Parrot, etc.), placez-vous dans le dossier du projet et lancez le serveur :
+Bash
+
+# Installation du binaire RoadRunner (à faire une seule fois)
+composer require spiral/roadrunner-cli spiral/roadrunner-http
+php artisan octane:install --server=roadrunner
+
+# Lancement du serveur avec rechargement automatique du code
+php artisan octane:start --server=roadrunner --port=8000 --watch
+
+L'API est maintenant accessible sur http://localhost:8000.
+
+    Identifiants de test (Hôpital) : admin@asklepios.com / secrets
+
+    Documentation Interactive : http://localhost:8000/api/documentation
+
+🛠️ Dépannage Rapide (Cheat Sheet)
+
+    Erreur Undefined constant SIGINT : Vous essayez d'exécuter octane:start sous Windows PowerShell. Basculez sur votre terminal Linux/WSL.
+
+    Erreur Invalid catalog name: 1046 No database selected en tapant une commande Artisan : La console ne sait pas quelle base cibler. Ajoutez toujours --database=tenant quand vous manipulez l'ERP en ligne de commande (ex: php artisan db:seed --database=tenant).
+
+    Erreur Table asklepios_system.cache doesn't exist lors d'un optimize:clear : Laravel lit un vieux cache. Allez dans le dossier bootstrap/cache/ et supprimez manuellement tous les fichiers .php, puis relancez la commande.
+
+    Nouvelle Migration pour l'Hôpital ? Créez la migration normalement, puis déplacez manuellement le fichier généré dans database/migrations/tenant.

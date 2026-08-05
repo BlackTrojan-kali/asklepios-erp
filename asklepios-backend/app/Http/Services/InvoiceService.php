@@ -8,6 +8,8 @@ use App\Models\Hospital\Consultation;
 use App\Models\Hospital\Admission;
 use App\Models\Hospital\PerformedMedicalAct;
 use App\Models\Hospital\PatientVisit;
+use App\Models\Hospital\BagCenter; // 👉 AJOUT
+use App\Models\Hospital\BloodTransfusion;
 use App\Models\Laboratory\LabRequest;
 use App\Models\Patient;
 use App\Models\PatientCoverage;
@@ -24,24 +26,43 @@ class InvoiceService
     {
         $patientId = $invoice->patient_id;
 
-        $unbilledConsultations = Consultation::whereHas('patientVisit', fn($q) => $q->where('patient_id', $patientId))
-            ->where('is_billed', false)->whereNull('invoice_id')->get();
+        // 👉 CORRECTION MAJEURE : On prend en compte les visites (Ambulatoire) ET les Admissions (Hospitalisation)
+        $unbilledConsultations = Consultation::where(function ($query) use ($patientId) {
+                $query->whereHas('patientVisit', fn($q) => $q->where('patient_id', $patientId))
+                      ->orWhereHas('admission', fn($q) => $q->where('patient_id', $patientId));
+            })
+            ->where('is_billed', false)
+            ->whereNull('invoice_id')
+            ->get();
         
         foreach ($unbilledConsultations as $index => $consultation) {
-            // 👉 Seule la PREMIÈRE consultation prend le prix pour correspondre au total affiché par votre frontend
             $appliedPrice = ($index === 0 && $consultationPrice > 0) ? (float)$consultationPrice : (float)($consultation->consultation_price ?? 0.0);
             
-            // 👉 CORRECTION MAJEURE : On assigne les valeurs manuellement pour contourner le blocage du `$fillable`
             $consultation->is_billed = true;
             $consultation->invoice_id = $invoice->id;
             $consultation->consultation_price = $appliedPrice;
             $consultation->save();
         }
 
-        $unbilledActs = PerformedMedicalAct::whereHas('patientVisit', fn($q) => $q->where('patient_id', $patientId))
-            ->where('is_billed', false)->whereNull('invoice_id')->get();
-        PerformedMedicalAct::whereIn('id', $unbilledActs->pluck('id'))->update(['is_billed' => true, 'invoice_id' => $invoice->id]);
+        // 👉 MISE À JOUR : Lier les transfusions sanguines de ces consultations
+        if ($unbilledConsultations->isNotEmpty()) {
+            BloodTransfusion::whereIn('consultation_id', $unbilledConsultations->pluck('id'))
+                ->update(['is_billed' => true]);
+        }
 
+        // 👉 CORRECTION MAJEURE : Actes liés aux visites ET admissions
+        $unbilledActs = PerformedMedicalAct::where(function ($query) use ($patientId) {
+                $query->whereHas('patientVisit', fn($q) => $q->where('patient_id', $patientId))
+                      ->orWhereHas('admission', fn($q) => $q->where('patient_id', $patientId));
+            })
+            ->where('is_billed', false)
+            ->whereNull('invoice_id')
+            ->get();
+            
+        PerformedMedicalAct::whereIn('id', $unbilledActs->pluck('id'))
+            ->update(['is_billed' => true, 'invoice_id' => $invoice->id]);
+
+        // Admissions directes
         $unbilledAdmissions = Admission::where('patient_id', $patientId)
             ->where('is_billed', false)->whereNull('invoice_id')->get();
         Admission::whereIn('id', $unbilledAdmissions->pluck('id'))->update(['is_billed' => true, 'invoice_id' => $invoice->id]);
@@ -64,6 +85,11 @@ class InvoiceService
             $consultation->save();
         }
 
+        if ($unbilledConsultations->isNotEmpty()) {
+            BloodTransfusion::whereIn('consultation_id', $unbilledConsultations->pluck('id'))
+                ->update(['is_billed' => true]);
+        }
+
         $unbilledActs = PerformedMedicalAct::where('patient_visit_id', $visitId)
             ->where('is_billed', false)->whereNull('invoice_id')->get();
         PerformedMedicalAct::whereIn('id', $unbilledActs->pluck('id'))->update(['is_billed' => true, 'invoice_id' => $invoice->id]);
@@ -76,7 +102,7 @@ class InvoiceService
     public function recalculateSplits(int $invoiceId)
     {
         $invoice = Invoice::with([
-            'consultations', 
+            'consultations.bloodTransfusions.bloodBag', // 👉 NOUVEAU : On charge les transfusions pour calculer les prix
             'performedMedicalActs', 
             'admissions.bed.facilityRoom.category', 
             'labRequests.lines.test' 
@@ -86,6 +112,18 @@ class InvoiceService
 
         $sumConsultations = $invoice->consultations->sum('consultation_price');
         $sumActs = $invoice->performedMedicalActs->sum('applied_price');
+        
+        // 👉 NOUVEAU : Calcul du coût des Transfusions Sanguines
+        $sumTransfusions = 0.0;
+        foreach ($invoice->consultations as $consultation) {
+            foreach ($consultation->bloodTransfusions as $transfusion) {
+                // On récupère le prix configuré pour ce groupe sanguin dans ce centre
+                $pricing = BagCenter::where('center_id', $transfusion->center_id)
+                                    ->where('blood_type', $transfusion->bloodBag->blood_type ?? '')
+                                    ->first();
+                $sumTransfusions += $pricing ? (float)$pricing->price : 0.0;
+            }
+        }
         
         $sumAdmissions = 0.0;
         foreach ($invoice->admissions as $admission) {
@@ -103,13 +141,14 @@ class InvoiceService
             }
         }
 
-        $totalLinked = $sumConsultations + $sumActs + $sumAdmissions + $sumLabs;
+        $totalLinked = $sumConsultations + $sumActs + $sumAdmissions + $sumLabs + $sumTransfusions;
         
         $unlinkedAmount = max(0, $invoice->total_amount - $totalLinked);
 
         $this->applyCoverageAndCreateSplits($invoice, $invoice->patient_id, [
             'consultation' => $sumConsultations + $unlinkedAmount, 
             'act'          => $sumActs,
+            'transfusion'  => $sumTransfusions, // 👉 Transfusions soumises à couverture
             'admission'    => $sumAdmissions,
             'lab'          => $sumLabs,
         ]);
@@ -130,7 +169,6 @@ class InvoiceService
         $consultationPrice = $consultationPrice ?? 0.0;
 
         return DB::transaction(function () use ($patient, $consultationPrice, $centerId) {
-            
             $invoice = Invoice::create([
                 'patient_id'       => $patient->id,
                 'center_id'        => $centerId,
@@ -168,7 +206,7 @@ class InvoiceService
 
     public function cancelInvoice(int $invoiceId)
     {
-        $invoice = Invoice::with(['splits', 'payments'])->findOrFail($invoiceId);
+        $invoice = Invoice::with(['splits', 'payments', 'consultations'])->findOrFail($invoiceId);
 
         if ($invoice->status === 'PAID') {
             throw new Exception("Sécurité comptable : Impossible d'annuler une facture qui a déjà été totalement payée.");
@@ -187,7 +225,13 @@ class InvoiceService
         }
 
         return DB::transaction(function () use ($invoice) {
-            // Requête SQL directe : elle n'est pas bloquée par le $fillable
+            
+            // 👉 NOUVEAU : Remettre is_billed à false pour les transfusions
+            $consultationIds = $invoice->consultations->pluck('id');
+            if ($consultationIds->isNotEmpty()) {
+                BloodTransfusion::whereIn('consultation_id', $consultationIds)->update(['is_billed' => false]);
+            }
+
             Consultation::where('invoice_id', $invoice->id)->update(['is_billed' => false, 'invoice_id' => null, 'consultation_price' => 0.0]);
             PerformedMedicalAct::where('invoice_id', $invoice->id)->update(['is_billed' => false, 'invoice_id' => null]);
             Admission::where('invoice_id', $invoice->id)->update(['is_billed' => false, 'invoice_id' => null]);
@@ -202,11 +246,6 @@ class InvoiceService
         });
     }
 
-    /**
-     * =========================================================================
-     * LOGIQUE DE TIERS PAYANT (RÉPARTITION ASSURANCE / PATIENT)
-     * =========================================================================
-     */
     private function applyCoverageAndCreateSplits(Invoice $invoice, int $patientId, array $totalsByScope)
     {
         $coverages = PatientCoverage::where('patient_id', $patientId)
@@ -217,9 +256,11 @@ class InvoiceService
 
         $patientPart = array_sum($totalsByScope);
 
+        // 👉 MISE À JOUR : Mapping des catégories de facturation aux catégories de couverture
         $scopeMapping = [
             'consultation' => 'consultation',
             'act'          => 'consultation',
+            'transfusion'  => 'consultation', // Les transfusions passent souvent dans le bloc consultation ou actes en assurance
             'admission'    => 'consultation',
             'lab'          => 'lab',
             'pharmacy'     => 'pharmacy',

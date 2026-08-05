@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\HttpServices\Tenant\TenantService;
 use App\Models\Pharmacy\Stock;
 use App\Observers\StockObserver;
 use Illuminate\Database\Eloquent\Model;
@@ -17,6 +18,10 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         //
+        // 👉 SCOPED : Le service est recréé neuf à chaque requête HTTP sous Octane
+    $this->app->scoped(TenantService::class, function ($app) {
+        return new TenantService();
+    });
     }
 
     /**

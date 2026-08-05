@@ -34,11 +34,11 @@ class PosSaleController extends Controller
    public function index(Request $request)
     {
         $user = auth()->user();
-        
+    
         // 1. Requête de base pour l'hôpital de l'admin
         $query = PosSale::with(['session.user', 'items.article', 'patient', 'branch'])
             ->whereHas('branch', function ($q) use ($user) {
-                $q->where('hospital_id', $user->profile_admin->hospital_id);
+                $q->where('hospital_id', $user->profile_pharm->hospital_id);
             });
         // 🟢 2. ON APPLIQUE LE SCOPE MULTI-SITES ICI
         $query = ScopeResolver::applyPharmacyScope($query, 'pharmacy_branch_id');

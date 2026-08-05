@@ -45,6 +45,12 @@ use App\Http\Controllers\Doctor\EquipmentController;
 use App\Http\Controllers\Doctor\MedicalActCatalogController;
 use App\Http\Controllers\Doctor\MedicalBackgroundController;
 use App\Http\Controllers\Hospital\AdmissionController;
+use App\Http\Controllers\Hospital\BagCenterController;
+use App\Http\Controllers\Hospital\BloodBagController;
+use App\Http\Controllers\Hospital\BloodDonorController;
+use App\Http\Controllers\Hospital\BloodRefrigeratorController;
+use App\Http\Controllers\Hospital\BloodTrackingController;
+use App\Http\Controllers\Hospital\BloodTransfusionController;
 use App\Http\Controllers\Hospital\FinancialReportController;
 use App\Http\Controllers\Hospital\GuarantorClaimController;
 use App\Http\Controllers\Hospital\InvoiceController;
@@ -103,16 +109,40 @@ Route::middleware('auth:sanctum')->group(function () {
     // --- 2.2. ASSURANCES ET GARANTS (Hors Licences spécifiques) ---
     Route::get('insurance-coverages/patient/{patient_id}', [PatientCoverageController::class, 'getPatientCoverages']);
     
-    Route::middleware(['role:admin,reception,ceo'])->group(function () {
+    Route::middleware(['role:admin,reception,ceo,doctor'])->group(function () {
         Route::post('insurance-coverages', [PatientCoverageController::class, 'store']);
         Route::put('insurance-coverages/{id}', [PatientCoverageController::class, 'update']);
         Route::delete('insurance-coverages/{id}', [PatientCoverageController::class, 'destroy']);
         
         Route::prefix('admin')->group(function () {
             Route::apiResource('insurance-companies', InsuranceCompanyController::class)->except(['show']);
+            // 👉 ROUTES : BANQUE DE SANG (Réfrigérateurs)
+        Route::apiResource('blood-refrigerators', BloodRefrigeratorController::class);
+        // 👉 ROUTES : BANQUE DE SANG (Donneurs)
+        Route::get('blood-donors/export', [BloodDonorController::class, 'export']);
+        Route::post('blood-donors/import', [BloodDonorController::class, 'import']);
+        Route::apiResource('blood-donors', BloodDonorController::class);
+        // 👉 ROUTES : BANQUE DE SANG (Poches de sang & Stock)
+        Route::get('blood-bags/export-pdf', [BloodBagController::class, 'exportPdf']);
+        Route::apiResource('blood-bags', BloodBagController::class);
+        Route::get('bag-pricings', [BagCenterController::class, 'index']);
+        Route::post('bag-pricings', [BagCenterController::class, 'store']);
         });
     });
-
+    // ==========================================================
+        // 👉 SUIVI DES TRANSFUSIONS SANGUINES (Blood Tracking)
+        // Accessible par les Admins, Docteurs, Réception et CEO
+        // ==========================================================
+        Route::middleware(['role:admin,doctor,reception,ceo'])->prefix('hospital/blood-tracking')->group(function () {
+            Route::get('/', [BloodTrackingController::class, 'index']);
+            Route::get('/export-pdf', [BloodTrackingController::class, 'exportPdf']);
+        });
+// GESTION DES TRANSFUSIONS (Docteur / Infirmière)
+    Route::prefix('doctor')->middleware(['role:doctor|nurse'])->group(function () {
+        Route::get('transfusions', [BloodTransfusionController::class, 'index']);
+        Route::post('transfusions', [BloodTransfusionController::class, 'store']);
+        Route::put('transfusions/{id}/finish', [BloodTransfusionController::class, 'finish']);
+    });
     Route::middleware(['role:admin'])->prefix('shared')->group(function () {
         Route::prefix('guarantor-claims')->group(function () {
             Route::get('/export/pdf', [GuarantorClaimController::class, 'exportPdfList']);

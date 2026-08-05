@@ -54,4 +54,7 @@ class Consultation extends Model
         return $this->belongsTo(\App\Models\ProfileDoctor::class,"profile_doctor_id");
     
     }
+    public function bloodTransfusions(){
+        return $this->hasMany(BloodTransfusion::class);
+    }
 }

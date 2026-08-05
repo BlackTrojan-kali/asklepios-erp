@@ -157,6 +157,19 @@
                     @endif
                 @endforeach
             @endif
+
+            {{-- 5. TRANSFUSIONS SANGUINES (👉 NOUVEAU BLOC INTÉGRÉ) --}}
+            @if(isset($transfusions) && count($transfusions) > 0)
+                @foreach($transfusions as $transfusion)
+                    <tr>
+                        <td>
+                            {{ $transfusion['description'] }} <br>
+                            <span style="font-size:9px; color:#666;">Prélèvement / Administration : {{ $transfusion['date'] }}</span>
+                        </td>
+                        <td class="text-right font-mono">{{ number_format($transfusion['price'], 0, ',', ' ') }}</td>
+                    </tr>
+                @endforeach
+            @endif
         </tbody>
     </table>
 
