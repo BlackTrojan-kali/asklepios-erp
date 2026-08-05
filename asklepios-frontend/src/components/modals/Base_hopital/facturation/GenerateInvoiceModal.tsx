@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
     X, Search, User, FileText, Calculator, 
-    ArrowRightCircle, Loader2, Receipt, ChevronLeft, ChevronRight, BedDouble, Stethoscope, Syringe, ShieldCheck
+    ArrowRightCircle, Loader2, Receipt, ChevronLeft, ChevronRight, BedDouble, Stethoscope, Syringe, ShieldCheck, Droplet
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import usePatientStore from '../../../../functions/base_hospital/usePatientStore';
@@ -27,8 +27,11 @@ interface UnbilledPreview {
     unbilled_consultations_count: number;
     unbilled_acts_total: number;
     unbilled_admissions_total: number;
-    total_without_consultation: number;
-    active_coverages?: ActiveCoverageMini[]; // 👉 NOUVEAU : Récupération des assurances actives
+    // 👉 NOUVEAU : Ajout des champs pour les transfusions
+    unbilled_transfusions_count?: number; 
+    unbilled_transfusions_total?: number;
+    total_without_consultation: number; // Doit inclure les actes, admissions, labo ET transfusions côté backend
+    active_coverages?: ActiveCoverageMini[];
 }
 
 export const GenerateInvoiceModal: React.FC<GenerateInvoiceModalProps> = ({ isOpen, onClose }) => {
@@ -95,10 +98,10 @@ export const GenerateInvoiceModal: React.FC<GenerateInvoiceModalProps> = ({ isOp
     const getScopeLabels = (scopes: string[]) => {
         if (!Array.isArray(scopes)) return '';
         return scopes.map(s => {
-            // 👉 MISE À JOUR : On englobe tout le bloc Hôpital sous une même appellation visuelle
             if (s === 'consultation') return 'Consultations, Actes & Séjours';
             if (s === 'pharmacy') return 'Pharmacie';
             if (s === 'lab') return 'Laboratoire';
+            if (s === 'transfusion') return 'Transfusions'; // Au cas où défini séparément
             return s;
         }).join(' | ');
     };
@@ -134,7 +137,7 @@ export const GenerateInvoiceModal: React.FC<GenerateInvoiceModalProps> = ({ isOp
                         </div>
                         <div>
                             <h2 className="text-lg font-bold font-brand">Facturation Patient</h2>
-                            <p className="text-xs text-blue-200">Regroupe tous les soins non facturés du patient (Consultations, Actes, Lits)</p>
+                            <p className="text-xs text-blue-200">Regroupe tous les soins non facturés du patient (Consultations, Actes, Lits, Transfusions)</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-full transition-colors">
@@ -242,7 +245,7 @@ export const GenerateInvoiceModal: React.FC<GenerateInvoiceModalProps> = ({ isOp
                                         </div>
                                     </div>
 
-                                    {/* 👉 NOUVEAU : ALERTE TIERS PAYANT (ASSURANCES) */}
+                                    {/* ALERTE TIERS PAYANT (ASSURANCES) */}
                                     {previewData?.active_coverages && previewData.active_coverages.length > 0 && (
                                         <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-xl border border-indigo-200 dark:border-indigo-800/50">
                                             <div className="flex items-center gap-2 mb-3">
@@ -339,6 +342,20 @@ export const GenerateInvoiceModal: React.FC<GenerateInvoiceModalProps> = ({ isOp
                                                     <span className="font-mono mt-1">{previewData.unbilled_admissions_total.toLocaleString()} FCFA</span>
                                                 </div>
 
+                                                {/* 👉 NOUVEAU : Transfusions Sanguines */}
+                                                {(previewData.unbilled_transfusions_count || 0) > 0 && (
+                                                    <div className="flex items-start justify-between text-sm">
+                                                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+                                                            <Droplet size={16} className="text-red-500 mt-0.5" />
+                                                            <div>
+                                                                <p className="font-medium">Transfusions Sanguines ({previewData.unbilled_transfusions_count})</p>
+                                                                <p className="text-[11px] text-gray-400">Poches de sang administrées selon le tarif du centre</p>
+                                                            </div>
+                                                        </div>
+                                                        <span className="font-mono mt-1 text-red-600 dark:text-red-400 font-bold">{(previewData.unbilled_transfusions_total || 0).toLocaleString()} FCFA</span>
+                                                    </div>
+                                                )}
+
                                                 <hr className="border-gray-200 dark:border-gray-700 my-2" />
                                                 
                                                 <div className="flex justify-between items-center pt-2">
@@ -351,7 +368,7 @@ export const GenerateInvoiceModal: React.FC<GenerateInvoiceModalProps> = ({ isOp
 
                                                 {calculateDynamicTotal() === 0 && previewData.unbilled_consultations_count === 0 && (
                                                     <div className="mt-2 p-2 bg-green-50 text-green-700 text-xs rounded text-center border border-green-200 font-medium">
-                                                        Ce patient est à jour. Aucun acte ni séjour en attente de facturation.
+                                                        Ce patient est à jour. Aucun acte, séjour ou transfusion en attente de facturation.
                                                     </div>
                                                 )}
                                             </div>

@@ -1,0 +1,443 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam nodesep 35
+skinparam ranksep 45
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+title Architecture Asklepios Master : ERP Hospitalier Intégral
+
+' --- DEFINITION DES COULEURS PAR DOMAINE ---
+skinparam package {
+    BackgroundColor<<Identity>> #E3F2FD
+    BackgroundColor<<Infra>> #E8F5E9
+    BackgroundColor<<Workflow>> #FFF9C4
+    BackgroundColor<<Clinical>> #FCE4EC
+    BackgroundColor<<Billing>> #F3E5F5
+    BackgroundColor<<Insurance>> #D1C4E9
+    BackgroundColor<<Morgue>> #CFD8DC
+    BackgroundColor<<ContinuousCare>> #FFECB3
+}
+
+package "1. Core, Groupement & Identité" <<Identity>> {
+    class tenant {
+        id: UnsignedBigInteger
+        name: String
+    }
+    class hospital_branch {
+        id: UnsignedBigInteger
+        tenant_id: UnsignedBigInteger
+        name: String
+        address: String
+        contact_phone: String
+    }
+    class patient {
+        id: UnsignedBigInteger
+        tenant_id: UnsignedBigInteger
+        patient_code: String
+        first_name: String
+        last_name: String
+        gender: String ('M', 'F', 'OTHER')
+        birth_date: Date
+        birth_place: String_optional
+        contact_phone: String
+        email: String_optional
+        address: Text_optional
+        emergency_contact_name: String_optional
+        emergency_contact_phone: String_optional
+        blood_type: String_optional
+    }
+    class receptionist {
+        id: UnsignedBigInteger
+        user_id: UnsignedBigInteger
+        hospital_branch_id: UnsignedBigInteger
+        desk_name: String
+    }
+    class practitioner {
+        id: UnsignedBigInteger
+        user_id: UnsignedBigInteger
+        tenant_id: UnsignedBigInteger
+        specialty: String
+        grade: String
+        default_consultation_price: float
+    }
+}
+
+package "2. Infrastructures & Hébergement" <<Infra>> {
+    class department {
+        id: UnsignedBigInteger
+        hospital_branch_id: UnsignedBigInteger
+        name: String
+    }
+    class room_category {
+        id: UnsignedBigInteger
+        hospital_branch_id: UnsignedBigInteger
+        name: String
+        price_per_night: float
+    }
+    class facility_room {
+        id: UnsignedBigInteger
+        department_id: UnsignedBigInteger
+        room_category_id: UnsignedBigInteger_optional
+        name: String
+        type: String ('WAITING_ROOM', 'CONSULTATION', 'WARD')
+    }
+    class bed {
+        id: UnsignedBigInteger
+        facility_room_id: UnsignedBigInteger
+        bed_number: String
+        status: String ('AVAILABLE', 'OCCUPIED', 'CLEANING', 'MAINTENANCE')
+    }
+    class equipment {
+        id: UnsignedBigInteger
+        department_id: UnsignedBigInteger
+        name: String
+        status: String
+    }
+}
+
+package "3. Rendez-vous & File d'Attente" <<Workflow>> {
+    class appointment {
+        id: UnsignedBigInteger
+        patient_id: UnsignedBigInteger
+        practitioner_id: UnsignedBigInteger
+        hospital_branch_id: UnsignedBigInteger
+        scheduled_datetime: Datetime
+        reason: String
+        status: String ('SCHEDULED', 'CANCELLED', 'ARRIVED')
+    }
+    class patient_visit {
+        id: UnsignedBigInteger
+        patient_id: UnsignedBigInteger
+        hospital_branch_id: UnsignedBigInteger
+        receptionist_id: UnsignedBigInteger
+        appointment_id: UnsignedBigInteger_optional
+        waiting_room_id: UnsignedBigInteger_optional
+        consulting_room_id: UnsignedBigInteger_optional
+        arrival_time: Datetime
+        queue_number: Integer
+        status: String ('IN_WAITING_ROOM', 'IN_CONSULTATION', 'COMPLETED')
+        visit_type: String ('ROUTINE', 'EMERGENCY', 'FOLLOW_UP')
+    }
+}
+
+package "4. Dossier Clinique & Examens" <<Clinical>> {
+    class medical_background {
+        id: UnsignedBigInteger
+        patient_id: UnsignedBigInteger
+        allergies: JSON_optional
+        chronic_conditions: JSON_optional
+        family_history: Text_optional
+        last_updated_at: Datetime
+    }
+    class consultation {
+        id: UnsignedBigInteger
+        patient_visit_id: UnsignedBigInteger
+        practitioner_id: UnsignedBigInteger
+        chief_complaint: Text
+        clinical_data: JSON
+        consultation_price: float
+    }
+    class admission {
+        id: UnsignedBigInteger
+        patient_visit_id: UnsignedBigInteger
+        bed_id: UnsignedBigInteger
+        admission_date: Datetime
+        actual_discharge_date: Datetime_optional
+        status: String ('ADMITTED', 'DISCHARGED', 'DECEASED')
+    }
+    class prescription {
+        id: UnsignedBigInteger
+        consultation_id: UnsignedBigInteger
+        status: String
+    }
+    class prescription_line {
+        id: UnsignedBigInteger
+        prescription_id: UnsignedBigInteger
+        article_id: UnsignedBigInteger_optional
+        custom_medication_name: String_optional
+        dosage: String
+    }
+    class exam_request {
+        id: UnsignedBigInteger
+        consultation_id: UnsignedBigInteger
+        status: String ('PENDING', 'COMPLETED')
+        created_at: Datetime
+    }
+    class exam_request_line {
+        id: UnsignedBigInteger
+        exam_request_id: UnsignedBigInteger
+        lab_parameter_id_optional: UnsignedBigInteger
+        exam_name: String
+        result_notes: Text_optional
+        document_url: String_optional
+    }
+}
+
+package "5. Actes Médicaux & Facturation" <<Billing>> {
+    class medical_act_catalog {
+        id: UnsignedBigInteger
+        tenant_id: UnsignedBigInteger
+        department_id: UnsignedBigInteger_optional
+        name: String
+        base_price: float
+    }
+    class performed_medical_act {
+        id: UnsignedBigInteger
+        patient_visit_id: UnsignedBigInteger_optional
+        morgue_admission_id: UnsignedBigInteger_optional
+        medical_act_catalog_id: UnsignedBigInteger
+        equipment_id: UnsignedBigInteger_optional
+        applied_price: float
+        performed_at: Datetime
+    }
+    class invoice {
+        id: UnsignedBigInteger
+        patient_id: UnsignedBigInteger_optional
+        hospital_branch_id: UnsignedBigInteger
+        patient_visit_id: UnsignedBigInteger_optional
+        total_amount: float
+        status: String ('UNPAID', 'PARTIALLY_PAID', 'PAID')
+        created_at: Datetime
+    }
+    class invoice_line {
+        id: UnsignedBigInteger
+        invoice_id: UnsignedBigInteger
+        reference_type: String (Polymorphisme global)
+        reference_id: UnsignedBigInteger
+        description: String
+        unit_price: float
+        is_covered_by_insurance: Boolean
+    }
+    class invoice_split {
+        id: UnsignedBigInteger
+        invoice_id: UnsignedBigInteger
+        guarantor_claim_id: UnsignedBigInteger_optional
+        payer_type: String ('PATIENT', 'INSURANCE')
+        patient_coverage_id: UnsignedBigInteger_optional
+        amount_to_pay: float
+        status: String ('UNPAID', 'PAID')
+    }
+    class payment {
+        id: UnsignedBigInteger
+        invoice_split_id: UnsignedBigInteger
+        cashier_id: UnsignedBigInteger
+        amount: float
+        payment_method: String
+    }
+}
+
+package "6. Assurances & Tiers-Payant" <<Insurance>> {
+    class insurance_company {
+        id: UnsignedBigInteger
+        tenant_id: UnsignedBigInteger
+        name: String
+    }
+    class patient_coverage {
+        id: UnsignedBigInteger
+        patient_id: UnsignedBigInteger
+        insurance_company_id: UnsignedBigInteger
+        policy_number: String
+        coverage_rate: float
+        priority_order: Integer
+        is_active: Boolean
+    }
+    class guarantor_claim {
+        id: UnsignedBigInteger
+        hospital_branch_id: UnsignedBigInteger
+        insurance_company_id: UnsignedBigInteger
+        claim_month: Date
+        total_claimed_amount: float
+        status: String
+    }
+}
+
+package "7. Gestion de la Morgue" <<Morgue>> {
+    class morgue_locker {
+        id: UnsignedBigInteger
+        hospital_branch_id: UnsignedBigInteger
+        locker_number: String
+        daily_rate: float
+        status: String
+    }
+    class morgue_admission {
+        id: UnsignedBigInteger
+        hospital_branch_id: UnsignedBigInteger
+        morgue_locker_id: UnsignedBigInteger
+        patient_id: UnsignedBigInteger_optional
+        external_deceased_name: String_optional
+        depositor_name: String
+        depositor_phone: String
+        arrival_date: Datetime
+        release_date: Datetime_optional
+        status: String
+    }
+}
+
+package "8. Soins Continus & Banque de Sang" <<ContinuousCare>> {
+    
+    class iv_infusion {
+        id: UnsignedBigInteger
+        patient_visit_id: UnsignedBigInteger
+        article_id: UnsignedBigInteger (Pharmacie)
+        volume_ml: float
+        flow_rate_drops_min: Integer
+        start_time: Datetime
+        end_time: Datetime_optional
+        status: String
+        applied_price: float
+    }
+    
+    ' --- AJOUT DU DONNEUR DE SANG ---
+    class blood_donor {
+        id: UnsignedBigInteger
+        hospital_branch_id: UnsignedBigInteger
+        donor_code: String (ex: D-2026-001)
+        first_name: String
+        last_name: String
+        gender: String
+        birth_date: Date
+        blood_type: String
+        contact_phone: String
+        serology_status: String ('PENDING', 'CLEARED', 'REJECTED')
+        last_donation_date: Date_optional
+    }
+    
+    class blood_refrigerator {
+        id: UnsignedBigInteger
+        hospital_branch_id: UnsignedBigInteger
+        name: String
+        target_temperature: float
+        status: String
+    }
+    
+    class blood_bag {
+        id: UnsignedBigInteger
+        hospital_branch_id: UnsignedBigInteger
+        blood_refrigerator_id: UnsignedBigInteger_optional
+        blood_donor_id: UnsignedBigInteger_optional (Null si sang CNTS)
+        external_supplier: String_optional (ex: 'CNTS Yaoundé', 'Croix-Rouge')
+        product_type: String ('WHOLE_BLOOD', 'RED_CELLS', 'PLASMA')
+        blood_type: String
+        barcode: String (Le code-barres sur la poche)
+        volume_ml: Integer
+        collection_date: Date
+        expiry_date: Date
+        status: String ('QUARANTINE', 'AVAILABLE', 'USED', 'EXPIRED')
+    }
+    
+    class blood_transfusion {
+        id: UnsignedBigInteger
+        patient_visit_id: UnsignedBigInteger
+        blood_bag_id: UnsignedBigInteger
+        start_time: Datetime
+        end_time: Datetime_optional
+        status: String
+        applied_price: float
+    }
+    
+    class oxygen_cylinder {
+        id: UnsignedBigInteger
+        hospital_branch_id: UnsignedBigInteger
+        serial_number: String
+        capacity_liters: float
+        current_volume_liters: float
+        status: String
+    }
+    class oxygen_administration {
+        id: UnsignedBigInteger
+        patient_visit_id: UnsignedBigInteger
+        oxygen_cylinder_id: UnsignedBigInteger_optional
+        flow_rate_lpm: float
+        start_time: Datetime
+        end_time: Datetime_optional
+        total_volume_consumed: float_optional
+        applied_price: float
+    }
+}
+
+' --- RELATIONS CORE & MULTI-CENTRES ---
+tenant "1" *-- "*" hospital_branch
+tenant "1" *-- "*" patient
+tenant "1" *-- "*" practitioner
+tenant "1" *-- "*" medical_act_catalog
+tenant "1" *-- "*" insurance_company
+
+hospital_branch "1" *-- "*" receptionist
+hospital_branch "1" *-- "*" room_category
+hospital_branch "1" *-- "*" department
+hospital_branch "1" <-- "*" appointment
+hospital_branch "1" <-- "*" patient_visit
+hospital_branch "1" *-- "*" invoice
+
+' --- RELATIONS INFRASTRUCTURES ---
+department "1" *-- "*" facility_room
+room_category "1" <-- "*" facility_room
+facility_room "1" *-- "*" bed
+department "1" *-- "*" equipment
+
+' --- RELATIONS WORKFLOW & DOSSIER ---
+patient "1" *-- "*" appointment
+practitioner "1" <-- "*" appointment
+patient "1" *-- "*" patient_visit
+receptionist "1" <-- "*" patient_visit
+appointment "1" <-- "1" patient_visit
+patient "1" *-- "1" medical_background
+
+' --- RELATIONS CLINIQUES ---
+patient_visit "1" *-- "1" consultation
+patient_visit "1" *-- "*" admission
+bed "1" <-- "*" admission
+consultation "1" *-- "1" prescription
+prescription "1" *-- "*" prescription_line
+consultation "1" *-- "*" exam_request
+exam_request "1" *-- "1..*" exam_request_line
+
+' --- RELATIONS ACTES MÉDICAUX ---
+medical_act_catalog "1" <-- "*" performed_medical_act
+equipment "1" <-- "*" performed_medical_act
+patient_visit "1" *-- "*" performed_medical_act
+morgue_admission "1" *-- "*" performed_medical_act : reçoit actes mortuaires >
+
+' --- RELATIONS SOINS CONTINUS & BANQUE DE SANG ---
+patient_visit "1" *-- "*" iv_infusion
+hospital_branch "1" *-- "*" blood_refrigerator
+hospital_branch "1" *-- "*" blood_donor
+blood_donor "1" *-- "*" blood_bag : donne >
+blood_refrigerator "1" *-- "*" blood_bag : stocke >
+blood_bag "1" <-- "*" blood_transfusion
+patient_visit "1" *-- "*" blood_transfusion
+hospital_branch "1" *-- "*" oxygen_cylinder
+oxygen_cylinder "1" <-- "*" oxygen_administration
+patient_visit "1" *-- "*" oxygen_administration
+
+' --- RELATIONS ASSURANCES ---
+patient "1" *-- "*" patient_coverage
+insurance_company "1" *-- "*" patient_coverage
+insurance_company "1" *-- "*" guarantor_claim
+
+' --- RELATIONS MORGUE ---
+hospital_branch "1" *-- "*" morgue_locker
+morgue_locker "1" <-- "*" morgue_admission
+patient "1" <-- "*" morgue_admission
+
+' --- RELATIONS FACTURATION ---
+invoice "1" *-- "*" invoice_line
+invoice "1" *-- "1..*" invoice_split
+patient_coverage "1" <-- "*" invoice_split
+guarantor_claim "1" *-- "*" invoice_split
+invoice_split "1" *-- "*" payment
+
+' Liens polymorphes vers invoice_line
+consultation "1" .. "*" invoice_line
+admission "1" .. "*" invoice_line
+performed_medical_act "1" .. "*" invoice_line
+exam_request_line "1" .. "*" invoice_line
+morgue_admission "1" .. "*" invoice_line
+iv_infusion "1" .. "*" invoice_line
+blood_transfusion "1" .. "*" invoice_line
+oxygen_administration "1" .. "*" invoice_line
+
+@enduml 

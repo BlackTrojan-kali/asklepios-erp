@@ -131,6 +131,11 @@ import FinanceBIDashboard from "./Pages/BI/FinanceBIDashboard";
 import ActivityBIDashboard from "./Pages/BI/ActivityBIDashboard";
 import HospitalFinanceBIDashboard from "./Pages/BI/HospitalFinanceBIDashboard";
 import LabActivityBIDashboard from "./Pages/BI/LabActivityBIDashboard";
+import BloodRefrigeratorPage from "./Pages/Hospital/BloodBank/BloodRefrigeratorPage";
+import BloodDonorPage from "./Pages/Hospital/BloodBank/BloodDonorPage";
+import BloodBagPage from "./Pages/Hospital/BloodBank/BloodBagPage";
+import BagPricingPage from "./Pages/Hospital/BloodBank/BagPricingPage";
+import BloodTrackingPage from "./Pages/Hospital/BloodBank/BloodTrackingPage";
 
 // ============================================================================
 // CONFIGURATION DES ROUTES
@@ -220,6 +225,16 @@ const routes = createBrowserRouter([
           </CheckRole>
         ),
         children: [
+          { 
+        path: "blood-refrigerators", 
+        element: <BloodRefrigeratorPage /> 
+    },{ 
+        path: "blood-donors", // 👉 NOUVELLE ROUTE
+        element: <BloodDonorPage /> 
+    },
+    { path: "blood-bags", element: <BloodBagPage /> }, // 👉 NOUVELLE ROUTE
+    { path: "bag-pricings", element: <BagPricingPage /> }, // 👉 NOUVELLE ROUTE
+    { path: "blood-tracking", element: <BloodTrackingPage /> },
           // -- Ressources Humaines --
           { path: "receptionists", element: <Receptionists /> },
           { path: "doctors", element: <Doctors /> },

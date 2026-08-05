@@ -25,7 +25,8 @@ import {
   Database,
   Star,
   ShieldPlus,
-  PieChart // 👉 NOUVEAU: Icône pour la BI
+  PieChart, // 👉 NOUVEAU: Icône pour la BI
+  ThermometerSnowflake
 } from "lucide-react";
 
 export type MenuItemType = {
@@ -151,7 +152,27 @@ export const MENU_CONFIG: MenuItemType[] = [
       { title: "Réceptionnistes", path: "/admin/receptionists" },
     ],
   },
+// ... (Après la section "Équipe Médicale")
 
+  // ==========================================
+  // C. MENUS ADMIN (Banque de Sang)
+  // ==========================================
+  {
+    title: "Banque de Sang",
+    icon: <ThermometerSnowflake size={20} />, // (N'oubliez pas d'importer l'icône en haut)
+    roles: ["admin"],
+    requiredLicence: "base_hospital",
+    subItems: [
+      { title: "Réfrigérateurs", path: "/admin/blood-refrigerators" },
+      { title: "Donneurs", path: "/admin/blood-donors" }, // 👉 NOUVEAU MENU
+      { title: "Stock de Sang", path: "/admin/blood-bags" }, // 👉 NOUVEAU MENU
+      { title: "Tarifs Poches", path: "/admin/bag-pricings" }, // 👉 NOUVEAU MENU
+      { title: "Suivi / Registre", path: "/admin/blood-tracking" }, // 👉 NOUVEAU MENU
+      // Vous pourrez ajouter "Poches de Sang" ici à la prochaine étape
+    ],
+  },
+
+  // ... (Réseau Pharmacies etc...)
   // ==========================================
   // C. MENUS ADMIN (Supervision Pharmacie)
   // ==========================================

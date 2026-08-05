@@ -102,6 +102,10 @@ export interface CreateConsultationPayload {
     chief_complaint: string;
     clinical_data?: Record<string, any>;
     consultation_price?: number;
+    blood_transfusions?: {
+    blood_bag_id: number;
+    start_time?: string;
+  }[];
     // ...
 }
 

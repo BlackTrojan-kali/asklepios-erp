@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { X, Printer, XCircle, Loader2, Receipt, CheckCircle, ShieldCheck } from 'lucide-react';
+import { X, Printer, XCircle, Loader2, Receipt, CheckCircle, ShieldCheck, Droplet } from 'lucide-react';
 import Swal from 'sweetalert2';
 import useInvoiceStore from '../../../../functions/base_hospital/useInvoiceStore';
 
@@ -51,7 +51,7 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen
     // Si la propriété patient_part n'existe pas (anciennes factures), le patient paie la totalité
     const patientPart = currentInvoice?.patient_part ?? totalAmount; 
     
-    const totalPaid = currentInvoice?.payments?.reduce((acc, curr) => acc + curr.amount, 0) || 0;
+    const totalPaid = currentInvoice?.payments?.reduce((acc: any, curr: any) => acc + curr.amount, 0) || 0;
     
     // Le reste à payer est calculé sur la PART PATIENT uniquement
     const remainingAmount = Math.max(0, patientPart - totalPaid);
@@ -122,7 +122,7 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen
                                     <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                                         
                                         {/* Consultations */}
-                                        {currentInvoice.consultations?.map(c => (
+                                        {currentInvoice.consultations?.map((c: any) => (
                                             <tr key={`cons-${c.id}`}>
                                                 <td className="py-3 px-3 dark:text-gray-300">Consultation médicale - Dr. {c.profileDoctor?.user?.first_name || ''}</td>
                                                 <td className="py-3 px-3 text-right font-mono dark:text-gray-300">{formatCurrency(c.consultation_price || 0)}</td>
@@ -130,15 +130,40 @@ export const InvoicePreviewModal: React.FC<InvoicePreviewModalProps> = ({ isOpen
                                         ))}
 
                                         {/* Actes Médicaux */}
-                                        {currentInvoice.performed_medical_acts?.map(act => (
+                                        {currentInvoice.performed_medical_acts?.map((act: any) => (
                                             <tr key={`act-${act.id}`}>
                                                 <td className="py-3 px-3 dark:text-gray-300">Acte: {act.medical_act_catalog?.name || act.medicalActCatalog?.name || 'Soin'}</td>
                                                 <td className="py-3 px-3 text-right font-mono dark:text-gray-300">{formatCurrency(act.applied_price || 0)}</td>
                                             </tr>
                                         ))}
 
+{/* Transfusions Sanguines */}
+                                        {currentInvoice.consultations?.map((c: any) => (
+                                            <React.Fragment key={`cons-transf-${c.id}`}>
+                                                {(c.blood_transfusions || c.bloodTransfusions)?.map((t: any) => (
+                                                    <tr key={`transf-${t.id}`}>
+                                                        <td className="py-3 px-3 dark:text-gray-300">
+                                                            <div className="flex items-center gap-2">
+                                                                <Droplet size={14} className="text-red-500" />
+                                                                <span>
+                                                                    Transfusion Sanguine - Poche {t.blood_bag?.type === 'WHOLE_BLOOD' ? 'Total' : t.blood_bag?.type === 'RED_CELLS' ? 'Globules Rouges' : 'Plasma'} 
+                                                                    <strong className="text-red-600 dark:text-red-400 ml-1">(Gr. {t.blood_bag?.blood_type || 'N/A'})</strong>
+                                                                </span>
+                                                            </div>
+                                                            <div className="text-[10px] text-gray-500 mt-0.5 ml-6">
+                                                                Code: {t.blood_bag?.barcode || `ID-${t.blood_bag_id}`}
+                                                            </div>
+                                                        </td>
+                                                        {/* 👉 MISE À JOUR : On affiche le prix envoyé par le backend */}
+                                                        <td className="py-3 px-3 text-right font-mono dark:text-gray-300">
+                                                            {t.price !== undefined ? formatCurrency(t.price) : <span className="text-[10px] italic text-gray-500">Inclus dans le total</span>}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </React.Fragment>
+                                        ))}
                                         {/* Lits / Admissions */}
-                                        {currentInvoice.admissions?.map(adm => {
+                                        {currentInvoice.admissions?.map((adm: any) => {
                                             const days = Math.max(1, Math.ceil((new Date(adm.actual_discharge_date || new Date()).getTime() - new Date(adm.admission_date).getTime()) / (1000 * 3600 * 24)));
                                             const price = adm.bed?.facility_room?.category?.price_per_night || 0;
                                             return (
