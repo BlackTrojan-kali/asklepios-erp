@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\HttpServices\Tenant\TenantService;
+use App\Http\Services\Tenant\TenantService;
 use Closure;
 use Illuminate\Http\Request;
 use App\Models\System\SaaSTenant; // 👉 On utilise le modèle de routage

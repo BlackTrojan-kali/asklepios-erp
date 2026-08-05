@@ -70,12 +70,13 @@ use App\Http\Controllers\SUPA\HospitalController;
 use App\Http\Controllers\SUPA\LicenceController;
 use App\Http\Controllers\SUPA\ProfileCeoController;
 use App\Http\Controllers\SUPA\SubscriptionController;
+use App\Http\Middleware\IdentifyTenant;
 use GuzzleHttp\Middleware;
 
 // ==========================================================
 // 1. AUTHENTIFICATION (PUBLIC)
 // ==========================================================
-Route::prefix("auth")->group(function () {
+Route::prefix("auth")->middleware([IdentifyTenant::class])->group(function () {
     Route::post("/login", [AuthController::class, "login"]);
     Route::post("/logout", [AuthController::class, "logout"])->middleware("auth:sanctum");
 });
@@ -83,7 +84,7 @@ Route::prefix("auth")->group(function () {
 // ==========================================================
 // 2. ROUTES AUTHENTIFIÉES (GLOBALES)
 // ==========================================================
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware([IdentifyTenant::class,'auth:sanctum'])->group(function () {
     
     // --- 2.1. INFORMATIONS GLOBALES & UTILISATEUR ---
     Route::get('/user', function (Request $request) {

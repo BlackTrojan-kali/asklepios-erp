@@ -12,6 +12,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+
+    // 🚨 ON IMPOSE NOTRE PROPRE LOI SUR L'ORDRE D'EXÉCUTION
+        $middleware->priority([
+            \App\Http\Middleware\IdentifyTenant::class,
+            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+            \Illuminate\Auth\Middleware\Authenticate::class,
+        ]);
         //
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,

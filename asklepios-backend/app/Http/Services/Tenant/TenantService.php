@@ -1,28 +1,29 @@
 <?php
 
-namespace App\HttpServices\Tenant;
+namespace App\Http\Services\Tenant;
+ // ✅ Import du bon modèle
 
+use App\Models\System\SaaSTenant;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Schema;
-use App\Models\System\Hospital;
 
 class TenantService
 {
-    protected ?Hospital $currentTenant = null;
+    protected ?SaaSTenant $currentTenant = null; // ✅ Type mis à jour
 
-    public function switchTo(Hospital $tenant): void
+    public function switchTo(SaaSTenant $tenant): void // ✅ La méthode accepte maintenant un SaaSTenant
     {
         $this->currentTenant = $tenant;
 
         // 1. PURGE OBLIGATOIRE POUR OCTANE (Vide le cache de la connexion précédente)
         DB::purge('tenant');
 
-        // 2. On injecte les identifiants de la base de cet hôpital
-        Config::set('database.connections.tenant.database', $tenant->database_name);
-        Config::set('database.connections.tenant.host', $tenant->database_host);
-        Config::set('database.connections.tenant.username', $tenant->database_username);
-        Config::set('database.connections.tenant.password', $tenant->database_password);
+        // 2. On injecte les identifiants avec les vrais noms de colonnes de votre table système
+        Config::set('database.connections.tenant.database', $tenant->db_database);
+        Config::set('database.connections.tenant.host', $tenant->db_host);
+        Config::set('database.connections.tenant.username', $tenant->db_username);
+        Config::set('database.connections.tenant.password', $tenant->db_password);
 
         // 3. On reconnecte
         DB::reconnect('tenant');
@@ -40,7 +41,7 @@ class TenantService
         Schema::connection('system');
     }
 
-    public function getCurrentTenant(): ?Hospital
+    public function getCurrentTenant(): ?SaaSTenant // ✅ Type de retour mis à jour
     {
         return $this->currentTenant;
     }
