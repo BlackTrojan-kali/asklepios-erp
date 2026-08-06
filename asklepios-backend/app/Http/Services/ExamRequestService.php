@@ -18,6 +18,7 @@ class ExamRequestService
      * @param int|null $patientVisitId
      * @param int|null $patientId
      * @param int|null $laboratoryId
+     * @param int|null $admissionId
      * @return ExamRequest
      * @throws Exception
      */
@@ -27,10 +28,11 @@ class ExamRequestService
         ?int $profileDoctorId = null,
         ?int $patientVisitId = null,
         ?int $patientId = null,
-        ?int $laboratoryId = null
+        ?int $laboratoryId = null,
+        ?int $admissionId = null // 👉 NOUVEAU : On accepte l'ID d'hospitalisation
     ): ExamRequest
     {
-        return DB::transaction(function () use ($consultationId, $exams, $profileDoctorId, $patientVisitId, $patientId, $laboratoryId) {
+        return DB::transaction(function () use ($consultationId, $exams, $profileDoctorId, $patientVisitId, $patientId, $laboratoryId, $admissionId) {
             
             // 1. Création de l'en-tête de la demande côté Hôpital
             $examRequest = ExamRequest::create([
@@ -40,7 +42,9 @@ class ExamRequestService
 
             // Préparation pour le Labo Interne si applicable
             $labRequest = null;
-            if ($laboratoryId && $patientId && $patientVisitId && $profileDoctorId) {
+            
+            // 👉 CORRECTION : On valide si on a un patientVisitId OU un admissionId
+            if ($laboratoryId && $patientId && $profileDoctorId && ($patientVisitId || $admissionId)) {
                 $hasInternalExams = collect($exams)->contains(function ($exam) {
                     return !empty($exam['send_to_internal_lab']) && !empty($exam['lab_test_id']);
                 });
@@ -49,6 +53,7 @@ class ExamRequestService
                     $labRequest = \App\Models\Laboratory\LabRequest::create([
                         'patient_id'        => $patientId,
                         'patient_visit_id'  => $patientVisitId,
+                        'admission_id'      => $admissionId, // 👉 NOUVEAU : On le lie à l'hospitalisation si applicable
                         'profile_doctor_id' => $profileDoctorId,
                         'laboratory_id'     => $laboratoryId,
                         'status'            => 'PENDING_PAYMENT',
@@ -90,8 +95,6 @@ class ExamRequestService
             'document_url' => $documentUrl,
         ]);
 
-        // Optionnel : Vérifier si toutes les lignes de l'ExamRequest parent sont terminées
-        // pour passer le statut global de la demande à "COMPLETED".
         $this->checkAndUpdateParentStatus($examLine->exam_request_id);
 
         return $examLine;

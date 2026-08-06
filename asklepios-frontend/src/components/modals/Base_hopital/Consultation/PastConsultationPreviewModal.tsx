@@ -8,6 +8,7 @@ import {
   TestTube,
   Download,
   Syringe,
+  Droplet, // 👉 NOUVEL IMPORT
 } from "lucide-react";
 import useConsultationStore from "../../../../functions/base_hospital/useConsultationStore";
 import useMedicalBgStore from "../../../../functions/base_hospital/useMedicalBgStore";
@@ -70,6 +71,11 @@ export const PastConsultationPreviewModal: React.FC<Props> = ({
     [];
   const prescriptions = currentConsultation?.prescriptions || [];
   const exams = currentConsultation?.exam_requests || [];
+  // 👉 RÉCUPÉRATION DES TRANSFUSIONS (S'adapte au format JSON snake_case ou camelCase)
+  const bloodTransfusions = 
+    currentConsultation?.blood_transfusions || 
+    currentConsultation?.bloodTransfusions || 
+    [];
 
   const handleDownloadRecord = () => {
     if (patient?.id) {
@@ -217,7 +223,7 @@ export const PastConsultationPreviewModal: React.FC<Props> = ({
                 )}
               </div>
 
-              {/* 4. Examens Demandés en Consultation */}
+              {/* 4. Examens Demandés */}
               <div className="bg-white dark:bg-gray-800/90 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
                 <h3 className="font-bold text-[#003366] dark:text-blue-400 mb-3 border-b border-gray-100 dark:border-gray-700 pb-2 flex items-center justify-between">
                   <span>
@@ -248,6 +254,55 @@ export const PastConsultationPreviewModal: React.FC<Props> = ({
                   </p>
                 )}
               </div>
+
+              {/* 👉 NOUVEAU BLOC : 5. Transfusions Sanguines */}
+              <div className="bg-white dark:bg-gray-800/90 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                <h3 className="font-bold text-red-600 dark:text-red-400 mb-3 border-b border-gray-100 dark:border-gray-700 pb-2 flex items-center gap-2">
+                  <Droplet size={18} /> 5. Transfusions Sanguines
+                </h3>
+                {bloodTransfusions.length > 0 ? (
+                  <ul className="space-y-2">
+                    {bloodTransfusions.map((transfusion: any) => (
+                      <li
+                        key={transfusion.id}
+                        className="flex items-center justify-between gap-3 text-sm p-3 bg-red-50/50 dark:bg-red-950/30 rounded-lg border border-red-100 dark:border-red-900/50"
+                      >
+                        <div className="flex items-start gap-3">
+                          <Droplet size={16} className="text-red-500 mt-0.5" />
+                          <div>
+                            <p className="font-bold text-red-900 dark:text-red-200">
+                              Poche de Sang {transfusion.blood_bag?.type === 'WHOLE_BLOOD' ? 'Total' : transfusion.blood_bag?.type === 'RED_CELLS' ? 'Globules Rouges' : 'Plasma'} 
+                              <span className="text-red-600 dark:text-red-400 ml-1">
+                                (Gr. {transfusion.blood_bag?.blood_type || 'N/A'})
+                              </span>
+                            </p>
+                            <p className="text-gray-600 dark:text-gray-400 text-xs mt-0.5">
+                              Début : {new Date(transfusion.start_time).toLocaleString('fr-FR')} • 
+                              Code : {transfusion.blood_bag?.barcode || `ID-${transfusion.blood_bag_id}`}
+                            </p>
+                          </div>
+                        </div>
+                        <div>
+                          {transfusion.status === 'FINISHED' ? (
+                            <span className="px-2 py-1 bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 text-xs font-bold rounded">
+                              Terminée
+                            </span>
+                          ) : (
+                            <span className="px-2 py-1 bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-400 text-xs font-bold rounded">
+                              En cours
+                            </span>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                    Aucune transfusion sanguine enregistrée lors de cette consultation.
+                  </p>
+                )}
+              </div>
+
             </>
           )}
         </div>

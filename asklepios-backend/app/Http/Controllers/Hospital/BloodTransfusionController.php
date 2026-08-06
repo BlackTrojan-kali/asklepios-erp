@@ -19,6 +19,8 @@ class BloodTransfusionController extends Controller
     }
 
     #[OA\Get(path: "/api/doctor/transfusions", summary: "Lister les transfusions")]
+
+#[OA\Response(response: 200, description: "élément Recupere avec success")]
     public function index(Request $request)
     {
         $query = BloodTransfusion::with(['bloodBag', 'consultation.patient']); // Ajustez selon vos relations
@@ -31,6 +33,8 @@ class BloodTransfusionController extends Controller
     }
 
     #[OA\Post(path: "/api/doctor/transfusions", summary: "Initier une transfusion à un patient")]
+
+#[OA\Response(response: 200, description: "élément Recupere avec success")]
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -54,6 +58,7 @@ class BloodTransfusionController extends Controller
     }
 
     #[OA\Put(path: "/api/doctor/transfusions/{id}/finish", summary: "Terminer une transfusion")]
+#[OA\Response(response: 200, description: "élément Recupere avec success")]
     public function finish($id)
     {
         try {

@@ -37,6 +37,7 @@ class HospitalFinanceBIController extends Controller
     }
 
     #[OA\Get(path: "/api/bi/hospital-finance/kpis", summary: "KPIs Financiers de l'hôpital", security: [["sanctum" => []]])]
+#[OA\Response(response: 200, description: "élément Recupere avec success")]
     public function getKPIs(Request $request)
     {
         // 1. Total Facturé (Ce que l'hôpital a produit comme valeur)
@@ -72,6 +73,7 @@ class HospitalFinanceBIController extends Controller
     }
 
     #[OA\Get(path: "/api/bi/hospital-finance/revenue-trends", summary: "Tendances des encaissements journaliers", security: [["sanctum" => []]])]
+#[OA\Response(response: 200, description: "élément Recupere avec success")]
     public function getRevenueTrends(Request $request)
     {
         $request->validate([
@@ -96,6 +98,7 @@ class HospitalFinanceBIController extends Controller
     }
 
     #[OA\Get(path: "/api/bi/hospital-finance/revenue-by-service", summary: "Chiffre d'affaires réparti par service", security: [["sanctum" => []]])]
+#[OA\Response(response: 200, description: "élément Recupere avec success")]
     public function getRevenueByService(Request $request)
     {
         $query = DB::table('invoice_lines')
@@ -121,6 +124,7 @@ class HospitalFinanceBIController extends Controller
     }
 
     #[OA\Get(path: "/api/bi/hospital-finance/payment-methods", summary: "Répartition des encaissements par méthode de paiement", security: [["sanctum" => []]])]
+#[OA\Response(response: 200, description: "élément Recupere avec success")]
     public function getPaymentMethods(Request $request)
     {
         $query = DB::table('payment_invoices')
@@ -140,6 +144,7 @@ class HospitalFinanceBIController extends Controller
     }
 
     #[OA\Get(path: "/api/bi/hospital-finance/insurance-claims", summary: "Statut des réclamations auprès des assurances", security: [["sanctum" => []]])]
+#[OA\Response(response: 200, description: "élément Recupere avec success")]
     public function getInsuranceClaims(Request $request)
     {
         $query = DB::table('guarantor_claims')

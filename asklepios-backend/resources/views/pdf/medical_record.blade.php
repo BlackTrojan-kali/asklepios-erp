@@ -239,7 +239,6 @@
                     </div>
                 @endif
 
-                <!-- 👉 NOUVEAU : Affichage des actes réalisés pendant l'hospitalisation -->
                 @if(isset($admission->performedMedicalActs) && $admission->performedMedicalActs->count() > 0)
                     <div class="sub-title" style="margin-top: 12px; border-top: 1px dashed #e2e8f0; padding-top: 8px;">Actes Médicaux en Chambre</div>
                     <ul style="margin: 5px 0; padding-left: 20px;">
@@ -249,7 +248,6 @@
                     </ul>
                 @endif
 
-                <!-- 👉 NOUVEAU : Affichage des consultations de suivi pendant l'hospitalisation -->
                 @if(isset($admission->consultations) && $admission->consultations->count() > 0)
                     <div class="sub-title" style="margin-top: 12px; border-top: 1px dashed #e2e8f0; padding-top: 8px;">Suivi Clinique (Visites en chambre)</div>
                     @foreach($admission->consultations as $consult)
@@ -267,6 +265,37 @@
                                     <strong>Notes cliniques :</strong><br>
                                     {!! nl2br(e($notes['notes'])) !!}
                                 </div>
+                            @endif
+
+                            <!-- 👉 NOUVEAU : Affichage des Transfusions Sanguines (Hospitalisation) -->
+                            @if(isset($consult->bloodTransfusions) && $consult->bloodTransfusions->count() > 0)
+                                <div class="sub-title">Transfusions Sanguines</div>
+                                <table class="inner-table">
+                                    <thead>
+                                        <tr>
+                                            <th width="30%">Poche (Code / ID)</th>
+                                            <th width="20%">Groupe</th>
+                                            <th width="30%">Début de transfusion</th>
+                                            <th width="20%">Statut</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($consult->bloodTransfusions as $transfusion)
+                                            <tr>
+                                                <td><strong>{{ $transfusion->bloodBag->bag_code ?? 'Poche #'.$transfusion->blood_bag_id }}</strong></td>
+                                                <td><span class="badge badge-red">{{ $transfusion->bloodBag->blood_type ?? 'N/A' }}</span></td>
+                                                <td>{{ \Carbon\Carbon::parse($transfusion->start_time)->format('d/m/Y à H:i') }}</td>
+                                                <td>
+                                                    @if($transfusion->status === 'FINISHED')
+                                                        <span class="badge badge-green">Terminée</span>
+                                                    @else
+                                                        <span class="badge badge-cyan">En cours</span>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
                             @endif
 
                             @if($consult->prescriptions && $consult->prescriptions->count() > 0)
@@ -357,6 +386,37 @@
                                     <li>{{ $act->medicalActCatalog->name ?? 'Acte médical' }}</li>
                                 @endforeach
                             </ul>
+                        @endif
+
+                        <!-- 👉 NOUVEAU : Affichage des Transfusions Sanguines (Consultation Externe) -->
+                        @if(isset($consult->bloodTransfusions) && $consult->bloodTransfusions->count() > 0)
+                            <div class="sub-title">Transfusions Sanguines</div>
+                            <table class="inner-table">
+                                <thead>
+                                    <tr>
+                                        <th width="30%">Poche (Code / ID)</th>
+                                        <th width="20%">Groupe</th>
+                                        <th width="30%">Début de transfusion</th>
+                                        <th width="20%">Statut</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($consult->bloodTransfusions as $transfusion)
+                                        <tr>
+                                            <td><strong>{{ $transfusion->bloodBag->bag_code ?? 'Poche #'.$transfusion->blood_bag_id }}</strong></td>
+                                            <td><span class="badge badge-red">{{ $transfusion->bloodBag->blood_type ?? 'N/A' }}</span></td>
+                                            <td>{{ \Carbon\Carbon::parse($transfusion->start_time)->format('d/m/Y à H:i') }}</td>
+                                            <td>
+                                                @if($transfusion->status === 'FINISHED')
+                                                    <span class="badge badge-green">Terminée</span>
+                                                @else
+                                                    <span class="badge badge-cyan">En cours</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
                         @endif
 
                         @if($consult->prescriptions && $consult->prescriptions->count() > 0)

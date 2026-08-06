@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use OpenApi\Attributes as OA;
 
 #[OA\Tag(name: "Pharmacy BI & Reporting", description: "Tableaux de bord consolidés pour le DG et rapports de conformité MINSANTE")]
+
 class PharmacyBIController extends Controller
 {
     /**

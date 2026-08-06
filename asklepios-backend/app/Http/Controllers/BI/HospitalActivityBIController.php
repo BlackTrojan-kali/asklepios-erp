@@ -9,6 +9,7 @@ use OpenApi\Attributes as OA;
 use Carbon\Carbon;
 
 #[OA\Tag(name: "BI - Dashboard Activités (CEO)", description: "Indicateurs consolidés sur le flux des patients et l'activité clinique")]
+#[OA\Response(response: 200, description: "élément Recupere avec success")]
 class HospitalActivityBIController extends Controller
 {
     /**
@@ -38,6 +39,7 @@ class HospitalActivityBIController extends Controller
     }
 
     #[OA\Get(path: "/api/bi/hospital/kpis", summary: "KPIs globaux de l'activité médicale", security: [["sanctum" => []]])]
+#[OA\Response(response: 200, description: "élément Recupere avec success")]
     public function getKPIs(Request $request)
     {
         // 1. Total des visites patients
@@ -77,6 +79,7 @@ class HospitalActivityBIController extends Controller
     }
 
     #[OA\Get(path: "/api/bi/hospital/visit-trends", summary: "Tendance des flux de patients par type", security: [["sanctum" => []]])]
+#[OA\Response(response: 200, description: "élément Recupere avec success")]
     public function getVisitTrends(Request $request)
     {
         $request->validate([
@@ -116,6 +119,7 @@ class HospitalActivityBIController extends Controller
     }
 
     #[OA\Get(path: "/api/bi/hospital/consultations-by-doctor", summary: "Charge de travail par Médecin", security: [["sanctum" => []]])]
+#[OA\Response(response: 200, description: "élément Recupere avec success")]
     public function getConsultationsByDoctor(Request $request)
     {
         $query = DB::table('consultations')
@@ -140,6 +144,7 @@ class HospitalActivityBIController extends Controller
     }
 
     #[OA\Get(path: "/api/bi/hospital/top-medical-acts", summary: "Actes médicaux les plus fréquents", security: [["sanctum" => []]])]
+#[OA\Response(response: 200, description: "élément Recupere avec success")]
     public function getTopMedicalActs(Request $request)
     {
         $query = DB::table('performed_medical_acts')
@@ -161,6 +166,7 @@ class HospitalActivityBIController extends Controller
     }
 
     #[OA\Get(path: "/api/bi/hospital/active-admissions", summary: "Détail des patients actuellement hospitalisés", security: [["sanctum" => []]])]
+#[OA\Response(response: 200, description: "élément Recupere avec success")]
     public function getActiveAdmissions(Request $request)
     {
         // Cette requête donne au CEO une vue temps réel (non filtrée par date de fin)

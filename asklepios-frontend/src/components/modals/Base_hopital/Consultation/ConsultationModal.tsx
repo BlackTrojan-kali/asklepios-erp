@@ -17,7 +17,7 @@ import {
   HeartPulse,
   History,
   Coffee,
-  Droplet // 👉 NOUVEL IMPORT
+  Droplet
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -45,10 +45,9 @@ import { AddMedicationModal } from "./AddMedicationModal";
 import { AddExamModal } from "./AddExamModal";
 import { AddMedicalActModal } from "./AddMedicalActModal";
 import { MedicalBackgroundModal } from "./MedicalBackgroundModal";
-import { AddTransfusionModal } from "./AddTransfusionModal"; // 👉 NOUVEL IMPORT
+import { AddTransfusionModal } from "./AddTransfusionModal";
 import { PatientLabResultsList } from "../laboratory/PatientLabResultsList";
 import { ImagePreviewModal } from "../laboratory/ImagePreviewModal";
-import { PrescribedExamAccordionItem } from "../laboratory/PrescribedExamAccordionItem";
 
 interface ConsultationModalProps {
   isOpen: boolean;
@@ -88,8 +87,6 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
   const [prescriptions, setPrescriptions] = useState<PrescriptionLinePayload[]>([]);
   const [exams, setExams] = useState<any[]>([]);
   const [performedActs, setPerformedActs] = useState<PerformedMedicalActPayload[]>([]);
-  
-  // 👉 NOUVEL ÉTAT POUR LES TRANSFUSIONS
   const [transfusions, setTransfusions] = useState<any[]>([]);
 
   const [labTests, setLabTests] = useState<any[]>([]);
@@ -106,7 +103,7 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
   const [isAddExamModalOpen, setIsAddExamModalOpen] = useState(false);
   const [isAddActModalOpen, setIsAddActModalOpen] = useState(false);
   const [isMedicalBgModalOpen, setIsMedicalBgModalOpen] = useState(false);
-  const [isAddTransfusionModalOpen, setIsAddTransfusionModalOpen] = useState(false); // 👉 NOUVEL ÉTAT
+  const [isAddTransfusionModalOpen, setIsAddTransfusionModalOpen] = useState(false);
 
   const [autoRefreshPage, setAutoRefreshPage] = useState<boolean>(false);
 
@@ -141,7 +138,7 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
       setPrescriptions([]);
       setExams([]);
       setPerformedActs([]);
-      setTransfusions([]); // 👉 RÉINITIALISATION
+      setTransfusions([]);
       setSuccessConsultationId(null);
       setLocalMedicalBg(patient.medical_background || null);
 
@@ -183,6 +180,17 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
     });
   };
 
+  // 👉 SÉCURITÉ FRONTEND : On capte le groupe sanguin peu importe son format
+  const handleOpenTransfusionModal = () => {
+    const bloodType = localMedicalBg?.blood_type || localMedicalBg?.bloodType || patient?.medical_background?.blood_type;
+
+    if (!bloodType || bloodType === 'UNKNOWN') {
+      toast.error("Transfusion impossible : Le groupe sanguin du patient n'est pas défini dans ses antécédents médicaux.", { duration: 5000 });
+      return;
+    }
+    setIsAddTransfusionModalOpen(true);
+  };
+
   // =====================================================================
   // 👉 SOUMISSION DE LA CONSULTATION
   // =====================================================================
@@ -198,7 +206,6 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
       prescriptions: prescriptions,
       exams: exams,
       medical_acts: performedActs,
-      // 👉 INTÉGRATION DES TRANSFUSIONS AU PAYLOAD
       blood_transfusions: transfusions.map(t => ({
           blood_bag_id: t.blood_bag_id,
           start_time: t.start_time
@@ -244,7 +251,7 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
   const removePrescription = (index: number) => setPrescriptions((prev) => prev.filter((_, i) => i !== index));
   const removeExam = (index: number) => setExams((prev) => prev.filter((_, i) => i !== index));
   const removeAct = (index: number) => setPerformedActs((prev) => prev.filter((_, i) => i !== index));
-  const removeTransfusion = (index: number) => setTransfusions((prev) => prev.filter((_, i) => i !== index)); // 👉 SUPPRESSION
+  const removeTransfusion = (index: number) => setTransfusions((prev) => prev.filter((_, i) => i !== index));
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
@@ -327,7 +334,7 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
                     <div className="grid grid-cols-2 gap-3">
                       <div className="bg-red-50 dark:bg-red-900/10 p-3 rounded-lg border border-red-100 dark:border-red-900/50">
                         <span className="block text-xs text-red-400 uppercase tracking-wide font-bold mb-1">Groupe Sanguin</span>
-                        <span className="font-black text-red-600 dark:text-red-400 text-lg">{localMedicalBg.blood_type || "Inconnu"}</span>
+                        <span className="font-black text-red-600 dark:text-red-400 text-lg">{localMedicalBg.blood_type || localMedicalBg.bloodType || "Inconnu"}</span>
                       </div>
                       <div className="bg-orange-50 dark:bg-orange-900/10 p-3 rounded-lg border border-orange-100 dark:border-orange-900/50">
                         <span className="block text-xs text-orange-500 uppercase tracking-wide font-bold mb-1">Allergies</span>
@@ -517,7 +524,7 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
                 )}
               </div>
 
-              {/* 👉 NOUVEAU BLOC 5 : Transfusions Sanguines */}
+              {/* Bloc 5 : Transfusions Sanguines */}
               <div className="bg-white dark:bg-gray-800 p-5 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
                 <div className="flex items-center justify-between mb-4 border-b border-gray-100 dark:border-gray-700 pb-2">
                   <h3 className="font-bold text-red-600 dark:text-red-400 font-brand flex items-center gap-2">
@@ -525,7 +532,7 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
                   </h3>
                   <button 
                     type="button"
-                    onClick={() => setIsAddTransfusionModalOpen(true)} 
+                    onClick={handleOpenTransfusionModal} 
                     className="flex items-center gap-1.5 text-sm font-medium text-red-600 hover:text-red-700 bg-red-50 dark:bg-red-900/30 px-3 py-1.5 rounded-lg transition-colors"
                   >
                     <Plus size={16} /> Prescrire une poche
@@ -612,11 +619,12 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
       <AddExamModal isOpen={isAddExamModalOpen} onClose={() => setIsAddExamModalOpen(false)} onAdd={(exam) => setExams((prev) => [...prev, exam])} labTests={labTests} />
       <AddMedicalActModal AutoRefreshPage={handleAutoRefreshPage} isOpen={isAddActModalOpen} onClose={() => setIsAddActModalOpen(false)} onAdd={(act) => setPerformedActs((prev) => [...prev, act])} medicalActs={sharedMedicalActs} equipments={sharedEquipment} />
       
-      {/* 👉 NOUVELLE MODALE POUR LES TRANSFUSIONS */}
+      {/* 👉 ON PASSE LE GROUPE SANGUIN SÉCURISÉ À LA MODALE */}
       <AddTransfusionModal 
         isOpen={isAddTransfusionModalOpen} 
         onClose={() => setIsAddTransfusionModalOpen(false)} 
         onAdd={(t) => setTransfusions(prev => [...prev, t])} 
+        patientBloodType={localMedicalBg?.blood_type || localMedicalBg?.bloodType || patient?.medical_background?.blood_type || ''}
       />
 
       <MedicalBackgroundModal AutoRefreshPage={handleAutoRefreshPage} isOpen={isMedicalBgModalOpen} onClose={(hasChanged?: boolean) => { setIsMedicalBgModalOpen(false); if (hasChanged) fetchLocalMedicalBg(); }} patientId={patient.id} existingData={localMedicalBg} />

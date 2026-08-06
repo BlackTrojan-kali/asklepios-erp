@@ -41,6 +41,7 @@ class StockBIController extends Controller
     }
 
     #[OA\Get(path: "/api/bi/stock/kpis", summary: "KPIs globaux du stock", security: [["sanctum" => []]])]
+#[OA\Response(response: 200, description: "élément Recupere avec success")]
     public function getKPIs(Request $request)
     {
         // 1. Valeur Totale du Stock
@@ -82,6 +83,7 @@ class StockBIController extends Controller
 
     // 👉 NOUVEAU : Récupère la liste exacte des produits en rupture pour le CEO
     #[OA\Get(path: "/api/bi/stock/low-stock-details", summary: "Détails des articles en rupture ou seuil critique", security: [["sanctum" => []]])]
+#[OA\Response(response: 200, description: "élément Recupere avec success")]
     public function getLowStockDetails(Request $request)
     {
         $query = DB::table('articles')
@@ -108,6 +110,7 @@ class StockBIController extends Controller
     }
 
     #[OA\Get(path: "/api/bi/stock/valuation-by-category", summary: "Valeur du stock par catégorie", security: [["sanctum" => []]])]
+#[OA\Response(response: 200, description: "élément Recupere avec success")]
     public function getValuationByCategory(Request $request)
     {
         $query = DB::table('stocks')
@@ -131,7 +134,7 @@ class StockBIController extends Controller
     }
 
     #[OA\Get(path: "/api/bi/stock/expiring-soon", summary: "Top des lots expirant bientôt", security: [["sanctum" => []]])]
-    #[OA\Get(path: "/api/bi/stock/expiring-soon", summary: "Top des lots expirant bientôt", security: [["sanctum" => []]])]
+#[OA\Response(response: 200, description: "élément Recupere avec success")]
     public function getExpiringSoon(Request $request)
     {
         // 👉 CORRECTION ICI : Utilisation de integer() au lieu de query() pour forcer le type
@@ -165,6 +168,7 @@ class StockBIController extends Controller
     }
 
     #[OA\Get(path: "/api/bi/stock/movement-trends", summary: "Tendances des entrées/sorties", security: [["sanctum" => []]])]
+#[OA\Response(response: 200, description: "élément Recupere avec success")]
     public function getMovementTrends(Request $request)
     {
         $request->validate([

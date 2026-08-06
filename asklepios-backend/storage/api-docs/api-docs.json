@@ -5643,6 +5643,342 @@
                 ]
             }
         },
+        "/api/bi/finance/kpis": {
+            "get": {
+                "summary": "KPIs financiers globaux",
+                "operationId": "ac0a7256892a4bda3abf0007f220fb32",
+                "responses": {
+                    "200": {
+                        "description": "élément Recupere avec success"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/bi/finance/revenue-trends": {
+            "get": {
+                "summary": "Tendance du Chiffre d'Affaires",
+                "operationId": "ddbe33178e667ba5a6a09d246492072f",
+                "responses": {
+                    "200": {
+                        "description": "élément Recupere avec success"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/bi/finance/revenue-by-payment-method": {
+            "get": {
+                "summary": "CA par Mode de Paiement",
+                "operationId": "0cbd48fe634a8d692d0124e662a495da",
+                "responses": {
+                    "200": {
+                        "description": "élément Recupere avec success"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/bi/finance/revenue-by-category": {
+            "get": {
+                "summary": "CA généré par catégorie de produits",
+                "operationId": "2b85a7881fc107474cf07f931bad1c4b",
+                "responses": {
+                    "200": {
+                        "description": "élément Recupere avec success"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/bi/finance/top-articles": {
+            "get": {
+                "summary": "Top des articles les plus rentables",
+                "operationId": "cfde834e7bbca90018fda0e7f56b0f28",
+                "responses": {
+                    "200": {
+                        "description": "élément Recupere avec success"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/bi/finance/cash-flow": {
+            "get": {
+                "summary": "Résumé des Flux de trésorerie (hors ventes simples)",
+                "operationId": "993eabf66ce45a5ea5106dd5cef27924",
+                "responses": {
+                    "200": {
+                        "description": "élément Recupere avec success"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/bi/hospital/kpis": {
+            "get": {
+                "summary": "KPIs globaux de l'activité médicale",
+                "operationId": "aa649caaba30068e7f8581102d858242",
+                "responses": {
+                    "200": {
+                        "description": "élément Recupere avec success"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/bi/hospital/visit-trends": {
+            "get": {
+                "summary": "Tendance des flux de patients par type",
+                "operationId": "5b78441b7ab85174eec928a4d21696aa",
+                "responses": {
+                    "200": {
+                        "description": "élément Recupere avec success"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/bi/hospital/consultations-by-doctor": {
+            "get": {
+                "summary": "Charge de travail par Médecin",
+                "operationId": "7c6bbdf89d0c16200e304f4fd07d02fa",
+                "responses": {
+                    "200": {
+                        "description": "élément Recupere avec success"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/bi/hospital/top-medical-acts": {
+            "get": {
+                "summary": "Actes médicaux les plus fréquents",
+                "operationId": "26c652da8997600cf6d81b8a23571621",
+                "responses": {
+                    "200": {
+                        "description": "élément Recupere avec success"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/bi/hospital/active-admissions": {
+            "get": {
+                "summary": "Détail des patients actuellement hospitalisés",
+                "operationId": "20a8dd80f3d2568c3821141e51b8171a",
+                "responses": {
+                    "200": {
+                        "description": "élément Recupere avec success"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/bi/hospital-finance/kpis": {
+            "get": {
+                "summary": "KPIs Financiers de l'hôpital",
+                "operationId": "c76d504f4335fab26e499356d2b2a589",
+                "responses": {
+                    "200": {
+                        "description": "élément Recupere avec success"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/bi/hospital-finance/revenue-trends": {
+            "get": {
+                "summary": "Tendances des encaissements journaliers",
+                "operationId": "1f01e4d1eb0821822edea621d74fb97c",
+                "responses": {
+                    "200": {
+                        "description": "élément Recupere avec success"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/bi/hospital-finance/revenue-by-service": {
+            "get": {
+                "summary": "Chiffre d'affaires réparti par service",
+                "operationId": "6953d284999d6e3dceb1d32f5c519e3e",
+                "responses": {
+                    "200": {
+                        "description": "élément Recupere avec success"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/bi/hospital-finance/payment-methods": {
+            "get": {
+                "summary": "Répartition des encaissements par méthode de paiement",
+                "operationId": "997b82d00a7f1c5ccafa0189c08cc392",
+                "responses": {
+                    "200": {
+                        "description": "élément Recupere avec success"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/bi/hospital-finance/insurance-claims": {
+            "get": {
+                "summary": "Statut des réclamations auprès des assurances",
+                "operationId": "2ab2ae7c70de72e1efba87010af2f9d0",
+                "responses": {
+                    "200": {
+                        "description": "élément Recupere avec success"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/bi/laboratory/kpis": {
+            "get": {
+                "summary": "KPIs globaux du laboratoire",
+                "operationId": "7076fe6cc564ebe7d21944cba266d8c6",
+                "responses": {
+                    "200": {
+                        "description": "élément Recupere avec success"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/bi/laboratory/request-trends": {
+            "get": {
+                "summary": "Évolution journalière des demandes d'analyses",
+                "operationId": "faf3dea6774c5288c0742af49ae192cc",
+                "responses": {
+                    "200": {
+                        "description": "élément Recupere avec success"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/bi/laboratory/top-tests": {
+            "get": {
+                "summary": "Palmarès des examens les plus prescrits et rentables",
+                "operationId": "d41c9fb966328f8857ff691604d1798f",
+                "responses": {
+                    "200": {
+                        "description": "élément Recupere avec success"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/bi/laboratory/revenue-by-category": {
+            "get": {
+                "summary": "Chiffre d'affaires par catégorie d'analyse (Hématologie, Biochimie, etc.)",
+                "operationId": "7f25b61969f28604b9511c7e239891d3",
+                "responses": {
+                    "200": {
+                        "description": "élément Recupere avec success"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/bi/laboratory/sample-quality": {
+            "get": {
+                "summary": "Répartition des prélèvements par statut (Qualité)",
+                "operationId": "92f3110b7385807f1e1f880f29ab3dcf",
+                "responses": {
+                    "200": {
+                        "description": "élément Recupere avec success"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/pharmacy/bi/kpis": {
             "get": {
                 "summary": "KPIs Globaux (CA, Marges, Panier Moyen)",
@@ -5707,38 +6043,99 @@
                 ]
             }
         },
+        "/api/bi/stock/kpis": {
+            "get": {
+                "summary": "KPIs globaux du stock",
+                "operationId": "a3dba386792cea55ab8949f00c4c1907",
+                "responses": {
+                    "200": {
+                        "description": "élément Recupere avec success"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/bi/stock/low-stock-details": {
+            "get": {
+                "summary": "Détails des articles en rupture ou seuil critique",
+                "operationId": "4db85bf6c6bea6b0439090c46918dc6f",
+                "responses": {
+                    "200": {
+                        "description": "élément Recupere avec success"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/bi/stock/valuation-by-category": {
+            "get": {
+                "summary": "Valeur du stock par catégorie",
+                "operationId": "66c00704dc4db271535c792bac63a6f8",
+                "responses": {
+                    "200": {
+                        "description": "élément Recupere avec success"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/bi/stock/expiring-soon": {
+            "get": {
+                "summary": "Top des lots expirant bientôt",
+                "operationId": "273858a29f4cc4f83771f10383de4155",
+                "responses": {
+                    "200": {
+                        "description": "élément Recupere avec success"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/bi/stock/movement-trends": {
+            "get": {
+                "summary": "Tendances des entrées/sorties",
+                "operationId": "962087767d2fa9f8d9c6b49035635940",
+                "responses": {
+                    "200": {
+                        "description": "élément Recupere avec success"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/doctor/consultations": {
             "get": {
                 "tags": [
                     "Consultations Médicales"
                 ],
                 "summary": "Lister les consultations du médecin",
-                "description": "Récupère l'historique des consultations effectuées par le médecin connecté (inclut les visites classiques et les hospitalisations).",
                 "operationId": "6e1a57b51ca9232d4ed3bfcc267616aa",
-                "parameters": [
-                    {
-                        "name": "date",
-                        "in": "query",
-                        "description": "Filtrer par date (ex: 2026-07-17)",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "format": "date"
-                        }
-                    },
-                    {
-                        "name": "patient_id",
-                        "in": "query",
-                        "description": "Filtrer par patient",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
-                        "description": "Liste récupérée avec succès"
+                        "description": "Liste des consultations récupérée avec succès"
+                    },
+                    "403": {
+                        "description": "Accès refusé : Profil médecin introuvable"
                     }
                 },
                 "security": [
@@ -5752,55 +6149,19 @@
                     "Consultations Médicales"
                 ],
                 "summary": "Enregistrer une nouvelle consultation complète",
-                "description": "Crée la consultation, génère les ordonnances, les examens, enregistre les actes et clôture la visite.",
                 "operationId": "7d07e953cf55021806bf07307e6b84cc",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "patient_visit_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "chief_complaint": {
-                                        "type": "string",
-                                        "example": "Maux de tête intenses"
-                                    },
-                                    "clinical_data": {
-                                        "type": "object"
-                                    },
-                                    "medical_acts": {
-                                        "type": "array",
-                                        "items": {
-                                            "properties": {
-                                                "medical_act_catalog_id": {
-                                                    "type": "integer"
-                                                },
-                                                "equipment_id": {
-                                                    "type": "integer",
-                                                    "nullable": true
-                                                },
-                                                "applied_price": {
-                                                    "type": "number"
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
                 "responses": {
                     "201": {
-                        "description": "Consultation finalisée avec succès"
+                        "description": "Consultation finalisée et enregistrée avec succès"
+                    },
+                    "403": {
+                        "description": "Accès refusé : Profil médecin introuvable"
                     },
                     "422": {
-                        "description": "Erreur de validation ou visite déjà traitée"
+                        "description": "Erreur de validation (ex: Groupe sanguin inconnu ou poche de sang incompatible)"
+                    },
+                    "500": {
+                        "description": "Erreur serveur lors de l'enregistrement"
                     }
                 },
                 "security": [
@@ -5815,11 +6176,14 @@
                 "tags": [
                     "Consultations Médicales"
                 ],
-                "summary": "Voir les détails d'une consultation",
+                "summary": "Voir les détails d'une consultation, incluant l'historique de transfusion du patient",
                 "operationId": "f549961819d49ef7acaf2945e817a040",
                 "responses": {
                     "200": {
-                        "description": "Elements recupere avec success"
+                        "description": "Détails de la consultation récupérés avec succès"
+                    },
+                    "404": {
+                        "description": "Consultation introuvable"
                     }
                 },
                 "security": [
@@ -5833,11 +6197,13 @@
                     "Consultations Médicales"
                 ],
                 "summary": "Mettre à jour les notes cliniques",
-                "description": "Permet au médecin de corriger ses notes cliniques après coup.",
                 "operationId": "5cff848d585852d8248e448a0637745b",
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "Dossier clinique mis à jour avec succès"
+                    },
+                    "404": {
+                        "description": "Consultation introuvable"
                     }
                 },
                 "security": [
@@ -5851,14 +6217,19 @@
                     "Consultations Médicales"
                 ],
                 "summary": "Supprimer une consultation",
-                "description": "Annule et supprime une consultation si elle n'est pas encore facturée.",
                 "operationId": "067d99aaaa5080a4ae6796367c493b60",
                 "responses": {
                     "200": {
-                        "description": "Consultation supprimée avec succès"
+                        "description": "Consultation annulée avec succès"
                     },
                     "422": {
-                        "description": "Impossible de supprimer une consultation déjà facturée"
+                        "description": "Impossible de supprimer (Consultation déjà facturée)"
+                    },
+                    "404": {
+                        "description": "Consultation introuvable"
+                    },
+                    "500": {
+                        "description": "Erreur serveur lors de la suppression"
                     }
                 },
                 "security": [
@@ -6867,6 +7238,997 @@
                 ]
             }
         },
+        "/api/admin/bag-pricings": {
+            "get": {
+                "summary": "Lister les tarifs des poches par centre",
+                "operationId": "27d5c66d3bf7689228330a38a624c8c3",
+                "responses": {
+                    "200": {
+                        "description": "élément Recupere avec success"
+                    }
+                }
+            },
+            "post": {
+                "summary": "Configurer le prix d'un groupe sanguin pour un centre",
+                "operationId": "9e70969d47e590e96dc1217d4077b3fa",
+                "responses": {
+                    "200": {
+                        "description": "élément Recupere avec success"
+                    }
+                }
+            }
+        },
+        "/api/admin/blood-bags": {
+            "get": {
+                "summary": "Lister le stock de poches de sang",
+                "operationId": "60fef96cba5eed59f9963f3c3cb6a360",
+                "parameters": [
+                    {
+                        "name": "center_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "hospital_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "blood_refrigerator_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "blood_type",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "WHOLE_BLOOD",
+                                "RED_CELLS",
+                                "PLASMA"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "QUARANTINE",
+                                "AVAILABLE",
+                                "USED",
+                                "EXPIRED"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste paginée"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "summary": "Ajouter une nouvelle poche de sang",
+                "operationId": "b0679a77197cfc58b6b56865dc7caf03",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "center_id",
+                                    "blood_refrigerator_id",
+                                    "blood_type",
+                                    "volume_ml",
+                                    "collection_date",
+                                    "expiry_date",
+                                    "type",
+                                    "status"
+                                ],
+                                "properties": {
+                                    "center_id": {
+                                        "type": "integer"
+                                    },
+                                    "blood_refrigerator_id": {
+                                        "type": "integer"
+                                    },
+                                    "blood_donor_id": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    },
+                                    "blood_type": {
+                                        "type": "string"
+                                    },
+                                    "volume_ml": {
+                                        "type": "integer"
+                                    },
+                                    "collection_date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "expiry_date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "external_supplier": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "WHOLE_BLOOD",
+                                            "RED_CELLS",
+                                            "PLASMA"
+                                        ]
+                                    },
+                                    "barcode": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "QUARANTINE",
+                                            "AVAILABLE",
+                                            "USED",
+                                            "EXPIRED"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Poche ajoutée"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/blood-bags/export-pdf": {
+            "get": {
+                "summary": "Générer un rapport PDF du stock de sang (Filtres appliqués)",
+                "operationId": "b05b282cdb585155ef32915caec9cd23",
+                "responses": {
+                    "200": {
+                        "description": "Fichier PDF binaire"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/blood-bags/{id}": {
+            "get": {
+                "summary": "Détails d'une poche de sang",
+                "operationId": "0b5144f7b6b365938d4afdcfbeec6787",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Détails de la poche"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "summary": "Mettre à jour une poche de sang (ex: Changer son statut)",
+                "operationId": "229627ba521c8f0b3f6ed984d7ed0acb",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "QUARANTINE",
+                                            "AVAILABLE",
+                                            "USED",
+                                            "EXPIRED"
+                                        ]
+                                    },
+                                    "blood_refrigerator_id": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Mis à jour"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "summary": "Supprimer une poche de sang",
+                "operationId": "4961bbe102bd6eb3377a04912ebe074b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Supprimé"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/blood-donors": {
+            "get": {
+                "summary": "Lister les donneurs de sang",
+                "operationId": "6cfb40b1830c04bd6434a5d7d2c18c28",
+                "parameters": [
+                    {
+                        "name": "center_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "hospital_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "blood_type",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "serology_status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste paginée des donneurs"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "summary": "Ajouter un nouveau donneur manuellement",
+                "operationId": "30e5c33ba700ae74cf2572c899f738dc",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "center_id",
+                                    "first_name",
+                                    "gender",
+                                    "birth_date",
+                                    "blood_type",
+                                    "phone_contact"
+                                ],
+                                "properties": {
+                                    "center_id": {
+                                        "type": "integer"
+                                    },
+                                    "first_name": {
+                                        "type": "string"
+                                    },
+                                    "last_name": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "gender": {
+                                        "type": "string",
+                                        "enum": [
+                                            "M",
+                                            "F"
+                                        ]
+                                    },
+                                    "birth_date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "blood_type": {
+                                        "type": "string"
+                                    },
+                                    "phone_contact": {
+                                        "type": "string"
+                                    },
+                                    "last_donation_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "nullable": true
+                                    },
+                                    "serology_status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "PENDING",
+                                            "CLEARED",
+                                            "REJECTED"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Donneur ajouté"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/blood-donors/export": {
+            "get": {
+                "summary": "Exporter la liste des donneurs en Excel (applique les mêmes filtres que l'index)",
+                "operationId": "42441232ae969a9aeeb873db03bc974c",
+                "responses": {
+                    "200": {
+                        "description": "Fichier Excel"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/blood-donors/import": {
+            "post": {
+                "summary": "Importer des donneurs depuis un fichier Excel",
+                "operationId": "cb1c3e44fe9ca3856ceae8a485e525a6",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "file",
+                                    "center_id"
+                                ],
+                                "properties": {
+                                    "file": {
+                                        "description": "Fichier Excel/CSV",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "center_id": {
+                                        "description": "Le centre d'attache pour ces donneurs",
+                                        "type": "integer"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Import réussi"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/blood-donors/{id}": {
+            "get": {
+                "summary": "Détails d'un donneur",
+                "operationId": "032f08a618460b2bab2bb66d1f8ee0ed",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Détails du donneur"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "summary": "Mettre à jour un donneur",
+                "operationId": "b58dcf509289a0e31905eb6ab145be7c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "first_name": {
+                                        "type": "string"
+                                    },
+                                    "serology_status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "PENDING",
+                                            "CLEARED",
+                                            "REJECTED"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Mis à jour"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "summary": "Supprimer un donneur",
+                "operationId": "06097f04c2bdc40cda9a6a7978548a68",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Supprimé"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/blood-refrigerators": {
+            "get": {
+                "summary": "Lister les réfrigérateurs",
+                "operationId": "586814cf24e218c0c7f554c53ab7a0b0",
+                "parameters": [
+                    {
+                        "name": "center_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "hospital_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste paginée des réfrigérateurs"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "summary": "Créer un nouveau réfrigérateur",
+                "operationId": "3967621f6bd5bcf99bd103d21f0d7da0",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "center_id",
+                                    "name",
+                                    "target_temperature",
+                                    "status"
+                                ],
+                                "properties": {
+                                    "center_id": {
+                                        "type": "integer"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "target_temperature": {
+                                        "type": "number",
+                                        "format": "float"
+                                    },
+                                    "status": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Réfrigérateur créé avec succès"
+                    },
+                    "422": {
+                        "description": "Erreur de validation"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/admin/blood-refrigerators/{id}": {
+            "get": {
+                "summary": "Afficher les détails d'un réfrigérateur",
+                "operationId": "4462f9c2cb89913b8e78aaad3049b015",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Détails du réfrigérateur"
+                    },
+                    "404": {
+                        "description": "Non trouvé"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "summary": "Mettre à jour un réfrigérateur",
+                "operationId": "4fc1de97a44ec649dc5c36ad2791f683",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "center_id": {
+                                        "type": "integer"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "target_temperature": {
+                                        "type": "number",
+                                        "format": "float"
+                                    },
+                                    "status": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Mis à jour avec succès"
+                    },
+                    "422": {
+                        "description": "Erreur de validation"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "summary": "Supprimer un réfrigérateur",
+                "operationId": "4b1d5986893980d54c6e77df85f06020",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Supprimé avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/hospital/blood-tracking": {
+            "get": {
+                "tags": [
+                    "Banque de Sang"
+                ],
+                "summary": "Lister le suivi des transfusions",
+                "operationId": "edac1fe699fd15f78f1b59bce4d60a60",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Numéro de la page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Nombre d'éléments par page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filtrer par statut (ON_GOING, FINISHED)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "ON_GOING",
+                                "FINISHED"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "blood_type",
+                        "in": "query",
+                        "description": "Filtrer par groupe sanguin (ex: A+, O-)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "Filtrer à partir de cette date (Y-m-d)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "Filtrer jusqu'à cette date (Y-m-d)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Liste paginée récupérée avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/hospital/blood-tracking/export-pdf": {
+            "get": {
+                "tags": [
+                    "Banque de Sang"
+                ],
+                "summary": "Exporter le rapport des transfusions (PDF)",
+                "operationId": "a99e99840a6c4f74fa4cc76817c07898",
+                "parameters": [
+                    {
+                        "name": "action",
+                        "in": "query",
+                        "description": "Action à effectuer (stream pour voir, download pour télécharger)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "stream",
+                                "download"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filtrer par statut",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "ON_GOING",
+                                "FINISHED"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "blood_type",
+                        "in": "query",
+                        "description": "Filtrer par groupe sanguin",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "Filtrer à partir de cette date",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "Filtrer jusqu'à cette date",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Fichier PDF généré avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/doctor/transfusions": {
+            "get": {
+                "summary": "Lister les transfusions",
+                "operationId": "e4359bba1b6547baa9ed7ab295fa69ff",
+                "responses": {
+                    "200": {
+                        "description": "élément Recupere avec success"
+                    }
+                }
+            },
+            "post": {
+                "summary": "Initier une transfusion à un patient",
+                "operationId": "135daee7d16a3f3afdf7d6a5b38e0f5a",
+                "responses": {
+                    "200": {
+                        "description": "élément Recupere avec success"
+                    }
+                }
+            }
+        },
+        "/api/doctor/transfusions/{id}/finish": {
+            "put": {
+                "summary": "Terminer une transfusion",
+                "operationId": "897d99dc7cc2abc0c4236685830c00de",
+                "responses": {
+                    "200": {
+                        "description": "élément Recupere avec success"
+                    }
+                }
+            }
+        },
         "/api/shared/reports/finance": {
             "get": {
                 "tags": [
@@ -7022,6 +8384,38 @@
                 "responses": {
                     "200": {
                         "description": "Données récupérées avec succès"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/shared/guarantor-claims/export/pdf": {
+            "get": {
+                "summary": "Exporter la liste filtrée des bordereaux en PDF",
+                "operationId": "b92c7ae66e6e9c4933e39bcb95d4c5d5",
+                "responses": {
+                    "200": {
+                        "description": "Fichier PDF généré"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/shared/guarantor-claims/export/excel": {
+            "get": {
+                "summary": "Exporter la liste filtrée des bordereaux en Excel",
+                "operationId": "dd9dff42a7bdce50c92cf3bd96fbb6a0",
+                "responses": {
+                    "200": {
+                        "description": "Fichier Excel généré"
                     }
                 },
                 "security": [
@@ -12187,6 +13581,11 @@
         }
     },
     "components": {
+        "responses": {
+            "200": {
+                "description": "élément Recupere avec success"
+            }
+        },
         "securitySchemes": {
             "bearerAuth": {
                 "type": "http",
@@ -12301,7 +13700,7 @@
         },
         {
             "name": "Consultations Médicales",
-            "description": "API de gestion des consultations, incluant la création simultanée d'ordonnances, d'examens et d'actes médicaux."
+            "description": "API de gestion des consultations, incluant la création simultanée d'ordonnances, d'examens, d'actes médicaux et de transfusions."
         },
         {
             "name": "Équipements",
@@ -12318,6 +13717,10 @@
         {
             "name": "Hospitalisations",
             "description": "Gestion des admissions, des lits et des sorties des patients"
+        },
+        {
+            "name": "Banque de Sang",
+            "description": "Gestion des donneurs, poches de sang, réfrigérateurs et transfusions"
         },
         {
             "name": "Facturation",

@@ -37,6 +37,7 @@ class LabActivityBIController extends Controller
     }
 
     #[OA\Get(path: "/api/bi/laboratory/kpis", summary: "KPIs globaux du laboratoire", security: [["sanctum" => []]])]
+#[OA\Response(response: 200, description: "élément Recupere avec success")]
     public function getKPIs(Request $request)
     {
         // 1. Total des requêtes (dossiers labo)
@@ -81,6 +82,7 @@ class LabActivityBIController extends Controller
     }
 
     #[OA\Get(path: "/api/bi/laboratory/request-trends", summary: "Évolution journalière des demandes d'analyses", security: [["sanctum" => []]])]
+#[OA\Response(response: 200, description: "élément Recupere avec success")]
     public function getRequestTrends(Request $request)
     {
         $request->validate([
@@ -103,6 +105,7 @@ class LabActivityBIController extends Controller
     }
 
     #[OA\Get(path: "/api/bi/laboratory/top-tests", summary: "Palmarès des examens les plus prescrits et rentables", security: [["sanctum" => []]])]
+#[OA\Response(response: 200, description: "élément Recupere avec success")]
     public function getTopTests(Request $request)
     {
         $query = DB::table('lab_request_lines')
@@ -128,7 +131,8 @@ class LabActivityBIController extends Controller
     }
 
     #[OA\Get(path: "/api/bi/laboratory/revenue-by-category", summary: "Chiffre d'affaires par catégorie d'analyse (Hématologie, Biochimie, etc.)", security: [["sanctum" => []]])]
-    public function getRevenueByCategory(Request $request)
+    #[OA\Response(response: 200, description: "élément Recupere avec success")] 
+   public function getRevenueByCategory(Request $request)
     {
         $query = DB::table('lab_request_lines')
             ->join('lab_requests', 'lab_request_lines.lab_request_id', '=', 'lab_requests.id')
@@ -150,6 +154,7 @@ class LabActivityBIController extends Controller
     }
 
     #[OA\Get(path: "/api/bi/laboratory/sample-quality", summary: "Répartition des prélèvements par statut (Qualité)", security: [["sanctum" => []]])]
+#[OA\Response(response: 200, description: "élément Recupere avec success")]
     public function getSampleQuality(Request $request)
     {
         $query = DB::table('lab_samples')

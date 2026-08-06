@@ -19,10 +19,10 @@ class MedicalRecordPdfService
             'admissions' => function($query) { $query->orderBy('admission_date', 'desc'); },
             'admissions.bed.facilityRoom',
             'admissions.doctor.user',
-            // 👉 NOUVEAU : On charge aussi les soins réalisés pendant l'hospitalisation
             'admissions.consultations.profileDoctor.user',
             'admissions.consultations.prescriptions.prescriptionLines.article',
             'admissions.consultations.examRequests.examRequestLines',
+            'admissions.consultations.bloodTransfusions.bloodBag', // 👉 NOUVEAU
             'admissions.performedMedicalActs.medicalActCatalog',
             'admissions.performedMedicalActs.equipment',
             
@@ -32,6 +32,7 @@ class MedicalRecordPdfService
             'patientVisits.consultations.profileDoctor.user',
             'patientVisits.consultations.prescriptions.prescriptionLines.article',
             'patientVisits.consultations.examRequests.examRequestLines',
+            'patientVisits.consultations.bloodTransfusions.bloodBag', // 👉 NOUVEAU
             'patientVisits.performedMedicalActs.medicalActCatalog',
             'patientVisits.performedMedicalActs.equipment',
 

@@ -38,6 +38,7 @@ class FinanceBIController extends Controller
     }
 
     #[OA\Get(path: "/api/bi/finance/kpis", summary: "KPIs financiers globaux", security: [["sanctum" => []]])]
+#[OA\Response(response: 200, description: "élément Recupere avec success")]
     public function getKPIs(Request $request)
     {
         // 1. Ventes (Chiffre d'affaires & Panier moyen)
@@ -74,6 +75,7 @@ class FinanceBIController extends Controller
     }
 
     #[OA\Get(path: "/api/bi/finance/revenue-trends", summary: "Tendance du Chiffre d'Affaires", security: [["sanctum" => []]])]
+#[OA\Response(response: 200, description: "élément Recupere avec success")]
     public function getRevenueTrends(Request $request)
     {
         $request->validate([
@@ -96,6 +98,7 @@ class FinanceBIController extends Controller
     }
 
     #[OA\Get(path: "/api/bi/finance/revenue-by-payment-method", summary: "CA par Mode de Paiement", security: [["sanctum" => []]])]
+#[OA\Response(response: 200, description: "élément Recupere avec success")]
     public function getRevenueByPaymentMethod(Request $request)
     {
         $query = DB::table('pos_sales');
@@ -113,6 +116,7 @@ class FinanceBIController extends Controller
     }
 
     #[OA\Get(path: "/api/bi/finance/revenue-by-category", summary: "CA généré par catégorie de produits", security: [["sanctum" => []]])]
+#[OA\Response(response: 200, description: "élément Recupere avec success")]
     public function getRevenueByCategory(Request $request)
     {
         $query = DB::table('pos_sale_items')
@@ -134,6 +138,7 @@ class FinanceBIController extends Controller
     }
 
     #[OA\Get(path: "/api/bi/finance/top-articles", summary: "Top des articles les plus rentables", security: [["sanctum" => []]])]
+#[OA\Response(response: 200, description: "élément Recupere avec success")]
     public function getTopArticles(Request $request)
     {
         $query = DB::table('pos_sale_items')
@@ -156,6 +161,7 @@ class FinanceBIController extends Controller
     }
 
     #[OA\Get(path: "/api/bi/finance/cash-flow", summary: "Résumé des Flux de trésorerie (hors ventes simples)", security: [["sanctum" => []]])]
+#[OA\Response(response: 200, description: "élément Recupere avec success")]
     public function getCashFlow(Request $request)
     {
         $query = DB::table('payment_transactions')->where('status', 'completed');
