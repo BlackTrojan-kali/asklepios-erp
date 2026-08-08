@@ -19,7 +19,10 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'],
+    'allowed_origins' => [
+        'http://192.168.1.140:5173', // Remplacez X et le port par vos vraies valeurs
+        'http://localhost:5173'
+    ],
 
     'allowed_origins_patterns' => ["*"],
 
